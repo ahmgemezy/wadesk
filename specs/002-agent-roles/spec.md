@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: User description: "Agent roles and permissions: Admin, Supervisor, Agent roles with distinct permission matrix, three invitation methods (email, WhatsApp, shareable link), and three conversation assignment modes (First Reply Wins, Manual, Round Robin)"
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 — Admin invites a new agent and assigns them a role (Priority: P1)
 
@@ -142,8 +142,10 @@ verify it lands in the Unassigned queue rather than auto-assigning.
   The join is blocked with a message explaining the plan limit and an upgrade prompt.
 - What happens when an admin removes an agent who has open assigned conversations?
   Conversations are automatically returned to the Unassigned queue.
+- What happens when a WhatsApp invite message fails to send (number not on WhatsApp, channel disconnected, API error)?
+  An inline error is shown with the specific reason; the admin is offered an option to copy the invite link as a fallback.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -152,24 +154,23 @@ verify it lands in the Unassigned queue rather than auto-assigning.
   permissions are enforced at the data level, not only in the UI.
 - **FR-003**: Admins MUST be able to invite team members by email address.
 - **FR-004**: Admins MUST be able to invite team members by phone number via WhatsApp message.
-- **FR-005**: Admins MUST be able to generate a time-limited shareable invite link (default: 7 days).
-- **FR-006**: Admins MUST be able to revoke a shareable invite link before it expires.
+- **FR-005**: Admins MUST be able to generate a time-limited shareable invite link (default: 7 days). Only one active link exists per tenant at a time — generating a new link auto-revokes the previous one.
+- **FR-006**: Admins MUST be able to manually revoke the active shareable invite link before it expires.
 - **FR-007**: New members joining via shareable link MUST be assigned the Agent role by default.
 - **FR-008**: Admins MUST be able to change any team member's role (except demoting the last Admin).
 - **FR-009**: Admins MUST be able to remove team members; their assigned conversations MUST return to Unassigned.
 - **FR-010**: The system MUST enforce plan-based agent count limits — joining is blocked when the limit is reached.
 - **FR-011**: Admins MUST be able to configure the assignment mode per channel: First Reply Wins, Manual, or Round Robin.
 - **FR-012**: Round Robin assignment mode MUST only be available on Growth plan and above.
-- **FR-013**: If an assigned agent is offline beyond a configurable threshold, the conversation MUST return to the Unassigned queue.
-- **FR-014**: At least one Admin MUST exist per tenant at all times — the last Admin cannot be demoted or removed.
+- **FR-013**: At least one Admin MUST exist per tenant at all times — the last Admin cannot be demoted or removed.
 
 ### Key Entities
 
 - **OrgMember**: A team member within a tenant. Attributes: tenantId, userId, role (admin/supervisor/agent), status (active/invited/removed), invitedAt, joinedAt.
-- **InviteLink**: A shareable invite token. Attributes: tenantId, token, createdBy, expiresAt, revoked, defaultRole.
-- **Channel**: Includes assignmentMode (first_reply/manual/round_robin) and offlineThresholdMinutes.
+- **InviteLink**: A shareable invite token. Attributes: tenantId, token, createdBy, expiresAt, revoked, defaultRole. Constraint: only one non-revoked, non-expired link per tenant at a time.
+- **Channel**: Includes assignmentMode (first_reply/manual/round_robin).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -179,12 +180,20 @@ verify it lands in the Unassigned queue rather than auto-assigning.
 - **SC-004**: A shareable invite link can be generated and shared in under 30 seconds.
 - **SC-005**: Removing an agent results in zero orphaned conversations — all their open conversations return to Unassigned within 5 seconds.
 
+## Clarifications
+
+### Session 2026-04-02
+
+- Q: When Round Robin distributes conversations, which agents does it consider? → A: All active (non-removed) agents regardless of online status — no presence system required.
+- Q: How should "agent offline" be detected and what is the default threshold for returning conversations? → A: FR-013 removed entirely — no auto-return based on offline status; Supervisors/Admins reassign manually.
+- Q: When a WhatsApp invite fails to send, what should the admin see? → A: Show inline error with specific reason and offer to copy the invite link as a fallback.
+- Q: Can a tenant have multiple active shareable invite links simultaneously? → A: One active link at a time — generating a new one auto-revokes the previous.
+
 ## Assumptions
 
 - Clerk Organizations are used to manage membership and role assignments; role labels (Admin/Supervisor/Agent) map to Clerk organization roles.
 - WhatsApp invitation messages are sent from the tenant's connected WhatsApp channel.
 - Invite emails use a standard transactional email service (provider TBD at implementation).
-- Round Robin only distributes among agents who are currently marked as available/online.
-- An agent's "online" status is determined by recent activity (last seen within a configurable window); presence system is out of scope for this feature.
+- Round Robin distributes conversations to all active (non-removed) agents regardless of online status; no presence system required.
 - Custom role creation (beyond Admin/Supervisor/Agent) is deferred to a future phase.
 - Bulk CSV import of team members is deferred to Phase 2.
