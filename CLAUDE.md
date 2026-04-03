@@ -589,10 +589,18 @@ A feature is "done" when:
 *Last updated: manually — update this file whenever a major architectural or product decision is made.*
 
 ## Recent Changes
+- 007-marketing-site: Added TypeScript (strict, no `any`) + Next.js 15 (App Router) + shadcn/ui, Tailwind CSS, Lucide React (icons), Clerk (auth check only)
 - 003-whatsapp-embedded-signup: Added TypeScript (strict, no `any`) + Next.js 15 (App Router), Convex, Clerk, Meta Graph API v21.0, Facebook JS SDK v21.0, Node.js `crypto` (AES-256 encryption)
 - 002-agent-roles: Added TypeScript (strict, no `any`) + Convex, Clerk (Organizations + Backend SDK), Next.js 15 (App Router), shadcn/ui, Meta WhatsApp Cloud API
-- 002-agent-roles: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
 
 ## Active Technologies
-- TypeScript (strict, no `any`) + Next.js 15 (App Router), Convex, Clerk, Meta Graph API v21.0, Facebook JS SDK v21.0, Node.js `crypto` (AES-256 encryption) (003-whatsapp-embedded-signup)
-- Convex — `channels` table extended; `onboardingStates` table new (003-whatsapp-embedded-signup)
+- TypeScript (strict, no `any`) + Next.js 15 (App Router) + shadcn/ui, Tailwind CSS, Lucide React (icons), Clerk (auth check only) (007-marketing-site)
+- N/A — all content is static TypeScript constants (007-marketing-site)
+
+<!-- convex-ai-start -->
+This project uses [Convex](https://convex.dev) as its backend.
+
+When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
+
+Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+<!-- convex-ai-end -->
