@@ -16,9 +16,9 @@
 
 **Purpose**: Clerk custom roles and schema additions needed before any story can be implemented.
 
-- [ ] T001 Configure Clerk custom roles `supervisor` and `agent` in Clerk Dashboard; set default member role to `org:agent` (Clerk Dashboard — no code file)
-- [ ] T002 Add `inviteLinks` table to `convex/schema.ts` with indexes `by_tenant` and `by_token`
-- [ ] T003 Run `npx convex dev` to push schema and regenerate TypeScript types
+- [x] T001 Configure Clerk custom roles `supervisor` and `agent` in Clerk Dashboard; set default member role to `org:agent` (Clerk Dashboard — no code file)
+- [x] T002 Add `inviteLinks` table to `convex/schema.ts` with indexes `by_tenant` and `by_token`
+- [x] T003 Run `npx convex dev` to push schema and regenerate TypeScript types
 
 **Checkpoint**: Schema deployed, Clerk roles configured — user story work can begin.
 
@@ -30,9 +30,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Create `convex/lib/auth.ts` — export `getCallerRole(ctx): Promise<"org:admin" | "org:supervisor" | "org:agent">` helper that reads `orgRole` from Clerk JWT identity
-- [ ] T005 [P] Create `convex/lib/planLimits.ts` — export `assertAgentLimitNotReached(ctx, tenantId)` that fetches Clerk org membership count and compares to plan limits (Free: 2, Starter: 5, Growth: 15, Business: unlimited)
-- [ ] T006 [P] Create `convex/lib/lastAdmin.ts` — export `assertNotLastAdmin(ctx, tenantId, targetUserId)` that checks admin count via Clerk Backend SDK and throws `ConvexError("LAST_ADMIN")` if count would drop to 0
+- [x] T004 Create `convex/lib/auth.ts` — export `getCallerRole(ctx): Promise<"org:admin" | "org:supervisor" | "org:agent">` helper that reads `orgRole` from Clerk JWT identity
+- [x] T005 [P] Create `convex/lib/planLimits.ts` — export `assertAgentLimitNotReached(ctx, tenantId)` that fetches Clerk org membership count and compares to plan limits (Free: 2, Starter: 5, Growth: 15, Business: unlimited)
+- [x] T006 [P] Create `convex/lib/lastAdmin.ts` — export `assertNotLastAdmin(ctx, tenantId, targetUserId)` that checks admin count via Clerk Backend SDK and throws `ConvexError("LAST_ADMIN")` if count would drop to 0
 
 **Checkpoint**: Foundation helpers ready — all user stories can now begin independently.
 
@@ -46,16 +46,16 @@
 
 ### Implementation
 
-- [ ] T007 [US1] Create `convex/orgMembers.ts` — implement `inviteByEmail` action: validate Admin role, call `assertAgentLimitNotReached`, call `clerkClient.organizations.createOrganizationInvitation({ emailAddress, role, redirectUrl: "/accept-invite" })`
-- [ ] T008 [US1] Add `list` query to `convex/orgMembers.ts` — return all org memberships for tenant (active + pending) via Clerk Backend SDK; require Admin or Supervisor role
-- [ ] T009 [US1] Add `changeRole` action to `convex/orgMembers.ts` — validate Admin, call `assertNotLastAdmin` when demoting admin, call `clerkClient.organizations.updateOrganizationMembership({ userId, role })`
-- [ ] T010 [US1] Add `removeMember` action to `convex/orgMembers.ts` — validate Admin, call `assertNotLastAdmin`, call Clerk delete membership, then call `conversations.unassignAll`
-- [ ] T011 [US1] Add `unassignAll` internal mutation to `convex/conversations.ts` — query all non-resolved conversations where `assignedAgentId === agentId`, patch each to `assignedAgentId = null`
-- [ ] T012 [US1] Create `app/accept-invite/page.tsx` — server component that confirms invite acceptance and redirects to `/inbox`
-- [ ] T013 [US1] Create `components/settings/team-member-list.tsx` — client component using `useQuery(api.orgMembers.list)`, renders member rows with name, email, role badge, and action menu (change role / remove); RTL-first layout with Cairo font
-- [ ] T014 [US1] Create `components/settings/role-select.tsx` — dropdown for Admin / Supervisor / Agent roles; labels in Arabic and English; `dir="ltr"` on select trigger value
-- [ ] T015 [US1] Create `components/settings/invite-modal.tsx` — dialog with three tabs: Email / WhatsApp / Link; Email tab contains email input + role selector + invite button
-- [ ] T016 [US1] Create `app/(dashboard)/settings/team/page.tsx` — server component; Admin/Supervisor guard; renders `<TeamMemberList />` and invite button that opens `<InviteModal />`
+- [x] T007 [US1] Create `convex/orgMembers.ts` — implement `inviteByEmail` action: validate Admin role, call `assertAgentLimitNotReached`, call `clerkClient.organizations.createOrganizationInvitation({ emailAddress, role, redirectUrl: "/accept-invite" })`
+- [x] T008 [US1] Add `list` query to `convex/orgMembers.ts` — return all org memberships for tenant (active + pending) via Clerk Backend SDK; require Admin or Supervisor role
+- [x] T009 [US1] Add `changeRole` action to `convex/orgMembers.ts` — validate Admin, call `assertNotLastAdmin` when demoting admin, call `clerkClient.organizations.updateOrganizationMembership({ userId, role })`
+- [x] T010 [US1] Add `removeMember` action to `convex/orgMembers.ts` — validate Admin, call `assertNotLastAdmin`, call Clerk delete membership, then call `conversations.unassignAll`
+- [x] T011 [US1] Add `unassignAll` internal mutation to `convex/conversations.ts` — query all non-resolved conversations where `assignedAgentId === agentId`, patch each to `assignedAgentId = null`
+- [x] T012 [US1] Create `app/accept-invite/page.tsx` — server component that confirms invite acceptance and redirects to `/inbox`
+- [x] T013 [US1] Create `components/settings/team-member-list.tsx` — client component using `useQuery(api.orgMembers.list)`, renders member rows with name, email, role badge, and action menu (change role / remove); RTL-first layout with Cairo font
+- [x] T014 [US1] Create `components/settings/role-select.tsx` — dropdown for Admin / Supervisor / Agent roles; labels in Arabic and English; `dir="ltr"` on select trigger value
+- [x] T015 [US1] Create `components/settings/invite-modal.tsx` — dialog with three tabs: Email / WhatsApp / Link; Email tab contains email input + role selector + invite button
+- [x] T016 [US1] Create `app/(dashboard)/settings/team/page.tsx` — server component; Admin/Supervisor guard; renders `<TeamMemberList />` and invite button that opens `<InviteModal />`
 
 **Checkpoint**: Email invitation fully functional — admin can invite, invitee accepts, role enforced in inbox.
 
@@ -69,8 +69,8 @@
 
 ### Implementation
 
-- [ ] T017 [US2] Add `inviteByWhatsApp` action to `convex/orgMembers.ts` — validate Admin, validate E.164 phone format, call `assertAgentLimitNotReached`, call `inviteLinks.getOrCreateActive` to get/create invite URL, call Meta Cloud API template message via tenant's connected channel; on failure throw `ConvexError("WHATSAPP_SEND_FAILED", { reason })`
-- [ ] T018 [US2] Add WhatsApp tab to `components/settings/invite-modal.tsx` — phone number input (`dir="ltr"`), role selector, send button; on `WHATSAPP_SEND_FAILED` error show inline error message with "Copy Link" fallback button
+- [x] T017 [US2] Add `inviteByWhatsApp` action to `convex/orgMembers.ts` — validate Admin, validate E.164 phone format, call `assertAgentLimitNotReached`, call `inviteLinks.getOrCreateActive` to get/create invite URL, call Meta Cloud API template message via tenant's connected channel; on failure throw `ConvexError("WHATSAPP_SEND_FAILED", { reason })`
+- [x] T018 [US2] Add WhatsApp tab to `components/settings/invite-modal.tsx` — phone number input (`dir="ltr"`), role selector, send button; on `WHATSAPP_SEND_FAILED` error show inline error message with "Copy Link" fallback button
 
 **Checkpoint**: WhatsApp invitation works end-to-end with graceful failure fallback.
 
@@ -84,12 +84,12 @@
 
 ### Implementation
 
-- [ ] T019 [US3] Create `convex/inviteLinks.ts` — implement `generate` mutation: validate Admin, revoke all existing active links for tenant, create new doc with 64-char hex token and `expiresAt = now + 7 days`, return `{ token, expiresAt, url }`
-- [ ] T020 [US3] Add `revoke` mutation to `convex/inviteLinks.ts` — validate Admin, set `revoked: true` on active link
-- [ ] T021 [US3] Add `getActive` live query to `convex/inviteLinks.ts` — return active link doc (not expired, not revoked) or null
-- [ ] T022 [US3] Add `validateAndJoin` action to `convex/inviteLinks.ts` — look up token, validate not revoked and not expired (throw `ConvexError("INVITE_INVALID")` if either), call `assertAgentLimitNotReached`, call `clerkClient.organizations.createOrganizationMembership({ role: "org:agent" })`; handle `ALREADY_MEMBER` gracefully
-- [ ] T023 [US3] Create `app/join/[token]/page.tsx` — public page (no auth required to view); server component reads token param, calls read-only token validation; if invalid shows "Invite expired or invalid" UI; if valid shows org name and Clerk sign-up/sign-in component; post-auth calls `validateAndJoin` server action and redirects to `/inbox`
-- [ ] T024 [US3] Add Link tab to `components/settings/invite-modal.tsx` — shows active link URL with copy button and expiry date; Revoke button; Generate button when no active link exists; uses `useQuery(api.inviteLinks.getActive)` and `useMutation` for generate/revoke
+- [x] T019 [US3] Create `convex/inviteLinks.ts` — implement `generate` mutation: validate Admin, revoke all existing active links for tenant, create new doc with 64-char hex token and `expiresAt = now + 7 days`, return `{ token, expiresAt, url }`
+- [x] T020 [US3] Add `revoke` mutation to `convex/inviteLinks.ts` — validate Admin, set `revoked: true` on active link
+- [x] T021 [US3] Add `getActive` live query to `convex/inviteLinks.ts` — return active link doc (not expired, not revoked) or null
+- [x] T022 [US3] Add `validateAndJoin` action to `convex/inviteLinks.ts` — look up token, validate not revoked and not expired (throw `ConvexError("INVITE_INVALID")` if either), call `assertAgentLimitNotReached`, call `clerkClient.organizations.createOrganizationMembership({ role: "org:agent" })`; handle `ALREADY_MEMBER` gracefully
+- [x] T023 [US3] Create `app/join/[token]/page.tsx` — public page (no auth required to view); server component reads token param, calls read-only token validation; if invalid shows "Invite expired or invalid" UI; if valid shows org name and Clerk sign-up/sign-in component; post-auth calls `validateAndJoin` server action and redirects to `/inbox`
+- [x] T024 [US3] Add Link tab to `components/settings/invite-modal.tsx` — shows active link URL with copy button and expiry date; Revoke button; Generate button when no active link exists; uses `useQuery(api.inviteLinks.getActive)` and `useMutation` for generate/revoke
 
 **Checkpoint**: Shareable invite link fully functional including revocation and expiry.
 
@@ -103,10 +103,10 @@
 
 ### Implementation
 
-- [ ] T025 [US4] Update `convex/conversations.ts` `listForCaller` query — use `getCallerRole` helper; Agent role filters by `assignedAgentId === callerId OR assignedAgentId === null`; Admin/Supervisor return all tenant conversations
-- [ ] T026 [US4] Update `convex/conversations.ts` `assign` mutation — call `getCallerRole`, throw `ConvexError("FORBIDDEN")` for Agent role (already defined in 001 contract — verify implementation matches)
-- [ ] T027 [P] [US4] Add role guard middleware to `app/(dashboard)/settings/` routes — redirect non-Admin users away from billing, channels, and team pages; Supervisor can access team page read-only
-- [ ] T028 [P] [US4] Update `components/inbox/conversation-list.tsx` — hide Assign button for Agent role; use Clerk `useOrganization` hook to get `orgRole` client-side for UI gating (data enforcement is in Convex)
+- [x] T025 [US4] Update `convex/conversations.ts` `listForCaller` query — use `getCallerRole` helper; Agent role filters by `assignedAgentId === callerId OR assignedAgentId === null`; Admin/Supervisor return all tenant conversations
+- [x] T026 [US4] Update `convex/conversations.ts` `assign` mutation — call `getCallerRole`, throw `ConvexError("FORBIDDEN")` for Agent role (already defined in 001 contract — verify implementation matches)
+- [x] T027 [P] [US4] Add role guard middleware to `app/(dashboard)/settings/` routes — redirect non-Admin users away from billing, channels, and team pages; Supervisor can access team page read-only
+- [x] T028 [P] [US4] Update `components/inbox/conversation-list.tsx` — hide Assign button for Agent role; use Clerk `useOrganization` hook to get `orgRole` client-side for UI gating (data enforcement is in Convex)
 
 **Checkpoint**: All role-based restrictions enforced at data layer and reflected in UI.
 
@@ -120,11 +120,11 @@
 
 ### Implementation
 
-- [ ] T029 [US5] Add `setAssignmentMode` mutation to `convex/channels.ts` — validate Admin role, validate Round Robin requires Growth/Business plan (throw `ConvexError("PLAN_REQUIRED", { requiredPlan: "growth" })` otherwise), patch `channel.assignmentMode`
-- [ ] T030 [US5] Add Round Robin assignment logic to `convex/http.ts` webhook action — when new conversation created on a `round_robin` channel: fetch active org members via Clerk SDK, sort by userId for determinism, assign to `members[roundRobinIndex % count].userId`, call `ctx.runMutation(api.channels.incrementRoundRobinIndex, { channelId })`
-- [ ] T031 [US5] Add `incrementRoundRobinIndex` internal mutation to `convex/channels.ts` — atomically increments `channel.roundRobinIndex`
-- [ ] T032 [US5] Create `components/settings/assignment-mode-select.tsx` — radio group for First Reply Wins / Manual / Round Robin; Round Robin option disabled with upgrade prompt tooltip when plan is Free or Starter; RTL-compatible layout
-- [ ] T033 [US5] Add assignment mode selector to channel settings page `app/(dashboard)/settings/channels/[channelId]/page.tsx` — renders `<AssignmentModeSelect />` with current mode; on change calls `setAssignmentMode` mutation
+- [x] T029 [US5] Add `setAssignmentMode` mutation to `convex/channels.ts` — validate Admin role, validate Round Robin requires Growth/Business plan (throw `ConvexError("PLAN_REQUIRED", { requiredPlan: "growth" })` otherwise), patch `channel.assignmentMode`
+- [x] T030 [US5] Add Round Robin assignment logic to `convex/http.ts` webhook action — when new conversation created on a `round_robin` channel: fetch active org members via Clerk SDK, sort by userId for determinism, assign to `members[roundRobinIndex % count].userId`, call `ctx.runMutation(api.channels.incrementRoundRobinIndex, { channelId })`
+- [x] T031 [US5] Add `incrementRoundRobinIndex` internal mutation to `convex/channels.ts` — atomically increments `channel.roundRobinIndex`
+- [x] T032 [US5] Create `components/settings/assignment-mode-select.tsx` — radio group for First Reply Wins / Manual / Round Robin; Round Robin option disabled with upgrade prompt tooltip when plan is Free or Starter; RTL-compatible layout
+- [x] T033 [US5] Add assignment mode selector to channel settings page `app/(dashboard)/settings/channels/[channelId]/page.tsx` — renders `<AssignmentModeSelect />` with current mode; on change calls `setAssignmentMode` mutation
 
 **Checkpoint**: All three assignment modes work. Round Robin plan gate enforced in Convex.
 

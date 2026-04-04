@@ -82,10 +82,10 @@ Array<{
   _id: Id<"messages">;
   direction: "inbound" | "outbound";
   content: string;
-  type: "text" | "image" | "document" | "unsupported";
+  contentType: "text" | "image" | "audio" | "video" | "document" | "sticker" | "location" | "template" | "unsupported";
   isInternalNote: boolean;
-  senderId: string;
-  status: "sent" | "delivered" | "read" | "failed" | null;
+  authorId: string | undefined;
+  status: "sent" | "delivered" | "read" | "failed";
   timestamp: number;
 }>
 ```
@@ -136,7 +136,7 @@ Persists an inbound message from a Meta webhook payload.
   metaMessageId: string;
   senderPhone: string;
   content: string;
-  type: "text" | "image" | "document" | "unsupported";
+  contentType: "text" | "image" | "document" | "unsupported";
   timestamp: number;
 }
 ```

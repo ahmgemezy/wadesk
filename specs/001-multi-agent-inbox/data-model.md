@@ -24,6 +24,7 @@ A connected WhatsApp Business number belonging to a tenant.
 **Indexes**:
 - `by_tenant`: `[tenantId]`
 - `by_tenant_phone`: `[tenantId, phoneNumberId]` — unique constraint for dedup
+- `by_phone_number_id`: `[phoneNumberId]` — webhook lookup by Meta phone ID
 
 ---
 
@@ -35,7 +36,7 @@ A customer who has messaged the business. Auto-created on first inbound message.
 |-------|------|-------|
 | `tenantId` | `string` | Clerk `orgId` |
 | `phone` | `string` | E.164 format always (e.g. `+201012345678`) |
-| `displayName` | `string \| null` | From WhatsApp profile |
+| `displayName` | `string` | From WhatsApp profile; fallback to phone number |
 | `customName` | `string \| null` | Agent override |
 | `tags` | `string[]` | e.g. `["VIP", "مشكلة متكررة"]` |
 | `notes` | `string \| null` | Free-text agent notes |
@@ -43,6 +44,7 @@ A customer who has messaged the business. Auto-created on first inbound message.
 | `firstSeenAt` | `number` | Unix timestamp of first message |
 | `lastSeenAt` | `number` | Updated on every inbound message |
 | `assignedAgentId` | `string \| null` | Clerk userId of usual handler |
+| `createdAt` | `number` | Unix timestamp |
 
 **Indexes**:
 - `by_tenant`: `[tenantId]`
@@ -94,17 +96,19 @@ An individual message or internal note within a conversation.
 | `tenantId` | `string` | Denormalized for query efficiency |
 | `direction` | `"inbound" \| "outbound"` | From customer's perspective |
 | `content` | `string` | Message text; `"[Unsupported message type]"` for unknown types |
-| `type` | `"text" \| "image" \| "document" \| "unsupported"` | WhatsApp message type |
+| `contentType` | `"text" \| "image" \| "audio" \| "video" \| "document" \| "sticker" \| "location" \| "template" \| "unsupported"` | WhatsApp message type |
 | `isInternalNote` | `boolean` | If true: visible only to agents, never sent to customer |
-| `senderId` | `string` | Clerk userId for outbound/notes; customer phone for inbound |
+| `authorId` | `string \| null` | Clerk userId for outbound/notes; customer phone for inbound |
+| `mediaUrl` | `string \| null` | URL for media attachment |
 | `metaMessageId` | `string \| null` | Meta's message ID (for dedup + delivery status) |
-| `status` | `"sent" \| "delivered" \| "read" \| "failed" \| null` | Outbound only; null for inbound |
+| `status` | `"sent" \| "delivered" \| "read" \| "failed"` | Required — delivery status |
 | `timestamp` | `number` | Unix timestamp |
+| `createdAt` | `number` | Unix timestamp |
 
 **Indexes**:
 - `by_conversation`: `[conversationId]` — primary access pattern for thread view
 - `by_tenant`: `[tenantId]` — for cross-conversation search (Phase 2)
-- `by_meta_id`: `[metaMessageId]` — deduplication on webhook redelivery
+- `by_meta_message_id`: `[metaMessageId]` — deduplication on webhook redelivery
 
 **Internal note visibility rule**: Queries for the conversation thread must filter `isInternalNote = false` for the customer-facing direction check. The Convex query for the agent thread returns ALL messages including notes (filtered in UI with visual distinction).
 
@@ -118,7 +122,8 @@ Saved response templates scoped to a tenant.
 |-------|------|-------|
 | `tenantId` | `string` | Clerk `orgId` |
 | `title` | `string` | Short label shown in panel, e.g. "Welcome greeting" |
-| `body` | `string` | Full message text; supports Arabic |
+| `content` | `string` | Full message text; supports Arabic |
+| `usageCount` | `number` | Times used; default 0 |
 | `category` | `string \| null` | e.g. "Greetings", "Orders", "Complaints" |
 | `createdBy` | `string` | Clerk userId of creator |
 | `createdAt` | `number` | Unix timestamp |
@@ -162,12 +167,13 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
-    .index("by_tenant_phone", ["tenantId", "phoneNumberId"]),
+    .index("by_tenant_phone", ["tenantId", "phoneNumberId"])
+    .index("by_phone_number_id", ["phoneNumberId"]),
 
   contacts: defineTable({
     tenantId: v.string(),
     phone: v.string(),
-    displayName: v.optional(v.string()),
+    displayName: v.string(),
     customName: v.optional(v.string()),
     tags: v.array(v.string()),
     notes: v.optional(v.string()),
@@ -175,6 +181,7 @@ export default defineSchema({
     firstSeenAt: v.number(),
     lastSeenAt: v.number(),
     assignedAgentId: v.optional(v.string()),
+    createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phone"]),
@@ -206,33 +213,39 @@ export default defineSchema({
     tenantId: v.string(),
     direction: v.union(v.literal("inbound"), v.literal("outbound")),
     content: v.string(),
-    type: v.union(
+    contentType: v.union(
       v.literal("text"),
       v.literal("image"),
+      v.literal("audio"),
+      v.literal("video"),
       v.literal("document"),
+      v.literal("sticker"),
+      v.literal("location"),
+      v.literal("template"),
       v.literal("unsupported")
     ),
     isInternalNote: v.boolean(),
-    senderId: v.string(),
+    authorId: v.optional(v.string()),
+    mediaUrl: v.optional(v.string()),
     metaMessageId: v.optional(v.string()),
-    status: v.optional(
-      v.union(
-        v.literal("sent"),
-        v.literal("delivered"),
-        v.literal("read"),
-        v.literal("failed")
-      )
+    status: v.union(
+      v.literal("sent"),
+      v.literal("delivered"),
+      v.literal("read"),
+      v.literal("failed")
     ),
     timestamp: v.number(),
+    createdAt: v.number(),
   })
     .index("by_conversation", ["conversationId"])
     .index("by_tenant", ["tenantId"])
-    .index("by_meta_id", ["metaMessageId"]),
+    .index("by_meta_message_id", ["metaMessageId"]),
 
   quickReplies: defineTable({
     tenantId: v.string(),
     title: v.string(),
-    body: v.string(),
+    content: v.string(),
+    usageCount: v.number(),
     category: v.optional(v.string()),
     createdBy: v.string(),
     createdAt: v.number(),
