@@ -2,6 +2,18 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  tenants: defineTable({
+    tenantId: v.string(),
+    plan: v.union(
+      v.literal("free"),
+      v.literal("starter"),
+      v.literal("growth"),
+      v.literal("business"),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_tenantId", ["tenantId"]),
+
   channels: defineTable({
     tenantId: v.string(),
     phoneNumberId: v.string(),

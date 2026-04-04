@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { getCallerIdentity } from "./lib/auth";
 
 export const listForConversation = query({
@@ -164,9 +165,9 @@ export const createInbound = internalMutation({
       .query("messages")
       .withIndex("by_meta_message_id", (q) => q.eq("metaMessageId", args.metaMessageId))
       .first();
-    if (existing) return existing._id;
+    if (existing) return { messageId: existing._id, conversationId: existing.conversationId, isNewConversation: false };
 
-    const contactId = await ctx.runMutation(internal.contacts.upsertByPhone, {
+    const contactId: Id<"contacts"> = await ctx.runMutation(internal.contacts.upsertByPhone, {
       tenantId: args.tenantId,
       phone: args.senderPhone,
       displayName: args.senderDisplayName,
@@ -179,6 +180,8 @@ export const createInbound = internalMutation({
       )
       .filter((q) => q.eq(q.field("contactId"), contactId))
       .first();
+
+    let isNewConversation = false;
 
     if (!conversation) {
       const conversationId = await ctx.db.insert("conversations", {
@@ -194,6 +197,7 @@ export const createInbound = internalMutation({
         ...(args.assignedAgentId ? { assignedAgentId: args.assignedAgentId } : {}),
       });
       conversation = await ctx.db.get(conversationId);
+      isNewConversation = true;
     } else {
       const patch: Record<string, unknown> = {
         lastMessageAt: args.timestamp,
@@ -206,7 +210,7 @@ export const createInbound = internalMutation({
       await ctx.db.patch(conversation._id, patch);
     }
 
-    return ctx.db.insert("messages", {
+    const messageId = await ctx.db.insert("messages", {
       conversationId: conversation!._id,
       tenantId: args.tenantId,
       direction: "inbound",
@@ -219,6 +223,8 @@ export const createInbound = internalMutation({
       timestamp: args.timestamp,
       createdAt: Date.now(),
     });
+
+    return { messageId, conversationId: conversation!._id, isNewConversation };
   },
 });
 

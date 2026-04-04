@@ -33,7 +33,8 @@ export const inviteByEmail = action({
       organizationId: tenantId,
       limit: 100,
     });
-    await assertAgentLimitNotReached(memberships);
+    const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
+    assertAgentLimitNotReached(memberships, plan);
 
     try {
       await client.organizations.createOrganizationInvitation({
@@ -166,7 +167,8 @@ export const inviteByWhatsApp = action({
       organizationId: tenantId,
       limit: 100,
     });
-    await assertAgentLimitNotReached(memberships);
+    const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
+    assertAgentLimitNotReached(memberships, plan);
 
     const existingLinks = await ctx.runQuery(internal.inviteLinks.getActiveForTenant, { tenantId });
     let inviteUrl: string;

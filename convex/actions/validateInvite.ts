@@ -31,7 +31,8 @@ export const validateAndJoin = action({
       organizationId: tenantId,
       limit: 100,
     });
-    await assertAgentLimitNotReached(memberships);
+    const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
+    assertAgentLimitNotReached(memberships, plan);
 
     try {
       await client.organizations.createOrganizationMembership({
@@ -42,7 +43,10 @@ export const validateAndJoin = action({
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("already") || msg.includes("member")) {
-        throw new ConvexError("ALREADY_MEMBER");
+        const org = await client.organizations.getOrganization({
+          organizationId: tenantId,
+        });
+        return { orgId: tenantId, orgName: org.name ?? "Organization" };
       }
       throw e;
     }

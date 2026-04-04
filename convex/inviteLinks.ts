@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
+import { getCallerRole, assertAdmin } from "./lib/auth";
 
 function buildUrl(token: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -16,7 +17,6 @@ function generateToken(): string {
 export const generate = mutation({
   args: {},
   handler: async (ctx) => {
-    const { getCallerRole, assertAdmin } = await import("./lib/auth");
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
@@ -56,7 +56,6 @@ export const generate = mutation({
 export const revokeLink = mutation({
   args: {},
   handler: async (ctx) => {
-    const { getCallerRole, assertAdmin } = await import("./lib/auth");
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
@@ -79,9 +78,10 @@ export const revokeLink = mutation({
 export const getActive = query({
   args: {},
   handler: async (ctx) => {
-    const { getCallerRole, assertAdmin } = await import("./lib/auth");
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    if (role !== "org:admin" && role !== "org:supervisor") {
+      throw new ConvexError("FORBIDDEN");
+    }
 
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("UNAUTHORIZED");

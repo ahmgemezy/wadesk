@@ -7,12 +7,12 @@ const PLAN_LIMITS: Record<string, number> = {
   business: Infinity,
 };
 
-type Plan = "free" | "starter" | "growth" | "business";
+export type Plan = "free" | "starter" | "growth" | "business";
 
-export async function assertAgentLimitNotReached(
+export function assertAgentLimitNotReached(
   clerkOrgMemberships: { data: unknown[] },
-  plan: Plan = "free",
-): Promise<void> {
+  plan: Plan,
+): void {
   const limit = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
   if (clerkOrgMemberships.data.length >= limit) {
     throw new ConvexError({

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Cairo } from "next/font/google";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
@@ -8,6 +8,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "WaDesk",
   description: "صندوق بريد WhatsApp للفرق — تعاون فريقك على محادثات واحدة",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const cairo = Cairo({
