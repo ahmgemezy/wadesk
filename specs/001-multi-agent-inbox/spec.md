@@ -158,11 +158,11 @@ verify it populates the reply box and can be sent.
 - **Conversation**: A thread between a customer and the business on a specific channel.
   Key attributes: tenantId, channelId, contactId, assignedAgentId, status, labels, lastMessageAt.
 - **Message**: An individual WhatsApp message within a conversation.
-  Attributes: conversationId, direction (inbound/outbound), content, type, timestamp, isInternalNote, senderId.
+  Attributes: conversationId, direction (inbound/outbound), content, contentType, timestamp, isInternalNote, authorId.
 - **Contact**: The customer profile auto-created on first message.
   Attributes: tenantId, phone (E.164), displayName, customName, tags.
 - **QuickReply**: A saved response template scoped to a tenant.
-  Attributes: tenantId, title, body, category.
+  Attributes: tenantId, title, content, category.
 - **Channel**: A connected WhatsApp Business number.
   Attributes: tenantId, phoneNumberId, displayName, assignmentMode.
 

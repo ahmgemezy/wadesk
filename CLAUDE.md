@@ -589,13 +589,13 @@ A feature is "done" when:
 *Last updated: manually — update this file whenever a major architectural or product decision is made.*
 
 ## Recent Changes
+- 008-dashboard-shell: Added TypeScript (strict, no `any`) — Next.js 15 App Router + shadcn/ui (Sidebar component), Tailwind CSS v4, Lucide React (icons), Clerk (`auth()` server-side)
 - 007-marketing-site: Added TypeScript (strict, no `any`) + Next.js 15 (App Router) + shadcn/ui, Tailwind CSS, Lucide React (icons), Clerk (auth check only)
 - 003-whatsapp-embedded-signup: Added TypeScript (strict, no `any`) + Next.js 15 (App Router), Convex, Clerk, Meta Graph API v21.0, Facebook JS SDK v21.0, Node.js `crypto` (AES-256 encryption)
-- 002-agent-roles: Added TypeScript (strict, no `any`) + Convex, Clerk (Organizations + Backend SDK), Next.js 15 (App Router), shadcn/ui, Meta WhatsApp Cloud API
 
 ## Active Technologies
-- TypeScript (strict, no `any`) + Next.js 15 (App Router) + shadcn/ui, Tailwind CSS, Lucide React (icons), Clerk (auth check only) (007-marketing-site)
-- N/A — all content is static TypeScript constants (007-marketing-site)
+- TypeScript (strict, no `any`) — Next.js 15 App Router + shadcn/ui (Sidebar component), Tailwind CSS v4, Lucide React (icons), Clerk (`auth()` server-side) (008-dashboard-shell)
+- None — no new Convex tables; reads Clerk session only (008-dashboard-shell)
 
 <!-- convex-ai-start -->
 This project uses [Convex](https://convex.dev) as its backend.
