@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { OrgRole } from "./team-member-list";
 
 interface RoleSelectProps {
@@ -15,17 +22,17 @@ const ROLES: { value: OrgRole; label: string }[] = [
 
 export function RoleSelect({ value, onChange }: RoleSelectProps) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value as OrgRole)}
-      dir="ltr"
-      className="flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-    >
-      {ROLES.map((r) => (
-        <option key={r.value} value={r.value}>
-          {r.label}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={(v) => onChange(v as OrgRole)}>
+      <SelectTrigger dir="ltr" className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {ROLES.map((r) => (
+          <SelectItem key={r.value} value={r.value}>
+            {r.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

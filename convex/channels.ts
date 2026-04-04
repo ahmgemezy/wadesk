@@ -1,12 +1,13 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
-import { getCallerRole, assertAdmin } from "./lib/auth";
+import { getCallerRole, getCallerIdentity, assertAdmin } from "./lib/auth";
+import { internal } from "./_generated/api";
+import type { Plan } from "./lib/planLimits";
 
 export const listForTenant = query({
   args: {},
   handler: async (ctx) => {
-    const { getCallerIdentity } = await import("./lib/auth");
     const { tenantId } = await getCallerIdentity(ctx);
     return ctx.db
       .query("channels")
@@ -45,7 +46,6 @@ export const getById = internalQuery({
 export const get = query({
   args: { channelId: v.id("channels") },
   handler: async (ctx, args) => {
-    const { getCallerIdentity } = await import("./lib/auth");
     const { tenantId } = await getCallerIdentity(ctx);
     const channel = await ctx.db.get(args.channelId);
     if (!channel || channel.tenantId !== tenantId) return null;
@@ -66,7 +66,6 @@ export const setAssignmentMode = mutation({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const { getCallerIdentity } = await import("./lib/auth");
     const { tenantId } = await getCallerIdentity(ctx);
 
     const channel = await ctx.db.get(args.channelId);
@@ -75,8 +74,10 @@ export const setAssignmentMode = mutation({
     }
 
     if (args.mode === "round_robin") {
-      // TODO: check tenant plan when plan field exists
-      // For now, allow on all plans — plan gating can be added when billing is integrated
+      const plan: Plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
+      if (plan === "free" || plan === "starter") {
+        throw new ConvexError({ code: "PLAN_REQUIRED", requiredPlan: "growth" });
+      }
     }
 
     await ctx.db.patch(args.channelId, { assignmentMode: args.mode });

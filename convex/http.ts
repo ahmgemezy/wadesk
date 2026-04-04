@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 async function verifySignature(
   body: string,
@@ -78,7 +79,7 @@ export const metaWebhook = httpAction(async (ctx, request) => {
           content = `[Unsupported message type]`;
         }
 
-        await ctx.runMutation(internal.messages.createInbound, {
+        const result: { messageId: Id<"messages">; conversationId: Id<"conversations">; isNewConversation: boolean } = await ctx.runMutation(internal.messages.createInbound, {
           tenantId: channel.tenantId,
           channelId: channel._id,
           metaMessageId: msg.id,
@@ -88,6 +89,14 @@ export const metaWebhook = httpAction(async (ctx, request) => {
           timestamp: Number(msg.timestamp) * 1000,
           senderDisplayName: value.contacts?.[0]?.profile?.name,
         });
+
+        if (channel.assignmentMode === "round_robin" && result.isNewConversation) {
+          await ctx.runAction(internal.actions.roundRobin.assignRoundRobin, {
+            tenantId: channel.tenantId,
+            channelId: channel._id,
+            conversationId: result.conversationId,
+          });
+        }
       }
 
       const statuses = value?.statuses;

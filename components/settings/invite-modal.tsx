@@ -59,6 +59,8 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
         setError("تم بلوغ الحد الأقصى / Plan limit reached");
       } else if (msg.includes("ALREADY_MEMBER")) {
         setError("عضو بالفعل / Already a member");
+      } else if (msg.includes("LAST_ADMIN")) {
+        setError("لا يمكن تغيير دور آخر مدير / Cannot change the role of the last admin");
       } else if (msg.includes("FORBIDDEN")) {
         setError("غير مصرح / Forbidden");
       } else {
@@ -85,7 +87,10 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
       } else if (msg.includes("PLAN_LIMIT")) {
         setError("تم بلوغ الحد الأقصى / Plan limit reached");
       } else if (msg.includes("WHATSAPP_SEND_FAILED")) {
-        setError("فشل إرسال واتساب / WhatsApp send failed");
+        setError("فشل إرسال واتساب / WhatsApp send failed. You can share this link instead: / يمكنك مشاركة هذا الرابط بدلاً من ذلك:");
+        if (activeLink?.url) {
+          setLinkFallback(activeLink.url);
+        }
       } else if (msg.includes("FORBIDDEN")) {
         setError("غير مصرح / Forbidden");
       } else {

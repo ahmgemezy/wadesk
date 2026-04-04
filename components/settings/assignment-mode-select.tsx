@@ -1,8 +1,14 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AssignmentModeSelectProps {
   channelId: Id<"channels">;
@@ -38,41 +44,74 @@ export function AssignmentModeSelect({
   currentMode,
 }: AssignmentModeSelectProps) {
   const setMode = useMutation(api.channels.setAssignmentMode);
+  const plan = useQuery(api.lib.tenants.getCurrentPlan);
+
+  const isRoundRobinLocked =
+    plan !== undefined && (plan === "free" || plan === "starter");
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium">
-        وضع التعيين / Assignment Mode
-      </h3>
+    <TooltipProvider>
       <div className="space-y-2">
-        {MODES.map((mode) => (
-          <label
-            key={mode.value}
-            className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
-              currentMode === mode.value
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-primary/50"
-            }`}
-          >
-            <input
-              type="radio"
-              name="assignmentMode"
-              value={mode.value}
-              checked={currentMode === mode.value}
-              onChange={() => setMode({ channelId, mode: mode.value })}
-              className="mt-1"
-            />
-            <div>
-              <div className="font-medium text-sm">
-                {mode.labelAr} / {mode.labelEn}
+        <h3 className="text-sm font-medium">
+          وضع التعيين / Assignment Mode
+        </h3>
+        <div className="space-y-2">
+          {MODES.map((mode) => {
+            const isLocked = mode.value === "round_robin" && isRoundRobinLocked;
+
+            const inner = (
+              <div
+                key={mode.value}
+                className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
+                  isLocked
+                    ? "border-border opacity-50 cursor-not-allowed"
+                    : currentMode === mode.value
+                      ? "border-primary bg-primary/5 cursor-pointer"
+                      : "border-border hover:border-primary/50 cursor-pointer"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="assignmentMode"
+                  value={mode.value}
+                  checked={currentMode === mode.value}
+                  onChange={() => {
+                    if (!isLocked) setMode({ channelId, mode: mode.value });
+                  }}
+                  disabled={isLocked}
+                  className="mt-1"
+                />
+                <div>
+                  <div className="font-medium text-sm">
+                    {mode.labelAr} / {mode.labelEn}
+                    {isLocked && (
+                      <span className="ms-2 text-xs text-muted-foreground">
+                        (خطة النمو مطلوبة / Growth plan required)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {mode.descAr} / {mode.descEn}
+                  </div>
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {mode.descAr} / {mode.descEn}
-              </div>
-            </div>
-          </label>
-        ))}
+            );
+
+            if (isLocked) {
+              return (
+                <Tooltip key={mode.value}>
+                  <TooltipTrigger render={inner} />
+                  <TooltipContent>
+                    requires Growth plan or above / ترقية إلى خطة النمو أو أعلى
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return inner;
+          })}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
