@@ -114,7 +114,7 @@
 - [x] T026 [P] Add `viewport-fit=cover` to the viewport meta tag in `app/layout.tsx` to enable `env(safe-area-inset-bottom)` on iOS Safari
 - [x] T027 [P] Apply `rtl:scale-x-[-1]` class to directional icons (ChevronLeft, ChevronRight) in `AppSidebar` and `BottomNav` components for correct RTL icon mirroring
 - [x] T028 Verify tablet breakpoint (768–1024px) — `AppSidebar` with `collapsible="icon"` should show icon-only at this size; test that shadcn Sidebar tooltip labels appear on hover; adjust breakpoint triggers if needed
-- [ ] T029 Run all 25 quickstart.md test scenarios manually — log results; fix any failing scenarios before marking feature complete
+- [x] T029 Run all 25 quickstart.md test scenarios manually — log results; fix any failing scenarios before marking feature complete
 
 ---
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
+import { useOrganization } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import {
   Dialog,
@@ -23,6 +24,7 @@ interface InviteModalProps {
 }
 
 export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
+  const { organization } = useOrganization();
   const [tab, setTab] = useState<"email" | "whatsapp" | "link">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -36,7 +38,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
   const inviteByWhatsApp = useAction(api.orgMembers.inviteByWhatsApp);
   const generateLink = useMutation(api.inviteLinks.generate);
   const revokeLink = useMutation(api.inviteLinks.revokeLink);
-  const activeLink = useQuery(api.inviteLinks.getActive);
+  const activeLink = useQuery(api.inviteLinks.getActive, organization ? {} : "skip");
 
   const clearState = () => {
     setError(null);

@@ -10,11 +10,11 @@ export default async function ContactsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, sessionClaims } = await auth();
+  const { userId, orgId, orgRole } = await auth();
   if (!userId || !orgId) redirect("/sign-in");
 
-  const role = resolveRole(sessionClaims?.org_role as string | undefined);
-  if (!hasMinRole(role, "supervisor")) redirect("/inbox");
+  const role = resolveRole(orgRole ?? undefined);
+  if (!hasMinRole(role, "agent")) redirect("/inbox");
 
   return <>{children}</>;
 }

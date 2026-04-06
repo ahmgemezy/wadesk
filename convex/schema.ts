@@ -40,13 +40,23 @@ export default defineSchema({
     tags: v.array(v.string()),
     notes: v.optional(v.string()),
     source: v.union(v.literal("auto"), v.literal("manual"), v.literal("import")),
+    isArchived: v.boolean(),
     firstSeenAt: v.number(),
     lastSeenAt: v.number(),
     assignedAgentId: v.optional(v.string()),
+    country: v.optional(v.string()),
+    city: v.optional(v.string()),
+    spent: v.optional(v.number()),
+    category: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
-    .index("by_tenant_phone", ["tenantId", "phone"]),
+    .index("by_tenant_phone", ["tenantId", "phone"])
+    .index("by_tenant_archived", ["tenantId", "isArchived"])
+    .searchIndex("search_by_name", {
+      searchField: "displayName",
+      filterFields: ["tenantId"],
+    }),
 
   conversations: defineTable({
     tenantId: v.string(),
@@ -68,7 +78,8 @@ export default defineSchema({
     .index("by_tenant_status", ["tenantId", "status"])
     .index("by_tenant_agent", ["tenantId", "assignedAgentId"])
     .index("by_tenant_channel", ["tenantId", "channelId"])
-    .index("by_last_message", ["tenantId", "lastMessageAt"]),
+    .index("by_last_message", ["tenantId", "lastMessageAt"])
+    .index("by_contact", ["contactId"]),
 
   messages: defineTable({
     conversationId: v.id("conversations"),
@@ -126,4 +137,23 @@ export default defineSchema({
   })
     .index("by_tenant", ["tenantId"])
     .index("by_token", ["token"]),
+
+  customFields: defineTable({
+    tenantId: v.string(),
+    contactId: v.id("contacts"),
+    key: v.string(),
+    value: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_contact", ["contactId"])
+    .index("by_tenant", ["tenantId"]),
+
+  onboardingState: defineTable({
+    tenantId: v.string(),
+    completedSteps: v.array(v.string()),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    completedAt: v.optional(v.number()),
+  })
+    .index("by_tenant", ["tenantId"]),
 });
