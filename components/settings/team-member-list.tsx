@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAction } from "convex/react";
+import { useOrganization } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ function roleIcon(role: OrgRole) {
 }
 
 export function TeamMemberList() {
+  const { organization } = useOrganization();
   const listMembers = useAction(api.orgMembers.list);
   const changeRole = useAction(api.orgMembers.changeRole);
   const removeMember = useAction(api.orgMembers.removeMember);
@@ -80,8 +82,9 @@ export function TeamMemberList() {
   }, [listMembers]);
 
   useEffect(() => {
+    if (!organization) return;
     void fetchMembers();
-  }, [fetchMembers]);
+  }, [fetchMembers, organization]);
 
   const handleChangeRole = async (userId: string, newRole: OrgRole) => {
     await changeRole({ targetUserId: userId, newRole });

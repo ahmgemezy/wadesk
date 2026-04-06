@@ -1,6 +1,8 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@/convex/_generated/api";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { BottomNav } from "@/components/shell/bottom-nav";
@@ -11,7 +13,8 @@ import { Separator } from "@/components/ui/separator";
 
 export const dynamic = "force-dynamic";
 
-function detectLocale(headersList: Headers): "ar" | "en" {
+function detectLocale(headersList: Headers, cookieLocale: string | undefined): "ar" | "en" {
+  if (cookieLocale === "ar" || cookieLocale === "en") return cookieLocale;
   const lang = headersList.get("accept-language") ?? "";
   if (lang.includes("ar")) return "ar";
   return "en";
@@ -22,7 +25,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId } = await auth();
+  const { userId, orgId, orgRole: clerkOrgRole, getToken } = await auth();
   if (!userId) {
     redirect("/sign-in");
   }
@@ -33,32 +36,42 @@ export default async function DashboardLayout({
   const user = await currentUser();
   if (!user) redirect("/sign-in");
 
-  const { sessionClaims } = await auth();
-  const orgRole = (sessionClaims?.org_role as string) ?? "org:agent";
+  const orgRole = clerkOrgRole ?? "org:agent";
   const role = resolveRole(orgRole);
+
+  if (orgRole !== "org:agent") {
+    const token = await getToken({ template: "convex" });
+    if (token) {
+      const state = await fetchQuery(api.onboarding.getState, {}, { token });
+      if (!state || !state.completedSteps.includes("onboarding_complete")) {
+        redirect("/onboarding");
+      }
+    }
+  }
 
   const resolvedUser: ResolvedUser = {
     name: user.fullName ?? user.emailAddresses[0]?.emailAddress ?? "User",
     email: user.emailAddresses[0]?.emailAddress ?? "",
     imageUrl: user.imageUrl,
     role: orgRole as ResolvedUser["role"],
-    orgName: (sessionClaims?.org_name as string) ?? "Organization",
+    orgName: user.organizationMemberships?.[0]?.organization?.name ?? "Organization",
   };
 
   const navItems = filterNavItems(role);
 
   const headersList = await headers();
-  const locale = detectLocale(headersList);
+  const cookieStore = await cookies();
+  const locale = detectLocale(headersList, cookieStore.get("locale")?.value);
 
   return (
     <SidebarProvider>
       <AppSidebar user={resolvedUser} navItems={navItems} locale={locale} />
       <SidebarInset>
-        <header className="flex h-12 items-center gap-2 px-4 md:hidden">
-          <SidebarTrigger />
+        <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b">
+          <SidebarTrigger className="-ms-1" />
           <Separator orientation="vertical" className="h-4" />
         </header>
-        <div className="flex-1 pb-16 md:pb-0">
+        <div className="flex-1 overflow-hidden pb-16 md:pb-0">
           {children}
         </div>
       </SidebarInset>

@@ -1,17 +1,18 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { resolveRole } from "@/lib/shell/role-utils";
 import { TeamMemberList } from "@/components/settings/team-member-list";
 
 export const dynamic = "force-dynamic";
 
 export default async function TeamSettingsPage() {
-  const { userId, orgId, sessionClaims } = await auth();
+  const { userId, orgId, orgRole } = await auth();
   if (!userId || !orgId) {
     redirect("/sign-in");
   }
 
-  const role = (sessionClaims?.org_role as string) ?? "org:agent";
-  if (role !== "org:admin" && role !== "admin" && role !== "org:supervisor") {
+  const role = resolveRole(orgRole ?? undefined);
+  if (role !== "admin" && role !== "supervisor") {
     redirect("/inbox");
   }
 

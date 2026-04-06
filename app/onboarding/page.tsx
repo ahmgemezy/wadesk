@@ -1,11 +1,12 @@
-"use client";
+import { headers } from "next/headers";
+import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 
-import { CreateOrganization } from "@clerk/nextjs";
+export const dynamic = "force-dynamic";
 
-export default function OnboardingPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <CreateOrganization afterCreateOrganizationUrl="/inbox" />
-    </div>
-  );
+export default async function OnboardingPage() {
+  const headersList = await headers();
+  const lang = headersList.get("accept-language") ?? "";
+  const locale: "ar" | "en" = lang.includes("ar") ? "ar" : "en";
+
+  return <OnboardingWizard locale={locale} />;
 }
