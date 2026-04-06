@@ -9,10 +9,10 @@ export default async function AnalyticsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, sessionClaims } = await auth();
+  const { userId, orgId, orgRole } = await auth();
   if (!userId || !orgId) redirect("/sign-in");
 
-  const role = resolveRole(sessionClaims?.org_role as string | undefined);
+  const role = resolveRole(orgRole ?? undefined);
   if (!hasMinRole(role, "supervisor")) redirect("/inbox");
 
   return <>{children}</>;
