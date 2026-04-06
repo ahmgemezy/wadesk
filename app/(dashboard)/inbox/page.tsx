@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
@@ -11,6 +11,7 @@ import { MessageInput } from "@/components/inbox/message-input";
 import { StatusSelector } from "@/components/inbox/status-selector";
 import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
+import { ContactPanel } from "@/components/contacts/contact-panel";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -22,6 +23,10 @@ import { Toaster } from "sonner";
 export default function InboxPage() {
   const { isLoaded, orgId } = useAuth();
   const hasOrg = isLoaded && !!orgId;
+  const [locale, setLocale] = useState<"ar" | "en">("ar");
+  useEffect(() => {
+    setLocale(document.documentElement.lang === "en" ? "en" : "ar");
+  }, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [channelFilter, setChannelFilter] = useState<string | undefined>(
     undefined,
@@ -53,7 +58,7 @@ export default function InboxPage() {
           setQuickReplyOpen(false);
         }}
       />
-      <div className="h-screen flex flex-col">
+      <div className="h-[calc(100svh)] flex flex-col">
         <div className="border-b p-2 flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1 me-auto">
             <Button
@@ -92,10 +97,10 @@ export default function InboxPage() {
                 }
               >
                 {s === "open"
-                  ? "مفتوح"
+                  ? (locale === "ar" ? "مفتوح" : "Open")
                   : s === "pending"
-                    ? "معلق"
-                    : "مغلق"}
+                    ? (locale === "ar" ? "معلق" : "Pending")
+                    : (locale === "ar" ? "مغلق" : "Resolved")}
               </Button>
             ))}
           </div>
@@ -117,23 +122,32 @@ export default function InboxPage() {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70}>
             {selectedId ? (
-              <div className="flex flex-col h-full">
-                <div className="border-b p-2 flex items-center justify-between">
-                  <StatusSelector conversationId={selectedId} />
-                  <AssignAgentDialog
+              <div className="flex h-full">
+                <div className="flex flex-col flex-1 min-w-0">
+                  <div className="border-b p-2 flex items-center justify-between">
+                    <StatusSelector conversationId={selectedId} />
+                    <AssignAgentDialog
+                      conversationId={selectedId}
+                      currentAssigneeId={
+                        selectedConversation?.assignedAgentId ?? undefined
+                      }
+                    />
+                  </div>
+                  <ConversationThread conversationId={selectedId} />
+                  <MessageInput
                     conversationId={selectedId}
-                    currentAssigneeId={
-                      selectedConversation?.assignedAgentId ?? undefined
-                    }
+                    onQuickReplyOpen={() => setQuickReplyOpen(true)}
+                    quickReplyContent={quickReplyContent}
+                    onQuickReplyConsumed={() => setQuickReplyContent("")}
                   />
                 </div>
-                <ConversationThread conversationId={selectedId} />
-                <MessageInput
-                  conversationId={selectedId}
-                  onQuickReplyOpen={() => setQuickReplyOpen(true)}
-                  quickReplyContent={quickReplyContent}
-                  onQuickReplyConsumed={() => setQuickReplyContent("")}
-                />
+                {selectedConversation?.contactId && (
+                  <div className="w-72 border-s overflow-hidden">
+                    <ContactPanel
+                      contactId={selectedConversation.contactId as Id<"contacts">}
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground">
