@@ -14,7 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
     labelAr: "جهات الاتصال",
     labelEn: "Contacts",
     icon: "Contact2",
-    minRole: "supervisor",
+    minRole: "agent",
   },
   {
     href: "/analytics",
@@ -39,8 +39,8 @@ export const NAV_ITEMS: NavItem[] = [
       },
       {
         href: "/settings/channels",
-        labelAr: "القنوات",
-        labelEn: "Channels",
+        labelAr: "الإدارات",
+        labelEn: "Departments",
         icon: "Radio",
         minRole: "admin",
       },

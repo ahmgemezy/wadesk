@@ -15,9 +15,9 @@ export async function getCallerIdentity(ctx: Ctx) {
     throw new ConvexError("NO_ORG");
   }
   return {
-    tenantId: identity.orgId,
+    tenantId: identity.orgId as string,
     callerId: identity.subject,
-    orgRole: identity.orgRole ?? "org:agent",
+    orgRole: (identity.orgRole as string | undefined) ?? "org:agent",
   };
 }
 

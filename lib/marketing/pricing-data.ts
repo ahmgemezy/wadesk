@@ -46,14 +46,14 @@ const plans: Plan[] = [
     conversationLimit: 500,
     featuresAr: [
       "وكيلان كحد أقصى",
-      "قناة واتساب واحدة",
+      "إدارة واتساب واحدة",
       "500 محادثة شهرياً",
       "تخصيص المحادثات",
       "الردود السريعة",
     ],
     featuresEn: [
       "Up to 2 agents",
-      "1 WhatsApp channel",
+      "1 WhatsApp department",
       "500 conversations/month",
       "Conversation assignment",
       "Quick replies",
@@ -71,7 +71,7 @@ const plans: Plan[] = [
     conversationLimit: null,
     featuresAr: [
       "5 وكلاء كحد أقصى",
-      "قناة واتساب واحدة",
+      "إدارة واتساب واحدة",
       "محادثات غير محدودة",
       "تخصيص المحادثات",
       "الردود السريعة",
@@ -79,7 +79,7 @@ const plans: Plan[] = [
     ],
     featuresEn: [
       "Up to 5 agents",
-      "1 WhatsApp channel",
+      "1 WhatsApp department",
       "Unlimited conversations",
       "Conversation assignment",
       "Quick replies",
@@ -98,7 +98,7 @@ const plans: Plan[] = [
     conversationLimit: null,
     featuresAr: [
       "15 وكيلاً كحد أقصى",
-      "3 قنوات واتساب",
+      "3 إدارات واتساب",
       "محادثات غير محدودة",
       "تخصيص المحادثات",
       "الردود السريعة",
@@ -108,7 +108,7 @@ const plans: Plan[] = [
     ],
     featuresEn: [
       "Up to 15 agents",
-      "3 WhatsApp channels",
+      "3 WhatsApp departments",
       "Unlimited conversations",
       "Conversation assignment",
       "Quick replies",
@@ -129,7 +129,7 @@ const plans: Plan[] = [
     conversationLimit: null,
     featuresAr: [
       "وكلاء غير محدودين",
-      "قنوات غير محدودة",
+      "إدارات غير محدودة",
       "محادثات غير محدودة",
       "تخصيص المحادثات",
       "الردود السريعة",
@@ -140,7 +140,7 @@ const plans: Plan[] = [
     ],
     featuresEn: [
       "Unlimited agents",
-      "Unlimited WhatsApp channels",
+      "Unlimited WhatsApp departments",
       "Unlimited conversations",
       "Conversation assignment",
       "Quick replies",

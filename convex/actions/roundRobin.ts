@@ -14,6 +14,7 @@ export const assignRoundRobin = internalAction({
   handler: async (ctx, args) => {
     const channel = await ctx.runQuery(internal.channels.getById, {
       channelId: args.channelId,
+      tenantId: args.tenantId,
     });
 
     if (!channel || channel.assignmentMode !== "round_robin") return;
@@ -39,11 +40,13 @@ export const assignRoundRobin = internalAction({
       await ctx.runMutation(internal.conversations.assignInternal, {
         conversationId: args.conversationId,
         agentId: assignedAgentId,
+        tenantId: args.tenantId,
       });
     }
 
     await ctx.runMutation(internal.channels.incrementRoundRobinIndex, {
       channelId: args.channelId,
+      tenantId: args.tenantId,
     });
   },
 });

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { MessageCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CheckCircle2 } from "lucide-react";
+import { EmbeddedSignupButton } from "./embedded-signup-button";
 
 interface StepConnectWhatsAppProps {
   onComplete: () => void;
@@ -12,59 +14,68 @@ interface StepConnectWhatsAppProps {
 export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
   const markStep = useMutation(api.onboarding.markStep);
   const [error, setError] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [displayPhone, setDisplayPhone] = useState<string | null>(null);
 
-  const handleConnect = async () => {
-    setConnecting(true);
+  const handleSuccess = async (_channelId: string, phone: string) => {
+    setDisplayPhone(phone);
+    setConnected(true);
     setError(null);
+    // completeEmbeddedSignup already marks whatsapp_connected in onboardingState server-side.
+    // We also call markStep here to keep the wizard completedSteps in sync.
     try {
       await markStep({ step: "whatsapp_connected" });
-      onComplete();
     } catch {
-      setError("فشل ربط الواتساب — حاول مرة تانية");
-    } finally {
-      setConnecting(false);
+      // ignore — already marked server-side by the action
     }
+    setTimeout(() => onComplete(), 2000);
   };
 
+  if (connected) {
+    return (
+      <div className="flex flex-col items-center gap-6 text-center" dir="rtl">
+        <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+          <CheckCircle2 className="w-8 h-8 text-green-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold font-cairo">تم الربط بنجاح!</h2>
+          {displayPhone && (
+            <p className="text-muted-foreground mt-1" dir="ltr">{displayPhone}</p>
+          )}
+          <p className="text-sm text-muted-foreground mt-1 font-cairo">
+            جارٍ الانتقال للخطوة التالية...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center gap-6">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold text-foreground">ربط واتساب بزنس</h2>
-        <p className="text-muted-foreground mt-1">Connect your WhatsApp Business number</p>
+    <div className="flex flex-col gap-6" dir="rtl">
+      <div>
+        <h2 className="text-xl font-semibold font-cairo">ربط حساب واتساب بيزنس</h2>
+        <p className="text-muted-foreground mt-1 text-sm font-cairo">
+          ستمتلك حساب WABA مباشرة — WaDesk لا يقيدك أبداً.
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Connect your WhatsApp Business Account — you own it directly.
+        </p>
       </div>
 
-      <div className="w-full flex flex-col items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-          <MessageCircle className="w-8 h-8 text-green-600" />
-        </div>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription className="font-cairo">{error}</AlertDescription>
+        </Alert>
+      )}
 
-        <p className="text-sm text-muted-foreground text-center max-w-sm">
-          هيوصلك رقم واتساب بزنس مخصص. ربطه بمساحة العمل عشان تقدر تستقبل وتبعت رسائل.
+      <div className="space-y-3">
+        <EmbeddedSignupButton
+          onSuccess={handleSuccess}
+          onError={(err) => setError(err)}
+        />
+        <p className="text-xs text-muted-foreground font-cairo">
+          ستُفتح نافذة من ميتا لاختيار حساب واتساب بيزنس الخاص بك
         </p>
-
-        {error && (
-          <div className="w-full rounded-md bg-destructive/10 p-3 text-center text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <button
-          onClick={handleConnect}
-          disabled={connecting}
-          className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none"
-        >
-          {connecting ? "جاري الربط..." : "ربط واتساب"}
-        </button>
-
-        {error && (
-          <button
-            onClick={handleConnect}
-            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
-            حاول مرة تانية
-          </button>
-        )}
       </div>
     </div>
   );

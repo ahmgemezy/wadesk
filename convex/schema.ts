@@ -17,20 +17,33 @@ export default defineSchema({
   channels: defineTable({
     tenantId: v.string(),
     phoneNumberId: v.string(),
+    displayPhone: v.optional(v.string()),      // E.164 display number
     displayName: v.string(),
     wabaId: v.string(),
+    accessToken: v.optional(v.string()),       // AES-256-GCM encrypted
+    tokenEncryptedAt: v.optional(v.number()),
     assignmentMode: v.union(
       v.literal("first_reply"),
       v.literal("manual"),
       v.literal("round_robin"),
     ),
     roundRobinIndex: v.number(),
-    isActive: v.boolean(),
+    // isActive kept optional for backward compat with existing docs
+    isActive: v.optional(v.boolean()),
+    status: v.optional(v.union(
+      v.literal("connecting"),
+      v.literal("active"),
+      v.literal("disconnected"),
+      v.literal("reconnect_required"),
+    )),
+    connectedAt: v.optional(v.number()),
+    disconnectedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phoneNumberId"])
-    .index("by_phone_number_id", ["phoneNumberId"]),
+    .index("by_phone_number_id", ["phoneNumberId"])
+    .index("by_tenant_status", ["tenantId", "status"]),
 
   contacts: defineTable({
     tenantId: v.string(),
@@ -102,6 +115,7 @@ export default defineSchema({
     mediaUrl: v.optional(v.string()),
     metaMessageId: v.optional(v.string()),
     status: v.union(
+      v.literal("sending"),
       v.literal("sent"),
       v.literal("delivered"),
       v.literal("read"),
@@ -110,7 +124,7 @@ export default defineSchema({
     timestamp: v.number(),
     createdAt: v.number(),
   })
-    .index("by_conversation", ["conversationId"])
+    .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_tenant", ["tenantId"])
     .index("by_meta_message_id", ["metaMessageId"]),
 

@@ -4,10 +4,21 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { clerkClient } from "@clerk/nextjs/server";
-import { getCallerRole, assertAdmin, type OrgRole } from "./lib/auth";
+import { getCallerRole, assertAdmin, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import { assertAgentLimitNotReached } from "./lib/planLimits";
 import { assertNotLastAdmin } from "./lib/lastAdmin";
 import { internal } from "./_generated/api";
+
+function assertSupervisorCanManageTarget(
+  callerRole: OrgRole,
+  targetRole: string | undefined,
+): void {
+  if (callerRole === "org:supervisor") {
+    if (targetRole !== "org:agent") {
+      throw new ConvexError("SUPERVISOR_CAN_ONLY_MANAGE_AGENTS");
+    }
+  }
+}
 
 export const inviteByEmail = action({
   args: {
@@ -20,7 +31,14 @@ export const inviteByEmail = action({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+
+    if (role === "org:supervisor") {
+      if (args.role !== "org:agent") {
+        throw new ConvexError("SUPERVISOR_CAN_ONLY_INVITE_AGENTS");
+      }
+    } else {
+      assertAdmin(role);
+    }
 
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("UNAUTHORIZED");
@@ -151,7 +169,14 @@ export const inviteByWhatsApp = action({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+
+    if (role === "org:supervisor") {
+      if (args.role !== "org:agent") {
+        throw new ConvexError("SUPERVISOR_CAN_ONLY_INVITE_AGENTS");
+      }
+    } else {
+      assertAdmin(role);
+    }
 
     const e164 = /^\+[1-9]\d{6,14}$/.test(args.phone);
     if (!e164) {
@@ -229,10 +254,11 @@ export const inviteByWhatsApp = action({
 export const removeMember = action({
   args: {
     targetUserId: v.string(),
+    status: v.union(v.literal("active"), v.literal("pending")),
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("UNAUTHORIZED");
@@ -240,11 +266,27 @@ export const removeMember = action({
 
     const client = await clerkClient();
 
+    if (args.status === "pending") {
+      await client.organizations.revokeOrganizationInvitation({
+        organizationId: tenantId,
+        invitationId: args.targetUserId,
+      });
+      return;
+    }
+
     const memberships = await client.organizations.getOrganizationMembershipList({
       organizationId: tenantId,
       limit: 100,
     });
     await assertNotLastAdmin(memberships, args.targetUserId);
+
+    if (role === "org:supervisor") {
+      const target = memberships.data.find(
+        (m) => m.publicUserData?.userId === args.targetUserId,
+      );
+      const targetRole = target?.role === "admin" ? "org:admin" : target?.role;
+      assertSupervisorCanManageTarget(role, targetRole);
+    }
 
     await client.organizations.deleteOrganizationMembership({
       organizationId: tenantId,

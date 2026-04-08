@@ -1,18 +1,28 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@clerk/nextjs";
 
+interface ConversationItem {
+  _id: string;
+  // Contact info — populated when available (real data or mock)
+  contactName?: string;
+  contactPhone?: string;
+  contactAvatarInitials?: string;
+  // Assigned agent
+  assignedAgentName?: string;
+  // Conversation meta
+  lastMessagePreview: string;
+  lastMessageAt: number;
+  status: string;
+  unreadCount: number;
+  assignedAgentId?: string;
+}
+
 interface ConversationListItemProps {
-  conversation: {
-    _id: string;
-    lastMessagePreview: string;
-    lastMessageAt: number;
-    status: string;
-    unreadCount: number;
-    assignedAgentId?: string;
-  };
+  conversation: ConversationItem;
   isActive?: boolean;
   onClick?: () => void;
   onAssignClick?: () => void;
@@ -27,7 +37,9 @@ export function ConversationListItem({
   const { membership } = useOrganization();
 
   const isAdminOrSupervisor =
-    membership?.role === "org:admin" || membership?.role === "admin";
+    membership?.role === "org:admin" ||
+    membership?.role === "admin" ||
+    membership?.role === "org:supervisor";
 
   const statusLabel =
     conversation.status === "open"
@@ -36,12 +48,22 @@ export function ConversationListItem({
         ? "معلق"
         : "مغلق";
 
-  const statusVariant =
+  const statusColor =
     conversation.status === "open"
-      ? "default"
+      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
       : conversation.status === "pending"
-        ? "secondary"
-        : "outline";
+        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400";
+
+  const displayName = conversation.contactName ?? "عميل / Contact";
+  const phone = conversation.contactPhone;
+  const initials =
+    conversation.contactAvatarInitials ??
+    displayName
+      .split(" ")
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("");
 
   const timeAgo = formatTimeAgo(conversation.lastMessageAt);
 
@@ -49,42 +71,88 @@ export function ConversationListItem({
     <div
       className={cn(
         "w-full text-start p-3 border-b hover:bg-accent/50 transition-colors cursor-pointer",
-        isActive && "bg-accent",
+        isActive && "bg-accent border-s-2 border-s-primary",
       )}
       onClick={onClick}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start gap-3">
+        {/* Avatar */}
+        <Avatar className="h-9 w-9 shrink-0">
+          <AvatarFallback className="text-xs font-medium">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+
+        {/* Main content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-medium truncate">
-              محادثة / Conversation
+          {/* Row 1: name + time + unread */}
+          <div className="flex items-center justify-between gap-1 mb-0.5">
+            <span
+              className="text-sm font-semibold truncate"
+              dir="auto"
+            >
+              {displayName}
             </span>
-            <Badge variant={statusVariant} className="text-[10px]">
-              {statusLabel}
-            </Badge>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
+              {conversation.unreadCount > 0 && (
+                <Badge className="text-[10px] rounded-full px-1.5 h-4 min-w-4 flex items-center justify-center">
+                  {conversation.unreadCount}
+                </Badge>
+              )}
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground truncate">
+
+          {/* Row 2: phone (if present) */}
+          {phone && (
+            <span
+              className="text-[10px] text-muted-foreground block mb-0.5"
+              dir="ltr"
+            >
+              {phone}
+            </span>
+          )}
+
+          {/* Row 3: last message preview */}
+          <p
+            className="text-xs text-muted-foreground truncate"
+            dir="auto"
+          >
             {conversation.lastMessagePreview}
           </p>
-        </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
-          {conversation.unreadCount > 0 && (
-            <Badge className="text-[10px] rounded-full px-1.5">
-              {conversation.unreadCount}
-            </Badge>
-          )}
-          {isAdminOrSupervisor && onAssignClick && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAssignClick();
-              }}
-              className="text-[10px] text-primary hover:underline"
+
+          {/* Row 4: status + assigned agent */}
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className={cn(
+                "text-[10px] rounded-full px-1.5 py-0.5 font-medium",
+                statusColor,
+              )}
             >
-              تعيين / Assign
-            </button>
-          )}
+              {statusLabel}
+            </span>
+            {conversation.assignedAgentName && (
+              <span className="text-[10px] text-muted-foreground truncate">
+                {conversation.assignedAgentName}
+              </span>
+            )}
+            {!conversation.assignedAgentId && (
+              <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                غير معين / Unassigned
+              </span>
+            )}
+            {isAdminOrSupervisor && onAssignClick && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAssignClick();
+                }}
+                className="text-[10px] text-primary hover:underline ms-auto"
+              >
+                تعيين / Assign
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -99,5 +167,6 @@ function formatTimeAgo(timestamp: number): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}س`;
   const days = Math.floor(hours / 24);
+  if (days === 1) return "أمس";
   return `${days}ي`;
 }

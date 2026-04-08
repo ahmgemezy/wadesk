@@ -12,6 +12,7 @@ import type { OrgRole } from "./team-member-list";
 interface RoleSelectProps {
   value: OrgRole;
   onChange: (role: OrgRole) => void;
+  disabled?: boolean;
 }
 
 const ROLES: { value: OrgRole; label: string }[] = [
@@ -20,9 +21,9 @@ const ROLES: { value: OrgRole; label: string }[] = [
   { value: "org:admin", label: "مدير / Admin" },
 ];
 
-export function RoleSelect({ value, onChange }: RoleSelectProps) {
+export function RoleSelect({ value, onChange, disabled }: RoleSelectProps) {
   return (
-    <Select value={value} onValueChange={(v) => onChange(v as OrgRole)}>
+    <Select value={value} onValueChange={(v) => onChange(v as OrgRole)} disabled={disabled}>
       <SelectTrigger dir="ltr" className="w-full">
         <SelectValue />
       </SelectTrigger>

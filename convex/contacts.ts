@@ -151,8 +151,9 @@ export const create = mutation({
     category: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { tenantId, orgRole } = await getCallerIdentity(ctx);
-    assertAdminOrSupervisor(orgRole);
+    const { tenantId } = await getCallerIdentity(ctx);
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
 
     const existing = await ctx.db
       .query("contacts")
