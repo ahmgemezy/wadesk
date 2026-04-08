@@ -170,8 +170,11 @@ export const assignInternal = internalMutation({
   args: {
     conversationId: v.id("conversations"),
     agentId: v.string(),
+    tenantId: v.string(),
   },
   handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== args.tenantId) return;
     await ctx.db.patch(args.conversationId, {
       assignedAgentId: args.agentId,
       lastMessageAt: Date.now(),

@@ -56,7 +56,7 @@ The canonical nav items list (defined in `lib/nav-items.ts`):
 | `/contacts`             | جهات الاتصال     | Contacts      | supervisor |
 | `/analytics`            | التحليلات        | Analytics     | supervisor |
 | `/settings/team`        | الفريق           | Team          | supervisor |
-| `/settings/channels`    | القنوات          | Channels      | admin      |
+| `/settings/channels`    | الإدارات          | Departments      | admin      |
 | `/settings/quick-replies` | الردود السريعة | Quick Replies | supervisor |
 | `/settings/billing`     | الفواتير         | Billing       | admin      |
 

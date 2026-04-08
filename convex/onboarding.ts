@@ -28,6 +28,19 @@ export const ensureCreated = mutation({
 
     if (existing) return existing._id;
 
+    const existingTenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId as string))
+      .first();
+
+    if (!existingTenant) {
+      await ctx.db.insert("tenants", {
+        tenantId: tenantId as string,
+        plan: "free",
+        createdAt: Date.now(),
+      });
+    }
+
     return ctx.db.insert("onboardingState", {
       tenantId: tenantId as string,
       completedSteps: ["workspace_named"],

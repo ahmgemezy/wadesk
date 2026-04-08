@@ -30,7 +30,9 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
   if (!orgId) {
-    redirect("/onboarding");
+    // User is signed in but no active org in session — returning member whose
+    // session hasn't activated an org yet. Show org selector.
+    redirect("/select-org");
   }
 
   const user = await currentUser();

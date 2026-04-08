@@ -327,12 +327,20 @@ CLERK_SECRET_KEY=
 # Convex
 NEXT_PUBLIC_CONVEX_URL=
 CONVEX_DEPLOY_KEY=
+CONVEX_SITE_URL=          # e.g. https://happy-animal-123.convex.site (Convex dashboard → Settings)
 
 # Meta WhatsApp Business API
 META_APP_ID=
 META_APP_SECRET=
 META_WEBHOOK_VERIFY_TOKEN=
 META_SYSTEM_USER_TOKEN=
+
+# WhatsApp Webhook (011)
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=   # Same as META_WEBHOOK_VERIFY_TOKEN — set in Meta App Dashboard
+WHATSAPP_WEBHOOK_SECRET=         # Random secret shared between Next.js route and Convex action
+WHATSAPP_APP_SECRET=             # Meta App Secret (Meta App Dashboard → Settings → Basic)
+WHATSAPP_API_TOKEN=              # Permanent System User token for sending messages (task 013)
+WHATSAPP_API_VERSION=v19.0       # Meta API version
 
 # Lemon Squeezy
 LEMONSQUEEZY_API_KEY=
@@ -583,6 +591,60 @@ A feature is "done" when:
 - ❌ Not a WordPress plugin
 - ❌ Not targeting enterprise (focus: SMBs 2–20 agents)
 - ❌ Not English-first
+
+---
+
+## 25. Roles & Permissions
+
+### Tenant Member Roles
+
+Each Clerk Organization (tenant) has 3 roles: **Admin**, **Supervisor**, **Agent**
+
+### Permissions Table
+
+| Permission | Admin | Supervisor | Agent |
+|---|:---:|:---:|:---:|
+| **Conversations** | | | |
+| View all conversations | ✅ | ✅ | ❌ |
+| View assigned conversations | ✅ | ✅ | ✅ |
+| Reply to conversations | ✅ | ✅ | ✅ |
+| Assign conversation to agent | ✅ | ✅ | ❌ |
+| Reassign conversation | ✅ | ✅ | ❌ |
+| Close / reopen conversation | ✅ | ✅ | ✅ |
+| **Contacts** | | | |
+| View contacts | ✅ | ✅ | ✅ |
+| Create / edit contacts | ✅ | ✅ | ✅ |
+| Delete contacts | ✅ | ✅ | ❌ |
+| **Team Management** | | | |
+| Invite members (Admin only) | ✅ | ❌ | ❌ |
+| Invite members (Agent only) | ✅ | ✅ | ❌ |
+| Remove members (Admin only) | ✅ | ❌ | ❌ |
+| Remove members (Agent only) | ✅ | ✅ | ❌ |
+| Change member roles | ✅ | ❌ | ❌ |
+| View team members list | ✅ | ✅ | ❌ |
+| **WABA & Inbox Settings** | | | |
+| Connect / disconnect WABA number | ✅ | ❌ | ❌ |
+| Edit inbox settings | ✅ | ❌ | ❌ |
+| Manage quick replies / templates | ✅ | ✅ | ❌ |
+| **Reports & Analytics** | | | |
+| View team-wide reports | ✅ | ✅ | ❌ |
+| View own performance stats | ✅ | ✅ | ✅ |
+| **Billing** | | | |
+| Manage subscription / billing | ✅ | ❌ | ❌ |
+
+### Role Rules
+
+Enforce these rules throughout the entire codebase:
+
+- **Admin** — Full control over everything in the tenant.
+- **Supervisor** — Can manage Agents only (invite & remove). Cannot invite, remove, or modify Admin accounts. Cannot access billing or WABA settings.
+- **Agent** — Works only on conversations assigned to them. Cannot see other agents' conversations or the team members list.
+
+### Implementation Notes
+
+- Role checks **must be enforced server-side** in Convex functions — never trust client-side checks alone.
+- Use Clerk `organizationMembership.role` to gate all role-sensitive actions.
+- When a Supervisor attempts to invite or remove a member, validate that the target member's role is `agent` before proceeding — reject with a clear error if the target is `admin` or `supervisor`.
 
 ---
 

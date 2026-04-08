@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery } from "convex/react";
-import { useAuth } from "@clerk/nextjs";
+import { useState, useCallback } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ConversationList } from "@/components/inbox/conversation-list";
@@ -12,40 +11,47 @@ import { StatusSelector } from "@/components/inbox/status-selector";
 import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
 import { ContactPanel } from "@/components/contacts/contact-panel";
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from "@/components/ui/resizable";
+import { SeedButton } from "@/components/dev/seed-button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ChevronRight } from "lucide-react";
 import { Toaster } from "sonner";
+import { cn } from "@/lib/utils";
 
 export default function InboxPage() {
-  const { isLoaded, orgId } = useAuth();
-  const hasOrg = isLoaded && !!orgId;
-  const [locale, setLocale] = useState<"ar" | "en">("ar");
-  useEffect(() => {
-    setLocale(document.documentElement.lang === "en" ? "en" : "ar");
-  }, []);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [channelFilter, setChannelFilter] = useState<string | undefined>(
-    undefined,
-  );
-  const [statusFilter, setStatusFilter] = useState<
-    "open" | "pending" | "resolved" | undefined
-  >(undefined);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
   const [quickReplyContent, setQuickReplyContent] = useState("");
 
-  const channels = useQuery(api.channels.listForTenant, hasOrg ? {} : "skip") as Array<{
-    _id: string;
-    displayName: string;
-  }> | undefined;
+  const markAsRead = useMutation(api.inbox.markAsRead);
+
+  // On mobile we show either the list or the chat panel, not both.
+  const showListOnMobile = selectedId === null;
 
   const selectedConversation = useQuery(
     api.conversations.get,
     selectedId ? { conversationId: selectedId as Id<"conversations"> } : "skip",
   );
+
+  // Get conversation list to pull contact info for the top bar
+  const convList = useQuery(api.inbox.listConversations, { filter: "all" });
+  const activeConv = convList?.find((c) => c.id === selectedId);
+
+  const contactName = activeConv?.contactName;
+  const contactPhone = activeConv?.contactPhone;
+  const contactInitials = activeConv?.contactAvatarInitials;
+
+  const handleSelect = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      markAsRead({ conversationId: id as Id<"conversations"> }).catch(() => {
+        // non-critical — ignore
+      });
+    },
+    [markAsRead],
+  );
+
+  const handleBack = () => setSelectedId(null);
 
   return (
     <>
@@ -58,81 +64,87 @@ export default function InboxPage() {
           setQuickReplyOpen(false);
         }}
       />
-      <div className="h-[calc(100svh)] flex flex-col">
-        <div className="border-b p-2 flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1 me-auto">
-            <Button
-              variant={channelFilter === undefined ? "default" : "outline"}
-              size="sm"
-              onClick={() => setChannelFilter(undefined)}
-            >
-              الكل / All
-            </Button>
-            {channels?.map((ch) => (
-              <Button
-                key={ch._id}
-                variant={channelFilter === ch._id ? "default" : "outline"}
-                size="sm"
-                onClick={() => setChannelFilter(ch._id)}
-              >
-                {ch.displayName}
-              </Button>
-            ))}
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant={statusFilter === undefined ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter(undefined)}
-            >
-              الكل / All
-            </Button>
-            {(["open", "pending", "resolved"] as const).map((s) => (
-              <Button
-                key={s}
-                variant={statusFilter === s ? "default" : "outline"}
-                size="sm"
-                onClick={() =>
-                  setStatusFilter(statusFilter === s ? undefined : s)
-                }
-              >
-                {s === "open"
-                  ? (locale === "ar" ? "مفتوح" : "Open")
-                  : s === "pending"
-                    ? (locale === "ar" ? "معلق" : "Pending")
-                    : (locale === "ar" ? "مغلق" : "Resolved")}
-              </Button>
-            ))}
-          </div>
+
+      <div className="h-[calc(100svh)] flex overflow-hidden">
+        {/* ── Conversation List column ────────────────────────────────── */}
+        <div
+          className={cn(
+            // Mobile: full-width, hide when a conversation is open
+            "w-full shrink-0 border-e flex flex-col",
+            // Desktop: fixed ~320px, always visible
+            "md:w-80 md:block",
+            // Mobile visibility toggle
+            showListOnMobile ? "block" : "hidden md:flex",
+          )}
+        >
+          <ConversationList
+            activeConversationId={selectedId ?? undefined}
+            onSelect={handleSelect}
+          />
         </div>
 
-        <ResizablePanelGroup
-          orientation="horizontal"
-          className="flex-1"
+        {/* ── Chat Panel column ───────────────────────────────────────── */}
+        <div
+          className={cn(
+            "flex-1 flex flex-col min-w-0",
+            // Mobile: hidden when list is shown
+            showListOnMobile ? "hidden md:flex" : "flex",
+          )}
         >
-          <ResizablePanel defaultSize={30} minSize={20}>
-            <ConversationList
-              channelId={channelFilter}
-              status={statusFilter}
-              activeConversationId={selectedId ?? undefined}
-              onSelect={setSelectedId}
-              orgLoaded={hasOrg}
-            />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={70}>
-            {selectedId ? (
-              <div className="flex h-full">
-                <div className="flex flex-col flex-1 min-w-0">
-                  <div className="border-b p-2 flex items-center justify-between">
-                    <StatusSelector conversationId={selectedId} />
-                    <AssignAgentDialog
-                      conversationId={selectedId}
-                      currentAssigneeId={
-                        selectedConversation?.assignedAgentId ?? undefined
-                      }
-                    />
-                  </div>
+          {selectedId ? (
+            <>
+              {/* Top bar */}
+              <div className="border-b px-3 py-2 flex items-center gap-2 shrink-0">
+                {/* Back button — mobile only */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden shrink-0"
+                  onClick={handleBack}
+                  aria-label="رجوع / Back"
+                >
+                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                </Button>
+
+                {/* Contact avatar + info */}
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarFallback className="text-xs">
+                    {contactInitials ?? "؟"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-semibold truncate leading-tight"
+                    dir="auto"
+                  >
+                    {contactName ?? "عميل / Contact"}
+                  </p>
+                  {contactPhone && (
+                    <p
+                      className="text-[10px] text-muted-foreground leading-tight"
+                      dir="ltr"
+                    >
+                      {contactPhone}
+                    </p>
+                  )}
+                </div>
+
+                {/* Dev seed button */}
+                <SeedButton />
+
+                {/* Controls */}
+                <StatusSelector conversationId={selectedId} />
+                <AssignAgentDialog
+                  conversationId={selectedId}
+                  currentAssigneeId={
+                    selectedConversation?.assignedAgentId ?? undefined
+                  }
+                />
+              </div>
+
+              {/* Message thread + composer */}
+              <div className="flex flex-1 min-h-0">
+                <div className="flex flex-col flex-1 min-w-0 min-h-0">
                   <ConversationThread conversationId={selectedId} />
                   <MessageInput
                     conversationId={selectedId}
@@ -141,21 +153,25 @@ export default function InboxPage() {
                     onQuickReplyConsumed={() => setQuickReplyContent("")}
                   />
                 </div>
+
+                {/* Contact side panel — desktop only, only when real contact exists */}
                 {selectedConversation?.contactId && (
-                  <div className="w-72 border-s overflow-hidden">
+                  <div className="hidden lg:block w-72 border-s overflow-y-auto shrink-0">
                     <ContactPanel
-                      contactId={selectedConversation.contactId as Id<"contacts">}
+                      contactId={
+                        selectedConversation.contactId as Id<"contacts">
+                      }
                     />
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                اختر محادثة / Select a conversation
-              </div>
-            )}
-          </ResizablePanel>
-        </ResizablePanelGroup>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              اختر محادثة / Select a conversation
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

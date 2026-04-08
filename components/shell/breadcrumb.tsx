@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 const SECTION_LABELS: Record<string, { ar: string; en: string }> = {
   settings: { ar: "الإعدادات", en: "Settings" },
   team: { ar: "الفريق", en: "Team" },
-  channels: { ar: "القنوات", en: "Channels" },
+  channels: { ar: "الإدارات", en: "Departments" },
   "quick-replies": { ar: "الردود السريعة", en: "Quick Replies" },
   billing: { ar: "الفواتير", en: "Billing" },
   inbox: { ar: "الصندوق", en: "Inbox" },

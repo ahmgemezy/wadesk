@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization, useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import {
   Dialog,
@@ -24,11 +24,15 @@ interface InviteModalProps {
 }
 
 export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
-  const { organization } = useOrganization();
+  const { organization, membership } = useOrganization();
+  const { isLoaded: authLoaded } = useAuth();
+  const orgRole = ((membership as unknown) as Record<string, unknown>)?.role as string | undefined;
+  const isSupervisor = orgRole === "org:supervisor";
   const [tab, setTab] = useState<"email" | "whatsapp" | "link">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<OrgRole>("org:agent");
+  const effectiveRole = isSupervisor ? "org:agent" : role;
   const [error, setError] = useState<string | null>(null);
   const [linkFallback, setLinkFallback] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -38,7 +42,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
   const inviteByWhatsApp = useAction(api.orgMembers.inviteByWhatsApp);
   const generateLink = useMutation(api.inviteLinks.generate);
   const revokeLink = useMutation(api.inviteLinks.revokeLink);
-  const activeLink = useQuery(api.inviteLinks.getActive, organization ? {} : "skip");
+  const activeLink = useQuery(api.inviteLinks.getActive, organization && authLoaded ? {} : "skip");
 
   const clearState = () => {
     setError(null);
@@ -51,7 +55,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     clearState();
     setSending(true);
     try {
-      await inviteByEmail({ email: email.trim(), role });
+      await inviteByEmail({ email: email.trim(), role: effectiveRole });
       setEmail("");
       onInvited();
       onClose();
@@ -65,6 +69,8 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
         setError("لا يمكن تغيير دور آخر مدير / Cannot change the role of the last admin");
       } else if (msg.includes("FORBIDDEN")) {
         setError("غير مصرح / Forbidden");
+      } else if (msg.includes("SUPERVISOR_CAN_ONLY_INVITE_AGENTS")) {
+        setError("المشرف يمكنه دعوة وكلاء فقط / Supervisors can only invite agents");
       } else {
         setError(msg);
       }
@@ -78,7 +84,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     clearState();
     setSending(true);
     try {
-      await inviteByWhatsApp({ phone: phone.trim(), role });
+      await inviteByWhatsApp({ phone: phone.trim(), role: effectiveRole });
       setPhone("");
       onInvited();
       onClose();
@@ -95,6 +101,8 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
         }
       } else if (msg.includes("FORBIDDEN")) {
         setError("غير مصرح / Forbidden");
+      } else if (msg.includes("SUPERVISOR_CAN_ONLY_INVITE_AGENTS")) {
+        setError("المشرف يمكنه دعوة وكلاء فقط / Supervisors can only invite agents");
       } else {
         setError(msg);
       }
@@ -135,11 +143,13 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const tabs: Array<{ id: "email" | "whatsapp" | "link"; label: string; icon: React.ReactNode }> = [
+  const allTabs: Array<{ id: "email" | "whatsapp" | "link"; label: string; icon: React.ReactNode }> = [
     { id: "email", label: "بريد إلكتروني / Email", icon: <Mail className="size-4" /> },
     { id: "whatsapp", label: "واتساب / WhatsApp", icon: <MessageCircle className="size-4" /> },
     { id: "link", label: "رابط / Link", icon: <Link2 className="size-4" /> },
   ];
+
+  const tabs = isSupervisor ? allTabs.filter((t) => t.id !== "link") : allTabs;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -174,7 +184,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
               onChange={(e) => setEmail(e.target.value)}
               dir="ltr"
             />
-            <RoleSelect value={role} onChange={setRole} />
+            <RoleSelect value={isSupervisor ? "org:agent" : role} onChange={isSupervisor ? () => {} : setRole} disabled={isSupervisor} />
             <Button
               onClick={handleInviteEmail}
               disabled={!email.trim() || sending}
@@ -194,7 +204,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
               onChange={(e) => setPhone(e.target.value)}
               dir="ltr"
             />
-            <RoleSelect value={role} onChange={setRole} />
+            <RoleSelect value={isSupervisor ? "org:agent" : role} onChange={isSupervisor ? () => {} : setRole} disabled={isSupervisor} />
             <Button
               onClick={handleInviteWhatsApp}
               disabled={!phone.trim() || sending}

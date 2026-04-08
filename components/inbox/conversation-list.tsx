@@ -1,77 +1,118 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { ConversationListItem } from "./conversation-list-item";
-import { useRouter } from "next/navigation";
+
+type AssignmentFilter = "all" | "mine" | "unassigned";
 
 interface ConversationListProps {
-  channelId?: string;
-  status?: string;
   activeConversationId?: string;
   onSelect?: (id: string) => void;
   onAssignClick?: (conversationId: string) => void;
-  orgLoaded?: boolean;
 }
 
 export function ConversationList({
-  channelId,
-  status,
   activeConversationId,
   onSelect,
   onAssignClick,
-  orgLoaded = false,
 }: ConversationListProps) {
-  const conversations = useQuery(api.conversations.listForCaller, orgLoaded ? {
-    channelId: channelId ? (channelId as Id<"channels">) : undefined,
-    status: status as "open" | "pending" | "resolved" | undefined,
-  } : "skip") as Array<{
-    _id: string;
-    lastMessagePreview: string;
-    lastMessageAt: number;
-    status: string;
-    unreadCount: number;
-    assignedAgentId?: string;
-  }> | undefined;
-  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<AssignmentFilter>("all");
 
-  if (conversations === undefined) {
-    return (
-      <div className="p-3 space-y-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
-        ))}
-      </div>
-    );
-  }
+  const conversations = useQuery(api.inbox.listConversations, { filter });
 
-  if (conversations.length === 0) {
+  const filtered = (conversations ?? []).filter((c) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground text-sm p-4 text-center">
-        لا توجد محادثات / No conversations
-      </div>
+      c.contactName?.toLowerCase().includes(q) ||
+      c.contactPhone?.toLowerCase().includes(q) ||
+      c.lastMessagePreview.toLowerCase().includes(q)
     );
-  }
+  });
+
+  const tabs: { value: AssignmentFilter; labelAr: string; labelEn: string }[] = [
+    { value: "all", labelAr: "الكل", labelEn: "All" },
+    { value: "mine", labelAr: "محادثاتي", labelEn: "Mine" },
+    { value: "unassigned", labelAr: "غير معينة", labelEn: "Unassigned" },
+  ];
 
   return (
-    <ScrollArea className="h-full">
-      {conversations.map((conv) => (
-        <ConversationListItem
-          key={conv._id}
-          conversation={conv}
-          isActive={conv._id === activeConversationId}
-          onClick={() => {
-            if (onSelect) {
-              onSelect(conv._id);
-            } else {
-              router.push(`/inbox/${conv._id}`);
-            }
-          }}
-          onAssignClick={onAssignClick ? () => onAssignClick(conv._id) : undefined}
-        />
-      ))}
-    </ScrollArea>
+    <div className="flex flex-col h-full">
+      {/* Search */}
+      <div className="p-2 border-b">
+        <div className="relative">
+          <Search className="absolute inset-s-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث بالاسم أو الرقم / Search..."
+            className="ps-8 h-8 text-sm"
+            dir="auto"
+          />
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 p-2 border-b">
+        {tabs.map((tab) => (
+          <Button
+            key={tab.value}
+            variant={filter === tab.value ? "default" : "ghost"}
+            size="sm"
+            className="flex-1 h-7 text-xs"
+            onClick={() => setFilter(tab.value)}
+          >
+            {tab.labelAr}
+          </Button>
+        ))}
+      </div>
+
+      {/* List */}
+      {conversations === undefined ? (
+        <div className="p-3 space-y-2 flex-1">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm p-4 text-center">
+          {search
+            ? "لا توجد نتائج / No results"
+            : "لا توجد محادثات / No conversations"}
+        </div>
+      ) : (
+        <ScrollArea className="flex-1">
+          {filtered.map((conv) => (
+            <ConversationListItem
+              key={conv.id}
+              conversation={{
+                _id: conv.id,
+                contactName: conv.contactName,
+                contactPhone: conv.contactPhone,
+                contactAvatarInitials: conv.contactAvatarInitials,
+                assignedAgentId: conv.assignedAgentId,
+                assignedAgentName: conv.assignedAgentName,
+                lastMessagePreview: conv.lastMessagePreview,
+                lastMessageAt: conv.lastMessageAt,
+                status: conv.status,
+                unreadCount: conv.unreadCount,
+              }}
+              isActive={conv.id === activeConversationId}
+              onClick={() => onSelect?.(conv.id)}
+              onAssignClick={
+                onAssignClick ? () => onAssignClick(conv.id) : undefined
+              }
+            />
+          ))}
+        </ScrollArea>
+      )}
+    </div>
   );
 }

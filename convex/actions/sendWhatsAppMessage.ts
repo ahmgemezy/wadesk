@@ -10,6 +10,7 @@ export const sendMessage = internalAction({
     phoneNumberId: v.string(),
     contactPhone: v.string(),
     content: v.string(),
+    tenantId: v.string(),
   },
   handler: async (ctx, args) => {
     try {
@@ -34,6 +35,7 @@ export const sendMessage = internalAction({
         await ctx.runMutation(internal.messages.updateStatus, {
           messageId: args.messageId,
           status: "failed",
+          tenantId: args.tenantId,
         });
         return;
       }
@@ -41,11 +43,13 @@ export const sendMessage = internalAction({
       await ctx.runMutation(internal.messages.updateStatus, {
         messageId: args.messageId,
         status: "delivered",
+        tenantId: args.tenantId,
       });
     } catch {
       await ctx.runMutation(internal.messages.updateStatus, {
         messageId: args.messageId,
         status: "failed",
+        tenantId: args.tenantId,
       });
     }
   },

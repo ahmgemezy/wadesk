@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
-import { getCallerIdentity } from "./lib/auth";
+import { getCallerIdentity, assertAdminOrSupervisor } from "./lib/auth";
 
 export const list = query({
   args: { category: v.optional(v.string()) },
@@ -32,11 +32,7 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin";
-    if (!isAdminOrSupervisor) {
-      throw new Error("FORBIDDEN");
-    }
+    assertAdminOrSupervisor(orgRole as Parameters<typeof assertAdminOrSupervisor>[0]);
 
     return ctx.db.insert("quickReplies", {
       tenantId,
@@ -60,11 +56,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin";
-    if (!isAdminOrSupervisor) {
-      throw new Error("FORBIDDEN");
-    }
+    assertAdminOrSupervisor(orgRole as Parameters<typeof assertAdminOrSupervisor>[0]);
 
     const quickReply = await ctx.db.get(args.id);
     if (!quickReply || quickReply.tenantId !== tenantId) {
@@ -85,11 +77,7 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin";
-    if (!isAdminOrSupervisor) {
-      throw new Error("FORBIDDEN");
-    }
+    assertAdminOrSupervisor(orgRole as Parameters<typeof assertAdminOrSupervisor>[0]);
 
     const quickReply = await ctx.db.get(args.id);
     if (!quickReply || quickReply.tenantId !== tenantId) {

@@ -1,19 +1,30 @@
 import { ConvexError } from "convex/values";
 
-const PLAN_LIMITS: Record<string, number> = {
+const AGENT_LIMITS: Record<string, number> = {
   free: 2,
   starter: 5,
   growth: 15,
   business: Infinity,
 };
 
+const CHANNEL_LIMITS: Record<string, number> = {
+  free: 1,
+  starter: 1,
+  growth: 3,
+  business: Infinity,
+};
+
 export type Plan = "free" | "starter" | "growth" | "business";
+
+export function getChannelLimit(plan: Plan): number {
+  return CHANNEL_LIMITS[plan] ?? CHANNEL_LIMITS.free;
+}
 
 export function assertAgentLimitNotReached(
   clerkOrgMemberships: { data: unknown[] },
   plan: Plan,
 ): void {
-  const limit = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free;
+  const limit = AGENT_LIMITS[plan] ?? AGENT_LIMITS.free;
   if (clerkOrgMemberships.data.length >= limit) {
     throw new ConvexError({
       message: "PLAN_LIMIT_REACHED",

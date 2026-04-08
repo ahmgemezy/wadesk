@@ -37,7 +37,7 @@ const dictionary: Dictionary = {
   },
   "pricing.month": { ar: "/ شهرياً", en: "/ month" },
   "pricing.agents": { ar: "وكلاء", en: "agents" },
-  "pricing.channels": { ar: "قنوات", en: "channels" },
+  "pricing.channels": { ar: "إدارات", en: "departments" },
   "pricing.unlimited": { ar: "غير محدود", en: "Unlimited" },
   "pricing.bestValue": { ar: "أفضل قيمة", en: "Best Value" },
   "differentiators.heading": {

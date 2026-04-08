@@ -62,7 +62,10 @@ function roleIcon(role: OrgRole) {
 }
 
 export function TeamMemberList() {
-  const { organization } = useOrganization();
+  const { organization, membership } = useOrganization();
+  const orgRole = ((membership as unknown) as Record<string, unknown>)?.role as string | undefined;
+  const isSupervisor = orgRole === "org:supervisor";
+  const isAdmin = orgRole === "org:admin" || orgRole === "admin";
   const listMembers = useAction(api.orgMembers.list);
   const changeRole = useAction(api.orgMembers.changeRole);
   const removeMember = useAction(api.orgMembers.removeMember);
@@ -91,8 +94,8 @@ export function TeamMemberList() {
     await fetchMembers();
   };
 
-  const handleRemove = async (userId: string) => {
-    await removeMember({ targetUserId: userId });
+  const handleRemove = async (userId: string, status: "active" | "pending") => {
+    await removeMember({ targetUserId: userId, status });
     await fetchMembers();
   };
 
@@ -154,44 +157,61 @@ export function TeamMemberList() {
               <Badge variant="outline">معلق / Pending</Badge>
             )}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
-                <MoreHorizontal className="size-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {member.role !== "org:admin" && (
+            {isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                  <MoreHorizontal className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {member.role !== "org:admin" && (
+                    <DropdownMenuItem
+                      onClick={() => handleChangeRole(member.userId, "org:admin")}
+                    >
+                      <Crown className="size-4" />
+                      ترقية لمدير / Make Admin
+                    </DropdownMenuItem>
+                  )}
+                  {member.role !== "org:supervisor" && (
+                    <DropdownMenuItem
+                      onClick={() => handleChangeRole(member.userId, "org:supervisor")}
+                    >
+                      <Shield className="size-4" />
+                      ترقية لمشرف / Make Supervisor
+                    </DropdownMenuItem>
+                  )}
+                  {member.role !== "org:agent" && (
+                    <DropdownMenuItem
+                      onClick={() => handleChangeRole(member.userId, "org:agent")}
+                    >
+                      <HeadphonesIcon className="size-4" />
+                      تخفيض لوكيل / Make Agent
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => handleChangeRole(member.userId, "org:admin")}
+                    variant="destructive"
+                    onClick={() => handleRemove(member.userId, member.status)}
                   >
-                    <Crown className="size-4" />
-                    ترقية لمدير / Make Admin
+                    إزالة / Remove
                   </DropdownMenuItem>
-                )}
-                {member.role !== "org:supervisor" && (
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            {isSupervisor && member.role === "org:agent" && (
+              <DropdownMenu>
+                <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                  <MoreHorizontal className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onClick={() => handleChangeRole(member.userId, "org:supervisor")}
+                    variant="destructive"
+                    onClick={() => handleRemove(member.userId, member.status)}
                   >
-                    <Shield className="size-4" />
-                    ترقية لمشرف / Make Supervisor
+                    إزالة / Remove
                   </DropdownMenuItem>
-                )}
-                {member.role !== "org:agent" && (
-                  <DropdownMenuItem
-                    onClick={() => handleChangeRole(member.userId, "org:agent")}
-                  >
-                    <HeadphonesIcon className="size-4" />
-                    تخفيض لوكيل / Make Agent
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => handleRemove(member.userId)}
-                >
-                  إزالة / Remove
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         ))}
 

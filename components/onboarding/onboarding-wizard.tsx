@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { api } from "../../convex/_generated/api";
 import { StepProgress } from "./step-progress";
@@ -28,10 +30,22 @@ interface OnboardingWizardProps {
 }
 
 export function OnboardingWizard({ locale }: OnboardingWizardProps) {
-  const state = useQuery(api.onboarding.getState);
+  const { isLoaded, orgId } = useAuth();
+  const state = useQuery(api.onboarding.getState, isLoaded && orgId ? {} : "skip");
   const router = useRouter();
 
-  if (state === undefined) {
+  const noOrgYet = isLoaded && !orgId;
+  const loading = !isLoaded || (!!orgId && state === undefined);
+
+  const completedSteps = loading || noOrgYet ? [] : (state?.completedSteps ?? []);
+  const currentStep = deriveCurrentStep(completedSteps);
+  const isComplete = !loading && currentStep === "onboarding_complete" && completedSteps.includes("onboarding_complete");
+
+  useEffect(() => {
+    if (isComplete) router.replace("/inbox");
+  }, [isComplete, router]);
+
+  if (loading) {
     return (
       <div className="w-full space-y-6">
         <div className="flex gap-3">
@@ -50,11 +64,7 @@ export function OnboardingWizard({ locale }: OnboardingWizardProps) {
     );
   }
 
-  const completedSteps = state?.completedSteps ?? [];
-  const currentStep = deriveCurrentStep(completedSteps);
-
-  if (currentStep === "onboarding_complete" && completedSteps.includes("onboarding_complete")) {
-    router.replace("/inbox");
+  if (isComplete) {
     return null;
   }
 

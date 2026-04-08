@@ -13,7 +13,7 @@ export const listForConversation = query({
     if (!conversation || conversation.tenantId !== tenantId) return [];
 
     const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin";
+      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
     if (
       !isAdminOrSupervisor &&
       conversation.assignedAgentId !== callerId &&
@@ -46,7 +46,7 @@ export const sendReply = mutation({
     }
 
     const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin";
+      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
     if (
       !isAdminOrSupervisor &&
       conversation.assignedAgentId !== callerId &&
@@ -93,6 +93,7 @@ export const sendReply = mutation({
       phoneNumberId: channel.phoneNumberId,
       contactPhone: contact.phone,
       content: args.content,
+      tenantId,
     });
 
     return messageId;
@@ -113,7 +114,7 @@ export const addInternalNote = mutation({
     }
 
     const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin";
+      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
     if (
       !isAdminOrSupervisor &&
       conversation.assignedAgentId !== callerId &&
@@ -153,9 +154,14 @@ export const createInbound = internalMutation({
     contentType: v.union(
       v.literal("text"),
       v.literal("image"),
+      v.literal("audio"),
       v.literal("document"),
+      v.literal("video"),
+      v.literal("sticker"),
+      v.literal("location"),
       v.literal("unsupported"),
     ),
+    mediaUrl: v.optional(v.string()),
     timestamp: v.number(),
     senderDisplayName: v.optional(v.string()),
     assignedAgentId: v.optional(v.string()),
@@ -165,7 +171,7 @@ export const createInbound = internalMutation({
       .query("messages")
       .withIndex("by_meta_message_id", (q) => q.eq("metaMessageId", args.metaMessageId))
       .first();
-    if (existing) return { messageId: existing._id, conversationId: existing.conversationId, isNewConversation: false };
+    if (existing) return { messageId: existing._id, conversationId: existing.conversationId, isNewConversation: false, isDuplicate: true };
 
     const contactId: Id<"contacts"> = await ctx.runMutation(internal.contacts.upsertByPhone, {
       tenantId: args.tenantId,
@@ -219,12 +225,13 @@ export const createInbound = internalMutation({
       isInternalNote: false,
       authorId: args.senderPhone,
       metaMessageId: args.metaMessageId,
+      ...(args.mediaUrl ? { mediaUrl: args.mediaUrl } : {}),
       status: "sent",
       timestamp: args.timestamp,
       createdAt: Date.now(),
     });
 
-    return { messageId, conversationId: conversation!._id, isNewConversation };
+    return { messageId, conversationId: conversation!._id, isNewConversation, isDuplicate: false };
   },
 });
 
@@ -247,8 +254,11 @@ export const updateStatus = internalMutation({
       v.literal("read"),
       v.literal("failed"),
     ),
+    tenantId: v.string(),
   },
   handler: async (ctx, args) => {
+    const message = await ctx.db.get(args.messageId);
+    if (!message || message.tenantId !== args.tenantId) return;
     await ctx.db.patch(args.messageId, { status: args.status });
   },
 });
@@ -262,14 +272,14 @@ export const updateStatusByMetaId = internalMutation({
       v.literal("read"),
       v.literal("failed"),
     ),
+    tenantId: v.string(),
   },
   handler: async (ctx, args) => {
     const message = await ctx.db
       .query("messages")
       .withIndex("by_meta_message_id", (q) => q.eq("metaMessageId", args.metaMessageId))
       .first();
-    if (message) {
-      await ctx.db.patch(message._id, { status: args.status });
-    }
+    if (!message || message.tenantId !== args.tenantId) return;
+    await ctx.db.patch(message._id, { status: args.status });
   },
 });
