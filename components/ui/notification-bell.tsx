@@ -16,19 +16,20 @@ import { ar } from "date-fns/locale";
 
 export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
   const router = useRouter();
-  const unreadCount = useQuery(api.notifications.getUnreadCount) ?? 0;
+  const unreadCount = useQuery(api.notifications.getUnreadCount);
   const notifications = useQuery(api.notifications.listForUser) ?? [];
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
 
   const isRtl = locale === "ar";
 
-  async function handleNotificationClick(
-    notificationId: Id<"notifications">,
-    _referenceId: string,
-  ) {
-    await markRead({ notificationId });
-    router.push(`/contacts`);
+  function handleNotificationClick(notificationId: Id<"notifications">) {
+    try {
+      markRead({ notificationId });
+      router.push(`/contacts`);
+    } catch {
+      // Silently ignore errors
+    }
   }
 
   return (
@@ -38,9 +39,9 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
         aria-label={isRtl ? "الإشعارات" : "Notifications"}
       >
         <Bell className="h-4 w-4" />
-        {unreadCount > 0 && (
+        {(unreadCount ?? 0) > 0 && (
           <span className="absolute top-1 end-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {(unreadCount ?? 0) > 9 ? "9+" : String(unreadCount ?? 0)}
           </span>
         )}
       </PopoverTrigger>
@@ -53,7 +54,7 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
           <span className="font-semibold text-sm">
             {isRtl ? "الإشعارات" : "Notifications"}
           </span>
-          {unreadCount > 0 && (
+          {(unreadCount ?? 0) > 0 && (
             <button
               onClick={() => markAllRead()}
               className="text-xs text-muted-foreground hover:text-foreground"
@@ -71,7 +72,7 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
             notifications.map((n) => (
               <button
                 key={n._id}
-                onClick={() => handleNotificationClick(n._id, n.referenceId)}
+                onClick={() => handleNotificationClick(n._id)}
                 className={cn(
                   "w-full text-start px-4 py-3 hover:bg-muted transition-colors border-b last:border-b-0",
                   !n.read && "bg-blue-50 dark:bg-blue-950/20",
