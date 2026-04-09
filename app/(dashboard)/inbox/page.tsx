@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ConversationList } from "@/components/inbox/conversation-list";
@@ -17,13 +17,17 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/context";
 
 export default function InboxPage() {
+  const t = useT();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
   const [quickReplyContent, setQuickReplyContent] = useState("");
 
   const markAsRead = useMutation(api.inbox.markAsRead);
+
+  const { isAuthenticated } = useConvexAuth();
 
   // On mobile we show either the list or the chat panel, not both.
   const showListOnMobile = selectedId === null;
@@ -34,7 +38,7 @@ export default function InboxPage() {
   );
 
   // Get conversation list to pull contact info for the top bar
-  const convList = useQuery(api.inbox.listConversations, { filter: "all" });
+  const convList = useQuery(api.inbox.listConversations, isAuthenticated ? { filter: "all" } : "skip");
   const activeConv = convList?.find((c) => c.id === selectedId);
 
   const contactName = activeConv?.contactName;
@@ -101,7 +105,7 @@ export default function InboxPage() {
                   size="icon"
                   className="md:hidden shrink-0"
                   onClick={handleBack}
-                  aria-label="رجوع / Back"
+                  aria-label={t("Back", "رجوع")}
                 >
                   <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                 </Button>
@@ -117,7 +121,7 @@ export default function InboxPage() {
                     className="text-sm font-semibold truncate leading-tight"
                     dir="auto"
                   >
-                    {contactName ?? "عميل / Contact"}
+                    {contactName ?? t("Contact", "عميل")}
                   </p>
                   {contactPhone && (
                     <p
@@ -168,7 +172,7 @@ export default function InboxPage() {
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
-              اختر محادثة / Select a conversation
+              {t("Select a conversation", "اختر محادثة")}
             </div>
           )}
         </div>

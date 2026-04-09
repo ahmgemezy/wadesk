@@ -210,6 +210,24 @@
 
 ---
 
+### Customer Journey
+- **Status:** Done
+- **Branch:** 008-dashboard-shell
+- **What was built:** Stage pipeline (lead/prospect/customer/retained/churned), follow-up scheduling with 30-min cron + Meta API send, max 2 attempts before auto-churn, contact timeline, notification bell, ContactSidePanel, FollowUpModal, full contact profile page, stage filter in Contacts and Inbox
+- **Key additions:**
+  - `followUps` table — with attemptCount, expectedRevenue, channelId
+  - `contactEvents` table — append-only timeline log
+  - `notifications` table — in-app bell notifications
+  - `convex/crons.ts` — 30-min cronJob
+  - `convex/followUps.ts` — processDue internalAction + recordFollowUpResult internalMutation
+  - `components/ui/notification-bell.tsx`
+  - `components/contacts/contact-side-panel.tsx`
+  - `components/contacts/follow-up-modal.tsx`
+  - `components/contacts/contact-timeline.tsx`
+  - `app/(dashboard)/contacts/[id]/page.tsx`
+
+---
+
 ## Up Next
 
 | # | Feature | Priority |

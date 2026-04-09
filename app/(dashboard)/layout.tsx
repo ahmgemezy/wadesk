@@ -11,6 +11,7 @@ import { filterNavItems } from "@/lib/shell/nav-config";
 import type { ResolvedUser } from "@/lib/shell/types";
 import { Separator } from "@/components/ui/separator";
 import { NotificationBell } from "@/components/ui/notification-bell";
+import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, orgRole: clerkOrgRole, getToken } = await auth();
+  const { userId, orgId, orgRole: clerkOrgRole, getToken, orgSlug } = await auth();
   if (!userId) {
     redirect("/sign-in");
   }
@@ -57,7 +58,7 @@ export default async function DashboardLayout({
     email: user.emailAddresses[0]?.emailAddress ?? "",
     imageUrl: user.imageUrl,
     role: orgRole as ResolvedUser["role"],
-    orgName: user.organizationMemberships?.[0]?.organization?.name ?? "Organization",
+    orgName: orgSlug ?? "Organization",
   };
 
   const navItems = filterNavItems(role);
@@ -78,7 +79,9 @@ export default async function DashboardLayout({
           </div>
         </header>
         <div className="flex-1 overflow-hidden pb-16 md:pb-0">
-          {children}
+          <ConvexAuthGuard>
+            {children}
+          </ConvexAuthGuard>
         </div>
       </SidebarInset>
       <BottomNav items={navItems} locale={locale} />

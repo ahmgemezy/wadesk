@@ -10,26 +10,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/context";
 
 export function StatusSelector({
   conversationId,
 }: {
   conversationId: string;
 }) {
+  const t = useT();
   const setStatus = useMutation(api.conversations.setStatus);
 
   const statuses = [
-    { value: "open" as const, label: "مفتوح / Open" },
-    { value: "pending" as const, label: "معلق / Pending" },
-    { value: "resolved" as const, label: "مغلق / Resolved" },
+    { value: "open" as const, label: t("Open", "مفتوح") },
+    { value: "pending" as const, label: t("Pending", "معلق") },
+    { value: "resolved" as const, label: t("Resolved", "مغلق") },
   ];
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button variant="outline" size="sm">
-          تغيير الحالة / Change Status
-        </Button>
+      <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+        {t("Change Status", "تغيير الحالة")}
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         {statuses.map((s) => (

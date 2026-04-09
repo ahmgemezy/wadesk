@@ -13,6 +13,7 @@ import { EmbeddedSignupButton } from "@/components/onboarding/embedded-signup-bu
 import { Plus, AlertTriangle, CheckCircle2, PhoneCall } from "lucide-react";
 import { toast } from "sonner";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useT } from "@/lib/i18n/context";
 
 const CHANNEL_LIMITS: Record<string, number> = {
   free: 1,
@@ -22,6 +23,7 @@ const CHANNEL_LIMITS: Record<string, number> = {
 };
 
 export default function ChannelsListPage() {
+  const t = useT();
   const { isLoaded, orgId, orgRole } = useAuth();
   const isAdmin = orgRole === "org:admin";
   const router = useRouter();
@@ -45,12 +47,12 @@ export default function ChannelsListPage() {
   const reconnectRequired = channels?.filter((c: ChannelItem) => c.status === "reconnect_required") ?? [];
 
   const handleDisconnect = async (channelId: Id<"channels">, name: string) => {
-    if (!confirm(`قطع اتصال "${name}"؟ لن تصل رسائل جديدة لهذا الرقم.`)) return;
+    if (!confirm(t(`Disconnect "${name}"? No new messages will arrive on this number.`, `قطع اتصال "${name}"؟ لن تصل رسائل جديدة لهذا الرقم.`))) return;
     try {
       await disconnectChannel({ channelId });
-      toast.success("تم قطع الاتصال");
+      toast.success(t("Disconnected", "تم قطع الاتصال"));
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "حدث خطأ");
+      toast.error(e instanceof Error ? e.message : t("An error occurred", "حدث خطأ"));
     }
   };
 
@@ -58,7 +60,7 @@ export default function ChannelsListPage() {
     setShowSignup(false);
     setReconnectChannelId(null);
     setSignupError(null);
-    setSuccessMessage(`تم الربط بنجاح! ${displayPhone}`);
+    setSuccessMessage(t(`Connected successfully! ${displayPhone}`, `تم الربط بنجاح! ${displayPhone}`));
     setTimeout(() => setSuccessMessage(null), 5000);
   };
 
@@ -85,7 +87,7 @@ export default function ChannelsListPage() {
         <Alert className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800">
           <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
           <AlertDescription className="text-yellow-800 dark:text-yellow-300 font-cairo">
-            انتهت صلاحية اتصال أحد أرقامك — أعد الاتصال لاستئناف الرسائل
+            {t("One of your numbers needs reconnection — reconnect to resume messages", "انتهت صلاحية اتصال أحد أرقامك — أعد الاتصال لاستئناف الرسائل")}
           </AlertDescription>
         </Alert>
       )}
@@ -101,17 +103,17 @@ export default function ChannelsListPage() {
       )}
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold font-cairo">أرقام واتساب</h1>
+        <h1 className="text-2xl font-bold font-cairo">{t("WhatsApp Numbers", "أرقام واتساب")}</h1>
         {isAdmin && (
           atLimit ? (
             <Button size="sm" variant="outline" onClick={() => router.push("/settings/billing")}>
               <Plus className="size-4 me-1" />
-              ترقية الباقة لإضافة رقم جديد
+              {t("Upgrade Plan to Add Number", "ترقية الباقة لإضافة رقم جديد")}
             </Button>
           ) : (
             <Button size="sm" onClick={() => { setShowSignup(true); setSignupError(null); }}>
               <Plus className="size-4 me-1" />
-              ربط رقم جديد
+              {t("Connect Number", "ربط رقم جديد")}
             </Button>
           )
         )}
@@ -121,9 +123,9 @@ export default function ChannelsListPage() {
       {showSignup && !reconnectChannelId && (
         <div className="mb-6 rounded-lg border p-5 space-y-4">
           <div>
-            <h2 className="text-base font-semibold font-cairo">ربط حساب واتساب بيزنس</h2>
+            <h2 className="text-base font-semibold font-cairo">{t("Connect WhatsApp Business", "ربط حساب واتساب بيزنس")}</h2>
             <p className="text-sm text-muted-foreground mt-0.5 font-cairo">
-              ستمتلك حساب WABA مباشرة — WaDesk لا يقيدك أبداً
+              {t("You'll own the WABA directly — WaDesk never locks you in", "ستمتلك حساب WABA مباشرة — WaDesk لا يقيدك أبداً")}
             </p>
           </div>
 
@@ -139,7 +141,7 @@ export default function ChannelsListPage() {
               onError={handleSignupError}
             />
             <Button variant="ghost" size="sm" onClick={() => setShowSignup(false)}>
-              إلغاء
+              {t("Cancel", "إلغاء")}
             </Button>
           </div>
         </div>
@@ -149,14 +151,14 @@ export default function ChannelsListPage() {
       {channels.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center space-y-3">
           <PhoneCall className="h-8 w-8 text-muted-foreground mx-auto" />
-          <p className="font-semibold font-cairo">لا توجد أرقام مرتبطة</p>
+          <p className="font-semibold font-cairo">{t("No numbers connected", "لا توجد أرقام مرتبطة")}</p>
           <p className="text-sm text-muted-foreground font-cairo">
-            اربط رقم واتساب بيزنس لتبدأ في استقبال الرسائل
+            {t("Connect a WhatsApp Business number to start receiving messages", "اربط رقم واتساب بيزنس لتبدأ في استقبال الرسائل")}
           </p>
           {isAdmin && !atLimit && (
             <Button size="sm" onClick={() => setShowSignup(true)} className="mt-2">
               <Plus className="size-4 me-1" />
-              ربط رقم الآن
+              {t("Connect Now", "ربط رقم الآن")}
             </Button>
           )}
         </div>
@@ -183,9 +185,9 @@ export default function ChannelsListPage() {
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground font-cairo">
-                      {channel.assignmentMode === "first_reply" && "أول رد يأخذ المحادثة"}
-                      {channel.assignmentMode === "manual" && "توزيع يدوي"}
-                      {channel.assignmentMode === "round_robin" && "توزيع دوري"}
+                      {channel.assignmentMode === "first_reply" && t("First reply wins", "أول رد يأخذ المحادثة")}
+                      {channel.assignmentMode === "manual" && t("Manual assignment", "توزيع يدوي")}
+                      {channel.assignmentMode === "round_robin" && t("Round robin", "توزيع دوري")}
                     </div>
                   </Link>
 
@@ -209,7 +211,7 @@ export default function ChannelsListPage() {
                         <EmbeddedSignupButton
                           onSuccess={handleSignupSuccess}
                           onError={handleSignupError}
-                          label="إعادة الاتصال"
+                          label={t("Reconnect", "إعادة الاتصال")}
                         />
                       </>
                     )}
@@ -219,7 +221,7 @@ export default function ChannelsListPage() {
                         variant="outline"
                         onClick={() => { setReconnectChannelId(channel._id); setSignupError(null); }}
                       >
-                        إعادة الاتصال
+                        {t("Reconnect", "إعادة الاتصال")}
                       </Button>
                     )}
                   </div>
@@ -234,7 +236,7 @@ export default function ChannelsListPage() {
                       className="text-xs text-muted-foreground hover:text-destructive"
                       onClick={() => handleDisconnect(channel._id as Id<"channels">, channel.displayName)}
                     >
-                      قطع الاتصال
+                      {t("Disconnect", "قطع الاتصال")}
                     </Button>
                   </div>
                 )}

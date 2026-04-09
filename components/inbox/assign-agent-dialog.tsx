@@ -12,6 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/context";
+import { UserIcon } from "lucide-react";
 
 export function AssignAgentDialog({
   conversationId,
@@ -20,6 +22,7 @@ export function AssignAgentDialog({
   conversationId: string;
   currentAssigneeId?: string;
 }) {
+  const t = useT();
   const assign = useMutation(api.conversations.assign);
   const { isLoaded, membership, memberships } = useOrganization({ memberships: true });
 
@@ -29,13 +32,13 @@ export function AssignAgentDialog({
   if (!isLoaded || !canAssign) return null;
 
   const memberList = memberships?.data ?? [];
+  const assignedUser = memberList.find((m) => m.publicUserData?.userId === currentAssigneeId)?.publicUserData;
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button variant="outline" size="sm">
-          تعيين / Assign
-        </Button>
+      <DropdownMenuTrigger render={<Button variant="outline" size="sm" className="gap-2" />}>
+        <UserIcon className="h-4 w-4" />
+        {assignedUser ? assignedUser.firstName : t("Assign", "تعيين")}
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         {memberList.map((m) => {
@@ -70,7 +73,7 @@ export function AssignAgentDialog({
             })
           }
         >
-          إلغاء التعيين / Unassign
+          {t("Unassign", "إلغاء التعيين")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

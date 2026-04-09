@@ -301,13 +301,28 @@ export const listByStage = query({
 
     let contacts;
     if (args.stage) {
-      contacts = await ctx.db
-        .query("contacts")
-        .withIndex("by_tenant_stage", (q) =>
-          q.eq("tenantId", tenantId).eq("stage", args.stage!),
-        )
-        .filter((q) => q.eq(q.field("isArchived"), false))
-        .take(500);
+      if (args.stage === "lead") {
+        contacts = await ctx.db
+          .query("contacts")
+          .withIndex("by_tenant_archived", (q) =>
+            q.eq("tenantId", tenantId).eq("isArchived", false)
+          )
+          .filter((q) => 
+            q.or(
+              q.eq(q.field("stage"), "lead"), 
+              q.eq(q.field("stage"), undefined)
+            )
+          )
+          .take(500);
+      } else {
+        contacts = await ctx.db
+          .query("contacts")
+          .withIndex("by_tenant_stage", (q) =>
+            q.eq("tenantId", tenantId).eq("stage", args.stage!),
+          )
+          .filter((q) => q.eq(q.field("isArchived"), false))
+          .take(500);
+      }
     } else {
       contacts = await ctx.db
         .query("contacts")
@@ -323,23 +338,6 @@ export const listByStage = query({
         ? contacts.filter((c) => c.assignedAgentId === callerId)
         : contacts;
 
-    return filtered.map((c) => ({
-      id: c._id,
-      phoneNumber: c.phone,
-      displayName: c.displayName,
-      customName: c.customName,
-      tags: c.tags,
-      notes: c.notes,
-      assignedTo: c.assignedAgentId,
-      stage: c.stage ?? "lead",
-      stageUpdatedAt: c.stageUpdatedAt,
-      totalConversations: c.totalConversations ?? 0,
-      firstContactAt: c.firstSeenAt,
-      lastContactAt: c.lastSeenAt,
-      isArchived: c.isArchived,
-      source: c.source,
-      wabaId: c.wabaId,
-      createdAt: c.createdAt,
-    }));
+    return filtered;
   },
 });

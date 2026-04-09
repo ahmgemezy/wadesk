@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
+import { useT } from "@/lib/i18n/context";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
@@ -23,6 +24,7 @@ export function QuickReplyPanel({
   onClose,
   onSelect,
 }: QuickReplyPanelProps) {
+  const t = useT();
   const [search, setSearch] = useState("");
   type QuickReply = {
     _id: string;
@@ -42,7 +44,7 @@ export function QuickReplyPanel({
 
   const grouped = filtered?.reduce(
     (acc: Record<string, QuickReply[]>, qr: QuickReply) => {
-      const cat = qr.category ?? "عام / General";
+      const cat = qr.category ?? t("General", "عام");
       if (!acc[cat]) acc[cat] = [];
       acc[cat].push(qr);
       return acc;
@@ -54,11 +56,11 @@ export function QuickReplyPanel({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="left" className="w-80">
         <SheetHeader>
-          <SheetTitle>ردود سريعة / Quick Replies</SheetTitle>
+          <SheetTitle>{t("Quick Replies", "ردود سريعة")}</SheetTitle>
         </SheetHeader>
         <div className="p-4 space-y-4">
           <Input
-            placeholder="بحث... / Search..."
+            placeholder={t("Search...", "بحث...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             dir="auto"

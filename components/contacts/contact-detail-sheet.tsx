@@ -13,6 +13,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -65,6 +72,13 @@ const tl = {
     pending: "معلق",
     resolved: "مغلق",
     addField: "إضافة حقل",
+    journeyStage: "مرحلة الرحلة",
+    stageLead: "عميل محتمل",
+    stageProspect: "مهتم",
+    stageCustomer: "عميل",
+    stageRetained: "عميل وفي",
+    stageChurned: "خسرناه",
+    lastEditedBy: "آخر تعديل",
   },
   en: {
     title: "Contact Profile",
@@ -96,6 +110,13 @@ const tl = {
     pending: "Pending",
     resolved: "Resolved",
     addField: "Add Field",
+    journeyStage: "Journey Stage",
+    stageLead: "Lead",
+    stageProspect: "Prospect",
+    stageCustomer: "Customer",
+    stageRetained: "Retained",
+    stageChurned: "Churned",
+    lastEditedBy: "Last edited by",
   },
 };
 
@@ -119,15 +140,16 @@ export function ContactDetailSheet({
   const customFields = useQuery(api.customFields.list, contactId ? { contactId } : "skip");
   const conversations = useQuery(api.conversations.listForCaller, open ? {} : "skip");
   const updateContact = useMutation(api.contacts.update);
+  const updateStage = useMutation(api.contacts.updateStage);
   const upsertField = useMutation(api.customFields.upsert);
   const deleteField = useMutation(api.customFields.delete_);
   const archiveContact = useMutation(api.contacts.archive);
 
-  const { membership } = useOrganization();
+  const { membership, memberships } = useOrganization({ memberships: { infinite: true } });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orgRole = (membership as any)?.role as string | undefined;
   const canEdit =
-    orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+    orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor" || orgRole === "org:agent";
 
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
@@ -137,6 +159,7 @@ export function ContactDetailSheet({
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("");
   const [spent, setSpent] = useState("");
+  const [stage, setStage] = useState<string>("lead");
   const [newFieldKey, setNewFieldKey] = useState("");
   const [newFieldValue, setNewFieldValue] = useState("");
   const [showNewField, setShowNewField] = useState(false);
@@ -152,6 +175,7 @@ export function ContactDetailSheet({
     setCity(contact.city ?? "");
     setCategory(contact.category ?? "");
     setSpent(contact.spent != null ? String(contact.spent) : "");
+    setStage(contact.stage ?? "lead");
     setEditing(true);
   }
 
@@ -171,6 +195,9 @@ export function ContactDetailSheet({
 
     if (Object.keys(patch).length > 0) {
       await updateContact({ contactId, ...patch } as Parameters<typeof updateContact>[0]);
+    }
+    if (stage !== (contact.stage ?? "lead")) {
+      await updateStage({ contactId, stage: stage as any });
     }
     setEditing(false);
   }
@@ -268,6 +295,41 @@ export function ContactDetailSheet({
                 {/* Location + Category */}
                 <Section label={locale === "ar" ? "التفاصيل" : "Details"}>
                   <div className="grid grid-cols-2 gap-3">
+                    <Field label={l.journeyStage as string} icon={<MapPinIcon className="size-3.5" />}>
+                      {editing ? (
+                        <Select value={stage} onValueChange={setStage}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="lead">{l.stageLead as string}</SelectItem>
+                            <SelectItem value="prospect">{l.stageProspect as string}</SelectItem>
+                            <SelectItem value="customer">{l.stageCustomer as string}</SelectItem>
+                            <SelectItem value="retained">{l.stageRetained as string}</SelectItem>
+                            <SelectItem value="churned">{l.stageChurned as string}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm">
+                            {contact.stage === "lead" ? l.stageLead :
+                             contact.stage === "prospect" ? l.stageProspect :
+                             contact.stage === "customer" ? l.stageCustomer :
+                             contact.stage === "retained" ? l.stageRetained :
+                             contact.stage === "churned" ? l.stageChurned : l.stageLead}
+                          </span>
+                          {contact.stageUpdatedBy && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              {l.lastEditedBy as string}: {(() => {
+                                const m = memberships?.data?.find(mem => mem.publicUserData?.userId === contact.stageUpdatedBy);
+                                const r = m?.role === "org:admin" ? "Admin" : m?.role === "org:supervisor" ? "Supervisor" : m?.role === "org:agent" ? "Agent" : "";
+                                return `${m?.publicUserData?.firstName ?? contact.stageUpdatedBy} ${r ? `(${r})` : ""}`;
+                              })()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </Field>
                     <Field label={l.country} icon={<MapPinIcon className="size-3.5" />}>
                       {editing ? (
                         <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={l.country} className="h-8 text-sm" />

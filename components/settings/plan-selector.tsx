@@ -4,12 +4,14 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { plans } from "@/lib/marketing/pricing-data";
 import { useState } from "react";
+import { useT } from "@/lib/i18n/context";
 
 export function PlanSelector() {
   const currentPlan = useQuery(api.lib.tenants.getCurrentPlan);
   const updatePlan = useMutation(api.lib.tenants.updatePlan);
   const [loading, setLoading] = useState<string | null>(null);
 
+  const t = useT();
   if (currentPlan === undefined) return null;
 
   const handleSelect = async (planId: "free" | "starter" | "growth" | "business") => {
@@ -41,21 +43,21 @@ export function PlanSelector() {
           >
             {isActive && (
               <span className="absolute top-2 end-2 text-xs font-medium text-primary">
-                الحالية / Current
+                {t("Current", "الحالية")}
               </span>
             )}
             <div className="font-semibold">
-              {plan.nameAr} / {plan.nameEn}
+              {t(plan.nameEn, plan.nameAr)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">
               {plan.price.USD === "0"
-                ? "مجاني / Free"
+                ? t("Free", "مجاني")
                 : `$${plan.price.USD}/mo`}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               {plan.agentLimit
-                ? `حتى ${plan.agentLimit} وكلاء / Up to ${plan.agentLimit} agents`
-                : "وكلاء غير محدودين / Unlimited agents"}
+                ? t(`Up to ${plan.agentLimit} agents`, `حتى ${plan.agentLimit} وكلاء`)
+                : t("Unlimited agents", "وكلاء غير محدودين")}
             </div>
           </button>
         );

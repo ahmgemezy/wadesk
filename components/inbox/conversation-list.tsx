@@ -1,15 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { ConversationListItem } from "./conversation-list-item";
+import { useT } from "@/lib/i18n/context";
+import { cn } from "@/lib/utils";
 
 type AssignmentFilter = "all" | "mine" | "unassigned";
+type StageFilter = "all" | "lead" | "prospect" | "customer" | "retained" | "churned";
+
+const STAGE_TABS: { value: StageFilter; en: string; ar: string }[] = [
+  { value: "all",      en: "All",      ar: "الكل" },
+  { value: "lead",     en: "Lead",     ar: "عميل محتمل" },
+  { value: "prospect", en: "Prospect", ar: "مرشح" },
+  { value: "customer", en: "Customer", ar: "عميل" },
+  { value: "retained", en: "Retained", ar: "عميل دائم" },
+  { value: "churned",  en: "Churned",  ar: "مفقود" },
+];
 
 interface ConversationListProps {
   activeConversationId?: string;
@@ -22,10 +34,22 @@ export function ConversationList({
   onSelect,
   onAssignClick,
 }: ConversationListProps) {
+  const t = useT();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<AssignmentFilter>("all");
+  const [stageFilter, setStageFilter] = useState<StageFilter>("all");
 
-  const conversations = useQuery(api.inbox.listConversations, { filter });
+  const { isAuthenticated } = useConvexAuth();
+
+  const conversations = useQuery(
+    api.inbox.listConversations,
+    isAuthenticated
+      ? {
+          filter,
+          contactStage: stageFilter,
+        }
+      : "skip"
+  );
 
   const filtered = (conversations ?? []).filter((c) => {
     if (!search) return true;
@@ -37,11 +61,13 @@ export function ConversationList({
     );
   });
 
-  const tabs: { value: AssignmentFilter; labelAr: string; labelEn: string }[] = [
-    { value: "all", labelAr: "الكل", labelEn: "All" },
-    { value: "mine", labelAr: "محادثاتي", labelEn: "Mine" },
-    { value: "unassigned", labelAr: "غير معينة", labelEn: "Unassigned" },
+  const tabs: { value: AssignmentFilter; label: string }[] = [
+    { value: "all", label: t("All", "الكل") },
+    { value: "mine", label: t("Mine", "محادثاتي") },
+    { value: "unassigned", label: t("Unassigned", "غير معينة") },
   ];
+
+  const isRtl = t("ltr", "rtl") === "rtl";
 
   return (
     <div className="flex flex-col h-full">
@@ -52,14 +78,14 @@ export function ConversationList({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث بالاسم أو الرقم / Search..."
+            placeholder={t("Search...", "ابحث بالاسم أو الرقم")}
             className="ps-8 h-8 text-sm"
             dir="auto"
           />
         </div>
       </div>
 
-      {/* Filter tabs */}
+      {/* Assignment filter tabs */}
       <div className="flex gap-1 p-2 border-b">
         {tabs.map((tab) => (
           <Button
@@ -69,8 +95,26 @@ export function ConversationList({
             className="flex-1 h-7 text-xs"
             onClick={() => setFilter(tab.value)}
           >
-            {tab.labelAr}
+            {tab.label}
           </Button>
+        ))}
+      </div>
+
+      {/* Stage filter tabs */}
+      <div className="flex gap-1 px-2 pt-2 pb-1 border-b overflow-x-auto scrollbar-none">
+        {STAGE_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setStageFilter(tab.value)}
+            className={cn(
+              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all whitespace-nowrap",
+              stageFilter === tab.value
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80",
+            )}
+          >
+            {isRtl ? tab.ar : tab.en}
+          </button>
         ))}
       </div>
 
@@ -84,8 +128,8 @@ export function ConversationList({
       ) : filtered.length === 0 ? (
         <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm p-4 text-center">
           {search
-            ? "لا توجد نتائج / No results"
-            : "لا توجد محادثات / No conversations"}
+            ? t("No results", "لا توجد نتائج")
+            : t("No conversations", "لا توجد محادثات")}
         </div>
       ) : (
         <ScrollArea className="flex-1">
@@ -98,7 +142,6 @@ export function ConversationList({
                 contactPhone: conv.contactPhone,
                 contactAvatarInitials: conv.contactAvatarInitials,
                 assignedAgentId: conv.assignedAgentId,
-                assignedAgentName: conv.assignedAgentName,
                 lastMessagePreview: conv.lastMessagePreview,
                 lastMessageAt: conv.lastMessageAt,
                 status: conv.status,

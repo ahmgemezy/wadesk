@@ -150,6 +150,7 @@ export const createInbound = internalMutation({
     channelId: v.id("channels"),
     metaMessageId: v.string(),
     senderPhone: v.string(),
+    wabaId: v.optional(v.string()),
     content: v.string(),
     contentType: v.union(
       v.literal("text"),
@@ -177,6 +178,8 @@ export const createInbound = internalMutation({
       tenantId: args.tenantId,
       phone: args.senderPhone,
       displayName: args.senderDisplayName,
+      wabaId: args.wabaId,
+      incrementConversations: true,
     });
 
     let conversation = await ctx.db
@@ -230,6 +233,17 @@ export const createInbound = internalMutation({
       timestamp: args.timestamp,
       createdAt: Date.now(),
     });
+
+    // ── Customer Journey: fire conversation_started event on new convos ──────
+    if (isNewConversation) {
+      await ctx.runMutation(internal.contactEvents.internalCreate, {
+        tenantId: args.tenantId,
+        contactId,
+        type: "conversation_started",
+        actorId: undefined,
+        metadata: { conversationId: conversation!._id },
+      });
+    }
 
     return { messageId, conversationId: conversation!._id, isNewConversation, isDuplicate: false };
   },

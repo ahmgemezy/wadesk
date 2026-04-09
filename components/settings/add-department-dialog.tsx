@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
+import { useT } from "@/lib/i18n/context";
 
 interface AddDepartmentDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function AddDepartmentDialog({ open, onClose }: AddDepartmentDialogProps)
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const t = useT();
   const createDepartment = useMutation(api.channels.create);
 
   const handleClose = () => {
@@ -49,9 +51,9 @@ export function AddDepartmentDialog({ open, onClose }: AddDepartmentDialogProps)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("DUPLICATE_PHONE_NUMBER")) {
-        setError("رقم الهاتف مستخدم بالفعل / Phone number already in use");
+        setError(t("Phone number already in use", "رقم الهاتف مستخدم بالفعل"));
       } else if (msg.includes("FORBIDDEN")) {
-        setError("غير مصرح / Forbidden");
+        setError(t("Forbidden", "غير مصرح"));
       } else {
         setError(msg);
       }
@@ -64,11 +66,11 @@ export function AddDepartmentDialog({ open, onClose }: AddDepartmentDialogProps)
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>إضافة إدارة / Add Department</DialogTitle>
+          <DialogTitle>{t("Add Department", "إضافة إدارة")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <Input
-            placeholder="اسم الإدارة / Department name"
+            placeholder={t("Department name", "اسم الإدارة")}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -90,7 +92,7 @@ export function AddDepartmentDialog({ open, onClose }: AddDepartmentDialogProps)
             className="w-full"
           >
             <Plus className="size-4 me-1" />
-            {saving ? "جارٍ الإضافة... / Adding..." : "إضافة / Add"}
+            {saving ? t("Adding...", "جارٍ الإضافة...") : t("Add", "إضافة")}
           </Button>
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 rounded-md p-2">

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useState, use } from "react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AssignmentModeSelect } from "@/components/settings/assignment-mode-select";
@@ -10,14 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Pencil, Check, X, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/context";
 
 export default function ChannelSettingsPage({
   params,
 }: {
-  params: { channelId: string };
+  params: Promise<{ channelId: string }>;
 }) {
-  const channelId = params.channelId as Id<"channels">;
-  const channel = useQuery(api.channels.get, { channelId });
+  const t = useT();
+  const { isAuthenticated } = useConvexAuth();
+  const { channelId: rawChannelId } = use(params);
+  const channelId = rawChannelId as Id<"channels">;
+  const channel = useQuery(api.channels.get, isAuthenticated ? { channelId } : "skip");
   const updateName = useMutation(api.channels.updateName);
   const removeChannel = useMutation(api.channels.remove);
   const [editing, setEditing] = useState(false);
@@ -43,7 +47,7 @@ export default function ChannelSettingsPage({
       await updateName({ channelId, displayName: nameValue.trim() });
       setEditing(false);
     } catch {
-      toast.error("فشل التحديث / Update failed");
+      toast.error(t("Update failed", "فشل التحديث"));
     } finally {
       setSaving(false);
     }
@@ -51,15 +55,15 @@ export default function ChannelSettingsPage({
 
   const handleDelete = async () => {
     if (!channel) return;
-    if (!confirm(`حذف "${channel.displayName}"؟ / Delete "${channel.displayName}"?`)) return;
+    if (!confirm(t(`Delete "${channel.displayName}"?`, `حذف "${channel.displayName}"؟`))) return;
     try {
       await removeChannel({ channelId });
       router.push("/settings/channels");
-      toast.success("تم الحذف / Deleted");
+      toast.success(t("Deleted", "تم الحذف"));
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("HAS_CONVERSATIONS")) {
-        toast.error("لا يمكن الحذف - توجد محادثات / Cannot delete — has conversations");
+        toast.error(t("Cannot delete — has conversations", "لا يمكن الحذف - توجد محادثات"));
       } else {
         toast.error(msg);
       }
@@ -78,7 +82,7 @@ export default function ChannelSettingsPage({
   if (!channel) {
     return (
       <div className="p-6 max-w-2xl mx-auto text-center text-muted-foreground">
-        الإدارة غير موجودة / Department not found
+        {t("Department not found", "الإدارة غير موجودة")}
       </div>
     );
   }
@@ -87,7 +91,7 @@ export default function ChannelSettingsPage({
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          إعدادات الإدارة / Department Settings
+          {t("Department Settings", "إعدادات الإدارة")}
         </h1>
         <Button
           variant="destructive"
@@ -95,12 +99,12 @@ export default function ChannelSettingsPage({
           onClick={handleDelete}
         >
           <Trash2 className="size-4 me-1" />
-          حذف / Delete
+          {t("Delete", "حذف")}
         </Button>
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-medium">الاسم / Name</h3>
+        <h3 className="text-sm font-medium">{t("Name", "الاسم")}</h3>
         {editing ? (
           <div className="flex items-center gap-2">
             <Input

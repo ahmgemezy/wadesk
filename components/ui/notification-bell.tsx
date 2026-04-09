@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Bell } from "lucide-react";
@@ -16,8 +16,10 @@ import { ar } from "date-fns/locale";
 
 export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
   const router = useRouter();
-  const unreadCount = useQuery(api.notifications.getUnreadCount);
-  const notifications = useQuery(api.notifications.listForUser) ?? [];
+  const { isAuthenticated } = useConvexAuth();
+  
+  const unreadCount = useQuery(api.notifications.getUnreadCount, isAuthenticated ? undefined : "skip");
+  const notifications = useQuery(api.notifications.listForUser, isAuthenticated ? undefined : "skip") ?? [];
   const markRead = useMutation(api.notifications.markRead);
   const markAllRead = useMutation(api.notifications.markAllRead);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState } from "react";
-import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
+import { useQuery, useMutation, usePaginatedQuery, useConvexAuth } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowRight, ArrowLeft, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useT } from "@/lib/i18n/context";
+import { useT, useLocale } from "@/lib/i18n/context";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 
@@ -32,20 +33,23 @@ export default function ContactProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const t = useT();
+  const locale = useLocale();
   const { id } = use(params);
   const router = useRouter();
-  const isRtl = true; // Arabic-first
+  const isRtl = locale === "ar";
   const dateLocale = isRtl ? ar : enUS;
 
+  const { isAuthenticated } = useConvexAuth();
   const contactId = id as Id<"contacts">;
 
-  const contactData = useQuery(api.contacts.getById, { contactId });
-  const followUps = useQuery(api.followUps.listByContact, { contactId });
+  const contactData = useQuery(api.contacts.getById, isAuthenticated ? { contactId } : "skip");
+  const followUps = useQuery(api.followUps.listByContact, isAuthenticated ? { contactId } : "skip");
   const { results: events, loadMore, status } = usePaginatedQuery(
     api.contactEvents.getTimeline,
-    { contactId },
+    isAuthenticated ? { contactId } : "skip",
     { initialNumItems: 20 }
   );
+  const channels = useQuery(api.channels.listForTenant, isAuthenticated ? undefined : "skip");
 
   const updateStage = useMutation(api.contacts.updateStage);
   const [followUpOpen, setFollowUpOpen] = useState(false);
@@ -78,8 +82,8 @@ export default function ContactProfilePage({
     (f) => f.status !== "pending" && f.status !== "cancelled"
   );
 
-  // Get channelId from first follow-up if available (needed for FollowUpModal)
-  const channelId = (followUps ?? [])[0]?.channelId as Id<"channels"> | undefined;
+  // Get channelId from existing follow-up, or default to the first available channel
+  const channelId = (followUps ?? [])[0]?.channelId as Id<"channels"> | undefined ?? channels?.[0]?._id;
 
   return (
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen">
@@ -126,7 +130,13 @@ export default function ContactProfilePage({
         </select>
 
         <Button
-          onClick={() => setFollowUpOpen(true)}
+          onClick={() => {
+            if (!channelId) {
+              toast.error(t("Please connect a WhatsApp channel first.", "يرجى ربط قناة واتساب أولاً."));
+              return;
+            }
+            setFollowUpOpen(true);
+          }}
           size="sm"
           className="shrink-0 gap-2"
         >
