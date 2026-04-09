@@ -1,0 +1,389 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation, usePaginatedQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+import Link from "next/link";
+import { format } from "date-fns";
+import { ar as arLocale, enUS } from "date-fns/locale";
+import { CalendarClock, ChevronLeft } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ContactTimeline } from "./contact-timeline";
+import { FollowUpModal } from "./follow-up-modal";
+
+// ---------------------------------------------------------------------------
+// Stage labels
+// ---------------------------------------------------------------------------
+
+const STAGE_LABELS: Record<string, { ar: string; en: string; color: string }> =
+  {
+    lead: {
+      ar: "عميل محتمل",
+      en: "Lead",
+      color: "bg-blue-100 text-blue-700",
+    },
+    prospect: {
+      ar: "مرشح",
+      en: "Prospect",
+      color: "bg-purple-100 text-purple-700",
+    },
+    customer: {
+      ar: "عميل",
+      en: "Customer",
+      color: "bg-green-100 text-green-700",
+    },
+    retained: {
+      ar: "محتفظ به",
+      en: "Retained",
+      color: "bg-emerald-100 text-emerald-700",
+    },
+    churned: {
+      ar: "مفقود",
+      en: "Churned",
+      color: "bg-red-100 text-red-700",
+    },
+  };
+
+// ---------------------------------------------------------------------------
+// i18n strings
+// ---------------------------------------------------------------------------
+
+const TL = {
+  ar: {
+    notFound: "لم يتم العثور على جهة الاتصال",
+    stage: "المرحلة",
+    notes: "ملاحظات",
+    notesPlaceholder: "أضف ملاحظات عن جهة الاتصال...",
+    stats: "إحصائيات",
+    totalConversations: "المحادثات",
+    firstContact: "أول تواصل",
+    lastContact: "آخر تواصل",
+    followUps: "المتابعات المعلقة",
+    noFollowUps: "لا توجد متابعات معلقة",
+    scheduleFollowUp: "جدولة متابعة",
+    timeline: "النشاط الأخير",
+    viewFull: "عرض الملف كاملاً ←",
+    loading: "جارٍ التحميل...",
+  },
+  en: {
+    notFound: "Contact not found",
+    stage: "Stage",
+    notes: "Notes",
+    notesPlaceholder: "Add notes about this contact...",
+    stats: "Stats",
+    totalConversations: "Conversations",
+    firstContact: "First Contact",
+    lastContact: "Last Contact",
+    followUps: "Pending Follow-ups",
+    noFollowUps: "No pending follow-ups",
+    scheduleFollowUp: "Schedule Follow-up",
+    timeline: "Recent Activity",
+    viewFull: "View full profile →",
+    loading: "Loading...",
+  },
+} as const;
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+interface Props {
+  contactId: Id<"contacts"> | null;
+  channelId: Id<"channels"> | null;
+  open: boolean;
+  onClose: () => void;
+  locale: "ar" | "en";
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function ContactSidePanel({
+  contactId,
+  channelId,
+  open,
+  onClose,
+  locale,
+}: Props) {
+  const t = TL[locale];
+  const dir = locale === "ar" ? "rtl" : "ltr";
+  const side = locale === "ar" ? "left" : "right";
+  const dateLocale = locale === "ar" ? arLocale : enUS;
+
+  // Queries
+  const data = useQuery(
+    api.contacts.getById,
+    contactId ? { contactId } : "skip",
+  );
+  const followUps = useQuery(
+    api.followUps.listByContact,
+    contactId ? { contactId } : "skip",
+  );
+  const { results: timelineEvents } = usePaginatedQuery(
+    api.contactEvents.getTimeline,
+    contactId ? { contactId } : "skip",
+    { initialNumItems: 5 },
+  );
+
+  // Mutations
+  const updateContact = useMutation(api.contacts.update);
+  const updateStage = useMutation(api.contacts.updateStage);
+
+  // Local state
+  const [notes, setNotes] = useState<string>("");
+  const [notesInitialized, setNotesInitialized] = useState(false);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
+
+  // Init notes from server when data loads
+  if (data && !notesInitialized) {
+    setNotes(data.contact.notes ?? "");
+    setNotesInitialized(true);
+  }
+  // Reset when contact changes
+  const [lastContactId, setLastContactId] = useState<
+    Id<"contacts"> | null
+  >(null);
+  if (contactId !== lastContactId) {
+    setLastContactId(contactId);
+    setNotesInitialized(false);
+  }
+
+  // Derived values
+  const contact = data?.contact;
+  const pendingFollowUps = (followUps ?? []).filter(
+    (f) => f.status === "pending",
+  );
+  const stage = contact?.stage ?? "lead";
+  const stageLabel = STAGE_LABELS[stage];
+  const displayName =
+    contact?.customName ?? contact?.displayName ?? "";
+  const initials = displayName
+    ? displayName
+        .split(" ")
+        .slice(0, 2)
+        .map((w: string) => w[0])
+        .join("")
+        .toUpperCase()
+    : "?";
+
+  const formatDate = (ts: number | undefined) => {
+    if (!ts) return "—";
+    return format(new Date(ts), "PP", { locale: dateLocale });
+  };
+
+  const handleStageChange = async (newStage: string) => {
+    if (!contactId) return;
+    await updateStage({ contactId, stage: newStage as "lead" | "prospect" | "customer" | "retained" | "churned" });
+  };
+
+  const handleNotesBlur = async () => {
+    if (!contactId || !data) return;
+    if (notes === (data.contact.notes ?? "")) return;
+    await updateContact({ contactId, notes });
+  };
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={(o: boolean) => { if (!o) onClose(); }}>
+        <SheetContent side={side} className="w-full sm:max-w-md overflow-y-auto p-0" showCloseButton>
+          <div dir={dir} className="flex flex-col h-full">
+            {/* Header */}
+            <SheetHeader className="p-4 border-b">
+              {contact ? (
+                <div className="flex items-center gap-3">
+                  {/* Avatar */}
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-lg shrink-0">
+                    {initials}
+                  </div>
+                  <div className="min-w-0">
+                    <SheetTitle className="text-base font-semibold truncate">
+                      {displayName || contact.phone}
+                    </SheetTitle>
+                    <p className="text-sm text-muted-foreground" dir="ltr">
+                      {contact.phone}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <SheetTitle>{t.loading}</SheetTitle>
+              )}
+            </SheetHeader>
+
+            {!contact && (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm p-4">
+                {data === null ? t.notFound : t.loading}
+              </div>
+            )}
+
+            {contact && (
+              <div className="flex-1 flex flex-col gap-0 overflow-y-auto">
+
+                {/* Stage */}
+                <section className="p-4 border-b space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {t.stage}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge className={`${stageLabel?.color ?? ""} border-0 text-xs`}>
+                      {stageLabel?.[locale] ?? stage}
+                    </Badge>
+                    <select
+                      value={stage}
+                      onChange={(e) => void handleStageChange(e.target.value)}
+                      className="ms-auto text-xs border rounded px-2 py-1 bg-background text-foreground"
+                    >
+                      {Object.entries(STAGE_LABELS).map(([key, val]) => (
+                        <option key={key} value={key}>
+                          {val[locale]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </section>
+
+                {/* Notes */}
+                <section className="p-4 border-b space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {t.notes}
+                  </p>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    onBlur={() => void handleNotesBlur()}
+                    placeholder={t.notesPlaceholder}
+                    className="text-sm min-h-20 resize-none"
+                    dir={dir}
+                  />
+                </section>
+
+                {/* Stats */}
+                <section className="p-4 border-b space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {t.stats}
+                  </p>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="text-lg font-semibold">
+                        {data.conversationCount}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.totalConversations}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {formatDate(contact.firstSeenAt)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.firstContact}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {formatDate(contact.lastSeenAt)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.lastContact}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Follow-ups */}
+                <section className="p-4 border-b space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      {t.followUps}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7"
+                      onClick={() => setFollowUpOpen(true)}
+                    >
+                      <CalendarClock className="h-3 w-3 me-1" />
+                      {t.scheduleFollowUp}
+                    </Button>
+                  </div>
+                  {pendingFollowUps.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">{t.noFollowUps}</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {pendingFollowUps.map((f) => (
+                        <li
+                          key={f._id}
+                          className="text-xs bg-muted rounded px-3 py-2 flex items-center justify-between gap-2"
+                        >
+                          <span className="truncate">{f.note ?? ""}</span>
+                          <span className="text-muted-foreground shrink-0">
+                            {formatDate(f.scheduledAt)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                {/* Timeline */}
+                <section className="p-4 border-b space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {t.timeline}
+                  </p>
+                  {timelineEvents.length > 0 ? (
+                    <ContactTimeline
+                      events={timelineEvents}
+                      locale={locale}
+                      compact
+                    />
+                  ) : (
+                    <p className="text-xs text-muted-foreground">—</p>
+                  )}
+                </section>
+
+                {/* View full profile link */}
+                <div className="p-4">
+                  <Link
+                    href={`/contacts/${contactId}`}
+                    className="flex items-center gap-1 text-sm text-primary hover:underline"
+                  >
+                    {locale === "ar" ? (
+                      <>
+                        <ChevronLeft className="h-4 w-4" />
+                        {t.viewFull}
+                      </>
+                    ) : (
+                      <>
+                        {t.viewFull}
+                      </>
+                    )}
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Follow-up modal */}
+      {contactId && channelId && (
+        <FollowUpModal
+          open={followUpOpen}
+          onClose={() => setFollowUpOpen(false)}
+          contactId={contactId}
+          channelId={channelId}
+          locale={locale}
+        />
+      )}
+    </>
+  );
+}
