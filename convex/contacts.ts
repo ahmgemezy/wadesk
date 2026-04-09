@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getCallerIdentity, getCallerRole, assertAdminOrSupervisor } from "./lib/auth";
 import { paginationOptsValidator } from "convex/server";
 
@@ -191,6 +192,8 @@ export const upsertByPhone = internalMutation({
     tenantId: v.string(),
     phone: v.string(),
     displayName: v.optional(v.string()),
+    wabaId: v.optional(v.string()),
+    incrementConversations: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -201,10 +204,15 @@ export const upsertByPhone = internalMutation({
       .first();
 
     if (existing) {
-      await ctx.db.patch(existing._id, {
+      const patch: Record<string, unknown> = {
         lastSeenAt: Date.now(),
         displayName: args.displayName ?? existing.displayName,
-      });
+      };
+      if (args.wabaId) patch.wabaId = args.wabaId;
+      if (args.incrementConversations) {
+        patch.totalConversations = (existing.totalConversations ?? 0) + 1;
+      }
+      await ctx.db.patch(existing._id, patch);
       return existing._id;
     }
 
@@ -215,9 +223,123 @@ export const upsertByPhone = internalMutation({
       tags: [],
       source: "auto",
       isArchived: false,
+      stage: "lead",
+      totalConversations: args.incrementConversations ? 1 : 0,
+      wabaId: args.wabaId,
       firstSeenAt: Date.now(),
       lastSeenAt: Date.now(),
       createdAt: Date.now(),
     });
+  },
+});
+
+const stageValidator = v.union(
+  v.literal("lead"),
+  v.literal("prospect"),
+  v.literal("customer"),
+  v.literal("retained"),
+  v.literal("churned"),
+);
+
+export const updateStage = mutation({
+  args: {
+    contactId: v.id("contacts"),
+    stage: stageValidator,
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
+    const contact = await ctx.db.get(args.contactId);
+    if (!contact || contact.tenantId !== tenantId) {
+      throw new Error("Contact not found");
+    }
+    const previousStage = contact.stage ?? "lead";
+    await ctx.db.patch(args.contactId, {
+      stage: args.stage,
+      stageUpdatedAt: Date.now(),
+      stageUpdatedBy: callerId,
+    });
+    await ctx.runMutation(internal.contactEvents.internalCreate, {
+      tenantId,
+      contactId: args.contactId,
+      type: "stage_changed",
+      actorId: callerId,
+      metadata: { from: previousStage, to: args.stage },
+    });
+  },
+});
+
+export const assignContact = mutation({
+  args: {
+    contactId: v.id("contacts"),
+    assignedTo: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+    const contact = await ctx.db.get(args.contactId);
+    if (!contact || contact.tenantId !== tenantId) {
+      throw new Error("Contact not found");
+    }
+    await ctx.db.patch(args.contactId, { assignedAgentId: args.assignedTo });
+    await ctx.runMutation(internal.contactEvents.internalCreate, {
+      tenantId,
+      contactId: args.contactId,
+      type: "assigned",
+      actorId: callerId,
+      metadata: { to: args.assignedTo, by: callerId },
+    });
+  },
+});
+
+export const listByStage = query({
+  args: {
+    stage: v.optional(stageValidator),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+
+    let contacts;
+    if (args.stage) {
+      contacts = await ctx.db
+        .query("contacts")
+        .withIndex("by_tenant_stage", (q) =>
+          q.eq("tenantId", tenantId).eq("stage", args.stage!),
+        )
+        .filter((q) => q.eq(q.field("isArchived"), false))
+        .take(500);
+    } else {
+      contacts = await ctx.db
+        .query("contacts")
+        .withIndex("by_tenant_archived", (q) =>
+          q.eq("tenantId", tenantId).eq("isArchived", false),
+        )
+        .take(500);
+    }
+
+    // Role-based visibility: Agent sees only own contacts
+    const filtered =
+      orgRole === "org:agent"
+        ? contacts.filter((c) => c.assignedAgentId === callerId)
+        : contacts;
+
+    return filtered.map((c) => ({
+      id: c._id,
+      phoneNumber: c.phone,
+      displayName: c.displayName,
+      customName: c.customName,
+      tags: c.tags,
+      notes: c.notes,
+      assignedTo: c.assignedAgentId,
+      stage: c.stage ?? "lead",
+      stageUpdatedAt: c.stageUpdatedAt,
+      totalConversations: c.totalConversations ?? 0,
+      firstContactAt: c.firstSeenAt,
+      lastContactAt: c.lastSeenAt,
+      isArchived: c.isArchived,
+      source: c.source,
+      wabaId: c.wabaId,
+      createdAt: c.createdAt,
+    }));
   },
 });
