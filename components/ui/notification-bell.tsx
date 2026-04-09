@@ -1,0 +1,97 @@
+"use client";
+
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+import { Bell } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { ar } from "date-fns/locale";
+
+export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
+  const router = useRouter();
+  const unreadCount = useQuery(api.notifications.getUnreadCount) ?? 0;
+  const notifications = useQuery(api.notifications.listForUser) ?? [];
+  const markRead = useMutation(api.notifications.markRead);
+  const markAllRead = useMutation(api.notifications.markAllRead);
+
+  const isRtl = locale === "ar";
+
+  async function handleNotificationClick(
+    notificationId: Id<"notifications">,
+    _referenceId: string,
+  ) {
+    await markRead({ notificationId });
+    router.push(`/contacts`);
+  }
+
+  return (
+    <Popover>
+      <PopoverTrigger
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        aria-label={isRtl ? "الإشعارات" : "Notifications"}
+      >
+        <Bell className="h-4 w-4" />
+        {unreadCount > 0 && (
+          <span className="absolute top-1 end-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </PopoverTrigger>
+      <PopoverContent
+        align={isRtl ? "start" : "end"}
+        className="w-80 p-0"
+        dir={isRtl ? "rtl" : "ltr"}
+      >
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <span className="font-semibold text-sm">
+            {isRtl ? "الإشعارات" : "Notifications"}
+          </span>
+          {unreadCount > 0 && (
+            <button
+              onClick={() => markAllRead()}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              {isRtl ? "تحديد الكل كمقروء" : "Mark all read"}
+            </button>
+          )}
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              {isRtl ? "لا توجد إشعارات" : "No notifications"}
+            </div>
+          ) : (
+            notifications.map((n) => (
+              <button
+                key={n._id}
+                onClick={() => handleNotificationClick(n._id, n.referenceId)}
+                className={cn(
+                  "w-full text-start px-4 py-3 hover:bg-muted transition-colors border-b last:border-b-0",
+                  !n.read && "bg-blue-50 dark:bg-blue-950/20",
+                )}
+              >
+                <p className="text-sm font-medium">{n.contactName ?? "—"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                  {n.message}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {formatDistanceToNow(new Date(n.createdAt), {
+                    addSuffix: true,
+                    locale: isRtl ? ar : undefined,
+                  })}
+                </p>
+              </button>
+            ))
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

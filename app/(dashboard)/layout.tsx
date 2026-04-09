@@ -10,6 +10,7 @@ import { resolveRole } from "@/lib/shell/role-utils";
 import { filterNavItems } from "@/lib/shell/nav-config";
 import type { ResolvedUser } from "@/lib/shell/types";
 import { Separator } from "@/components/ui/separator";
+import { NotificationBell } from "@/components/ui/notification-bell";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,9 @@ export default async function DashboardLayout({
         <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b">
           <SidebarTrigger className="-ms-1" />
           <Separator orientation="vertical" className="h-4" />
+          <div className="ms-auto">
+            <NotificationBell locale={locale} />
+          </div>
         </header>
         <div className="flex-1 overflow-hidden pb-16 md:pb-0">
           {children}
