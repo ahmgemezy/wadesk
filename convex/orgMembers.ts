@@ -138,7 +138,12 @@ export const changeRole = action({
 
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("UNAUTHORIZED");
+    const callerId = identity.subject;
     const tenantId = identity.orgId as string;
+
+    if (callerId === args.targetUserId) {
+      throw new ConvexError("CANNOT_CHANGE_OWN_ROLE");
+    }
 
     const client = await clerkClient();
 
@@ -262,7 +267,12 @@ export const removeMember = action({
 
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("UNAUTHORIZED");
+    const callerId = identity.subject;
     const tenantId = identity.orgId as string;
+
+    if (callerId === args.targetUserId) {
+      throw new ConvexError("CANNOT_REMOVE_SELF");
+    }
 
     const client = await clerkClient();
 

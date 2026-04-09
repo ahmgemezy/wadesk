@@ -16,6 +16,7 @@ import { RoleSelect } from "./role-select";
 import type { OrgRole } from "./team-member-list";
 import { Mail, MessageCircle, Link2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/context";
 
 interface InviteModalProps {
   open: boolean;
@@ -38,6 +39,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const t = useT();
   const inviteByEmail = useAction(api.orgMembers.inviteByEmail);
   const inviteByWhatsApp = useAction(api.orgMembers.inviteByWhatsApp);
   const generateLink = useMutation(api.inviteLinks.generate);
@@ -62,15 +64,15 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("PLAN_LIMIT")) {
-        setError("تم بلوغ الحد الأقصى / Plan limit reached");
+        setError(t("Plan limit reached", "تم بلوغ الحد الأقصى"));
       } else if (msg.includes("ALREADY_MEMBER")) {
-        setError("عضو بالفعل / Already a member");
+        setError(t("Already a member", "عضو بالفعل"));
       } else if (msg.includes("LAST_ADMIN")) {
-        setError("لا يمكن تغيير دور آخر مدير / Cannot change the role of the last admin");
+        setError(t("Cannot change the role of the last admin", "لا يمكن تغيير دور آخر مدير"));
       } else if (msg.includes("FORBIDDEN")) {
-        setError("غير مصرح / Forbidden");
+        setError(t("Forbidden", "غير مصرح"));
       } else if (msg.includes("SUPERVISOR_CAN_ONLY_INVITE_AGENTS")) {
-        setError("المشرف يمكنه دعوة وكلاء فقط / Supervisors can only invite agents");
+        setError(t("Supervisors can only invite agents", "المشرف يمكنه دعوة وكلاء فقط"));
       } else {
         setError(msg);
       }
@@ -91,18 +93,18 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("INVALID_PHONE")) {
-        setError("رقم هاتف غير صالح / Invalid phone number (E.164: +201012345678)");
+        setError(t("Invalid phone number (E.164: +201012345678)", "رقم هاتف غير صالح (مثال: +201012345678)"));
       } else if (msg.includes("PLAN_LIMIT")) {
-        setError("تم بلوغ الحد الأقصى / Plan limit reached");
+        setError(t("Plan limit reached", "تم بلوغ الحد الأقصى"));
       } else if (msg.includes("WHATSAPP_SEND_FAILED")) {
-        setError("فشل إرسال واتساب / WhatsApp send failed. You can share this link instead: / يمكنك مشاركة هذا الرابط بدلاً من ذلك:");
+        setError(t("WhatsApp send failed. You can share this link instead:", "فشل إرسال واتساب. يمكنك مشاركة هذا الرابط:"));
         if (activeLink?.url) {
           setLinkFallback(activeLink.url);
         }
       } else if (msg.includes("FORBIDDEN")) {
-        setError("غير مصرح / Forbidden");
+        setError(t("Forbidden", "غير مصرح"));
       } else if (msg.includes("SUPERVISOR_CAN_ONLY_INVITE_AGENTS")) {
-        setError("المشرف يمكنه دعوة وكلاء فقط / Supervisors can only invite agents");
+        setError(t("Supervisors can only invite agents", "المشرف يمكنه دعوة وكلاء فقط"));
       } else {
         setError(msg);
       }
@@ -139,14 +141,14 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     if (!activeLink?.url) return;
     await navigator.clipboard.writeText(activeLink.url);
     setCopied(true);
-    toast.success("تم النسخ / Link copied!");
+    toast.success(t("Link copied!", "تم نسخ الرابط!"));
     setTimeout(() => setCopied(false), 2000);
   };
 
   const allTabs: Array<{ id: "email" | "whatsapp" | "link"; label: string; icon: React.ReactNode }> = [
-    { id: "email", label: "بريد إلكتروني / Email", icon: <Mail className="size-4" /> },
-    { id: "whatsapp", label: "واتساب / WhatsApp", icon: <MessageCircle className="size-4" /> },
-    { id: "link", label: "رابط / Link", icon: <Link2 className="size-4" /> },
+    { id: "email", label: t("Email", "بريد إلكتروني"), icon: <Mail className="size-4" /> },
+    { id: "whatsapp", label: t("WhatsApp", "واتساب"), icon: <MessageCircle className="size-4" /> },
+    { id: "link", label: t("Link", "رابط"), icon: <Link2 className="size-4" /> },
   ];
 
   const tabs = isSupervisor ? allTabs.filter((t) => t.id !== "link") : allTabs;
@@ -155,7 +157,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>دعوة عضو / Invite Member</DialogTitle>
+          <DialogTitle>{t("Invite Member", "دعوة عضو")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex gap-1 border-b pb-1">
@@ -179,7 +181,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
           <div className="space-y-3">
             <Input
               type="email"
-              placeholder="البريد الإلكتروني / Email address"
+              placeholder={t("Email address", "البريد الإلكتروني")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               dir="ltr"
@@ -190,7 +192,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
               disabled={!email.trim() || sending}
               className="w-full"
             >
-              {sending ? "جارٍ الإرسال... / Sending..." : "دعوة / Invite"}
+              {sending ? t("Sending...", "جارٍ الإرسال...") : t("Invite", "دعوة")}
             </Button>
           </div>
         )}
@@ -210,7 +212,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
               disabled={!phone.trim() || sending}
               className="w-full"
             >
-              {sending ? "جارٍ الإرسال... / Sending..." : "إرسال واتساب / Send WhatsApp"}
+              {sending ? t("Sending...", "جارٍ الإرسال...") : t("Send WhatsApp", "إرسال واتساب")}
             </Button>
             {linkFallback && (
               <div className="flex items-center gap-2">
@@ -238,7 +240,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
                   </Button>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  تنتهي في / Expires: {new Date(activeLink.expiresAt).toLocaleDateString("ar-EG")}
+                  {t("Expires:", "تنتهي في:")} {new Date(activeLink.expiresAt).toLocaleDateString(t("en-US", "ar-EG"))}
                 </div>
                 <Button
                   variant="destructive"
@@ -246,7 +248,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
                   disabled={sending}
                   className="w-full"
                 >
-                  إلغاء الرابط / Revoke Link
+                  {t("Revoke Link", "إلغاء الرابط")}
                 </Button>
               </>
             ) : (
@@ -255,7 +257,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
                 disabled={sending}
                 className="w-full"
               >
-                إنشاء رابط / Generate Link
+                {t("Generate Link", "إنشاء رابط")}
               </Button>
             )}
           </div>

@@ -1,16 +1,19 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useQuery, useConvexAuth } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 
 const SECTION_LABELS: Record<string, { ar: string; en: string }> = {
-  settings: { ar: "الإعدادات", en: "Settings" },
-  team: { ar: "الفريق", en: "Team" },
-  channels: { ar: "الإدارات", en: "Departments" },
-  "quick-replies": { ar: "الردود السريعة", en: "Quick Replies" },
-  billing: { ar: "الفواتير", en: "Billing" },
-  inbox: { ar: "الصندوق", en: "Inbox" },
-  contacts: { ar: "جهات الاتصال", en: "Contacts" },
-  analytics: { ar: "التحليلات", en: "Analytics" },
+  settings:       { ar: "الإعدادات",      en: "Settings" },
+  team:           { ar: "الفريق",          en: "Team" },
+  channels:       { ar: "الإدارات",        en: "Departments" },
+  "quick-replies":{ ar: "الردود السريعة",  en: "Quick Replies" },
+  billing:        { ar: "الفواتير",         en: "Billing" },
+  inbox:          { ar: "الصندوق",          en: "Inbox" },
+  contacts:       { ar: "جهات الاتصال",    en: "Contacts" },
+  analytics:      { ar: "التحليلات",        en: "Analytics" },
 };
 
 interface BreadcrumbProps {
@@ -29,13 +32,8 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
       aria-label="Breadcrumb"
     >
       {segments.map((segment, index) => {
-        const label = SECTION_LABELS[segment];
-        const displayText = label
-          ? locale === "ar"
-            ? label.ar
-            : label.en
-          : segment;
         const isLast = index === segments.length - 1;
+        const prevSegment = index > 0 ? segments[index - 1] : undefined;
 
         return (
           <span key={`${segment}-${index}`} className="flex items-center gap-1.5">
@@ -48,11 +46,57 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
               className={isLast ? "text-foreground font-medium" : "text-muted-foreground"}
               aria-current={isLast ? "page" : undefined}
             >
-              {displayText}
+              <DynamicSegment segment={segment} prevSegment={prevSegment} locale={locale} />
             </span>
           </span>
         );
       })}
     </nav>
   );
+}
+
+function DynamicSegment({
+  segment,
+  prevSegment,
+  locale,
+}: {
+  segment: string;
+  prevSegment?: string;
+  locale: "ar" | "en";
+}) {
+  const { isAuthenticated } = useConvexAuth();
+
+  const isChannel = prevSegment === "channels";
+  const channel = useQuery(
+    api.channels.get,
+    isAuthenticated && isChannel ? { channelId: segment as Id<"channels"> } : "skip"
+  );
+
+  const isContact = prevSegment === "contacts";
+  const contactQuery = useQuery(
+    api.contacts.getById,
+    isAuthenticated && isContact ? { contactId: segment as Id<"contacts"> } : "skip"
+  );
+
+  if (isChannel) {
+    return <>{channel?.displayName ?? "…"}</>;
+  }
+
+  if (isContact) {
+    const name =
+      contactQuery?.contact?.customName ??
+      contactQuery?.contact?.displayName ??
+      contactQuery?.contact?.phone ??
+      "…";
+    return <>{name}</>;
+  }
+
+  const label = SECTION_LABELS[segment];
+  const displayText = label
+    ? locale === "ar"
+      ? label.ar
+      : label.en
+    : segment;
+
+  return <>{displayText}</>;
 }

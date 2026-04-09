@@ -7,6 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./message-bubble";
+import { useLocale } from "@/lib/i18n/context";
 
 type MessageItem = {
   _id: string;
@@ -19,7 +20,7 @@ type MessageItem = {
   timestamp: number;
 };
 
-function formatDateLabel(timestamp: number): string {
+function formatDateLabel(timestamp: number, locale: "ar" | "en"): string {
   const date = new Date(timestamp);
   const today = new Date();
   const yesterday = new Date(today);
@@ -30,10 +31,10 @@ function formatDateLabel(timestamp: number): string {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
 
-  if (isSameDay(date, today)) return "اليوم / Today";
-  if (isSameDay(date, yesterday)) return "أمس / Yesterday";
+  if (isSameDay(date, today)) return locale === "en" ? "Today" : "اليوم";
+  if (isSameDay(date, yesterday)) return locale === "en" ? "Yesterday" : "أمس";
 
-  return date.toLocaleDateString("ar-EG", {
+  return date.toLocaleDateString(locale === "en" ? "en-US" : "ar-EG", {
     day: "numeric",
     month: "long",
     year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
@@ -42,10 +43,11 @@ function formatDateLabel(timestamp: number): string {
 
 function groupByDate(
   messages: MessageItem[],
+  locale: "ar" | "en",
 ): { date: string; items: MessageItem[] }[] {
   const groups: { date: string; items: MessageItem[] }[] = [];
   for (const msg of messages) {
-    const label = formatDateLabel(msg.timestamp);
+    const label = formatDateLabel(msg.timestamp, locale);
     const last = groups[groups.length - 1];
     if (last && last.date === label) {
       last.items.push(msg);
@@ -61,6 +63,7 @@ export function ConversationThread({
 }: {
   conversationId: string;
 }) {
+  const locale = useLocale();
   const rawMessages = useQuery(api.inbox.getMessages, {
     conversationId: conversationId as Id<"conversations">,
   });
@@ -105,12 +108,12 @@ export function ConversationThread({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
-        لا توجد رسائل بعد / No messages yet
+        {locale === "en" ? "No messages yet" : "لا توجد رسائل بعد"}
       </div>
     );
   }
 
-  const groups = groupByDate(messages);
+  const groups = groupByDate(messages, locale);
 
   return (
     <ScrollArea className="flex-1">

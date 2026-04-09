@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { useT, useLocale } from "@/lib/i18n/context";
 
 type Message = {
   _id: string;
@@ -14,16 +15,18 @@ type Message = {
 };
 
 export function MessageBubble({ message }: { message: Message }) {
+  const t = useT();
+  const locale = useLocale();
   if (message.isInternalNote) {
     return (
       <div className="flex justify-start">
         <div className="max-w-[75%] rounded-lg bg-amber-50 dark:bg-amber-950 p-3 border border-amber-200 dark:border-amber-800">
           <div className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-1">
-            ملاحظة داخلية / Internal Note
+            {t("Internal Note", "ملاحظة داخلية")}
           </div>
           <div className="text-sm whitespace-pre-wrap">{message.content}</div>
           <div className="text-xs text-muted-foreground mt-1 text-start">
-            {new Date(message.timestamp).toLocaleTimeString("ar-EG", {
+            {new Date(message.timestamp).toLocaleTimeString(locale === "en" ? "en-US" : "ar-EG", {
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -39,7 +42,7 @@ export function MessageBubble({ message }: { message: Message }) {
         <div className="max-w-[75%] rounded-lg bg-muted p-3">
           <div className="text-sm text-muted-foreground flex items-center gap-2">
             <span>📎</span>
-            <span>[رسالة غير مدعومة] / [Unsupported message type]</span>
+            <span>{t("[Unsupported message type]", "[رسالة غير مدعومة]")}</span>
           </div>
         </div>
       </div>
@@ -60,7 +63,7 @@ export function MessageBubble({ message }: { message: Message }) {
         <div className="text-sm whitespace-pre-wrap">{message.content}</div>
         <div className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isInbound ? "justify-start" : "justify-end"}`}>
           <span>
-            {new Date(message.timestamp).toLocaleTimeString("ar-EG", {
+            {new Date(message.timestamp).toLocaleTimeString(locale === "en" ? "en-US" : "ar-EG", {
               hour: "2-digit",
               minute: "2-digit",
             })}

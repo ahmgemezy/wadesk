@@ -195,6 +195,7 @@ export const metaWebhook = httpAction(async (ctx, request) => {
               channelId: channel._id,
               metaMessageId: msg.id,
               senderPhone: msg.from,
+              wabaId: phoneNumberId,
               content,
               contentType,
               mediaUrl,

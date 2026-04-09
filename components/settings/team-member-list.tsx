@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAction } from "convex/react";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization, useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { InviteModal } from "./invite-modal";
+import { useT } from "@/lib/i18n/context";
 import { MoreHorizontal, Plus, UserPlus, Shield, HeadphonesIcon, Crown } from "lucide-react";
 
 export type OrgRole = "org:admin" | "org:supervisor" | "org:agent";
@@ -28,14 +29,14 @@ interface Member {
   joinedAt: number | null;
 }
 
-function roleLabel(role: OrgRole): string {
+function roleLabel(role: OrgRole, t: (en: string, ar: string) => string): string {
   switch (role) {
     case "org:admin":
-      return "مدير / Admin";
+      return t("Admin", "مدير");
     case "org:supervisor":
-      return "مشرف / Supervisor";
+      return t("Supervisor", "مشرف");
     case "org:agent":
-      return "وكيل / Agent";
+      return t("Agent", "وكيل");
   }
 }
 
@@ -63,9 +64,12 @@ function roleIcon(role: OrgRole) {
 
 export function TeamMemberList() {
   const { organization, membership } = useOrganization();
+  const { user } = useUser();
   const orgRole = ((membership as unknown) as Record<string, unknown>)?.role as string | undefined;
   const isSupervisor = orgRole === "org:supervisor";
   const isAdmin = orgRole === "org:admin" || orgRole === "admin";
+  const currentUserId = user?.id;
+  const t = useT();
   const listMembers = useAction(api.orgMembers.list);
   const changeRole = useAction(api.orgMembers.changeRole);
   const removeMember = useAction(api.orgMembers.removeMember);
@@ -113,11 +117,11 @@ export function TeamMemberList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
-          أعضاء الفريق / Team Members
+          {t("Team Members", "أعضاء الفريق")}
         </h2>
         <Button onClick={() => setInviteOpen(true)} size="sm">
           <UserPlus className="size-4 ms-1" />
-          دعوة / Invite
+          {t("Invite", "دعوة")}
         </Button>
       </div>
 
@@ -150,14 +154,14 @@ export function TeamMemberList() {
 
             <Badge variant={roleBadgeVariant(member.role)} className="gap-1">
               {roleIcon(member.role)}
-              {roleLabel(member.role)}
+              {roleLabel(member.role, t)}
             </Badge>
 
             {member.status === "pending" && (
-              <Badge variant="outline">معلق / Pending</Badge>
+              <Badge variant="outline">{t("Pending", "معلق")}</Badge>
             )}
 
-            {isAdmin && (
+            {isAdmin && member.userId !== currentUserId && (
               <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
                   <MoreHorizontal className="size-4" />
@@ -168,7 +172,7 @@ export function TeamMemberList() {
                       onClick={() => handleChangeRole(member.userId, "org:admin")}
                     >
                       <Crown className="size-4" />
-                      ترقية لمدير / Make Admin
+                      {t("Make Admin", "ترقية لمدير")}
                     </DropdownMenuItem>
                   )}
                   {member.role !== "org:supervisor" && (
@@ -176,7 +180,7 @@ export function TeamMemberList() {
                       onClick={() => handleChangeRole(member.userId, "org:supervisor")}
                     >
                       <Shield className="size-4" />
-                      ترقية لمشرف / Make Supervisor
+                      {t("Make Supervisor", "ترقية لمشرف")}
                     </DropdownMenuItem>
                   )}
                   {member.role !== "org:agent" && (
@@ -184,7 +188,7 @@ export function TeamMemberList() {
                       onClick={() => handleChangeRole(member.userId, "org:agent")}
                     >
                       <HeadphonesIcon className="size-4" />
-                      تخفيض لوكيل / Make Agent
+                      {t("Make Agent", "تخفيض لوكيل")}
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -192,12 +196,12 @@ export function TeamMemberList() {
                     variant="destructive"
                     onClick={() => handleRemove(member.userId, member.status)}
                   >
-                    إزالة / Remove
+                    {t("Remove", "إزالة")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            {isSupervisor && member.role === "org:agent" && (
+            {isSupervisor && member.role === "org:agent" && member.userId !== currentUserId && (
               <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
                   <MoreHorizontal className="size-4" />
@@ -207,7 +211,7 @@ export function TeamMemberList() {
                     variant="destructive"
                     onClick={() => handleRemove(member.userId, member.status)}
                   >
-                    إزالة / Remove
+                    {t("Remove", "إزالة")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -217,7 +221,7 @@ export function TeamMemberList() {
 
         {members.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
-            لا يوجد أعضاء / No members found
+            {t("No members found", "لا يوجد أعضاء")}
           </div>
         )}
       </div>

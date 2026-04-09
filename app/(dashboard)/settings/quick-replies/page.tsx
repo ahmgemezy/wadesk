@@ -6,6 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/lib/i18n/context";
 
 export default function QuickRepliesPage() {
   const quickReplies = useQuery(api.quickReplies.list, {}) as
@@ -14,6 +15,7 @@ export default function QuickRepliesPage() {
   const createReply = useMutation(api.quickReplies.create);
   const removeReply = useMutation(api.quickReplies.remove);
 
+  const t = useT();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("");
@@ -32,32 +34,32 @@ export default function QuickRepliesPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">الردود السريعة / Quick Replies</h1>
+      <h1 className="text-2xl font-bold">{t("Quick Replies", "الردود السريعة")}</h1>
 
       <div className="border rounded-lg p-4 space-y-3">
         <h2 className="font-medium">
-          إضافة رد جديد / Add New Reply
+          {t("Add New Reply", "إضافة رد جديد")}
         </h2>
         <Input
-          placeholder="العنوان / Title"
+          placeholder={t("Title", "العنوان")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           dir="auto"
         />
         <Textarea
-          placeholder="نص الرد / Reply body"
+          placeholder={t("Reply body", "نص الرد")}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           dir="auto"
         />
         <Input
-          placeholder="الفئة (اختياري) / Category (optional)"
+          placeholder={t("Category (optional)", "الفئة (اختياري)")}
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           dir="auto"
         />
         <Button onClick={handleCreate} disabled={!title.trim() || !body.trim()}>
-          إضافة / Add
+          {t("Add", "إضافة")}
         </Button>
       </div>
 
@@ -83,7 +85,7 @@ export default function QuickRepliesPage() {
               size="sm"
               onClick={() => removeReply({ id: qr._id })}
             >
-              حذف / Delete
+              {t("Delete", "حذف")}
             </Button>
           </div>
         ))}

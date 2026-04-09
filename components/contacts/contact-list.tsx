@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { usePaginatedQuery, useMutation } from "convex/react";
+import { useState } from "react";
+import { usePaginatedQuery, useMutation, useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
 import { useOrganization, useAuth } from "@clerk/nextjs";
@@ -21,13 +22,27 @@ import {
   XIcon,
   MapPinIcon,
   PhoneIcon,
-  MessageSquareIcon,
+  ExternalLinkIcon,
 } from "lucide-react";
 import { ContactDetailSheet } from "./contact-detail-sheet";
 import { AddContactDialog } from "./add-contact-dialog";
 import { CsvImportDialog } from "./csv-import-dialog";
 import { BulkTagDialog } from "./bulk-tag-dialog";
 import { cn } from "@/lib/utils";
+
+// ─── Stage config ─────────────────────────────────────────────────────────────
+
+type Stage = "lead" | "prospect" | "customer" | "retained" | "churned";
+
+const STAGE_CONFIG: Record<Stage, { en: string; ar: string; color: string }> = {
+  lead:     { en: "Lead",     ar: "عميل محتمل",  color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
+  prospect: { en: "Prospect", ar: "مرشح",        color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+  customer: { en: "Customer", ar: "عميل",         color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" },
+  retained: { en: "Retained", ar: "عميل دائم",   color: "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300" },
+  churned:  { en: "Churned",  ar: "مفقود",        color: "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300" },
+};
+
+const STAGE_TABS: (Stage | "all")[] = ["all", "lead", "prospect", "customer", "retained", "churned"];
 
 const PAGE_SIZE = 24;
 
@@ -52,6 +67,8 @@ const t = {
     conversations: "محادثة",
     noTags: "بدون وسوم",
     selectAll: "تحديد الكل",
+    viewProfile: "عرض الملف",
+    all: "الكل",
   },
   en: {
     search: "Search by name or phone...",
@@ -73,6 +90,8 @@ const t = {
     conversations: "conv.",
     noTags: "No tags",
     selectAll: "Select All",
+    viewProfile: "View Profile",
+    all: "All",
   },
 } as const;
 
@@ -83,6 +102,7 @@ interface ContactListProps {
 export function ContactList({ locale = "ar" }: ContactListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [includeArchived, setIncludeArchived] = useState(false);
+  const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
   const [selectedContactId, setSelectedContactId] = useState<Id<"contacts"> | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -90,6 +110,7 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
   const [bulkTagOpen, setBulkTagOpen] = useState(false);
   const [selected, setSelected] = useState<Set<Id<"contacts">>>(new Set());
 
+  const router = useRouter();
   const dir = locale === "ar" ? "rtl" : "ltr";
   const labels = t[locale];
 
@@ -103,12 +124,20 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
     orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
 
   const isSearching = searchQuery.trim().length > 0;
+  // When a stage tab is active (and not searching), use listByStage
+  const isStageFiltered = !isSearching && stageFilter !== "all";
 
   const archiveContact = useMutation(api.contacts.archive);
 
+  // Stage-filtered query (non-paginated — listByStage returns up to 500)
+  const stageContacts = useQuery(
+    api.contacts.listByStage,
+    hasOrg && isStageFiltered ? { stage: stageFilter as Stage } : "skip",
+  );
+
   const listResults = usePaginatedQuery(
     api.contacts.listForTenant,
-    hasOrg && !isSearching ? { includeArchived } : "skip",
+    hasOrg && !isSearching && !isStageFiltered ? { includeArchived } : "skip",
     { initialNumItems: PAGE_SIZE },
   );
 
@@ -118,8 +147,17 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
     { initialNumItems: PAGE_SIZE },
   );
 
-  const results = isSearching ? searchResults : listResults;
-  const contacts = (results?.results ?? []) as Doc<"contacts">[];
+  // Unified contact list
+  let contacts: Doc<"contacts">[] = [];
+  if (isSearching) {
+    contacts = (searchResults?.results ?? []) as Doc<"contacts">[];
+  } else if (isStageFiltered) {
+    contacts = (stageContacts ?? []) as Doc<"contacts">[];
+  } else {
+    contacts = (listResults?.results ?? []) as Doc<"contacts">[];
+  }
+
+  const results = isSearching ? searchResults : isStageFiltered ? null : listResults;
 
   function handleRowClick(contactId: Id<"contacts">) {
     setSelectedContactId(contactId);
@@ -220,16 +258,42 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
           </Button>
         </div>
 
+        {/* Stage filter tabs */}
+        <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+          {STAGE_TABS.map((tab) => {
+            const isActive = stageFilter === tab;
+            const cfg = tab !== "all" ? STAGE_CONFIG[tab] : null;
+            return (
+              <button
+                key={tab}
+                onClick={() => { setStageFilter(tab); setSelected(new Set()); }}
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                )}
+              >
+                {tab === "all"
+                  ? labels.all
+                  : locale === "ar" ? cfg!.ar : cfg!.en}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Button
-              variant={includeArchived ? "default" : "outline"}
-              size="sm"
-              onClick={() => setIncludeArchived(!includeArchived)}
-            >
-              <ArchiveIcon className="size-4 me-1" />
-              {includeArchived ? labels.showAll : labels.archived}
-            </Button>
+            {!isStageFiltered && (
+              <Button
+                variant={includeArchived ? "default" : "outline"}
+                size="sm"
+                onClick={() => setIncludeArchived(!includeArchived)}
+              >
+                <ArchiveIcon className="size-4 me-1" />
+                {includeArchived ? labels.showAll : labels.archived}
+              </Button>
+            )}
             {contacts.length > 0 && (
               <Button variant="ghost" size="sm" onClick={toggleSelectAll} className="text-muted-foreground">
                 <Checkbox
@@ -309,8 +373,11 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
                   archivedLabel={labels.archivedBadge}
                   noTagsLabel={labels.noTags}
                   conversationsLabel={labels.conversations}
+                  viewProfileLabel={labels.viewProfile}
+                  locale={locale}
                   onToggle={() => toggleSelect(contact._id)}
                   onClick={handleRowClick}
+                  onViewProfile={(id) => router.push(`/contacts/${id}`)}
                 />
               ))}
             </div>
@@ -367,8 +434,11 @@ interface ContactCardProps {
   archivedLabel: string;
   noTagsLabel: string;
   conversationsLabel: string;
+  viewProfileLabel: string;
+  locale: "ar" | "en";
   onToggle: () => void;
   onClick: (id: Id<"contacts">) => void;
+  onViewProfile: (id: Id<"contacts">) => void;
 }
 
 function ContactCard({
@@ -377,9 +447,14 @@ function ContactCard({
   archivedLabel,
   noTagsLabel,
   conversationsLabel,
+  viewProfileLabel,
+  locale,
   onToggle,
   onClick,
+  onViewProfile,
 }: ContactCardProps) {
+  const stage = (contact.stage ?? "lead") as Stage;
+  const stageCfg = STAGE_CONFIG[stage];
   const initials = (contact.customName ?? contact.displayName ?? contact.phone)
     .split(" ")
     .slice(0, 2)
@@ -427,12 +502,17 @@ function ContactCard({
         />
       </div>
 
-      {/* Archived badge */}
-      {contact.isArchived && (
-        <Badge variant="outline" className="absolute top-3 inset-e-3 text-xs">
-          {archivedLabel}
-        </Badge>
-      )}
+      {/* Stage badge + archived badge */}
+      <div className="absolute top-3 inset-e-3 flex flex-col items-end gap-1">
+        {contact.isArchived && (
+          <Badge variant="outline" className="text-xs">
+            {archivedLabel}
+          </Badge>
+        )}
+        <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", stageCfg.color)}>
+          {locale === "ar" ? stageCfg.ar : stageCfg.en}
+        </span>
+      </div>
 
       {/* Avatar */}
       <div className="flex flex-col items-center gap-3 pt-2">
@@ -497,6 +577,20 @@ function ContactCard({
           </span>
         </div>
       )}
+
+      {/* View Profile link */}
+      <div
+        className="mt-3 flex justify-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={() => onViewProfile(contact._id)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+        >
+          <ExternalLinkIcon className="size-3" />
+          {viewProfileLabel}
+        </button>
+      </div>
 
       {/* Hover glow */}
       <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-linear-to-br from-primary/5 to-transparent" />

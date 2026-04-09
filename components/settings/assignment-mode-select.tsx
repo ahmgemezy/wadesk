@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useT } from "@/lib/i18n/context";
 
 interface AssignmentModeSelectProps {
   channelId: Id<"channels">;
@@ -43,6 +44,7 @@ export function AssignmentModeSelect({
   channelId,
   currentMode,
 }: AssignmentModeSelectProps) {
+  const t = useT();
   const setMode = useMutation(api.channels.setAssignmentMode);
   const plan = useQuery(api.lib.tenants.getCurrentPlan);
 
@@ -53,7 +55,7 @@ export function AssignmentModeSelect({
     <TooltipProvider>
       <div className="space-y-2">
         <h3 className="text-sm font-medium">
-          وضع التعيين / Assignment Mode
+          {t("Assignment Mode", "وضع التعيين")}
         </h3>
         <div className="space-y-2">
           {MODES.map((mode) => {
@@ -83,15 +85,15 @@ export function AssignmentModeSelect({
                 />
                 <div>
                   <div className="font-medium text-sm">
-                    {mode.labelAr} / {mode.labelEn}
+                    {t(mode.labelEn, mode.labelAr)}
                     {isLocked && (
                       <span className="ms-2 text-xs text-muted-foreground">
-                        (خطة النمو مطلوبة / Growth plan required)
+                        ({t("Growth plan required", "خطة النمو مطلوبة")})
                       </span>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {mode.descAr} / {mode.descEn}
+                    {t(mode.descEn, mode.descAr)}
                   </div>
                 </div>
               </div>
@@ -102,7 +104,7 @@ export function AssignmentModeSelect({
                 <Tooltip key={mode.value}>
                   <TooltipTrigger render={inner} />
                   <TooltipContent>
-                    requires Growth plan or above / ترقية إلى خطة النمو أو أعلى
+                    {t("Requires Growth plan or above", "ترقية إلى خطة النمو أو أعلى")}
                   </TooltipContent>
                 </Tooltip>
               );

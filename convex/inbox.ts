@@ -16,6 +16,14 @@ export const listConversations = query({
       v.literal("mine"),
       v.literal("unassigned"),
     ),
+    contactStage: v.optional(v.union(
+      v.literal("all"),
+      v.literal("lead"),
+      v.literal("prospect"),
+      v.literal("customer"),
+      v.literal("retained"),
+      v.literal("churned"),
+    )),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -45,10 +53,10 @@ export const listConversations = query({
     }
 
     // Limit to 50 (pagination in a later task)
-    const page = filtered.slice(0, 50);
+    const page = filtered.slice(0, 200); // fetch more to allow for stage filtering
 
     // Join contacts for display info
-    const result = await Promise.all(
+    const rawResult = await Promise.all(
       page.map(async (conv) => {
         const contact = await ctx.db.get(conv.contactId);
         const name = contact?.customName ?? contact?.displayName ?? "";
@@ -65,6 +73,7 @@ export const listConversations = query({
           contactName: name || undefined,
           contactPhone: contact?.phone,
           contactAvatarInitials: initials,
+          contactStage: (contact?.stage ?? "lead") as string,
           assignedAgentId: conv.assignedAgentId,
           status: conv.status,
           lastMessagePreview: conv.lastMessagePreview,
@@ -74,7 +83,13 @@ export const listConversations = query({
       }),
     );
 
-    return result;
+    // Apply stage filter (after join, before cap)
+    const stageFiltered =
+      args.contactStage && args.contactStage !== "all"
+        ? rawResult.filter((r) => r.contactStage === args.contactStage)
+        : rawResult;
+
+    return stageFiltered.slice(0, 50);
   },
 });
 

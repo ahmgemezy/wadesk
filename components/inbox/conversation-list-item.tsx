@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@clerk/nextjs";
+import { useT, useLocale } from "@/lib/i18n/context";
 
 interface ConversationItem {
   _id: string;
@@ -35,6 +36,8 @@ export function ConversationListItem({
   onAssignClick,
 }: ConversationListItemProps) {
   const { membership } = useOrganization();
+  const t = useT();
+  const locale = useLocale();
 
   const isAdminOrSupervisor =
     membership?.role === "org:admin" ||
@@ -43,10 +46,10 @@ export function ConversationListItem({
 
   const statusLabel =
     conversation.status === "open"
-      ? "مفتوح"
+      ? t("Open", "مفتوح")
       : conversation.status === "pending"
-        ? "معلق"
-        : "مغلق";
+        ? t("Pending", "معلق")
+        : t("Resolved", "مغلق");
 
   const statusColor =
     conversation.status === "open"
@@ -55,7 +58,7 @@ export function ConversationListItem({
         ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
         : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400";
 
-  const displayName = conversation.contactName ?? "عميل / Contact";
+  const displayName = conversation.contactName ?? t("Contact", "عميل");
   const phone = conversation.contactPhone;
   const initials =
     conversation.contactAvatarInitials ??
@@ -65,7 +68,7 @@ export function ConversationListItem({
       .slice(0, 2)
       .join("");
 
-  const timeAgo = formatTimeAgo(conversation.lastMessageAt);
+  const timeAgo = formatTimeAgo(conversation.lastMessageAt, locale);
 
   return (
     <div
@@ -138,7 +141,7 @@ export function ConversationListItem({
             )}
             {!conversation.assignedAgentId && (
               <span className="text-[10px] text-amber-600 dark:text-amber-400">
-                غير معين / Unassigned
+                {t("Unassigned", "غير معين")}
               </span>
             )}
             {isAdminOrSupervisor && onAssignClick && (
@@ -149,7 +152,7 @@ export function ConversationListItem({
                 }}
                 className="text-[10px] text-primary hover:underline ms-auto"
               >
-                تعيين / Assign
+                {t("Assign", "تعيين")}
               </button>
             )}
           </div>
@@ -159,8 +162,18 @@ export function ConversationListItem({
   );
 }
 
-function formatTimeAgo(timestamp: number): string {
+function formatTimeAgo(timestamp: number, locale: "ar" | "en"): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (locale === "en") {
+    if (seconds < 60) return "now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "yesterday";
+    return `${days}d`;
+  }
   if (seconds < 60) return "الآن";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}د`;

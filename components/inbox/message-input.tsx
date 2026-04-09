@@ -7,6 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useT } from "@/lib/i18n/context";
 
 export function MessageInput({
   conversationId,
@@ -19,6 +20,7 @@ export function MessageInput({
   quickReplyContent?: string;
   onQuickReplyConsumed?: () => void;
 }) {
+  const t = useT();
   const [content, setContent] = useState("");
   const [isNote, setIsNote] = useState(false);
 
@@ -77,8 +79,8 @@ export function MessageInput({
       setContent(trimmed); // restore on error
       toast.error(
         isNote
-          ? "فشل إضافة الملاحظة / Failed to add note"
-          : "فشل إرسال الرسالة / Failed to send message",
+          ? t("Failed to add note", "فشل إضافة الملاحظة")
+          : t("Failed to send message", "فشل إرسال الرسالة"),
       );
     }
   };
@@ -98,8 +100,8 @@ export function MessageInput({
         onKeyDown={handleKeyDown}
         placeholder={
           isNote
-            ? "اكتب ملاحظة داخلية... / Add internal note..."
-            : "اكتب ردك... / Type your reply..."
+            ? t("Add internal note...", "اكتب ملاحظة داخلية...")
+            : t("Type your reply...", "اكتب ردك...")
         }
         className={`min-h-20 resize-none ${
           isNote
@@ -115,16 +117,16 @@ export function MessageInput({
             size="sm"
             onClick={() => setIsNote(!isNote)}
           >
-            📝 {isNote ? "ملاحظة / Note" : "ملاحظة / Note"}
-          </Button>
+            📝 {t("Note", "ملاحظة")}
+</Button>
           {onQuickReplyOpen && (
             <Button variant="outline" size="sm" onClick={onQuickReplyOpen}>
-              💬 رد سريع / Quick Reply
+              💬 {t("Quick Reply", "رد سريع")}
             </Button>
           )}
         </div>
         <Button onClick={handleSubmit} disabled={!content.trim()}>
-          {isNote ? "حفظ / Save" : "إرسال / Send"}
+          {isNote ? t("Save", "حفظ") : t("Send", "إرسال")}
         </Button>
       </div>
     </div>

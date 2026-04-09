@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { OrgRole } from "./team-member-list";
+import { useT } from "@/lib/i18n/context";
 
 interface RoleSelectProps {
   value: OrgRole;
@@ -15,13 +16,15 @@ interface RoleSelectProps {
   disabled?: boolean;
 }
 
-const ROLES: { value: OrgRole; label: string }[] = [
-  { value: "org:agent", label: "وكيل / Agent" },
-  { value: "org:supervisor", label: "مشرف / Supervisor" },
-  { value: "org:admin", label: "مدير / Admin" },
-];
-
 export function RoleSelect({ value, onChange, disabled }: RoleSelectProps) {
+  const t = useT();
+
+  const ROLES: { value: OrgRole; label: string }[] = [
+    { value: "org:agent", label: t("Agent", "وكيل") },
+    { value: "org:supervisor", label: t("Supervisor", "مشرف") },
+    { value: "org:admin", label: t("Admin", "مدير") },
+  ];
+
   return (
     <Select value={value} onValueChange={(v) => onChange(v as OrgRole)} disabled={disabled}>
       <SelectTrigger dir="ltr" className="w-full">

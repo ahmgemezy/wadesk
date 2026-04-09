@@ -11,12 +11,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useT, useLocale } from "@/lib/i18n/context";
 
 interface ContactPanelProps {
   contactId: Id<"contacts">;
 }
 
 export function ContactPanel({ contactId }: ContactPanelProps) {
+  const t = useT();
+  const locale = useLocale();
+  const isRtl = locale === "ar";
+
   const data = useQuery(api.contacts.getById, { contactId });
   const customFields = useQuery(api.customFields.list, { contactId });
   const updateContact = useMutation(api.contacts.update);
@@ -33,7 +38,7 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
 
   if (data === undefined || customFields === undefined) {
     return (
-      <div dir="rtl" className="p-4 space-y-4">
+      <div dir={isRtl ? "rtl" : "ltr"} className="p-4 space-y-4">
         <Skeleton className="h-6 w-3/4" />
         <Skeleton className="h-4 w-1/2" />
         <Skeleton className="h-20 w-full" />
@@ -44,8 +49,8 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
 
   if (data === null) {
     return (
-      <div dir="rtl" className="p-4 text-center text-muted-foreground">
-        لم يتم العثور على جهة الاتصال
+      <div dir={isRtl ? "rtl" : "ltr"} className="p-4 text-center text-muted-foreground">
+        {t("Contact not found", "لم يتم العثور على جهة الاتصال")}
       </div>
     );
   }
@@ -93,14 +98,14 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
 
   return (
     <ScrollArea className="h-full">
-      <div dir="rtl" className="p-4 space-y-4">
+      <div dir={isRtl ? "rtl" : "ltr"} className="p-4 space-y-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             {editing ? (
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="الاسم"
+                placeholder={t("Name", "الاسم")}
                 className="text-lg font-medium"
               />
             ) : (
@@ -111,10 +116,10 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
             variant="ghost"
             size="icon-sm"
             onClick={editing ? saveEdits : startEditing}
-            aria-label={editing ? "حفظ" : "تعديل"}
+            aria-label={editing ? t("Save", "حفظ") : t("Edit", "تعديل")}
           >
             {editing ? (
-              <span className="text-xs">حفظ</span>
+              <span className="text-xs">{t("Save", "حفظ")}</span>
             ) : (
               <PencilIcon className="size-4" />
             )}
@@ -124,7 +129,7 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
               variant="ghost"
               size="icon-sm"
               onClick={() => setEditing(false)}
-              aria-label="إلغاء"
+              aria-label={t("Cancel", "إلغاء")}
             >
               <XIcon className="size-4" />
             </Button>
@@ -132,24 +137,24 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
         </div>
 
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">رقم الهاتف</p>
+          <p className="text-xs text-muted-foreground">{t("Phone Number", "رقم الهاتف")}</p>
           <p className="text-sm font-mono" dir="ltr">
             {contact.phone}
           </p>
         </div>
 
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">المحادثات</p>
+          <p className="text-xs text-muted-foreground">{t("Conversations", "المحادثات")}</p>
           <p className="text-sm">{conversationCount}</p>
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">الوسوم</p>
+          <p className="text-xs text-muted-foreground">{t("Tags", "الوسوم")}</p>
           {editing ? (
             <Input
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="وسوم مفصولة بفواصل"
+              placeholder={t("Comma separated tags", "وسوم مفصولة بفواصل")}
             />
           ) : (
             <div className="flex flex-wrap gap-1">
@@ -160,37 +165,37 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
                   </Badge>
                 ))
               ) : (
-                <span className="text-xs text-muted-foreground">بدون وسوم</span>
+                <span className="text-xs text-muted-foreground">{t("No tags", "بدون وسوم")}</span>
               )}
             </div>
           )}
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">ملاحظات</p>
+          <p className="text-xs text-muted-foreground">{t("Notes", "ملاحظات")}</p>
           {editing ? (
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="أضف ملاحظات..."
+              placeholder={t("Add notes...", "أضف ملاحظات...")}
               rows={3}
             />
           ) : (
             <p className="text-sm whitespace-pre-wrap">
-              {contact.notes || "بدون ملاحظات"}
+              {contact.notes || t("No notes", "بدون ملاحظات")}
             </p>
           )}
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">حقول مخصصة</p>
+            <p className="text-xs text-muted-foreground">{t("Custom Fields", "حقول مخصصة")}</p>
             {!editing && (
               <Button
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => setShowNewField(true)}
-                aria-label="إضافة حقل"
+                aria-label={t("Add field", "إضافة حقل")}
               >
                 <PlusIcon className="size-4" />
               </Button>
@@ -210,7 +215,7 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => handleDeleteField(field._id)}
-                aria-label={`حذف ${field.key}`}
+                aria-label={`${t("Delete", "حذف")} ${field.key}`}
               >
                 <Trash2Icon className="size-3" />
               </Button>
@@ -222,20 +227,20 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
               <Input
                 value={newFieldKey}
                 onChange={(e) => setNewFieldKey(e.target.value)}
-                placeholder="المفتاح"
+                placeholder={t("Key", "المفتاح")}
                 className="w-24"
               />
               <Input
                 value={newFieldValue}
                 onChange={(e) => setNewFieldValue(e.target.value)}
-                placeholder="القيمة"
+                placeholder={t("Value", "القيمة")}
                 className="flex-1"
               />
               <Button
                 variant="ghost"
                 size="icon-sm"
                 onClick={handleAddField}
-                aria-label="حفظ الحقل"
+                aria-label={t("Save field", "حفظ الحقل")}
               >
                 <PlusIcon className="size-4" />
               </Button>
@@ -247,7 +252,7 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
                   setNewFieldKey("");
                   setNewFieldValue("");
                 }}
-                aria-label="إلغاء"
+                aria-label={t("Cancel", "إلغاء")}
               >
                 <XIcon className="size-4" />
               </Button>
@@ -256,7 +261,7 @@ export function ContactPanel({ contactId }: ContactPanelProps) {
 
           {!showNewField && customFields.length === 0 && (
             <span className="text-xs text-muted-foreground">
-              لا توجد حقول مخصصة
+              {t("No custom fields", "لا توجد حقول مخصصة")}
             </span>
           )}
         </div>

@@ -10,8 +10,10 @@ import { StatusSelector } from "@/components/inbox/status-selector";
 import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
 import { useState } from "react";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
+import { useT } from "@/lib/i18n/context";
 
 export default function ConversationPage() {
+  const t = useT();
   const params = useParams<{ id: string }>();
   const conversationId = params.id;
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
@@ -24,7 +26,7 @@ export default function ConversationPage() {
   if (!conversation) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        {!conversation && "جاري التحميل... / Loading..."}
+        {!conversation && t("Loading...", "جاري التحميل...")}
       </div>
     );
   }

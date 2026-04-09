@@ -1,0 +1,1172 @@
+# Parallel multi-session execution
+
+**Session ID:** ses_292133b75ffetJ9UgIxWqCVUUa
+**Created:** 4/8/2026, 6:28:46 PM
+**Updated:** 4/8/2026, 6:29:46 PM
+
+---
+
+## User
+
+how to run multi sessions in parallel ?
+
+---
+
+## Assistant (Build · GLM-5.1 · 18.2s)
+
+_Thinking:_
+
+The user is asking about how to run multi sessions in parallel. This seems like a general question that could be related to the codebase they're working in, or it could be about opencode itself. Let me check if there's relevant documentation or code in their project.
+
+Actually, the user might be asking about opencode's capabilities. Let me check the opencode docs first.
+
+Wait, looking at the context more carefully - this is a wadesk project. Let me check what this project is about and if there's documentation about running multi sessions.
+
+Actually, the user might be asking about opencode specifically - how to run multiple sessions in parallel. Let me check the opencode docs.
+
+**Tool: webfetch**
+
+**Input:**
+```json
+{
+  "url": "https://opencode.ai",
+  "format": "markdown"
+}
+```
+
+**Output:**
+```
+OpenCode | The open source AI coding agent
+
+[![OpenCode](data:image/svg+xml,%3csvg%20width='234'%20height='42'%20viewBox='0%200%20234%2042'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M18%2030H6V18H18V30Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M18%2012H6V30H18V12ZM24%2036H0V6H24V36Z'%20fill='%23656363'/%3e%3cpath%20d='M48%2030H36V18H48V30Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M36%2030H48V12H36V30ZM54%2036H36V42H30V6H54V36Z'%20fill='%23656363'/%3e%3cpath%20d='M84%2024V30H66V24H84Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M84%2024H66V30H84V36H60V6H84V24ZM66%2018H78V12H66V18Z'%20fill='%23656363'/%3e%3cpath%20d='M108%2036H96V18H108V36Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M108%2012H96V36H90V6H108V12ZM114%2036H108V12H114V36Z'%20fill='%23656363'/%3e%3cpath%20d='M144%2030H126V18H144V30Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M144%2012H126V30H144V36H120V6H144V12Z'%20fill='%23211E1E'/%3e%3cpath%20d='M168%2030H156V18H168V30Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M168%2012H156V30H168V12ZM174%2036H150V6H174V36Z'%20fill='%23211E1E'/%3e%3cpath%20d='M198%2030H186V18H198V30Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M198%2012H186V30H198V12ZM204%2036H180V6H198V0H204V36Z'%20fill='%23211E1E'/%3e%3cpath%20d='M234%2024V30H216V24H234Z'%20fill='%23CFCECD'/%3e%3cpath%20d='M216%2012V18H228V12H216ZM234%2024H216V30H234V36H210V6H234V24Z'%20fill='%23211E1E'/%3e%3c/svg%3e)![OpenCode](data:image/svg+xml,%3csvg%20width='234'%20height='42'%20viewBox='0%200%20234%2042'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M18%2030H6V18H18V30Z'%20fill='%234B4646'/%3e%3cpath%20d='M18%2012H6V30H18V12ZM24%2036H0V6H24V36Z'%20fill='%23B7B1B1'/%3e%3cpath%20d='M48%2030H36V18H48V30Z'%20fill='%234B4646'/%3e%3cpath%20d='M36%2030H48V12H36V30ZM54%2036H36V42H30V6H54V36Z'%20fill='%23B7B1B1'/%3e%3cpath%20d='M84%2024V30H66V24H84Z'%20fill='%234B4646'/%3e%3cpath%20d='M84%2024H66V30H84V36H60V6H84V24ZM66%2018H78V12H66V18Z'%20fill='%23B7B1B1'/%3e%3cpath%20d='M108%2036H96V18H108V36Z'%20fill='%234B4646'/%3e%3cpath%20d='M108%2012H96V36H90V6H108V12ZM114%2036H108V12H114V36Z'%20fill='%23B7B1B1'/%3e%3cpath%20d='M144%2030H126V18H144V30Z'%20fill='%234B4646'/%3e%3cpath%20d='M144%2012H126V30H144V36H120V6H144V12Z'%20fill='%23F1ECEC'/%3e%3cpath%20d='M168%2030H156V18H168V30Z'%20fill='%234B4646'/%3e%3cpath%20d='M168%2012H156V30H168V12ZM174%2036H150V6H174V36Z'%20fill='%23F1ECEC'/%3e%3cpath%20d='M198%2030H186V18H198V30Z'%20fill='%234B4646'/%3e%3cpath%20d='M198%2012H186V30H198V12ZM204%2036H180V6H198V0H204V36Z'%20fill='%23F1ECEC'/%3e%3cpath%20d='M234%2024V30H216V24H234Z'%20fill='%234B4646'/%3e%3cpath%20d='M216%2012V18H228V12H216ZM234%2024H216V30H234V36H210V6H234V24Z'%20fill='%23F1ECEC'/%3e%3c/svg%3e)](/)
+
+-   [GitHub \[140K\]](https://github.com/anomalyco/opencode)
+-   [Docs](/docs)
+-   [Zen](/zen)
+-   [Go](/go)
+-   [Enterprise](/enterprise)
+-   [Free](/download)
+
+Open menu
+
+New
+
+Desktop app available in beta on macOS, Windows, and Linux.[Download now](/download)[Download the desktop beta now](/download)
+
+# The open source AI coding agent
+
+Free models included or connect any model from any provider, including Claude, GPT, Gemini and more.
+
+curlnpmbunbrewparu
+
+curl -fsSL https://opencode.ai/install | bash
+
+Your browser does not support the video tag.
+
+### What is OpenCode?
+
+OpenCode is an open source agent that helps you write code in your terminal, IDE, or desktop.
+
+-   \[\*\]
+    
+    **LSP enabled** Automatically loads the right LSPs for the LLM
+    
+-   \[\*\]
+    
+    **Multi-session** Start multiple agents in parallel on the same project
+    
+-   \[\*\]
+    
+    **Share links** Share a link to any session for reference or to debug
+    
+-   \[\*\]
+    
+    **GitHub Copilot** Log in with GitHub to use your Copilot account
+    
+-   \[\*\]
+    
+    **ChatGPT Plus/Pro** Log in with OpenAI to use your ChatGPT Plus or Pro account
+    
+-   \[\*\]
+    
+    **Any model** 75+ LLM providers through Models.dev, including local models
+    
+-   \[\*\]
+    
+    **Any editor** Available as a terminal interface, desktop app, and IDE extension
+    
+
+[Read docs](/docs)
+
+### The open source AI coding agent
+
+\[\*\]
+
+With over **140,000** GitHub stars, **850** contributors, and over **11,000** commits, OpenCode is used and trusted by over **6.5M** developers every month.
+
+Fig 1.
+
+**140K** GitHub Stars
+
+Fig 2.
+
+**850** Contributors
+
+Fig 3.
+
+**6.5M** Monthly Devs
+
+### Built for privacy first
+
+\[\*\]
+
+OpenCode does not store any of your code or context data, so that it can operate in privacy sensitive environments. Learn more about [privacy](/docs/enterprise/).
+
+### FAQ
+
+-   What is OpenCode?
+    
+-   How do I use OpenCode?
+    
+-   Do I need extra AI subscriptions to use OpenCode?
+    
+-   Can I use my existing AI subscriptions with OpenCode?
+    
+-   Can I only use OpenCode in the terminal?
+    
+-   How much does OpenCode cost?
+    
+-   What about data and privacy?
+    
+-   Is OpenCode open source?
+    
+
+**Access reliable optimized models for coding agents**
+
+Zen gives you access to a handpicked set of AI models that OpenCode has tested and benchmarked specifically for coding agents. No need to worry about inconsistent performance and quality across providers, use validated models that work.
+
+[Learn about Zen](/zen)
+
+### Be the first to know when we release new products
+
+Join the waitlist for early access.
+
+Subscribe
+
+[GitHub \[140K\]](https://github.com/anomalyco/opencode)
+
+[Docs](/docs)
+
+[Changelog](/changelog)
+
+[Discord](/discord)
+
+[X](https://x.com/opencode)
+
+©2026 [Anomaly](https://anoma.ly)[Brand](/brand)[Privacy](/legal/privacy-policy)[Terms](/legal/terms-of-service)
+
+English
+```
+
+---
+
+## Assistant (Build · GLM-5.1 · 9.4s)
+
+**Tool: webfetch**
+
+**Input:**
+```json
+{
+  "format": "markdown",
+  "url": "https://opencode.ai/docs"
+}
+```
+
+**Output:**
+```
+Intro | AI coding agent built for the terminalIntro | OpenCode     [Skip to content](#_top)
+
+  [![](/docs/_astro/logo-dark.DOStV66V.svg) ![](/docs/_astro/logo-light.B0yzR0O5.svg) OpenCode](/docs/)
+
+[app.header.home](/)[app.header.docs](/docs/)
+
+[](https://github.com/anomalyco/opencode)[](https://opencode.ai/discord)
+
+Search CtrlK
+
+Cancel
+
+-   [Intro](/docs/)
+-   [Config](/docs/config/)
+-   [Providers](/docs/providers/)
+-   [Network](/docs/network/)
+-   [Enterprise](/docs/enterprise/)
+-   [Troubleshooting](/docs/troubleshooting/)
+-   [Windows](/docs/windows-wsl)
+-   Usage
+    
+    -   [Go](/docs/go/)
+    -   [TUI](/docs/tui/)
+    -   [CLI](/docs/cli/)
+    -   [Web](/docs/web/)
+    -   [IDE](/docs/ide/)
+    -   [Zen](/docs/zen/)
+    -   [Share](/docs/share/)
+    -   [GitHub](/docs/github/)
+    -   [GitLab](/docs/gitlab/)
+    
+-   Configure
+    
+    -   [Tools](/docs/tools/)
+    -   [Rules](/docs/rules/)
+    -   [Agents](/docs/agents/)
+    -   [Models](/docs/models/)
+    -   [Themes](/docs/themes/)
+    -   [Keybinds](/docs/keybinds/)
+    -   [Commands](/docs/commands/)
+    -   [Formatters](/docs/formatters/)
+    -   [Permissions](/docs/permissions/)
+    -   [LSP Servers](/docs/lsp/)
+    -   [MCP servers](/docs/mcp-servers/)
+    -   [ACP Support](/docs/acp/)
+    -   [Agent Skills](/docs/skills/)
+    -   [Custom Tools](/docs/custom-tools/)
+    
+-   Develop
+    
+    -   [SDK](/docs/sdk/)
+    -   [Server](/docs/server/)
+    -   [Plugins](/docs/plugins/)
+    -   [Ecosystem](/docs/ecosystem/)
+    
+
+[GitHub](https://github.com/anomalyco/opencode)[Discord](https://opencode.ai/discord)
+
+Select theme DarkLightAuto   Select language EnglishالعربيةBosanskiDanskDeutschEspañolFrançaisItaliano日本語한국어Norsk BokmålPolskiPortuguês (Brasil)РусскийไทยTürkçe简体中文繁體中文
+
+On this page
+
+-   [Overview](#_top)
+-   [Install](#install)
+-   [Configure](#configure)
+-   [Initialize](#initialize)
+-   [Usage](#usage)
+    -   [Ask questions](#ask-questions)
+    -   [Add features](#add-features)
+    -   [Make changes](#make-changes)
+    -   [Undo changes](#undo-changes)
+-   [Share](#share)
+-   [Customize](#customize)
+
+## On this page
+
+-   [Overview](#_top)
+-   [Install](#install)
+-   [Configure](#configure)
+-   [Initialize](#initialize)
+-   [Usage](#usage)
+    -   [Ask questions](#ask-questions)
+    -   [Add features](#add-features)
+    -   [Make changes](#make-changes)
+    -   [Undo changes](#undo-changes)
+-   [Share](#share)
+-   [Customize](#customize)
+
+# Intro
+
+Get started with OpenCode.
+
+[**OpenCode**](/) is an open source AI coding agent. It’s available as a terminal-based interface, desktop app, or IDE extension.
+
+![OpenCode TUI with the opencode theme](/docs/_astro/screenshot.CQjBbRyJ_1dLadc.webp)
+
+Let’s get started.
+
+---
+
+#### [Prerequisites](#prerequisites)
+
+To use OpenCode in your terminal, you’ll need:
+
+1.  A modern terminal emulator like:
+    
+    -   [WezTerm](https://wezterm.org), cross-platform
+    -   [Alacritty](https://alacritty.org), cross-platform
+    -   [Ghostty](https://ghostty.org), Linux and macOS
+    -   [Kitty](https://sw.kovidgoyal.net/kitty/), Linux and macOS
+2.  API keys for the LLM providers you want to use.
+    
+
+---
+
+## [Install](#install)
+
+The easiest way to install OpenCode is through the install script.
+
+Terminal window
+
+```
+curl -fsSL https://opencode.ai/install | bash
+```
+
+You can also install it with the following commands:
+
+-   **Using Node.js**
+    
+    -   [npm](#tab-panel-0)
+    -   [Bun](#tab-panel-1)
+    -   [pnpm](#tab-panel-2)
+    -   [Yarn](#tab-panel-3)
+    
+    Terminal window
+    
+    ```
+    npm install -g opencode-ai
+    ```
+    
+    Terminal window
+    
+    ```
+    bun install -g opencode-ai
+    ```
+    
+    Terminal window
+    
+    ```
+    pnpm install -g opencode-ai
+    ```
+    
+    Terminal window
+    
+    ```
+    yarn global add opencode-ai
+    ```
+    
+-   **Using Homebrew on macOS and Linux**
+    
+    Terminal window
+    
+    ```
+    brew install anomalyco/tap/opencode
+    ```
+    
+    > We recommend using the OpenCode tap for the most up to date releases. The official `brew install opencode` formula is maintained by the Homebrew team and is updated less frequently.
+    
+-   **Installing on Arch Linux**
+    
+    Terminal window
+    
+    ```
+    sudo pacman -S opencode           # Arch Linux (Stable)paru -S opencode-bin              # Arch Linux (Latest from AUR)
+    ```
+    
+
+#### [Windows](#windows)
+
+Recommended: Use WSL
+
+For the best experience on Windows, we recommend using [Windows Subsystem for Linux (WSL)](/docs/windows-wsl). It provides better performance and full compatibility with OpenCode’s features.
+
+-   **Using Chocolatey**
+    
+    Terminal window
+    
+    ```
+    choco install opencode
+    ```
+    
+-   **Using Scoop**
+    
+    Terminal window
+    
+    ```
+    scoop install opencode
+    ```
+    
+-   **Using NPM**
+    
+    Terminal window
+    
+    ```
+    npm install -g opencode-ai
+    ```
+    
+-   **Using Mise**
+    
+    Terminal window
+    
+    ```
+    mise use -g github:anomalyco/opencode
+    ```
+    
+-   **Using Docker**
+    
+    Terminal window
+    
+    ```
+    docker run -it --rm ghcr.io/anomalyco/opencode
+    ```
+    
+
+Support for installing OpenCode on Windows using Bun is currently in progress.
+
+You can also grab the binary from the [Releases](https://github.com/anomalyco/opencode/releases).
+
+---
+
+## [Configure](#configure)
+
+With OpenCode you can use any LLM provider by configuring their API keys.
+
+If you are new to using LLM providers, we recommend using [OpenCode Zen](/docs/zen). It’s a curated list of models that have been tested and verified by the OpenCode team.
+
+1.  Run the `/connect` command in the TUI, select opencode, and head to [opencode.ai/auth](https://opencode.ai/auth).
+    
+    ```
+    /connect
+    ```
+    
+2.  Sign in, add your billing details, and copy your API key.
+    
+3.  Paste your API key.
+    
+    ```
+    ┌ API key││└ enter
+    ```
+    
+
+Alternatively, you can select one of the other providers. [Learn more](/docs/providers#directory).
+
+---
+
+## [Initialize](#initialize)
+
+Now that you’ve configured a provider, you can navigate to a project that you want to work on.
+
+Terminal window
+
+```
+cd /path/to/project
+```
+
+And run OpenCode.
+
+Terminal window
+
+```
+opencode
+```
+
+Next, initialize OpenCode for the project by running the following command.
+
+```
+/init
+```
+
+This will get OpenCode to analyze your project and create an `AGENTS.md` file in the project root.
+
+Tip
+
+You should commit your project’s `AGENTS.md` file to Git.
+
+This helps OpenCode understand the project structure and the coding patterns used.
+
+---
+
+## [Usage](#usage)
+
+You are now ready to use OpenCode to work on your project. Feel free to ask it anything!
+
+If you are new to using an AI coding agent, here are some examples that might help.
+
+---
+
+### [Ask questions](#ask-questions)
+
+You can ask OpenCode to explain the codebase to you.
+
+Tip
+
+Use the `@` key to fuzzy search for files in the project.
+
+```
+How is authentication handled in @packages/functions/src/api/index.ts
+```
+
+This is helpful if there’s a part of the codebase that you didn’t work on.
+
+---
+
+### [Add features](#add-features)
+
+You can ask OpenCode to add new features to your project. Though we first recommend asking it to create a plan.
+
+1.  **Create a plan**
+    
+    OpenCode has a *Plan mode* that disables its ability to make changes and instead suggest *how* it’ll implement the feature.
+    
+    Switch to it using the **Tab** key. You’ll see an indicator for this in the lower right corner.
+    
+    ```
+    <TAB>
+    ```
+    
+    Now let’s describe what we want it to do.
+    
+    ```
+    When a user deletes a note, we'd like to flag it as deleted in the database.Then create a screen that shows all the recently deleted notes.From this screen, the user can undelete a note or permanently delete it.
+    ```
+    
+    You want to give OpenCode enough details to understand what you want. It helps to talk to it like you are talking to a junior developer on your team.
+    
+    Tip
+    
+    Give OpenCode plenty of context and examples to help it understand what you want.
+    
+2.  **Iterate on the plan**
+    
+    Once it gives you a plan, you can give it feedback or add more details.
+    
+    ```
+    We'd like to design this new screen using a design I've used before.[Image #1] Take a look at this image and use it as a reference.
+    ```
+    
+    Tip
+    
+    Drag and drop images into the terminal to add them to the prompt.
+    
+    OpenCode can scan any images you give it and add them to the prompt. You can do this by dragging and dropping an image into the terminal.
+    
+3.  **Build the feature**
+    
+    Once you feel comfortable with the plan, switch back to *Build mode* by hitting the **Tab** key again.
+    
+    ```
+    <TAB>
+    ```
+    
+    And asking it to make the changes.
+    
+    ```
+    Sounds good! Go ahead and make the changes.
+    ```
+    
+
+---
+
+### [Make changes](#make-changes)
+
+For more straightforward changes, you can ask OpenCode to directly build it without having to review the plan first.
+
+```
+We need to add authentication to the /settings route. Take a look at how this ishandled in the /notes route in @packages/functions/src/notes.ts and implementthe same logic in @packages/functions/src/settings.ts
+```
+
+You want to make sure you provide a good amount of detail so OpenCode makes the right changes.
+
+---
+
+### [Undo changes](#undo-changes)
+
+Let’s say you ask OpenCode to make some changes.
+
+```
+Can you refactor the function in @packages/functions/src/api/index.ts?
+```
+
+But you realize that it is not what you wanted. You **can undo** the changes using the `/undo` command.
+
+```
+/undo
+```
+
+OpenCode will now revert the changes you made and show your original message again.
+
+```
+Can you refactor the function in @packages/functions/src/api/index.ts?
+```
+
+From here you can tweak the prompt and ask OpenCode to try again.
+
+Tip
+
+You can run `/undo` multiple times to undo multiple changes.
+
+Or you **can redo** the changes using the `/redo` command.
+
+```
+/redo
+```
+
+---
+
+## [Share](#share)
+
+The conversations that you have with OpenCode can be [shared with your team](/docs/share).
+
+```
+/share
+```
+
+This will create a link to the current conversation and copy it to your clipboard.
+
+Note
+
+Conversations are not shared by default.
+
+Here’s an [example conversation](https://opencode.ai/s/4XP1fce5) with OpenCode.
+
+---
+
+## [Customize](#customize)
+
+And that’s it! You are now a pro at using OpenCode.
+
+To make it your own, we recommend [picking a theme](/docs/themes), [customizing the keybinds](/docs/keybinds), [configuring code formatters](/docs/formatters), [creating custom commands](/docs/commands), or playing around with the [OpenCode config](/docs/config).
+
+[Edit page](https://github.com/anomalyco/opencode/edit/dev/packages/web/src/content/docs/index.mdx)[Found a bug? Open an issue](https://github.com/anomalyco/opencode/issues/new)[Join our Discord community](https://opencode.ai/discord) Select language EnglishالعربيةBosanskiDanskDeutschEspañolFrançaisItaliano日本語한국어Norsk BokmålPolskiPortuguês (Brasil)РусскийไทยTürkçe简体中文繁體中文 
+
+© [Anomaly](https://anoma.ly)
+
+Last updated: Apr 7, 2026
+```
+
+---
+
+## Assistant (Build · GLM-5.1 · 8.8s)
+
+**Tool: webfetch**
+
+**Input:**
+```json
+{
+  "format": "markdown",
+  "url": "https://opencode.ai/docs/tui/"
+}
+```
+
+**Output:**
+```
+TUI | OpenCode     [Skip to content](#_top)
+
+  [![](/docs/_astro/logo-dark.DOStV66V.svg) ![](/docs/_astro/logo-light.B0yzR0O5.svg) OpenCode](/docs/)
+
+[app.header.home](/)[app.header.docs](/docs/)
+
+[](https://github.com/anomalyco/opencode)[](https://opencode.ai/discord)
+
+Search CtrlK
+
+Cancel
+
+-   [Intro](/docs/)
+-   [Config](/docs/config/)
+-   [Providers](/docs/providers/)
+-   [Network](/docs/network/)
+-   [Enterprise](/docs/enterprise/)
+-   [Troubleshooting](/docs/troubleshooting/)
+-   [Windows](/docs/windows-wsl)
+-   Usage
+    
+    -   [Go](/docs/go/)
+    -   [TUI](/docs/tui/)
+    -   [CLI](/docs/cli/)
+    -   [Web](/docs/web/)
+    -   [IDE](/docs/ide/)
+    -   [Zen](/docs/zen/)
+    -   [Share](/docs/share/)
+    -   [GitHub](/docs/github/)
+    -   [GitLab](/docs/gitlab/)
+    
+-   Configure
+    
+    -   [Tools](/docs/tools/)
+    -   [Rules](/docs/rules/)
+    -   [Agents](/docs/agents/)
+    -   [Models](/docs/models/)
+    -   [Themes](/docs/themes/)
+    -   [Keybinds](/docs/keybinds/)
+    -   [Commands](/docs/commands/)
+    -   [Formatters](/docs/formatters/)
+    -   [Permissions](/docs/permissions/)
+    -   [LSP Servers](/docs/lsp/)
+    -   [MCP servers](/docs/mcp-servers/)
+    -   [ACP Support](/docs/acp/)
+    -   [Agent Skills](/docs/skills/)
+    -   [Custom Tools](/docs/custom-tools/)
+    
+-   Develop
+    
+    -   [SDK](/docs/sdk/)
+    -   [Server](/docs/server/)
+    -   [Plugins](/docs/plugins/)
+    -   [Ecosystem](/docs/ecosystem/)
+    
+
+[GitHub](https://github.com/anomalyco/opencode)[Discord](https://opencode.ai/discord)
+
+Select theme DarkLightAuto   Select language EnglishالعربيةBosanskiDanskDeutschEspañolFrançaisItaliano日本語한국어Norsk BokmålPolskiPortuguês (Brasil)РусскийไทยTürkçe简体中文繁體中文
+
+On this page
+
+-   [Overview](#_top)
+-   [File references](#file-references)
+-   [Bash commands](#bash-commands)
+-   [Commands](#commands)
+    -   [connect](#connect)
+    -   [compact](#compact)
+    -   [details](#details)
+    -   [editor](#editor)
+    -   [exit](#exit)
+    -   [export](#export)
+    -   [help](#help)
+    -   [init](#init)
+    -   [models](#models)
+    -   [new](#new)
+    -   [redo](#redo)
+    -   [sessions](#sessions)
+    -   [share](#share)
+    -   [themes](#themes)
+    -   [thinking](#thinking)
+    -   [undo](#undo)
+    -   [unshare](#unshare)
+-   [Editor setup](#editor-setup)
+-   [Configure](#configure)
+    -   [Options](#options)
+-   [Customization](#customization)
+
+## On this page
+
+-   [Overview](#_top)
+-   [File references](#file-references)
+-   [Bash commands](#bash-commands)
+-   [Commands](#commands)
+    -   [connect](#connect)
+    -   [compact](#compact)
+    -   [details](#details)
+    -   [editor](#editor)
+    -   [exit](#exit)
+    -   [export](#export)
+    -   [help](#help)
+    -   [init](#init)
+    -   [models](#models)
+    -   [new](#new)
+    -   [redo](#redo)
+    -   [sessions](#sessions)
+    -   [share](#share)
+    -   [themes](#themes)
+    -   [thinking](#thinking)
+    -   [undo](#undo)
+    -   [unshare](#unshare)
+-   [Editor setup](#editor-setup)
+-   [Configure](#configure)
+    -   [Options](#options)
+-   [Customization](#customization)
+
+# TUI
+
+Using the OpenCode terminal user interface.
+
+OpenCode provides an interactive terminal interface or TUI for working on your projects with an LLM.
+
+Running OpenCode starts the TUI for the current directory.
+
+Terminal window
+
+```
+opencode
+```
+
+Or you can start it for a specific working directory.
+
+Terminal window
+
+```
+opencode /path/to/project
+```
+
+Once you’re in the TUI, you can prompt it with a message.
+
+```
+Give me a quick summary of the codebase.
+```
+
+---
+
+## [File references](#file-references)
+
+You can reference files in your messages using `@`. This does a fuzzy file search in the current working directory.
+
+Tip
+
+You can also use `@` to reference files in your messages.
+
+```
+How is auth handled in @packages/functions/src/api/index.ts?
+```
+
+The content of the file is added to the conversation automatically.
+
+---
+
+## [Bash commands](#bash-commands)
+
+Start a message with `!` to run a shell command.
+
+```
+!ls -la
+```
+
+The output of the command is added to the conversation as a tool result.
+
+---
+
+## [Commands](#commands)
+
+When using the OpenCode TUI, you can type `/` followed by a command name to quickly execute actions. For example:
+
+```
+/help
+```
+
+Most commands also have keybind using `ctrl+x` as the leader key, where `ctrl+x` is the default leader key. [Learn more](/docs/keybinds).
+
+Here are all available slash commands:
+
+---
+
+### [connect](#connect)
+
+Add a provider to OpenCode. Allows you to select from available providers and add their API keys.
+
+```
+/connect
+```
+
+---
+
+### [compact](#compact)
+
+Compact the current session. *Alias*: `/summarize`
+
+```
+/compact
+```
+
+**Keybind:** `ctrl+x c`
+
+---
+
+### [details](#details)
+
+Toggle tool execution details.
+
+```
+/details
+```
+
+**Keybind:** `ctrl+x d`
+
+---
+
+### [editor](#editor)
+
+Open external editor for composing messages. Uses the editor set in your `EDITOR` environment variable. [Learn more](#editor-setup).
+
+```
+/editor
+```
+
+**Keybind:** `ctrl+x e`
+
+---
+
+### [exit](#exit)
+
+Exit OpenCode. *Aliases*: `/quit`, `/q`
+
+```
+/exit
+```
+
+**Keybind:** `ctrl+x q`
+
+---
+
+### [export](#export)
+
+Export current conversation to Markdown and open in your default editor. Uses the editor set in your `EDITOR` environment variable. [Learn more](#editor-setup).
+
+```
+/export
+```
+
+**Keybind:** `ctrl+x x`
+
+---
+
+### [help](#help)
+
+Show the help dialog.
+
+```
+/help
+```
+
+**Keybind:** `ctrl+x h`
+
+---
+
+### [init](#init)
+
+Guided setup for creating or updating `AGENTS.md`. [Learn more](/docs/rules).
+
+```
+/init
+```
+
+**Keybind:** `ctrl+x i`
+
+---
+
+### [models](#models)
+
+List available models.
+
+```
+/models
+```
+
+**Keybind:** `ctrl+x m`
+
+---
+
+### [new](#new)
+
+Start a new session. *Alias*: `/clear`
+
+```
+/new
+```
+
+**Keybind:** `ctrl+x n`
+
+---
+
+### [redo](#redo)
+
+Redo a previously undone message. Only available after using `/undo`.
+
+Tip
+
+Any file changes will also be restored.
+
+Internally, this uses Git to manage the file changes. So your project **needs to be a Git repository**.
+
+```
+/redo
+```
+
+**Keybind:** `ctrl+x r`
+
+---
+
+### [sessions](#sessions)
+
+List and switch between sessions. *Aliases*: `/resume`, `/continue`
+
+```
+/sessions
+```
+
+**Keybind:** `ctrl+x l`
+
+---
+
+### [share](#share)
+
+Share current session. [Learn more](/docs/share).
+
+```
+/share
+```
+
+**Keybind:** `ctrl+x s`
+
+---
+
+### [themes](#themes)
+
+List available themes.
+
+```
+/themes
+```
+
+**Keybind:** `ctrl+x t`
+
+---
+
+### [thinking](#thinking)
+
+Toggle the visibility of thinking/reasoning blocks in the conversation. When enabled, you can see the model’s reasoning process for models that support extended thinking.
+
+Note
+
+This command only controls whether thinking blocks are **displayed** - it does not enable or disable the model’s reasoning capabilities. To toggle actual reasoning capabilities, use `ctrl+t` to cycle through model variants.
+
+```
+/thinking
+```
+
+---
+
+### [undo](#undo)
+
+Undo last message in the conversation. Removes the most recent user message, all subsequent responses, and any file changes.
+
+Tip
+
+Any file changes made will also be reverted.
+
+Internally, this uses Git to manage the file changes. So your project **needs to be a Git repository**.
+
+```
+/undo
+```
+
+**Keybind:** `ctrl+x u`
+
+---
+
+### [unshare](#unshare)
+
+Unshare current session. [Learn more](/docs/share#un-sharing).
+
+```
+/unshare
+```
+
+---
+
+## [Editor setup](#editor-setup)
+
+Both the `/editor` and `/export` commands use the editor specified in your `EDITOR` environment variable.
+
+-   [Linux/macOS](#tab-panel-4)
+-   [Windows (CMD)](#tab-panel-5)
+-   [Windows (PowerShell)](#tab-panel-6)
+
+Terminal window
+
+```
+# Example for nano or vimexport EDITOR=nanoexport EDITOR=vim
+# For GUI editors, VS Code, Cursor, VSCodium, Windsurf, Zed, etc.# include --waitexport EDITOR="code --wait"
+```
+
+To make it permanent, add this to your shell profile; `~/.bashrc`, `~/.zshrc`, etc.
+
+Terminal window
+
+```
+set EDITOR=notepad
+# For GUI editors, VS Code, Cursor, VSCodium, Windsurf, Zed, etc.# include --waitset EDITOR=code --wait
+```
+
+To make it permanent, use **System Properties** > **Environment Variables**.
+
+Terminal window
+
+```
+$env:EDITOR = "notepad"
+# For GUI editors, VS Code, Cursor, VSCodium, Windsurf, Zed, etc.# include --wait$env:EDITOR = "code --wait"
+```
+
+To make it permanent, add this to your PowerShell profile.
+
+Popular editor options include:
+
+-   `code` - Visual Studio Code
+-   `cursor` - Cursor
+-   `windsurf` - Windsurf
+-   `nvim` - Neovim editor
+-   `vim` - Vim editor
+-   `nano` - Nano editor
+-   `notepad` - Windows Notepad
+-   `subl` - Sublime Text
+
+Note
+
+Some editors like VS Code need to be started with the `--wait` flag.
+
+Some editors need command-line arguments to run in blocking mode. The `--wait` flag makes the editor process block until closed.
+
+---
+
+## [Configure](#configure)
+
+You can customize TUI behavior through `tui.json` (or `tui.jsonc`).
+
+tui.json
+
+```
+{  "$schema": "https://opencode.ai/tui.json",  "theme": "opencode",  "keybinds": {    "leader": "ctrl+x"  },  "scroll_speed": 3,  "scroll_acceleration": {    "enabled": true  },  "diff_style": "auto",  "mouse": true}
+```
+
+This is separate from `opencode.json`, which configures server/runtime behavior.
+
+### [Options](#options)
+
+-   `theme` - Sets your UI theme. [Learn more](/docs/themes).
+-   `keybinds` - Customizes keyboard shortcuts. [Learn more](/docs/keybinds).
+-   `scroll_acceleration.enabled` - Enable macOS-style scroll acceleration for smooth, natural scrolling. When enabled, scroll speed increases with rapid scrolling gestures and stays precise for slower movements. **This setting takes precedence over `scroll_speed` and overrides it when enabled.**
+-   `scroll_speed` - Controls how fast the TUI scrolls when using scroll commands (minimum: `0.001`, supports decimal values). Defaults to `3`. **Note: This is ignored if `scroll_acceleration.enabled` is set to `true`.**
+-   `diff_style` - Controls diff rendering. `"auto"` adapts to terminal width, `"stacked"` always shows a single-column layout.
+-   `mouse` - Enable or disable mouse capture in the TUI (default: `true`). When disabled, the terminal’s native mouse selection/scrolling behavior is preserved.
+
+Use `OPENCODE_TUI_CONFIG` to load a custom TUI config path.
+
+---
+
+## [Customization](#customization)
+
+You can customize various aspects of the TUI view using the command palette (`ctrl+x h` or `/help`). These settings persist across restarts.
+
+---
+
+#### [Username display](#username-display)
+
+Toggle whether your username appears in chat messages. Access this through:
+
+-   Command palette: Search for “username” or “hide username”
+-   The setting persists automatically and will be remembered across TUI sessions
+
+[Edit page](https://github.com/anomalyco/opencode/edit/dev/packages/web/src/content/docs/tui.mdx)[Found a bug? Open an issue](https://github.com/anomalyco/opencode/issues/new)[Join our Discord community](https://opencode.ai/discord) Select language EnglishالعربيةBosanskiDanskDeutschEspañolFrançaisItaliano日本語한국어Norsk BokmålPolskiPortuguês (Brasil)РусскийไทยTürkçe简体中文繁體中文 
+
+© [Anomaly](https://anoma.ly)
+
+Last updated: Apr 7, 2026
+```
+
+---
+
+## Assistant (Build · GLM-5.1 · 23.3s)
+
+To run multiple sessions in parallel in OpenCode:
+
+1. **In the TUI**: Use `/new` (or `ctrl+x n`) to start a new session, and `/sessions` (or `ctrl+x l`) to switch between sessions. Note that sessions are sequential within a single TUI instance — you switch between them, they don't run simultaneously.
+
+2. **True parallel sessions**: Open multiple terminal windows/tabs and run `opencode` in each one. Each instance has its own session and can work independently on the same project.
+
+3. **Via CLI**: Use `opencode run` in separate terminals to run non-interactive sessions in parallel:
+   ```
+   # Terminal 1
+   opencode run "implement feature A"
+   # Terminal 2
+   opencode run "implement feature B"
+   ```
+
+The key insight from the docs is that OpenCode supports **multi-session** — you can start multiple agents in parallel on the same project by running separate OpenCode instances in different terminal windows.
+
+---
+

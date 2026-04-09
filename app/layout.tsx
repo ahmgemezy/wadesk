@@ -4,6 +4,7 @@ import { Cairo } from "next/font/google";
 import { cookies } from "next/headers";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LocaleProvider } from "@/lib/i18n/context";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,9 @@ export default async function RootLayout({
       <html lang={locale} dir={dir} suppressHydrationWarning>
         <body className={`${cairo.variable} font-cairo antialiased`}>
           <ConvexClientProvider>
-            <ThemeProvider>{children}</ThemeProvider>
+            <LocaleProvider locale={locale}>
+              <ThemeProvider>{children}</ThemeProvider>
+            </LocaleProvider>
           </ConvexClientProvider>
         </body>
       </html>
