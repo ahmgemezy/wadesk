@@ -62,10 +62,23 @@ export default defineSchema({
     spent: v.optional(v.number()),
     category: v.optional(v.string()),
     createdAt: v.number(),
+    stage: v.optional(v.union(
+      v.literal("lead"),
+      v.literal("prospect"),
+      v.literal("customer"),
+      v.literal("retained"),
+      v.literal("churned"),
+    )),
+    stageUpdatedAt: v.optional(v.number()),
+    stageUpdatedBy: v.optional(v.string()),
+    totalConversations: v.optional(v.number()),
+    wabaId: v.optional(v.string()),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phone"])
     .index("by_tenant_archived", ["tenantId", "isArchived"])
+    .index("by_tenant_stage", ["tenantId", "stage"])
+    .index("by_tenant_assigned", ["tenantId", "assignedAgentId"])
     .searchIndex("search_by_name", {
       searchField: "displayName",
       filterFields: ["tenantId"],
@@ -161,6 +174,72 @@ export default defineSchema({
   })
     .index("by_contact", ["contactId"])
     .index("by_tenant", ["tenantId"]),
+
+  followUps: defineTable({
+    tenantId: v.string(),
+    contactId: v.id("contacts"),
+    channelId: v.id("channels"),
+    phoneNumber: v.string(),
+    scheduledAt: v.number(),
+    note: v.optional(v.string()),
+    whatsappMessage: v.string(),
+    expectedRevenue: v.optional(v.number()),
+    currency: v.optional(v.union(
+      v.literal("EGP"),
+      v.literal("SAR"),
+      v.literal("AED"),
+      v.literal("USD"),
+    )),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("sent"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+    ),
+    attemptCount: v.number(),
+    createdBy: v.string(),
+    assignedTo: v.optional(v.string()),
+    notifiedAt: v.optional(v.number()),
+    sentAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_tenant_status", ["tenantId", "status"])
+    .index("by_contact", ["contactId"])
+    .index("by_scheduled", ["scheduledAt"]),
+
+  contactEvents: defineTable({
+    tenantId: v.string(),
+    contactId: v.id("contacts"),
+    type: v.union(
+      v.literal("stage_changed"),
+      v.literal("assigned"),
+      v.literal("note_updated"),
+      v.literal("tags_changed"),
+      v.literal("followup_scheduled"),
+      v.literal("followup_sent"),
+      v.literal("followup_failed"),
+      v.literal("conversation_started"),
+      v.literal("conversation_resolved"),
+      v.literal("lost"),
+    ),
+    actorId: v.optional(v.string()),
+    metadata: v.any(),
+    createdAt: v.number(),
+  })
+    .index("by_contact", ["contactId", "createdAt"])
+    .index("by_tenant", ["tenantId"]),
+
+  notifications: defineTable({
+    tenantId: v.string(),
+    userId: v.string(),
+    type: v.literal("followup_due"),
+    referenceId: v.string(),
+    contactName: v.optional(v.string()),
+    message: v.string(),
+    read: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["tenantId", "userId", "read"]),
 
   onboardingState: defineTable({
     tenantId: v.string(),
