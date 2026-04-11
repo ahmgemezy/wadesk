@@ -127,8 +127,8 @@ Retrofitting multi-number support after launch requires painful schema migration
 | Plan | Max Numbers |
 |---|---|
 | Free | 1 |
-| Starter | 1 |
-| Growth | 3 |
+| Starter | 2 |
+| Growth | 5 |
 | Business | Unlimited |
 
 ---
@@ -183,8 +183,8 @@ Every extra step = friction = churn. Keep it ruthlessly simple.
 | | |
 |---|---|
 | WhatsApp numbers | 1 |
-| Agents | 2 |
-| Conversations/month | 500 |
+| Agents | 3 |
+| Conversations/month | 300 |
 | Features | Basic inbox only |
 
 **Goal:** Zero friction entry. Let them feel the product before asking for money.
@@ -201,10 +201,10 @@ Every extra step = friction = churn. Keep it ruthlessly simple.
 
 | | |
 |---|---|
-| WhatsApp numbers | 1 |
+| WhatsApp numbers | 2 |
 | Agents | 5 |
 | Conversations | Unlimited |
-| Features | Quick replies, Internal notes, Basic analytics |
+| Features | Quick replies, Internal notes, Basic analytics (own stats only) |
 
 **Target:** Small businesses 2–5 people.
 
@@ -220,7 +220,7 @@ Every extra step = friction = churn. Keep it ruthlessly simple.
 
 | | |
 |---|---|
-| WhatsApp numbers | 3 |
+| WhatsApp numbers | 5 |
 | Agents | 15 |
 | Conversations | Unlimited |
 | Features | Everything in Starter + Business profile editing + Advanced analytics + Priority support |
