@@ -217,6 +217,36 @@ export const assignConversation = mutation({
 
 // ─── Mark as Read ─────────────────────────────────────────────────────────────
 
+// Returns recent internal notes for conversations belonging to a contact
+export const getInternalNotesByContact = query({
+  args: { contactId: v.id("contacts") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const contact = await ctx.db.get(args.contactId);
+    if (!contact || contact.tenantId !== tenantId) return [];
+
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_contact", (q) => q.eq("contactId", args.contactId))
+      .collect();
+
+    const notesList: { _id: string; content: string; timestamp: number; authorId?: string }[] = [];
+    for (const conv of conversations) {
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+        .filter((q) => q.eq(q.field("isInternalNote"), true))
+        .order("desc")
+        .take(5);
+      for (const m of messages) {
+        notesList.push({ _id: m._id, content: m.content, timestamp: m.timestamp, authorId: m.authorId });
+      }
+    }
+
+    return notesList.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+  },
+});
+
 export const markAsRead = mutation({
   args: { conversationId: v.id("conversations") },
   handler: async (ctx, args) => {
@@ -224,6 +254,16 @@ export const markAsRead = mutation({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) return;
     await ctx.db.patch(args.conversationId, { unreadCount: 0 });
+  },
+});
+
+export const markAsUnread = mutation({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId) return;
+    await ctx.db.patch(args.conversationId, { unreadCount: 1 });
   },
 });
 

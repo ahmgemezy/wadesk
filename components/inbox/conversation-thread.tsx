@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./message-bubble";
 import { useLocale } from "@/lib/i18n/context";
@@ -16,6 +15,7 @@ type MessageItem = {
   contentType?: string;
   isInternalNote: boolean;
   authorId: string | undefined;
+  mediaUrl?: string;
   status: "sending" | "sent" | "delivered" | "read" | "failed";
   timestamp: number;
 };
@@ -78,6 +78,7 @@ export function ConversationThread({
           contentType: m.contentType as string,
           isInternalNote: m.isInternalNote,
           authorId: m.authorId,
+          mediaUrl: m.mediaUrl,
           status: m.status as "sending" | "sent" | "delivered" | "read" | "failed",
           timestamp: m.timestamp,
         }));
@@ -90,7 +91,7 @@ export function ConversationThread({
 
   if (messages === undefined) {
     return (
-      <div className="flex-1 p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
@@ -116,7 +117,7 @@ export function ConversationThread({
   const groups = groupByDate(messages, locale);
 
   return (
-    <ScrollArea className="flex-1">
+    <div className="flex-1 min-h-0 overflow-y-auto">
       <div className="p-4 space-y-4">
         {groups.map((group) => (
           <div key={group.date}>
@@ -150,6 +151,7 @@ export function ConversationThread({
                       | "template",
                     isInternalNote: msg.isInternalNote,
                     authorId: msg.authorId,
+                    mediaUrl: msg.mediaUrl,
                     status: msg.status === "sending" ? "sent" : msg.status,
                     timestamp: msg.timestamp,
                   }}
@@ -160,6 +162,6 @@ export function ConversationThread({
         ))}
         <div ref={bottomRef} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

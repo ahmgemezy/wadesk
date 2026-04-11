@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getCallerIdentity } from "./lib/auth";
 
 function isAdminOrSupervisor(orgRole: string): boolean {
@@ -142,6 +143,15 @@ export const setStatus = mutation({
     }
 
     await ctx.db.patch(args.conversationId, { status: args.status });
+
+    if (args.status === "resolved" && conversation.assignedAgentId) {
+      await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, {
+        conversationId: args.conversationId,
+        resolvedAt: Date.now(),
+        assignedAgentId: conversation.assignedAgentId,
+        agentName: undefined,
+      });
+    }
   },
 });
 

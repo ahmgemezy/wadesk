@@ -88,8 +88,8 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { reset(); onClose(); } }}>
-      <DialogContent dir={isRtl ? "rtl" : "ltr"} className="max-w-md">
-        <DialogHeader>
+      <DialogContent dir={isRtl ? "rtl" : "ltr"} className="sm:max-w-136">
+        <DialogHeader className="pe-8">
           <DialogTitle>{isRtl ? "جدولة متابعة" : "Schedule Follow-up"}</DialogTitle>
         </DialogHeader>
 

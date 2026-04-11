@@ -16,6 +16,15 @@ const CHANNEL_LIMITS: Record<string, number> = {
 
 export type Plan = "free" | "starter" | "growth" | "business";
 
+export function assertSupervisorRoleAllowed(plan: Plan): void {
+  if (plan === "free") {
+    throw new ConvexError({
+      message: "PLAN_LIMIT_REACHED",
+      data: { reason: "Supervisor role is not available on the Free plan. Upgrade to Starter or above." },
+    });
+  }
+}
+
 export function getChannelLimit(plan: Plan): number {
   return CHANNEL_LIMITS[plan] ?? CHANNEL_LIMITS.free;
 }

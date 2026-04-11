@@ -79,8 +79,8 @@ export function BulkTagDialog({ open, onOpenChange, contactIds, locale = "ar", o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="sm:max-w-136">
+        <DialogHeader className="pe-8">
           <DialogTitle>{l.title}</DialogTitle>
           <DialogDescription>{l.desc(contactIds.length)}</DialogDescription>
         </DialogHeader>

@@ -64,8 +64,8 @@ export function AddDepartmentDialog({ open, onClose }: AddDepartmentDialogProps)
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-136">
+        <DialogHeader className="pe-8">
           <DialogTitle>{t("Add Department", "إضافة إدارة")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">

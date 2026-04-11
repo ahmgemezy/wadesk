@@ -69,7 +69,7 @@ export default function InboxPage() {
         }}
       />
 
-      <div className="h-[calc(100svh)] flex overflow-hidden">
+      <div className="flex h-full overflow-hidden">
         {/* ── Conversation List column ────────────────────────────────── */}
         <div
           className={cn(
@@ -165,6 +165,10 @@ export default function InboxPage() {
                       contactId={
                         selectedConversation.contactId as Id<"contacts">
                       }
+                      channelId={
+                        selectedConversation.channelId as Id<"channels">
+                      }
+                      conversationId={selectedId as Id<"conversations">}
                     />
                   </div>
                 )}

@@ -185,7 +185,7 @@ Every extra step = friction = churn. Keep it ruthlessly simple.
 | WhatsApp numbers | 1 |
 | Agents | 3 |
 | Conversations/month | 300 |
-| Features | Basic inbox only |
+| Features | Basic inbox only (Admin + Agent roles only — no Supervisor role) |
 
 **Goal:** Zero friction entry. Let them feel the product before asking for money.
 

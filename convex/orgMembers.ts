@@ -5,7 +5,7 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { clerkClient } from "@clerk/nextjs/server";
 import { getCallerRole, assertAdmin, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
-import { assertAgentLimitNotReached } from "./lib/planLimits";
+import { assertAgentLimitNotReached, assertSupervisorRoleAllowed } from "./lib/planLimits";
 import { assertNotLastAdmin } from "./lib/lastAdmin";
 import { internal } from "./_generated/api";
 
@@ -53,6 +53,7 @@ export const inviteByEmail = action({
     });
     const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
     assertAgentLimitNotReached(memberships, plan);
+    if (args.role === "org:supervisor") assertSupervisorRoleAllowed(plan);
 
     try {
       await client.organizations.createOrganizationInvitation({
@@ -145,6 +146,11 @@ export const changeRole = action({
       throw new ConvexError("CANNOT_CHANGE_OWN_ROLE");
     }
 
+    if (args.newRole === "org:supervisor") {
+      const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
+      assertSupervisorRoleAllowed(plan);
+    }
+
     const client = await clerkClient();
 
     if (args.newRole !== "org:admin") {
@@ -199,6 +205,7 @@ export const inviteByWhatsApp = action({
     });
     const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
     assertAgentLimitNotReached(memberships, plan);
+    if (args.role === "org:supervisor") assertSupervisorRoleAllowed(plan);
 
     const existingLinks = await ctx.runQuery(internal.inviteLinks.getActiveForTenant, { tenantId });
     let inviteUrl: string;

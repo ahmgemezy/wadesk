@@ -1,10 +1,14 @@
 "use client";
 
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@clerk/nextjs";
 import { useT, useLocale } from "@/lib/i18n/context";
+import { MailOpen, MailCheck } from "lucide-react";
 
 interface ConversationItem {
   _id: string;
@@ -38,6 +42,18 @@ export function ConversationListItem({
   const { membership } = useOrganization();
   const t = useT();
   const locale = useLocale();
+  const markAsRead = useMutation(api.inbox.markAsRead);
+  const markAsUnread = useMutation(api.inbox.markAsUnread);
+
+  function handleToggleRead(e: React.MouseEvent) {
+    e.stopPropagation();
+    const id = conversation._id as Id<"conversations">;
+    if (conversation.unreadCount > 0) {
+      markAsRead({ conversationId: id }).catch(() => {});
+    } else {
+      markAsUnread({ conversationId: id }).catch(() => {});
+    }
+  }
 
   const isAdminOrSupervisor =
     membership?.role === "org:admin" ||
@@ -73,7 +89,7 @@ export function ConversationListItem({
   return (
     <div
       className={cn(
-        "w-full text-start p-3 border-b hover:bg-accent/50 transition-colors cursor-pointer",
+        "group w-full text-start p-3 border-b hover:bg-accent/50 transition-colors cursor-pointer",
         isActive && "bg-accent border-s-2 border-s-primary",
       )}
       onClick={onClick}
@@ -98,6 +114,19 @@ export function ConversationListItem({
             </span>
             <div className="flex items-center gap-1 shrink-0">
               <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
+              <button
+                onClick={handleToggleRead}
+                title={
+                  conversation.unreadCount > 0
+                    ? t("Mark as read", "تعيين كمقروء")
+                    : t("Mark as unread", "تعيين كغير مقروء")
+                }
+                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+              >
+                {conversation.unreadCount > 0
+                  ? <MailOpen className="size-3" />
+                  : <MailCheck className="size-3" />}
+              </button>
               {conversation.unreadCount > 0 && (
                 <Badge className="text-[10px] rounded-full px-1.5 h-4 min-w-4 flex items-center justify-center">
                   {conversation.unreadCount}

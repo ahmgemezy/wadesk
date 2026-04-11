@@ -143,8 +143,8 @@ export function AddContactDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="sm:max-w-136">
+        <DialogHeader className="pe-8">
           <DialogTitle>{l.title}</DialogTitle>
           <DialogDescription>{l.desc}</DialogDescription>
         </DialogHeader>
