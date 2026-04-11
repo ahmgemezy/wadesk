@@ -1,7 +1,7 @@
 import { ConvexError } from "convex/values";
 
 const AGENT_LIMITS: Record<string, number> = {
-  free: 2,
+  free: 3,
   starter: 5,
   growth: 15,
   business: Infinity,
@@ -9,8 +9,8 @@ const AGENT_LIMITS: Record<string, number> = {
 
 const CHANNEL_LIMITS: Record<string, number> = {
   free: 1,
-  starter: 1,
-  growth: 3,
+  starter: 2,
+  growth: 5,
   business: Infinity,
 };
 
