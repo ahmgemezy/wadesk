@@ -1,10 +1,22 @@
 # WaDesk — Build Progress
 
+> This file is the single source of truth for project progress. It is read by Claude Chat (project manager) to stay updated on what has been built, what decisions were made, and what is coming next.
 > Updated after each major task. Never modify CLAUDE.md unless explicitly asked.
 
 ---
 
-## Completed
+## Project Summary
+
+**WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf.  
+**Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Lemon Squeezy (payments)  
+**Current branch:** `008-dashboard-shell` (all recent work is here, not yet merged into `002-agent-roles`)  
+**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server running
+
+---
+
+## Completed Features
+
+---
 
 ### CLAUDE.md — Roles & Permissions Section
 - **Status:** Done
@@ -15,14 +27,8 @@
 
 ### 002 — Agent Roles
 - **Status:** Done
-- **What was built:** Agent roles and permissions system (Admin / Supervisor / Agent)
 - **Branch:** `002-agent-roles`
-
----
-
-### 003 — (Completed)
-- **Status:** Done
-- **Branch:** merged
+- **What was built:** Agent roles and permissions system (Admin / Supervisor / Agent) — Clerk org roles wired to Convex auth, server-side enforcement, client-side gating
 
 ---
 
@@ -37,129 +43,92 @@
 
 ### 005 — Contact Management
 - **Status:** Done
-- **What was built:** Contacts CRM-lite (auto-capture, manual input, CSV import, tags, custom fields)
+- **What was built:** Contacts CRM-lite (auto-capture, manual input, CSV import, tags, custom fields, stage pipeline)
 - **Key additions:**
   - `customFields` table in Convex
   - `libphonenumber-js` for phone normalization
   - `papaparse` for client-side CSV parsing
-- **Auth fixes included**
 
 ---
 
 ### 006 — Basic Analytics
 - **Status:** Done
-- **What was built:** Analytics dashboard (conversation volume, response time, agent performance)
+- **What was built:** Analytics dashboard (conversation volume, response time, agent performance, CSAT placeholder)
 - **Key additions:**
   - `conversationMetrics` denormalized read-model table in Convex
   - Recharts via shadcn/ui chart component
   - `ctx.scheduler.runAfter` pattern for async internalMutation triggers
+- **Routes:** `/analytics` (team-wide, Admin/Supervisor) · `/my-stats` (own stats, all roles)
 
 ---
 
 ### 007 — Marketing Site
 - **Status:** Done
-- **What was built:** Public marketing site (landing page, pricing, features)
 - **Branch:** `007-marketing-site` (merged into `002-agent-roles`)
-- **Key additions:**
-  - Next.js 15 App Router public routes
-  - shadcn/ui + Tailwind CSS v4
-  - Clerk auth check (redirect if signed in)
+- **What was built:** Public marketing site (landing page, pricing, features, Arabic-first copy)
+- **Key additions:** Next.js 15 App Router public routes · Clerk auth check (redirect if signed in)
 
 ---
 
 ### 008 — Dashboard Shell
-- **Status:** In Progress
+- **Status:** Done (core shell complete; features added incrementally on this branch)
 - **Branch:** `008-dashboard-shell`
-- **What was built:** Main app shell — sidebar navigation, layout, route structure
-- **Key files:**
-  - `app/(dashboard)/` — protected dashboard routes
-  - `components/` — Sidebar, nav components
+- **What was built:** Main app shell — sidebar navigation, layout, protected route structure
 - **Key additions:**
-  - shadcn/ui Sidebar component
+  - shadcn/ui Sidebar component with collapsible rail mode
   - Lucide React icons
-  - Clerk `auth()` server-side
+  - Clerk `auth()` server-side route protection
   - TypeScript strict mode (no `any`)
-- **What's next:**
-  - [ ] Inbox view (conversation list + chat panel)
-  - [ ] Real-time conversation updates via Convex subscriptions
-  - [ ] WhatsApp Embedded Signup flow
-  - [ ] Webhook receiver for incoming Meta messages
 
 ---
 
-### Permissions Audit & Fix
+### 009 — Inbox UI (Mock Data Phase)
 - **Status:** Done
-- **What was done:** Full audit of role-based permissions across the entire codebase and alignment with CLAUDE.md `## 25. Roles & Permissions`
-- **Bugs fixed:**
-  - `convex/messages.ts` — Supervisor was excluded from viewing messages, sending replies, and adding internal notes (only checked admin). Added `org:supervisor` to all 3 inline role checks.
-  - `convex/quickReplies.ts` — Supervisor was excluded from creating, editing, and deleting quick replies (only checked admin). Replaced inline checks with `assertAdminOrSupervisor`.
-  - `components/inbox/conversation-list-item.tsx` — Supervisor was excluded from the "Assign" button on conversation list items (only checked admin). Added `org:supervisor`.
-  - `convex/orgMembers.ts` — Supervisor could not invite or remove members. Updated `inviteByEmail`, `inviteByWhatsApp`, and `removeMember` to allow Supervisor access, with validation that the target role is `org:agent` only. Added `assertSupervisorCanManageTarget` helper.
-  - `lib/shell/nav-config.ts` — Contacts nav item had `minRole: "supervisor"` but CLAUDE.md says all roles can view/edit contacts. Changed to `minRole: "agent"`.
-- **Client-side updates:**
-  - `components/settings/invite-modal.tsx` — Supervisors now see only Agent role in invite dropdown, Link tab hidden (admin-only feature), new error handling for `SUPERVISOR_CAN_ONLY_INVITE_AGENTS`.
-  - `components/settings/team-member-list.tsx` — Supervisors only see remove action for agents; admins see full role-change + remove menu.
-  - `components/settings/role-select.tsx` — Added `disabled` prop for supervisor lock.
-
----
-
-### 009 — Inbox UI (Mock Data)
-- **Status:** Done
-- **Branch:** `008-dashboard-shell`
-- **What was built:** Full 3-column inbox UI wired to mock data, ready for real Convex data in task 011
+- **What was built:** Full 3-column inbox UI wired to mock data
 - **New files:**
-  - `lib/mock/inbox-data.ts` — 10 mock conversations, 40+ messages, 3 agents, Egyptian/Gulf phone numbers
-  - `convex/inbox.ts` — typed stub queries (`listConversations`, `getMessages`, `sendMessage`, `updateStatus`, `assignConversation`)
-  - `components/ui/avatar.tsx` — shadcn Avatar component (installed)
-- **Modified files:**
-  - `components/inbox/conversation-list-item.tsx` — avatar initials, contact name + phone, status color chips, assigned agent name, RTL-aware layout
-  - `components/inbox/conversation-list.tsx` — search bar (by name/phone/preview), All/Mine/Unassigned filter tabs, wired to `api.inbox.listConversations`
-  - `components/inbox/conversation-thread.tsx` — date dividers (Today/Yesterday/date), dual-source (real DB or mock fallback)
-  - `app/(dashboard)/inbox/page.tsx` — mobile-responsive layout (single column toggle), contact info in top bar, removed legacy channel/status filter bar
-- **Decisions:**
-  - Mock data imported into Convex stubs so UI uses `useQuery`/`useMutation` wiring from day one — task 011 just swaps the handlers
-  - `ConversationThread` prefers real DB messages over mock (non-zero real messages win)
-  - Contact side panel hidden on `< lg` to give chat panel more room
-
----
-
-### 012 — Real-time Message Delivery
-- **Status:** Done
-- **Branch:** `008-dashboard-shell`
-- **What was built:** Replaced all mock data stubs with real Convex queries/mutations; inbox is now fully live
-- **Schema changes:**
-  - `messages.status`: added `"sending"` literal for optimistic UI state
-  - `messages.by_conversation` index extended to `["conversationId", "createdAt"]` for ordered retrieval
-- **New files:**
-  - `convex/seed.ts` — seed mutation integrated into `convex/inbox.ts` as `inbox.seed`
-  - `components/dev/seed-button.tsx` — renders only in `NODE_ENV=development`
-- **Modified files:**
-  - `convex/inbox.ts` — all stubs replaced with real DB implementations: `listConversations`, `getMessages`, `sendMessage`, `updateStatus`, `assignConversation`, `markAsRead`, `seed`
-  - `components/inbox/conversation-thread.tsx` — removed mock fallback; uses only `api.inbox.getMessages`; Skeleton loading state
-  - `components/inbox/message-input.tsx` — switched to `api.inbox.sendMessage` with `withOptimisticUpdate` (message appears instantly)
-  - `app/(dashboard)/inbox/page.tsx` — calls `markAsRead` on conversation open; `SeedButton` in dev top bar
+  - `lib/mock/inbox-data.ts` — 10 mock conversations, 40+ messages
+  - `components/inbox/conversation-list-item.tsx`
+  - `components/inbox/conversation-thread.tsx`
+  - `components/inbox/message-input.tsx`
+  - `components/inbox/message-bubble.tsx`
 - **Key decisions:**
-  - `"sending"` status written on insert; task 013 (WA API send) will patch it to `"sent"` after delivery
-  - Agents in "all" filter see only their own conversations + unassigned queue (CLAUDE.md §25)
-  - Seed data creates contacts + channel + conversations + messages in one mutation — idempotent (skips existing)
+  - All UI uses `useQuery`/`useMutation` from day one — task 012 just swapped handlers
+  - Mobile-responsive: single column toggle (list ↔ chat)
+  - Contact side panel hidden on `< lg` breakpoint
 
 ---
+
+### 010 — WhatsApp Embedded Signup
+- **Status:** Done
+- **What was built:** Full Meta WhatsApp Embedded Signup — Admin connects WABA; tokens stored AES-256-GCM encrypted; webhook auto-subscribed; channels page with status badges, disconnect, reconnect
+- **New files:**
+  - `convex/lib/encryption.ts` — AES-256-GCM encrypt/decrypt
+  - `components/onboarding/embedded-signup-button.tsx` — FB JS SDK popup
+  - `components/onboarding/channel-status-badge.tsx`
+- **Key decisions:**
+  - `accessToken` encrypted at rest; never returned to client
+  - Reconnection reuses existing `channelId` — preserves conversation history
+  - Webhook subscription failure → 5-retry scheduled job (60s intervals)
+- **Env vars required:**
+  ```
+  NEXT_PUBLIC_META_APP_ID=
+  NEXT_PUBLIC_META_CONFIG_ID=
+  ENCRYPTION_SECRET=
+  ```
 
 ---
 
 ### 011 — Webhook Receiver
 - **Status:** Done
-- **Branch:** `008-dashboard-shell`
-- **What was built:** Full Meta WhatsApp Cloud API webhook receiver — inbound messages flow from Meta into the Convex DB and appear in the Inbox UI in real-time
+- **What was built:** Full Meta WhatsApp Cloud API webhook receiver — inbound messages appear in Inbox in real-time
 - **New files:**
-  - `app/api/webhook/whatsapp/route.ts` — Next.js route: HMAC verification, returns 200 immediately, fire-and-forgets to Convex
-  - `scripts/test-webhook.ts` — Local test script (sends fake Meta payload with valid HMAC)
-  - `docs/webhook-testing.md` — Setup guide for ngrok + Meta App Dashboard
-- **Modified files:**
-  - `convex/http.ts` — Full rewrite: shared-secret + HMAC dual auth, all content types (text/image/audio/document/video/sticker/location), structured JSON logging
-  - `convex/messages.ts` — `createInbound`: extended contentType union to include `audio | video | sticker | location`, added `mediaUrl` arg, returns `isDuplicate` flag
-  - `CLAUDE.md` — Added `CONVEX_SITE_URL`, `WHATSAPP_WEBHOOK_VERIFY_TOKEN`, `WHATSAPP_WEBHOOK_SECRET`, `WHATSAPP_APP_SECRET`, `WHATSAPP_API_TOKEN`, `WHATSAPP_API_VERSION` to env vars section
-- **New env vars:**
+  - `app/api/webhook/whatsapp/route.ts` — HMAC verification, fires to Convex
+  - `convex/http.ts` — shared-secret + HMAC dual auth, all content types
+- **Supported inbound types:** text · image · audio · document · video · sticker · location
+- **Key decisions:**
+  - Dedup by `metaMessageId` — Meta sends duplicates, skipped silently
+  - Resolved conversations auto-reopen to `"open"` when customer messages again
+- **Env vars required:**
   ```
   CONVEX_SITE_URL=
   WHATSAPP_WEBHOOK_VERIFY_TOKEN=
@@ -168,73 +137,177 @@
   WHATSAPP_API_TOKEN=
   WHATSAPP_API_VERSION=v19.0
   ```
-- **Key decisions:**
-  - Next.js route is the Meta-facing endpoint (handles HMAC); Convex HTTP action (`/meta-webhook`) validates shared secret — clean separation of concerns
-  - Both direct Meta calls (HMAC) and Next.js-forwarded calls (shared secret) supported in Convex action
-  - Dedup by `metaMessageId` — Meta sends duplicates, we skip silently and log
-  - `isDuplicate` flag returned by `createInbound` so Convex action can log accurately without double-processing
-  - Resolved conversations re-opened to `"open"` when customer messages again
 
 ---
 
-### 010 — WhatsApp Embedded Signup
+### 012 — Real-time Message Delivery (Inbox Live)
 - **Status:** Done
-- **Branch:** `008-dashboard-shell`
-- **What was built:** Full Meta WhatsApp Embedded Signup flow — Admin can connect their WABA directly; tokens stored AES-256 encrypted; webhook auto-subscribed; channels page with status badges, disconnect, and reconnect
-- **New files:**
-  - `convex/lib/encryption.ts` — AES-256-GCM encrypt/decrypt; key from `ENCRYPTION_SECRET` Convex env
-  - `components/onboarding/channel-status-badge.tsx` — colored badge (active/connecting/disconnected/reconnect_required)
-  - `components/onboarding/embedded-signup-button.tsx` — FB JS SDK popup (postMessage + FB.login); calls `completeEmbeddedSignup` action
-  - `components/ui/alert.tsx` — shadcn alert component (added via `npx shadcn add alert`)
-- **Modified files:**
-  - `convex/schema.ts` — Extended `channels` table: `accessToken`, `tokenEncryptedAt`, `status` enum, `displayPhone`, `connectedAt`, `disconnectedAt`; added `by_tenant_status` index
-  - `convex/channels.ts` — Added `completeEmbeddedSignup` action (token exchange → encrypt → webhook subscribe → upsert → onboarding mark), `disconnect`, `rename`, `setStatus` (internal), `upsertChannel` (internal), `markWhatsappConnected` (internal), `retryWebhookSubscription` (internalAction, 5-attempt retry with 60s delay)
-  - `convex/lib/planLimits.ts` — Added `getChannelLimit(plan)` with channel limits (free/starter: 1, growth: 3, business: ∞)
-  - `convex/lib/auth.ts` — Fixed `tenantId` cast (`identity.orgId as string`) to resolve pre-existing TypeScript errors
-  - `app/(dashboard)/settings/channels/page.tsx` — Full rewrite: Embedded Signup panel, plan limit check, status badges, disconnect button, reconnect-required banner
-  - `components/onboarding/step-connect-whatsapp.tsx` — Replaced placeholder button with real `EmbeddedSignupButton`; success state with phone number display
-- **New env vars (add to `.env.local`):**
-  ```
-  NEXT_PUBLIC_META_APP_ID=          # Meta App ID (public — FB JS SDK)
-  NEXT_PUBLIC_META_CONFIG_ID=       # Meta Login for Business config ID
-  META_APP_ID=                      # Same as above, server-side reference
-  ENCRYPTION_SECRET=a056ba5dcf20ca7d0c2d0b07b36152a263430ed9b84d531ce7ec6555f155ef9e
-  ```
-- **Convex env vars set:**
-  - `ENCRYPTION_SECRET` — set via `npx convex env set`
-- **Critical for task 011:** `by_phone_number_id` index was already in schema; `by_tenant_status` added in this task
+- **What was built:** Replaced all mock stubs with real Convex queries/mutations; inbox is fully live
+- **Schema changes:**
+  - `messages.status` — added `"sending"` literal for optimistic UI state
+- **Key additions:**
+  - `components/dev/seed-button.tsx` — dev-only seed button (renders only in `NODE_ENV=development`)
+  - `inbox.seed` mutation — idempotent seed: contacts + channel + conversations + messages
+  - Optimistic update on `sendMessage` — message appears instantly in thread before server confirms
 - **Key decisions:**
-  - `accessToken` stored AES-256-GCM encrypted; never returned to client (stripped in `listForTenant`/`get`)
-  - Reconnection reuses existing `channelId` — preserves all conversation history
-  - Webhook subscription failure triggers 5-retry scheduled job (60s intervals), not a hard error
+  - `"sending"` status written on insert; task 013 patches to `"sent"` after Meta delivery
+  - Agents in "all" filter see only their own conversations + unassigned queue (per CLAUDE.md §25)
+
+---
+
+### Permissions Audit & Fix
+- **Status:** Done
+- **What was done:** Full audit of role-based permissions across the codebase aligned to CLAUDE.md §25
+- **Bugs fixed:**
+  - `convex/messages.ts` — Supervisor excluded from viewing messages, sending replies, adding internal notes. Added `org:supervisor` to all role checks.
+  - `convex/quickReplies.ts` — Supervisor excluded from managing quick replies. Replaced inline checks with `assertAdminOrSupervisor`.
+  - `components/inbox/conversation-list-item.tsx` — Supervisor excluded from Assign button. Fixed.
+  - `convex/orgMembers.ts` — Supervisor couldn't invite/remove agents. Added validation that target must be `org:agent`.
+  - `lib/shell/nav-config.ts` — Contacts had `minRole: "supervisor"` incorrectly. Changed to `minRole: "agent"`.
+- **Client-side updates:** `invite-modal.tsx`, `team-member-list.tsx`, `role-select.tsx`
 
 ---
 
 ### Customer Journey
 - **Status:** Done
-- **Branch:** 008-dashboard-shell
-- **What was built:** Stage pipeline (lead/prospect/customer/retained/churned), follow-up scheduling with 30-min cron + Meta API send, max 2 attempts before auto-churn, contact timeline, notification bell, ContactSidePanel, FollowUpModal, full contact profile page, stage filter in Contacts and Inbox
-- **Key additions:**
-  - `followUps` table — with attemptCount, expectedRevenue, channelId
-  - `contactEvents` table — append-only timeline log
-  - `notifications` table — in-app bell notifications
-  - `convex/crons.ts` — 30-min cronJob
-  - `convex/followUps.ts` — processDue internalAction + recordFollowUpResult internalMutation
+- **Branch:** `008-dashboard-shell`
+- **What was built:** Full customer stage pipeline + follow-up scheduling system
+- **Stages:** lead → prospect → customer → retained → churned
+- **New tables in Convex:**
+  - `followUps` — scheduled follow-ups (attemptCount, expectedRevenue, channelId, status)
+  - `contactEvents` — append-only timeline log per contact
+  - `notifications` — in-app bell notifications
+- **New files:**
+  - `convex/crons.ts` — 30-min cronJob runs `processDue`
+  - `convex/followUps.ts` — `processDue` internalAction + `recordFollowUpResult` internalMutation
   - `components/ui/notification-bell.tsx`
   - `components/contacts/contact-side-panel.tsx`
   - `components/contacts/follow-up-modal.tsx`
   - `components/contacts/contact-timeline.tsx`
-  - `app/(dashboard)/contacts/[id]/page.tsx`
+  - `app/(dashboard)/contacts/[id]/page.tsx` — full contact profile page
+- **Business logic:** Max 2 follow-up attempts before auto-churn; sends via Meta API; revenue tracking per follow-up
+- **Inbox integration:** Stage filter tabs in conversation list (filter by lead/prospect/customer/etc.)
 
 ---
 
-## Up Next
+### Inbox — Rich Media, Emoji, Attachments & Contact Panel Upgrades
+- **Status:** Done
+- **Branch:** `008-dashboard-shell`
+- **Commit:** `e100803`
+- **What was built:** Comprehensive inbox UX improvements across message rendering, composer, conversation list, and contact side panel
 
-| # | Feature | Priority |
-|---|---|---|
-| 013 | WhatsApp API send (wire inbox.sendMessage → Meta API, patch "sending" → "sent") | High |
-| 014 | Internal notes UI | Medium |
-| 015 | Conversation assignment (manual / round-robin) | Medium |
-| 016 | CSAT flow | Low |
-| 017 | SLA alerts | Low |
-| 018 | Data export | Low |
+#### Message Rendering (MessageBubble)
+- Inbound rich media now fully rendered:
+  - **Image/Sticker** — `<img>` with lazy loading, rounded, max 256px height
+  - **Video** — `<video controls>` with max height
+  - **Audio** — `<audio controls>` with waveform icon
+  - **Document** — FileIcon + filename + download link
+  - **Location** — MapPin icon + Google Maps link (parses `"lat,lng|name"` content format)
+- Status ticks: `·` sending · `✓` sent · `✓✓` delivered · `✓✓` (green) read · `✗` failed
+
+#### Outbound Attachments (MessageInput)
+- **Image, Video, Document, Audio** — file picker per type → Convex Storage upload → `sendMediaReply` action → Meta Media API
+- **Location** — browser `navigator.geolocation` → `sendLocationReply` mutation → `sendLocation` WhatsApp action
+- **Emoji picker** — `emoji-picker-react` lazy-loaded via `next/dynamic`; positioned `absolute bottom-full` above toolbar; closes on outside click
+- Attachment preview card shown before send (image thumbnail for images, icons for others)
+- Location preview card shows lat/lng coordinates
+
+#### Convex Backend (messages.ts, actions/sendWhatsAppMessage.ts)
+- `generateUploadUrl` mutation — wraps `ctx.storage.generateUploadUrl()`
+- `sendMediaReply` action — uploads to Meta Media API via FormData → gets `media_id` → sends WhatsApp media message
+- `sendLocationReply` mutation — inserts location message, schedules `sendLocation` action
+- `sendMediaMessage` internalAction — uploads file to Meta, sends WhatsApp media message
+- `sendLocation` internalAction — sends WhatsApp location message type
+- `getConversationInternal`, `getChannelInternal`, `getContactInternal` — internalQuery helpers
+
+#### Conversation List Improvements
+- **Scroll fix** — replaced `ScrollArea` with plain `div overflow-y-auto` (ScrollArea breaks flex height chain)
+- **Stage filter tags** — now `flex-wrap` instead of horizontal scroll; all stages visible
+- **Unread filter tab** — new "Unread" tab in assignment filter; counts and filters conversations with `unreadCount > 0`
+- **Read/Unread toggle** — hover-reveal button per conversation row (MailOpen/MailCheck icons); calls `markAsRead` / `markAsUnread`
+
+#### Sidebar Badge
+- `app-sidebar.tsx` — queries live unread count; shows green badge on Inbox nav item (capped at 99+); tooltip says "X unread messages"
+
+#### Contact Panel (ContactPanel)
+- **Customer Journey** — clickable stage pills directly in panel (no need to open contact profile page)
+- **Internal Notes section** — pulls recent internal notes from all conversations with this contact via `getInternalNotesByContact`; shown as amber cards with timestamp
+- **Follow-ups section** — pending follow-ups (blue cards with cancel button) + completed follow-ups (grayed, strikethrough); + button opens `FollowUpModal`
+- `channelId` and `conversationId` now threaded down from inbox page → ContactPanel
+
+#### Convex Backend (inbox.ts)
+- `markAsUnread` mutation — patches conversation `unreadCount: 1`
+- `getInternalNotesByContact` query — queries all conversations for contact, collects internal notes, returns top 10 sorted desc
+
+#### Bug Fixes
+- `ScrollArea` replaced everywhere it broke flex scroll chains (thread + list)
+- Emoji picker fixed: added `relative` to outer wrapper so `absolute bottom-full` positions correctly
+- Tailwind canonical classes fixed: `max-w-[160px]` → `max-w-40`, `after:start-1/2` → `after:inset-s-1/2`, `after:w-[2px]` → `after:w-0.5`, `min-w-[80px]` → `min-w-20`
+- Auth in Convex actions: switched from `getCallerIdentity` (uses `ctx.db`, not available in actions) to `ctx.auth.getUserIdentity()` directly
+
+---
+
+## What's Done vs. What's Pending — Feature Checklist
+
+| Feature | Status |
+|---|---|
+| Multi-agent shared inbox | ✅ Done |
+| Real-time conversation list | ✅ Done |
+| Conversation assignment (manual) | ✅ Done |
+| Conversation status: Open / Pending / Resolved | ✅ Done |
+| Quick replies / saved responses | ✅ Done |
+| Internal notes (invisible to customer) | ✅ Done |
+| Contact management (CRM-lite) | ✅ Done |
+| Customer journey stages | ✅ Done |
+| Follow-up scheduling | ✅ Done |
+| Contact timeline | ✅ Done |
+| In-app notifications | ✅ Done |
+| Basic analytics (volume, response time, agent perf) | ✅ Done |
+| WhatsApp Embedded Signup | ✅ Done |
+| Webhook receiver (inbound messages) | ✅ Done |
+| Inbound rich media rendering (image/video/audio/doc/location) | ✅ Done |
+| Outbound attachments (image/video/audio/doc) | ✅ Done |
+| Outbound location | ✅ Done |
+| Emoji picker | ✅ Done |
+| Read/Unread toggle per conversation | ✅ Done |
+| Unread badge on sidebar | ✅ Done |
+| Stage filter in inbox | ✅ Done |
+| WhatsApp API send (outbound text via Meta) | ⚠️ Partial — messages saved to DB with "sending" status; Meta API call not yet wired for text replies |
+| WhatsApp API send (outbound media via Meta) | ✅ Done |
+| Round-robin assignment | ❌ Not started |
+| CSAT flow | ❌ Not started |
+| SLA alerts | ❌ Not started |
+| Data export | ❌ Not started |
+| Billing / Lemon Squeezy | ❌ Not started |
+| WhatsApp Catalog | ❌ Deferred Phase 2 |
+| Broadcast / bulk campaigns | ❌ Deferred Phase 2 |
+
+---
+
+## Up Next (Priority Order)
+
+| # | Feature | Priority | Notes |
+|---|---|---|---|
+| 013 | Wire outbound text replies → Meta API (patch "sending" → "sent") | **High** | Media already wired; text replies still only saved to DB |
+| 014 | Round-robin assignment mode | Medium | Schema already has `roundRobinIndex` on channels |
+| 015 | CSAT flow | Medium | Auto-send rating request after conversation close |
+| 016 | SLA alerts | Medium | Convex scheduled function checks open conversations |
+| 017 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
+| 018 | Billing / Lemon Squeezy integration | Low | Plan limits partially enforced in Convex already |
+
+---
+
+## Architecture Decisions Log
+
+| Decision | Rationale |
+|---|---|
+| Convex over Supabase | Real-time first, no SQL complexity |
+| Clerk over NextAuth | Multi-tenant orgs built-in |
+| Lemon Squeezy over Stripe | MoR = handles MENA VAT |
+| `ScrollArea` avoided in flex scroll contexts | shadcn ScrollArea's internal wrapper breaks `min-h-0` flex constraints — use plain `div overflow-y-auto` |
+| Convex actions use `ctx.auth.getUserIdentity()` directly | `getCallerIdentity()` calls `ctx.db` which doesn't exist in action context |
+| Outbound media: Convex Storage → Meta Media API | Files uploaded to Convex first, then re-uploaded to Meta to get `media_id` |
+| `"sending"` status on message insert | Allows optimistic UI; task 013 patches to `"sent"` after Meta confirms delivery |
+| Seed mutation is idempotent | Skips existing contacts/conversations — safe to run multiple times in dev |
+| `metaMessageId` dedup on inbound | Meta sends webhook duplicates; silently skipped |
+| Reconnecting WABA reuses existing `channelId` | Preserves all conversation history |
