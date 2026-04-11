@@ -4,6 +4,7 @@ export type IconName =
   | "Inbox"
   | "Contact2"
   | "BarChart3"
+  | "TrendingUp"
   | "Settings"
   | "Users"
   | "Radio"

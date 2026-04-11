@@ -124,8 +124,8 @@ import type { Id } from "@/convex/_generated/dataModel";
 
    return (
      <Dialog open={open} onOpenChange={onOpenChange}>
-       <DialogContent className="max-w-lg">
-         <DialogHeader>
+       <DialogContent className="sm:max-w-136">
+         <DialogHeader className="pe-8">
            <DialogTitle>
              {step === "upload" && "استيراد جهات اتصال"}
              {step === "preview" && "معاينةة الاستيراد"}

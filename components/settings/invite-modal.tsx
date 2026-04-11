@@ -155,8 +155,8 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-136">
+        <DialogHeader className="pe-8">
           <DialogTitle>{t("Invite Member", "دعوة عضو")}</DialogTitle>
         </DialogHeader>
 
@@ -215,8 +215,8 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
               {sending ? t("Sending...", "جارٍ الإرسال...") : t("Send WhatsApp", "إرسال واتساب")}
             </Button>
             {linkFallback && (
-              <div className="flex items-center gap-2">
-                <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate" dir="ltr">
+              <div className="flex items-center gap-2 min-w-0">
+                <code className="text-xs bg-muted px-2 py-1 rounded flex-1 break-all min-w-0" dir="ltr">
                   {linkFallback}
                 </code>
                 <Button variant="outline" size="icon-sm" onClick={async () => { await navigator.clipboard.writeText(linkFallback); }}>
@@ -231,8 +231,8 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
           <div className="space-y-3">
             {activeLink ? (
               <>
-                <div className="flex items-center gap-2">
-                  <code className="text-xs bg-muted px-2 py-1 rounded flex-1 truncate" dir="ltr">
+                <div className="flex items-center gap-2 min-w-0">
+                  <code className="text-xs bg-muted px-2 py-1 rounded flex-1 break-all min-w-0" dir="ltr">
                     {activeLink.url}
                   </code>
                   <Button variant="outline" size="icon-sm" onClick={handleCopyActiveLink}>

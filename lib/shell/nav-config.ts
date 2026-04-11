@@ -17,6 +17,13 @@ export const NAV_ITEMS: NavItem[] = [
     minRole: "agent",
   },
   {
+    href: "/my-stats",
+    labelAr: "إحصائياتي",
+    labelEn: "My Stats",
+    icon: "TrendingUp",
+    minRole: "agent",
+  },
+  {
     href: "/analytics",
     labelAr: "التحليلات",
     labelEn: "Analytics",

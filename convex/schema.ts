@@ -249,4 +249,20 @@ export default defineSchema({
     completedAt: v.optional(v.number()),
   })
     .index("by_tenant", ["tenantId"]),
+
+  conversationMetrics: defineTable({
+    tenantId: v.string(),
+    conversationId: v.id("conversations"),
+    channelId: v.id("channels"),
+    assignedAgentId: v.optional(v.string()),
+    agentName: v.optional(v.string()),
+    createdAt: v.number(),
+    firstResponseAt: v.optional(v.number()),
+    firstResponseTimeSeconds: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),
+    messageCount: v.number(),
+  })
+    .index("by_tenant_created", ["tenantId", "createdAt"])
+    .index("by_tenant_agent", ["tenantId", "assignedAgentId"])
+    .index("by_conversation", ["conversationId"]),
 });

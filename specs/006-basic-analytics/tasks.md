@@ -17,9 +17,9 @@
 
 **Purpose**: Add `conversationMetrics` table to schema and scaffold new Convex modules
 
-- [ ] T001 Add `conversationMetrics` table definition with all fields and indexes to `convex/schema.ts`
-- [ ] T002 [P] Create empty `convex/conversationMetrics.ts` module with file-level JSDoc describing its role as an internal write-only read-model
-- [ ] T003 [P] Create empty `convex/analytics.ts` module with file-level JSDoc describing its role as the analytics query layer
+- [x] T001 Add `conversationMetrics` table definition with all fields and indexes to `convex/schema.ts`
+- [x] T002 [P] Create empty `convex/conversationMetrics.ts` module with file-level JSDoc describing its role as an internal write-only read-model
+- [x] T003 [P] Create empty `convex/analytics.ts` module with file-level JSDoc describing its role as the analytics query layer
 
 ---
 
@@ -29,13 +29,13 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Implement `conversationMetrics.create` (`internalMutation`) in `convex/conversationMetrics.ts` — inserts record with `messageCount: 0`, `firstResponseAt: undefined`, `resolvedAt: undefined`
-- [ ] T005 Implement `conversationMetrics.recordFirstResponse` (`internalMutation`) in `convex/conversationMetrics.ts` — idempotent; only patches if `firstResponseAt` is not yet set; computes `firstResponseTimeSeconds`
-- [ ] T006 Implement `conversationMetrics.recordResolution` (`internalMutation`) in `convex/conversationMetrics.ts` — patches `resolvedAt`, `assignedAgentId`, `agentName` snapshot
-- [ ] T007 Implement `conversationMetrics.incrementMessageCount` (`internalMutation`) in `convex/conversationMetrics.ts` — increments `messageCount` by 1 using `ctx.db.patch`
-- [ ] T008 Integrate `conversationMetrics.create` trigger into `convex/conversations.ts` — call `ctx.scheduler.runAfter(0, internal.conversationMetrics.create, ...)` inside the new-conversation mutation
-- [ ] T009 Integrate `conversationMetrics.recordResolution` trigger into `convex/conversations.ts` — call `ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, ...)` when status changes to `"resolved"`
-- [ ] T010 Integrate `conversationMetrics.recordFirstResponse` and `conversationMetrics.incrementMessageCount` triggers into `convex/messages.ts` — call both via `ctx.scheduler.runAfter(0, ...)` on each new outbound non-internal-note message; call `incrementMessageCount` only for all new messages (inbound or outbound)
+- [x] T004 Implement `conversationMetrics.create` (`internalMutation`) in `convex/conversationMetrics.ts` — inserts record with `messageCount: 0`, `firstResponseAt: undefined`, `resolvedAt: undefined`
+- [x] T005 Implement `conversationMetrics.recordFirstResponse` (`internalMutation`) in `convex/conversationMetrics.ts` — idempotent; only patches if `firstResponseAt` is not yet set; computes `firstResponseTimeSeconds`
+- [x] T006 Implement `conversationMetrics.recordResolution` (`internalMutation`) in `convex/conversationMetrics.ts` — patches `resolvedAt`, `assignedAgentId`, `agentName` snapshot
+- [x] T007 Implement `conversationMetrics.incrementMessageCount` (`internalMutation`) in `convex/conversationMetrics.ts` — increments `messageCount` by 1 using `ctx.db.patch`
+- [x] T008 Integrate `conversationMetrics.create` trigger into `convex/conversations.ts` — call `ctx.scheduler.runAfter(0, internal.conversationMetrics.create, ...)` inside the new-conversation mutation
+- [x] T009 Integrate `conversationMetrics.recordResolution` trigger into `convex/conversations.ts` — call `ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, ...)` when status changes to `"resolved"`
+- [x] T010 Integrate `conversationMetrics.recordFirstResponse` and `conversationMetrics.incrementMessageCount` triggers into `convex/messages.ts` — call both via `ctx.scheduler.runAfter(0, ...)` on each new outbound non-internal-note message; call `incrementMessageCount` only for all new messages (inbound or outbound)
 
 **Checkpoint**: Pipeline integration complete — new conversations and messages now write to `conversationMetrics`. Analytics queries can return real data.
 
@@ -49,13 +49,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement `analytics.getTeamSummary` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `createdAt` range using `by_tenant_created` index; enforces `assertAdminOrSupervisor`; returns `{ totalConversations, avgFirstResponseTimeSeconds, totalMessages }`
-- [ ] T012 [P] [US1] Create `components/analytics/date-range-picker.tsx` — preset buttons (آخر 7 أيام / آخر 30 يومًا / آخر 90 يومًا) + custom date picker (shadcn/ui `<Popover>` + `<Calendar>`); max range 365 days; enforces RTL layout; exposes `value: DateRange` and `onChange` props
-- [ ] T013 [US1] Create `components/analytics/team-summary-cards.tsx` — client component; uses `useQuery(api.analytics.getTeamSummary, { startTs, endTs })`; renders 3 shadcn/ui `<Card>` components with skeleton loading state and "لا توجد بيانات لهذه الفترة" empty state; labels bilingual (Arabic primary)
-- [ ] T014 [US1] Create `components/analytics/analytics-dashboard.tsx` — client component orchestrator; holds `DateRange` state (default: last 30 days); renders `<DateRangePicker>`, `<TeamSummaryCards>`, and placeholder slots for US2/US3 components; accepts `locale: "ar" | "en"` prop
-- [ ] T015 [US1] Create `app/(dashboard)/analytics/layout.tsx` — server component; reads `tenant.plan` via `fetchQuery(api.tenants.getForCaller)`; renders `<AnalyticsUpsellTeaser>` if plan is `free` or `starter`; renders children otherwise; enforces org:admin or org:supervisor access (redirect agents to `/my-stats`)
-- [ ] T016 [US1] Create `app/(dashboard)/analytics/page.tsx` — server component; renders `<AnalyticsDashboard locale={locale} />`; derives `locale` from Clerk session or tenant settings
-- [ ] T017 [P] [US1] Create `components/analytics/analytics-upsell-teaser.tsx` — renders blurred analytics preview with shadcn/ui `<Card>` overlay and CTA: "ترقية إلى Growth للوصول إلى التحليلات" / "Upgrade to Growth for Analytics"; links to billing page
+- [x] T011 [US1] Implement `analytics.getTeamSummary` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `createdAt` range using `by_tenant_created` index; enforces `assertAdminOrSupervisor`; returns `{ totalConversations, avgFirstResponseTimeSeconds, totalMessages }`
+- [x] T012 [P] [US1] Create `components/analytics/date-range-picker.tsx` — preset buttons (آخر 7 أيام / آخر 30 يومًا / آخر 90 يومًا) + custom date picker (shadcn/ui `<Popover>` + `<Calendar>`); max range 365 days; enforces RTL layout; exposes `value: DateRange` and `onChange` props
+- [x] T013 [US1] Create `components/analytics/team-summary-cards.tsx` — client component; uses `useQuery(api.analytics.getTeamSummary, { startTs, endTs })`; renders 3 shadcn/ui `<Card>` components with skeleton loading state and "لا توجد بيانات لهذه الفترة" empty state; labels bilingual (Arabic primary)
+- [x] T014 [US1] Create `components/analytics/analytics-dashboard.tsx` — client component orchestrator; holds `DateRange` state (default: last 30 days); renders `<DateRangePicker>`, `<TeamSummaryCards>`, and placeholder slots for US2/US3 components; accepts `locale: "ar" | "en"` prop
+- [x] T015 [US1] Create `app/(dashboard)/analytics/layout.tsx` — server component; reads `tenant.plan` via `fetchQuery(api.tenants.getForCaller)`; renders `<AnalyticsUpsellTeaser>` if plan is `free` or `starter`; renders children otherwise; enforces org:admin or org:supervisor access (redirect agents to `/my-stats`)
+- [x] T016 [US1] Create `app/(dashboard)/analytics/page.tsx` — server component; renders `<AnalyticsDashboard locale={locale} />`; derives `locale` from Clerk session or tenant settings
+- [x] T017 [P] [US1] Create `components/analytics/analytics-upsell-teaser.tsx` — renders blurred analytics preview with shadcn/ui `<Card>` overlay and CTA: "ترقية إلى Growth للوصول إلى التحليلات" / "Upgrade to Growth for Analytics"; links to billing page
 
 **Checkpoint**: US1 complete — Admin/Supervisor can view and filter team summary. Free/Starter see teaser. Agents see redirect.
 
@@ -69,9 +69,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] Implement `analytics.getAgentPerformance` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `createdAt` range; groups by `assignedAgentId`; returns per-agent `{ agentId, agentName, conversationsHandled, avgFirstResponseTimeSeconds }`; uses `"[Former Agent]"` fallback for agents no longer in org; enforces `assertAdminOrSupervisor`
-- [ ] T019 [US2] Create `components/analytics/agent-performance-table.tsx` — client component; accepts `dateRange: DateRange` and `orgMembers: OrgMember[]` props; uses `useQuery(api.analytics.getAgentPerformance)`; merges result with `orgMembers` to add zero-count rows for agents not in result; renders shadcn/ui `<Table>` with columns: Agent Name, Conversations Handled, Avg Response Time; skeleton loading state; RTL-compatible
-- [ ] T020 [US2] Integrate `<AgentPerformanceTable>` into `components/analytics/analytics-dashboard.tsx` — pass `dateRange` state and `orgMembers` (fetched from Clerk `useOrganizationMembersList` hook) as props
+- [x] T018 [US2] Implement `analytics.getAgentPerformance` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `createdAt` range; groups by `assignedAgentId`; returns per-agent `{ agentId, agentName, conversationsHandled, avgFirstResponseTimeSeconds }`; uses `"[Former Agent]"` fallback for agents no longer in org; enforces `assertAdminOrSupervisor`
+- [x] T019 [US2] Create `components/analytics/agent-performance-table.tsx` — client component; accepts `dateRange: DateRange` and `orgMembers: OrgMember[]` props; uses `useQuery(api.analytics.getAgentPerformance)`; merges result with `orgMembers` to add zero-count rows for agents not in result; renders shadcn/ui `<Table>` with columns: Agent Name, Conversations Handled, Avg Response Time; skeleton loading state; RTL-compatible
+- [x] T020 [US2] Integrate `<AgentPerformanceTable>` into `components/analytics/analytics-dashboard.tsx` — pass `dateRange` state and `orgMembers` (fetched from Clerk `useOrganizationMembersList` hook) as props
 
 **Checkpoint**: US2 complete — Admin/Supervisor sees per-agent performance table alongside team summary.
 
@@ -85,9 +85,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Implement `analytics.getVolumeOverTime` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `createdAt` range; groups by day (≤60 days) or week (>60 days) in UTC; returns `Array<{ bucketLabel, bucketStart, count }>`; enforces `assertAdminOrSupervisor`
-- [ ] T022 [US3] Create `components/analytics/volume-chart.tsx` — client component; accepts `dateRange: DateRange` prop; uses `useQuery(api.analytics.getVolumeOverTime)`; renders Recharts `<BarChart>` inside a `dir="ltr"` container (SVG not RTL-aware); card title and enclosing `<Card>` use RTL; tooltip shows exact count + date/week label; skeleton loading state; empty state message in Arabic
-- [ ] T023 [US3] Integrate `<VolumeChart>` into `components/analytics/analytics-dashboard.tsx` — pass `dateRange` state as prop; position below agent performance table
+- [x] T021 [US3] Implement `analytics.getVolumeOverTime` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `createdAt` range; groups by day (≤60 days) or week (>60 days) in UTC; returns `Array<{ bucketLabel, bucketStart, count }>`; enforces `assertAdminOrSupervisor`
+- [x] T022 [US3] Create `components/analytics/volume-chart.tsx` — client component; accepts `dateRange: DateRange` prop; uses `useQuery(api.analytics.getVolumeOverTime)`; renders Recharts `<BarChart>` inside a `dir="ltr"` container (SVG not RTL-aware); card title and enclosing `<Card>` use RTL; tooltip shows exact count + date/week label; skeleton loading state; empty state message in Arabic
+- [x] T023 [US3] Integrate `<VolumeChart>` into `components/analytics/analytics-dashboard.tsx` — pass `dateRange` state as prop; position below agent performance table
 
 **Checkpoint**: US3 complete — Full analytics dashboard now shows team summary, agent table, and volume chart.
 
@@ -101,10 +101,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T024 [US4] Implement `analytics.getMyStats` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `assignedAgentId = callerId` + `createdAt` within current UTC calendar month; accessible to all authenticated roles (each sees only their own data); returns `{ conversationsHandled, avgFirstResponseTimeSeconds }`
-- [ ] T025 [US4] Create `components/analytics/agent-my-stats.tsx` — client component; uses `useQuery(api.analytics.getMyStats)`; renders 2 shadcn/ui `<Card>` components: own conversation count + own avg response time for current month; skeleton loading state; bilingual labels (Arabic primary); RTL layout
-- [ ] T026 [US4] Create `app/(dashboard)/my-stats/page.tsx` — server component; accessible to all authenticated roles; renders `<AgentMyStats />`; add sidebar nav link visible to all roles (Agents land here by default)
-- [ ] T027 [US4] Update `app/(dashboard)/analytics/layout.tsx` to redirect agents (role: `org:agent`) to `/my-stats` instead of showing "Permission denied" — use Clerk `auth()` to check role server-side
+- [x] T024 [US4] Implement `analytics.getMyStats` query in `convex/analytics.ts` — filters `conversationMetrics` by `tenantId` + `assignedAgentId = callerId` + `createdAt` within current UTC calendar month; accessible to all authenticated roles (each sees only their own data); returns `{ conversationsHandled, avgFirstResponseTimeSeconds }`
+- [x] T025 [US4] Create `components/analytics/agent-my-stats.tsx` — client component; uses `useQuery(api.analytics.getMyStats)`; renders 2 shadcn/ui `<Card>` components: own conversation count + own avg response time for current month; skeleton loading state; bilingual labels (Arabic primary); RTL layout
+- [x] T026 [US4] Create `app/(dashboard)/my-stats/page.tsx` — server component; accessible to all authenticated roles; renders `<AgentMyStats />`; add sidebar nav link visible to all roles (Agents land here by default)
+- [x] T027 [US4] Update `app/(dashboard)/analytics/layout.tsx` to redirect agents (role: `org:agent`) to `/my-stats` instead of showing "Permission denied" — use Clerk `auth()` to check role server-side
 
 **Checkpoint**: US4 complete — Agents have their own stats page; full analytics dashboard remains gated.
 
@@ -114,10 +114,10 @@
 
 **Purpose**: RTL validation, empty states, error boundaries, and sidebar navigation wiring
 
-- [ ] T028 [P] Add `Analytics` and `My Stats` links to the dashboard sidebar in `app/(dashboard)/layout.tsx` or the sidebar component — Analytics link visible only to admin/supervisor; My Stats visible to all roles
-- [ ] T029 [P] Verify all analytics components render correctly in RTL layout (`dir="rtl"`) — check card alignment, table direction, date picker, and that `<VolumeChart>` container uses `dir="ltr"` while enclosing card is RTL
-- [ ] T030 Add error boundary around `<AnalyticsDashboard>` in `app/(dashboard)/analytics/page.tsx` using a client-side `<ErrorBoundary>` or Next.js `error.tsx` — show friendly Arabic error message on query failure
-- [ ] T031 [P] Validate max date range enforcement (365 days) in `components/analytics/date-range-picker.tsx` — show clear error message if user selects range > 365 days
+- [x] T028 [P] Add `Analytics` and `My Stats` links to the dashboard sidebar in `app/(dashboard)/layout.tsx` or the sidebar component — Analytics link visible only to admin/supervisor; My Stats visible to all roles
+- [x] T029 [P] Verify all analytics components render correctly in RTL layout (`dir="rtl"`) — check card alignment, table direction, date picker, and that `<VolumeChart>` container uses `dir="ltr"` while enclosing card is RTL
+- [x] T030 Add error boundary around `<AnalyticsDashboard>` in `app/(dashboard)/analytics/page.tsx` using a client-side `<ErrorBoundary>` or Next.js `error.tsx` — show friendly Arabic error message on query failure
+- [x] T031 [P] Validate max date range enforcement (365 days) in `components/analytics/date-range-picker.tsx` — show clear error message if user selects range > 365 days
 - [ ] T032 Run through `specs/006-basic-analytics/quickstart.md` validation scenarios (if available) to confirm all acceptance criteria pass
 
 ---

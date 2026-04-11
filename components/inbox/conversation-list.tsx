@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, useConvexAuth } from "convex/react";
+import { useAuth } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -11,7 +11,7 @@ import { ConversationListItem } from "./conversation-list-item";
 import { useT } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
-type AssignmentFilter = "all" | "mine" | "unassigned";
+type AssignmentFilter = "all" | "mine" | "unassigned" | "unread";
 type StageFilter = "all" | "lead" | "prospect" | "customer" | "retained" | "churned";
 
 const STAGE_TABS: { value: StageFilter; en: string; ar: string }[] = [
@@ -40,18 +40,31 @@ export function ConversationList({
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
 
   const { isAuthenticated } = useConvexAuth();
+  const { userId } = useAuth();
 
-  const conversations = useQuery(
+  // Load all conversations for the selected stage — filter assignment client-side
+  // so we can show counts on all 3 tabs simultaneously without extra queries.
+  const allConversations = useQuery(
     api.inbox.listConversations,
-    isAuthenticated
-      ? {
-          filter,
-          contactStage: stageFilter,
-        }
-      : "skip"
+    isAuthenticated ? { filter: "all", contactStage: stageFilter } : "skip"
   );
 
-  const filtered = (conversations ?? []).filter((c) => {
+  // Derive per-tab counts
+  const countAll = allConversations?.length ?? 0;
+  const countMine = allConversations?.filter((c) => c.assignedAgentId === userId).length ?? 0;
+  const countUnassigned = allConversations?.filter((c) => !c.assignedAgentId).length ?? 0;
+  const countUnread = allConversations?.filter((c) => (c.unreadCount ?? 0) > 0).length ?? 0;
+
+  // Apply assignment filter client-side
+  const assignmentFiltered = (allConversations ?? []).filter((c) => {
+    if (filter === "mine") return c.assignedAgentId === userId;
+    if (filter === "unassigned") return !c.assignedAgentId;
+    if (filter === "unread") return (c.unreadCount ?? 0) > 0;
+    return true;
+  });
+
+  // Apply search
+  const filtered = assignmentFiltered.filter((c) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -61,16 +74,17 @@ export function ConversationList({
     );
   });
 
-  const tabs: { value: AssignmentFilter; label: string }[] = [
-    { value: "all", label: t("All", "الكل") },
-    { value: "mine", label: t("Mine", "محادثاتي") },
-    { value: "unassigned", label: t("Unassigned", "غير معينة") },
+  const tabs: { value: AssignmentFilter; label: string; count: number }[] = [
+    { value: "all", label: t("All", "الكل"), count: countAll },
+    { value: "mine", label: t("Mine", "محادثاتي"), count: countMine },
+    { value: "unassigned", label: t("Unassigned", "غير معينة"), count: countUnassigned },
+    { value: "unread", label: t("Unread", "غير مقروء"), count: countUnread },
   ];
 
   const isRtl = t("ltr", "rtl") === "rtl";
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Search */}
       <div className="p-2 border-b">
         <div className="relative">
@@ -86,22 +100,34 @@ export function ConversationList({
       </div>
 
       {/* Assignment filter tabs */}
-      <div className="flex gap-1 p-2 border-b">
+      <div className="flex flex-wrap gap-1 p-2 border-b">
         {tabs.map((tab) => (
           <Button
             key={tab.value}
             variant={filter === tab.value ? "default" : "ghost"}
             size="sm"
-            className="flex-1 h-7 text-xs"
+            className="h-7 text-xs gap-1.5"
             onClick={() => setFilter(tab.value)}
           >
             {tab.label}
+            {allConversations !== undefined && (
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0 text-[10px] font-semibold leading-4 min-w-4.5 text-center",
+                  filter === tab.value
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {tab.count}
+              </span>
+            )}
           </Button>
         ))}
       </div>
 
       {/* Stage filter tabs */}
-      <div className="flex gap-1 px-2 pt-2 pb-1 border-b overflow-x-auto scrollbar-none">
+      <div className="flex flex-wrap gap-1 px-2 pt-2 pb-1 border-b">
         {STAGE_TABS.map((tab) => (
           <button
             key={tab.value}
@@ -119,8 +145,8 @@ export function ConversationList({
       </div>
 
       {/* List */}
-      {conversations === undefined ? (
-        <div className="p-3 space-y-2 flex-1">
+      {allConversations === undefined ? (
+        <div className="p-3 space-y-2 flex-1 min-h-0 overflow-y-auto">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
           ))}
@@ -132,7 +158,7 @@ export function ConversationList({
             : t("No conversations", "لا توجد محادثات")}
         </div>
       ) : (
-        <ScrollArea className="flex-1">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {filtered.map((conv) => (
             <ConversationListItem
               key={conv.id}
@@ -154,7 +180,7 @@ export function ConversationList({
               }
             />
           ))}
-        </ScrollArea>
+        </div>
       )}
     </div>
   );

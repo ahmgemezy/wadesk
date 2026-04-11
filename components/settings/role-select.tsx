@@ -27,8 +27,8 @@ export function RoleSelect({ value, onChange, disabled }: RoleSelectProps) {
 
   return (
     <Select value={value} onValueChange={(v) => onChange(v as OrgRole)} disabled={disabled}>
-      <SelectTrigger dir="ltr" className="w-full">
-        <SelectValue />
+      <SelectTrigger className="w-full">
+        <span>{ROLES.find((r) => r.value === value)?.label ?? value}</span>
       </SelectTrigger>
       <SelectContent>
         {ROLES.map((r) => (

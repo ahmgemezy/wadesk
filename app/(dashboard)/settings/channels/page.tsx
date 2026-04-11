@@ -17,8 +17,8 @@ import { useT } from "@/lib/i18n/context";
 
 const CHANNEL_LIMITS: Record<string, number> = {
   free: 1,
-  starter: 1,
-  growth: 3,
+  starter: 2,
+  growth: 5,
   business: Infinity,
 };
 

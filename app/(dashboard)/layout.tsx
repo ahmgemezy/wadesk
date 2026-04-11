@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import { fetchQuery } from "convex/nextjs";
@@ -27,7 +27,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, orgRole: clerkOrgRole, getToken, orgSlug } = await auth();
+  const { userId, orgId, orgRole: clerkOrgRole, getToken } = await auth();
   if (!userId) {
     redirect("/sign-in");
   }
@@ -39,6 +39,15 @@ export default async function DashboardLayout({
 
   const user = await currentUser();
   if (!user) redirect("/sign-in");
+
+  let orgName = "Organization";
+  try {
+    const client = await clerkClient();
+    const org = await client.organizations.getOrganization({ organizationId: orgId! });
+    orgName = org.name || "Organization";
+  } catch {
+    // fallback to generic name if Clerk API fails
+  }
 
   const orgRole = clerkOrgRole ?? "org:agent";
   const role = resolveRole(orgRole);
@@ -58,7 +67,7 @@ export default async function DashboardLayout({
     email: user.emailAddresses[0]?.emailAddress ?? "",
     imageUrl: user.imageUrl,
     role: orgRole as ResolvedUser["role"],
-    orgName: orgSlug ?? "Organization",
+    orgName,
   };
 
   const navItems = filterNavItems(role);
@@ -68,9 +77,9 @@ export default async function DashboardLayout({
   const locale = detectLocale(headersList, cookieStore.get("locale")?.value);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh overflow-hidden">
       <AppSidebar user={resolvedUser} navItems={navItems} locale={locale} />
-      <SidebarInset>
+      <SidebarInset className="overflow-hidden">
         <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b">
           <SidebarTrigger className="-ms-1" />
           <Separator orientation="vertical" className="h-4" />
@@ -78,7 +87,7 @@ export default async function DashboardLayout({
             <NotificationBell locale={locale} />
           </div>
         </header>
-        <div className="flex-1 overflow-hidden pb-16 md:pb-0">
+        <div className="flex-1 overflow-hidden min-h-0 pb-16 md:pb-0">
           <ConvexAuthGuard>
             {children}
           </ConvexAuthGuard>
