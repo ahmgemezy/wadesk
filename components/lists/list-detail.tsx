@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRightIcon, MegaphoneIcon, PencilIcon } from "lucide-react";
+import { ArrowRightIcon, MegaphoneIcon, PencilIcon, UserIcon } from "lucide-react";
 
 const STAGE_COLORS: Record<string, string> = {
   lead: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
@@ -37,6 +37,11 @@ const t = {
     other: "أخرى",
     noData: "لا توجد بيانات",
     contacts: "جهة اتصال",
+    contactsSection: "جهات الاتصال في هذه القائمة",
+    phone: "رقم الهاتف",
+    name: "الاسم",
+    stage: "المرحلة",
+    noContacts: "لا توجد جهات اتصال تطابق فلاتر هذه القائمة.",
   },
   en: {
     back: "Back to Lists",
@@ -48,6 +53,11 @@ const t = {
     other: "Other",
     noData: "No data",
     contacts: "contacts",
+    contactsSection: "Contacts in this list",
+    phone: "Phone",
+    name: "Name",
+    stage: "Stage",
+    noContacts: "No contacts match this list's filters.",
   },
 };
 
@@ -61,6 +71,10 @@ export function ListDetail({ listId, locale }: Props) {
   const router = useRouter();
   const list = useQuery(api.contactLists.getById, { listId });
   const stats = useQuery(api.contactLists.getStats, { listId });
+  const contactsResult = useQuery(api.contactLists.getMatchingContacts, {
+    listId,
+    paginationOpts: { numItems: 100, cursor: null },
+  });
 
   if (list === undefined || stats === undefined) {
     return (
@@ -200,6 +214,61 @@ export function ListDetail({ listId, locale }: Props) {
           </div>
         </div>
       )}
+
+      {/* Contacts list */}
+      <div className="bg-card border rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b flex items-center gap-2">
+          <UserIcon className="size-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">{tx.contactsSection}</h2>
+          {contactsResult && (
+            <span className="ms-auto text-xs text-muted-foreground">
+              {contactsResult.page.length}{" "}
+              {locale === "ar" ? "جهة اتصال" : "contacts"}
+            </span>
+          )}
+        </div>
+
+        {contactsResult === undefined ? (
+          <div className="flex flex-col divide-y">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-5 py-3">
+                <Skeleton className="size-8 rounded-full shrink-0" />
+                <Skeleton className="h-4 w-36" />
+                <Skeleton className="h-4 w-28 ms-auto" />
+              </div>
+            ))}
+          </div>
+        ) : contactsResult.page.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            {tx.noContacts}
+          </div>
+        ) : (
+          <div className="divide-y">
+            {contactsResult.page.map((contact) => (
+              <div
+                key={contact._id}
+                className="flex items-center gap-3 px-5 py-3 hover:bg-muted/40 cursor-pointer transition-colors"
+                onClick={() => router.push(`/contacts/${contact._id}`)}
+              >
+                <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">
+                  {(contact.displayName ?? contact.phone)[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{contact.displayName ?? contact.phone}</p>
+                  <p className="text-xs text-muted-foreground" dir="ltr">{contact.phone}</p>
+                </div>
+                {contact.stage && (
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${STAGE_COLORS[contact.stage] ?? STAGE_COLORS.unknown}`}
+                  >
+                    {STAGE_LABELS[contact.stage]?.[locale] ?? contact.stage}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
