@@ -84,6 +84,52 @@ export default defineSchema({
       filterFields: ["tenantId"],
     }),
 
+  contactLists: defineTable({
+    tenantId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    filters: v.object({
+      countries: v.optional(v.array(v.string())),
+      cities: v.optional(v.array(v.string())),
+      stages: v.optional(v.array(v.union(
+        v.literal("lead"),
+        v.literal("prospect"),
+        v.literal("customer"),
+        v.literal("retained"),
+        v.literal("churned"),
+      ))),
+      tags: v.optional(v.array(v.string())),
+    }),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"]),
+
+  broadcasts: defineTable({
+    tenantId: v.string(),
+    name: v.string(),
+    listId: v.id("contactLists"),
+    channelId: v.id("channels"),
+    templateName: v.string(),
+    templateLanguage: v.string(),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("sending"),
+      v.literal("sent"),
+      v.literal("failed"),
+    ),
+    recipientSnapshot: v.array(v.id("contacts")),
+    recipientCount: v.number(),
+    sentCount: v.optional(v.number()),
+    failedCount: v.optional(v.number()),
+    sentAt: v.optional(v.number()),
+    createdBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_status", ["tenantId", "status"]),
+
   conversations: defineTable({
     tenantId: v.string(),
     channelId: v.id("channels"),
@@ -264,5 +310,47 @@ export default defineSchema({
   })
     .index("by_tenant_created", ["tenantId", "createdAt"])
     .index("by_tenant_agent", ["tenantId", "assignedAgentId"])
+    .index("by_conversation", ["conversationId"]),
+
+  automationRules: defineTable({
+    tenantId: v.string(),
+    name: v.string(),
+    enabled: v.boolean(),
+    priority: v.number(),
+    triggerType: v.union(
+      v.literal("keyword"),
+      v.literal("outside_hours"),
+      v.literal("first_message"),
+      v.literal("no_reply_timeout"),
+    ),
+    keywordList: v.optional(v.array(v.string())),
+    timeoutMinutes: v.optional(v.number()),
+    responseTemplate: v.string(),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_enabled", ["tenantId", "enabled"])
+    .index("by_tenant_priority", ["tenantId", "priority"]),
+
+  businessHours: defineTable({
+    tenantId: v.string(),
+    timezone: v.string(),
+    schedule: v.any(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"]),
+
+  ruleFireLog: defineTable({
+    tenantId: v.string(),
+    ruleId: v.id("automationRules"),
+    conversationId: v.id("conversations"),
+    firedAt: v.number(),
+    triggerType: v.string(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_rule_conversation", ["ruleId", "conversationId"])
     .index("by_conversation", ["conversationId"]),
 });
