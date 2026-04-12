@@ -3,6 +3,7 @@ import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCallerIdentity, getCallerRole, assertAdminOrSupervisor } from "./lib/auth";
 import { paginationOptsValidator } from "convex/server";
+import { getCountryFromPhone } from "../lib/phoneGeo";
 
 export const listForTenant = query({
   args: {
@@ -167,6 +168,8 @@ export const create = mutation({
       return { error: "duplicate" as const, existingId: existing._id };
     }
 
+    const geoCountry = args.country ?? getCountryFromPhone(args.phone)?.countryIso ?? undefined;
+
     return ctx.db.insert("contacts", {
       tenantId,
       phone: args.phone,
@@ -174,7 +177,7 @@ export const create = mutation({
       customName: args.customName,
       tags: args.tags ?? [],
       notes: args.notes,
-      country: args.country,
+      country: geoCountry,
       city: args.city,
       spent: args.spent,
       category: args.category,

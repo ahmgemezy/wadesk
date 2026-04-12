@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
+import { getCountryFromPhone } from "../lib/phoneGeo";
 
 export const importBatchChunk = internalMutation({
   args: {
@@ -54,6 +55,8 @@ export const importBatchChunk = internalMutation({
         continue;
       }
 
+      const geoCountry = getCountryFromPhone(row.phone)?.countryIso ?? undefined;
+
       await ctx.db.insert("contacts", {
         tenantId: args.tenantId,
         phone: row.phone,
@@ -61,6 +64,7 @@ export const importBatchChunk = internalMutation({
         customName: row.name,
         tags: row.tags ?? [],
         notes: row.notes,
+        country: geoCountry,
         source: "import",
         isArchived: false,
         firstSeenAt: Date.now(),
