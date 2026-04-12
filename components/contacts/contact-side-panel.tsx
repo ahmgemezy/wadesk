@@ -17,6 +17,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ContactTimeline } from "./contact-timeline";
 import { FollowUpModal } from "./follow-up-modal";
 
@@ -29,27 +36,27 @@ const STAGE_LABELS: Record<string, { ar: string; en: string; color: string }> =
     lead: {
       ar: "عميل محتمل",
       en: "Lead",
-      color: "bg-blue-100 text-blue-700",
+      color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
     },
     prospect: {
       ar: "مرشح",
       en: "Prospect",
-      color: "bg-purple-100 text-purple-700",
+      color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
     },
     customer: {
       ar: "عميل",
       en: "Customer",
-      color: "bg-green-100 text-green-700",
+      color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
     },
     retained: {
       ar: "محتفظ به",
       en: "Retained",
-      color: "bg-emerald-100 text-emerald-700",
+      color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
     },
     churned: {
       ar: "مفقود",
       en: "Churned",
-      color: "bg-red-100 text-red-700",
+      color: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
     },
   };
 
@@ -237,17 +244,18 @@ export function ContactSidePanel({
                     <Badge className={`${stageLabel?.color ?? ""} border-0 text-xs`}>
                       {stageLabel?.[locale] ?? stage}
                     </Badge>
-                    <select
-                      value={stage}
-                      onChange={(e) => void handleStageChange(e.target.value)}
-                      className="ms-auto text-xs border rounded px-2 py-1 bg-background text-foreground"
-                    >
-                      {Object.entries(STAGE_LABELS).map(([key, val]) => (
-                        <option key={key} value={key}>
-                          {val[locale]}
-                        </option>
-                      ))}
-                    </select>
+                    <Select value={stage} onValueChange={(v) => void handleStageChange(v)}>
+                      <SelectTrigger className="ms-auto h-7 w-auto text-xs px-2 py-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STAGE_LABELS).map(([key, val]) => (
+                          <SelectItem key={key} value={key} className="text-xs">
+                            {val[locale]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </section>
 

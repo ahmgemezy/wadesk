@@ -225,6 +225,14 @@ export const metaWebhook = httpAction(async (ctx, request) => {
                 conversationId: result.conversationId,
               });
             }
+
+            await ctx.runMutation(internal.automations.evaluateAndFireAutomations, {
+              tenantId: channel.tenantId,
+              channelId: channel._id,
+              conversationId: result.conversationId,
+              messageContent: content,
+              isNewConversation: result.isNewConversation,
+            });
           }
 
           // ── Process status updates ──────────────────────────────────────

@@ -9,4 +9,10 @@ crons.interval(
   internal.followUps.processDue,
 );
 
+crons.interval(
+  "check-automation-timeouts",
+  { minutes: 1 },
+  internal.automations.checkNoReplyTimeouts,
+);
+
 export default crons;
