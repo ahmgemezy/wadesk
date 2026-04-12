@@ -1,0 +1,292 @@
+import { v } from "convex/values";
+import { query, mutation } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
+import {
+  getCallerIdentity,
+  getCallerRole,
+  assertAdminOrSupervisor,
+  assertAdmin,
+} from "./lib/auth";
+import { assertListLimitNotReached } from "./lib/planLimits";
+import type { Doc } from "./_generated/dataModel";
+
+type Stage = "lead" | "prospect" | "customer" | "retained" | "churned";
+
+type ListFilters = {
+  countries?: string[];
+  cities?: string[];
+  stages?: Stage[];
+  tags?: string[];
+};
+
+function contactMatchesFilters(
+  contact: Doc<"contacts">,
+  filters: ListFilters,
+): boolean {
+  if (filters.countries && filters.countries.length > 0) {
+    if (!contact.country || !filters.countries.includes(contact.country)) {
+      return false;
+    }
+  }
+  if (filters.cities && filters.cities.length > 0) {
+    if (!contact.city || !filters.cities.includes(contact.city)) {
+      return false;
+    }
+  }
+  if (filters.stages && filters.stages.length > 0) {
+    if (!contact.stage || !filters.stages.includes(contact.stage as Stage)) {
+      return false;
+    }
+  }
+  if (filters.tags && filters.tags.length > 0) {
+    const hasMatchingTag = filters.tags.some((tag) =>
+      contact.tags.includes(tag),
+    );
+    if (!hasMatchingTag) return false;
+  }
+  return true;
+}
+
+export const listForTenant = query({
+  args: {},
+  handler: async (ctx) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    return ctx.db
+      .query("contactLists")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .order("desc")
+      .collect();
+  },
+});
+
+export const getById = query({
+  args: { listId: v.id("contactLists") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.tenantId !== tenantId) return null;
+    return list;
+  },
+});
+
+export const getMatchingContacts = query({
+  args: {
+    listId: v.id("contactLists"),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.tenantId !== tenantId) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+
+    const allContacts = await ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+      .collect();
+
+    const matching = allContacts.filter((c) =>
+      contactMatchesFilters(c, list.filters),
+    );
+
+    const { numItems, cursor } = args.paginationOpts;
+    const startIndex = cursor ? parseInt(cursor, 10) : 0;
+    const page = matching.slice(startIndex, startIndex + numItems);
+    const nextCursor = startIndex + numItems < matching.length
+      ? String(startIndex + numItems)
+      : null;
+
+    return {
+      page,
+      isDone: nextCursor === null,
+      continueCursor: nextCursor ?? "",
+    };
+  },
+});
+
+export const getStats = query({
+  args: { listId: v.id("contactLists") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.tenantId !== tenantId) return null;
+
+    const allContacts = await ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+      .collect();
+
+    const matching = allContacts.filter((c) =>
+      contactMatchesFilters(c, list.filters),
+    );
+
+    const stageBreakdown: Record<string, number> = {};
+    const cityBreakdown: Record<string, number> = {};
+    const tagBreakdown: Record<string, number> = {};
+
+    for (const contact of matching) {
+      const stage = contact.stage ?? "unknown";
+      stageBreakdown[stage] = (stageBreakdown[stage] ?? 0) + 1;
+
+      const city = contact.city ?? "unknown";
+      cityBreakdown[city] = (cityBreakdown[city] ?? 0) + 1;
+
+      for (const tag of contact.tags) {
+        tagBreakdown[tag] = (tagBreakdown[tag] ?? 0) + 1;
+      }
+    }
+
+    return {
+      total: matching.length,
+      stageBreakdown,
+      cityBreakdown,
+      tagBreakdown,
+    };
+  },
+});
+
+export const previewCount = query({
+  args: {
+    filters: v.object({
+      countries: v.optional(v.array(v.string())),
+      cities: v.optional(v.array(v.string())),
+      stages: v.optional(v.array(v.union(
+        v.literal("lead"),
+        v.literal("prospect"),
+        v.literal("customer"),
+        v.literal("retained"),
+        v.literal("churned"),
+      ))),
+      tags: v.optional(v.array(v.string())),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const allContacts = await ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+      .collect();
+
+    const matching = allContacts.filter((c) =>
+      contactMatchesFilters(c, args.filters),
+    );
+
+    const stageBreakdown: Record<string, number> = {};
+    for (const contact of matching) {
+      const stage = contact.stage ?? "unknown";
+      stageBreakdown[stage] = (stageBreakdown[stage] ?? 0) + 1;
+    }
+
+    return { count: matching.length, stageBreakdown };
+  },
+});
+
+export const create = mutation({
+  args: {
+    name: v.string(),
+    description: v.optional(v.string()),
+    filters: v.object({
+      countries: v.optional(v.array(v.string())),
+      cities: v.optional(v.array(v.string())),
+      stages: v.optional(v.array(v.union(
+        v.literal("lead"),
+        v.literal("prospect"),
+        v.literal("customer"),
+        v.literal("retained"),
+        v.literal("churned"),
+      ))),
+      tags: v.optional(v.array(v.string())),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
+      .first();
+    const plan = (tenant?.plan ?? "free") as import("./lib/planLimits").Plan;
+
+    const currentCount = await ctx.db
+      .query("contactLists")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .collect()
+      .then((r) => r.length);
+
+    assertListLimitNotReached(currentCount, plan);
+
+    const now = Date.now();
+    return ctx.db.insert("contactLists", {
+      tenantId,
+      name: args.name,
+      description: args.description,
+      filters: args.filters,
+      createdBy: callerId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+export const update = mutation({
+  args: {
+    listId: v.id("contactLists"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    filters: v.optional(v.object({
+      countries: v.optional(v.array(v.string())),
+      cities: v.optional(v.array(v.string())),
+      stages: v.optional(v.array(v.union(
+        v.literal("lead"),
+        v.literal("prospect"),
+        v.literal("customer"),
+        v.literal("retained"),
+        v.literal("churned"),
+      ))),
+      tags: v.optional(v.array(v.string())),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.tenantId !== tenantId) {
+      throw new Error("List not found");
+    }
+
+    const patch: Partial<Doc<"contactLists">> = { updatedAt: Date.now() };
+    if (args.name !== undefined) patch.name = args.name;
+    if (args.description !== undefined) patch.description = args.description;
+    if (args.filters !== undefined) patch.filters = args.filters;
+
+    await ctx.db.patch(args.listId, patch);
+  },
+});
+
+export const remove = mutation({
+  args: { listId: v.id("contactLists") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const list = await ctx.db.get(args.listId);
+    if (!list || list.tenantId !== tenantId) {
+      throw new Error("List not found");
+    }
+
+    await ctx.db.delete(args.listId);
+  },
+});
