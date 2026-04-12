@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { getCountryFromPhone } from "../lib/phoneGeo";
 import { paginationOptsValidator } from "convex/server";
 import {
   getCallerIdentity,
@@ -24,7 +25,8 @@ function contactMatchesFilters(
   filters: ListFilters,
 ): boolean {
   if (filters.countries && filters.countries.length > 0) {
-    if (!contact.country || !filters.countries.includes(contact.country)) {
+    const detectedCountry = getCountryFromPhone(contact.phone)?.countryIso?.toUpperCase();
+    if (!detectedCountry || !filters.countries.map((c) => c.toUpperCase()).includes(detectedCountry)) {
       return false;
     }
   }
@@ -56,6 +58,26 @@ export const listForTenant = query({
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .order("desc")
       .collect();
+  },
+});
+
+export const getAvailableCountries = query({
+  args: {},
+  handler: async (ctx) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const contacts = await ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+      .collect();
+
+    const seen = new Set<string>();
+    for (const c of contacts) {
+      const geo = getCountryFromPhone(c.phone);
+      if (geo) seen.add(geo.countryIso.toUpperCase());
+    }
+    return Array.from(seen).sort();
   },
 });
 

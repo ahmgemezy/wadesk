@@ -219,6 +219,8 @@ export const upsertByPhone = internalMutation({
       return existing._id;
     }
 
+    const autoCountry = getCountryFromPhone(args.phone)?.countryIso ?? undefined;
+
     return ctx.db.insert("contacts", {
       tenantId: args.tenantId,
       phone: args.phone,
@@ -227,6 +229,7 @@ export const upsertByPhone = internalMutation({
       source: "auto",
       isArchived: false,
       stage: "lead",
+      country: autoCountry,
       totalConversations: args.incrementConversations ? 1 : 0,
       wabaId: args.wabaId,
       firstSeenAt: Date.now(),
@@ -342,5 +345,30 @@ export const listByStage = query({
         : contacts;
 
     return filtered;
+  },
+});
+
+export const backfillCountries = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const contacts = await ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+      .collect();
+
+    let updated = 0;
+    for (const c of contacts) {
+      if (!c.country) {
+        const geo = getCountryFromPhone(c.phone);
+        if (geo) {
+          await ctx.db.patch(c._id, { country: geo.countryIso.toUpperCase() });
+          updated++;
+        }
+      }
+    }
+    return { updated };
   },
 });
