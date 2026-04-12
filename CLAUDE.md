@@ -651,13 +651,12 @@ Enforce these rules throughout the entire codebase:
 *Last updated: manually — update this file whenever a major architectural or product decision is made.*
 
 ## Recent Changes
+- 009-automation-rules: Automation rules engine (if-this-send-that) — new tables: `automationRules`, `businessHours`, `ruleFireLog`; new files: `convex/automations.ts`, `lib/automationHelpers.ts`, `components/automations/` (4 components), `app/(dashboard)/automations/page.tsx`, `components/ui/switch.tsx`; modified: `convex/schema.ts`, `convex/http.ts`, `convex/crons.ts`, `convex/lib/planLimits.ts`, `convex/messages.ts` (fixed totalConversations increment), `lib/shell/nav-config.ts` (sidebar link), `lib/shell/types.ts`, `components/shell/resolve-icon.tsx`; 4 trigger types: keyword, outside_hours, first_message, no_reply_timeout; plan limits: Free 2, Starter 10, Growth 30, Business unlimited; admin+supervisor manage rules, admin-only for business hours
 - 004-multi-tenant-onboarding: Added `onboardingState` table (Convex); `fetchQuery` from `convex/nextjs` (server-side Convex reads in RSC)
 - 005-contact-management: Added `customFields` table (Convex); `libphonenumber-js` (phone normalization); `papaparse` (CSV parsing client-side)
-- 006-basic-analytics: Added `conversationMetrics` table (Convex denormalized read-model); Recharts (via shadcn/ui chart component) for volume chart; `ctx.scheduler.runAfter` pattern for async internalMutation triggers
-- 008-dashboard-shell: Added TypeScript (strict, no `any`) — Next.js 15 App Router + shadcn/ui (Sidebar component), Tailwind CSS v4, Lucide React (icons), Clerk (`auth()` server-side)
-- 007-marketing-site: Added TypeScript (strict, no `any`) + Next.js 15 (App Router) + shadcn/ui, Tailwind CSS, Lucide React (icons), Clerk (auth check only)
 
 ## Active Technologies
+- TypeScript (strict, no `any`) — enforced project-wide + Next.js 15 (App Router), Convex (backend + realtime), Clerk (auth + multi-tenancy), shadcn/ui, Tailwind CSS v4
 
 <!-- convex-ai-start -->
 This project uses [Convex](https://convex.dev) as its backend.

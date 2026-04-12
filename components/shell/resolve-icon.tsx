@@ -8,6 +8,9 @@ import {
   Radio,
   MessageSquareText,
   CreditCard,
+  Zap,
+  List,
+  Megaphone,
 } from "lucide-react";
 import type { IconName } from "@/lib/shell/types";
 import type { LucideIcon } from "lucide-react";
@@ -22,6 +25,9 @@ const ICON_MAP: Record<IconName, LucideIcon> = {
   Radio,
   MessageSquareText,
   CreditCard,
+  Zap,
+  List,
+  Megaphone,
 };
 
 export function resolveIcon(name: IconName): LucideIcon {

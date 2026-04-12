@@ -11,6 +11,7 @@ import { filterNavItems } from "@/lib/shell/nav-config";
 import type { ResolvedUser } from "@/lib/shell/types";
 import { Separator } from "@/components/ui/separator";
 import { NotificationBell } from "@/components/ui/notification-bell";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
 
 export const dynamic = "force-dynamic";
@@ -83,11 +84,12 @@ export default async function DashboardLayout({
         <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b">
           <SidebarTrigger className="-ms-1" />
           <Separator orientation="vertical" className="h-4" />
-          <div className="ms-auto">
+          <div className="ms-auto flex items-center gap-1">
+            <ThemeToggle />
             <NotificationBell locale={locale} />
           </div>
         </header>
-        <div className="flex-1 overflow-hidden min-h-0 pb-16 md:pb-0">
+        <div className="flex-1 overflow-y-auto min-h-0 pb-16 md:pb-0">
           <ConvexAuthGuard>
             {children}
           </ConvexAuthGuard>

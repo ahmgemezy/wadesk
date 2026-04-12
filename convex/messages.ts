@@ -192,7 +192,6 @@ export const createInbound = internalMutation({
       phone: args.senderPhone,
       displayName: args.senderDisplayName,
       wabaId: args.wabaId,
-      incrementConversations: true,
     });
 
     let conversation = await ctx.db
@@ -220,6 +219,10 @@ export const createInbound = internalMutation({
       });
       conversation = await ctx.db.get(conversationId);
       isNewConversation = true;
+      const contact = await ctx.db.get(contactId);
+      await ctx.db.patch(contactId, {
+        totalConversations: (contact?.totalConversations ?? 0) + 1,
+      });
     } else {
       const patch: Record<string, unknown> = {
         lastMessageAt: args.timestamp,

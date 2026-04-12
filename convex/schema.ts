@@ -10,6 +10,7 @@ export default defineSchema({
       v.literal("growth"),
       v.literal("business"),
     ),
+    orgName: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_tenantId", ["tenantId"]),
@@ -326,6 +327,13 @@ export default defineSchema({
     keywordList: v.optional(v.array(v.string())),
     timeoutMinutes: v.optional(v.number()),
     responseTemplate: v.string(),
+    senderName: v.optional(v.string()),
+    mediaUrl: v.optional(v.string()),
+    mediaType: v.optional(v.union(
+      v.literal("image"),
+      v.literal("video"),
+      v.literal("document"),
+    )),
     createdBy: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),

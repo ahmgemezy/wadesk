@@ -8,6 +8,13 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { ContactTimeline } from "@/components/contacts/contact-timeline";
 import { FollowUpModal } from "@/components/contacts/follow-up-modal";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowRight, ArrowLeft, CalendarClock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,11 +24,11 @@ import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
 
 const STAGE_LABELS: Record<string, { ar: string; en: string; color: string }> = {
-  lead:     { ar: "عميل محتمل", en: "Lead",     color: "bg-blue-100 text-blue-700" },
-  prospect: { ar: "مرشح",       en: "Prospect",  color: "bg-purple-100 text-purple-700" },
-  customer: { ar: "عميل",       en: "Customer",  color: "bg-green-100 text-green-700" },
-  retained: { ar: "محتفظ به",   en: "Retained",  color: "bg-emerald-100 text-emerald-700" },
-  churned:  { ar: "مفقود",      en: "Churned",   color: "bg-red-100 text-red-700" },
+  lead:     { ar: "عميل محتمل", en: "Lead",     color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
+  prospect: { ar: "مرشح",       en: "Prospect",  color: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300" },
+  customer: { ar: "عميل",       en: "Customer",  color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+  retained: { ar: "محتفظ به",   en: "Retained",  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" },
+  churned:  { ar: "مفقود",      en: "Churned",   color: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300" },
 };
 
 const STAGES = ["lead", "prospect", "customer", "retained", "churned"] as const;
@@ -115,19 +122,18 @@ export default function ContactProfilePage({
         </span>
 
         {/* Stage changer */}
-        <select
-          className="text-sm border rounded px-2 py-1"
-          value={stage}
-          onChange={(e) =>
-            void updateStage({ contactId, stage: e.target.value as Stage })
-          }
-        >
-          {STAGES.map((s) => (
-            <option key={s} value={s}>
-              {isRtl ? STAGE_LABELS[s].ar : STAGE_LABELS[s].en}
-            </option>
-          ))}
-        </select>
+        <Select value={stage} onValueChange={(v) => void updateStage({ contactId, stage: v as Stage })}>
+          <SelectTrigger className="h-8 w-auto text-sm px-2">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STAGES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {isRtl ? STAGE_LABELS[s].ar : STAGE_LABELS[s].en}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Button
           onClick={() => {

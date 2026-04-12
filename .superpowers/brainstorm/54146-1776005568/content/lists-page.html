@@ -1,0 +1,110 @@
+<h2>Lists Page Layout</h2>
+<p class="subtitle">How should the main Lists page be structured? Pick the layout that feels right.</p>
+
+<div class="cards">
+  <div class="card" data-choice="A" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f9fa;border-radius:8px;padding:16px;font-size:12px;min-height:200px;">
+        <div style="background:#e2e8f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:600;">📋 القوائم</span>
+          <span style="background:#3b82f6;color:#fff;border-radius:4px;padding:3px 10px;font-size:11px;">+ قائمة جديدة</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+            <div style="font-weight:600;margin-bottom:4px;">عملاء القاهرة</div>
+            <div style="color:#64748b;font-size:11px;margin-bottom:8px;">المدينة: القاهرة • المرحلة: عميل</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:18px;font-weight:700;color:#3b82f6;">142</span>
+              <span style="color:#64748b;font-size:11px;">جهة اتصال</span>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+              <span style="background:#dcfce7;color:#16a34a;border-radius:4px;padding:2px 6px;font-size:10px;">40 عميل</span>
+              <span style="background:#dbeafe;color:#2563eb;border-radius:4px;padding:2px 6px;font-size:10px;">30 مرشح</span>
+              <span style="background:#f1f5f9;color:#64748b;border-radius:4px;padding:2px 6px;font-size:10px;">72 عميل محتمل</span>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+            <div style="font-weight:600;margin-bottom:4px;">VIP السعودية</div>
+            <div style="color:#64748b;font-size:11px;margin-bottom:8px;">الدولة: السعودية • الوسوم: VIP</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:18px;font-weight:700;color:#3b82f6;">58</span>
+              <span style="color:#64748b;font-size:11px;">جهة اتصال</span>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+              <span style="background:#dcfce7;color:#16a34a;border-radius:4px;padding:2px 6px;font-size:10px;">50 عميل</span>
+              <span style="background:#f3e8ff;color:#9333ea;border-radius:4px;padding:2px 6px;font-size:10px;">8 عميل دائم</span>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+            <div style="font-weight:600;margin-bottom:4px;">عملاء محتملون</div>
+            <div style="color:#64748b;font-size:11px;margin-bottom:8px;">المرحلة: عميل محتمل، مرشح</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:18px;font-weight:700;color:#3b82f6;">317</span>
+              <span style="color:#64748b;font-size:11px;">جهة اتصال</span>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+              <span style="background:#dbeafe;color:#2563eb;border-radius:4px;padding:2px 6px;font-size:10px;">180 مرشح</span>
+              <span style="background:#f1f5f9;color:#64748b;border-radius:4px;padding:2px 6px;font-size:10px;">137 عميل محتمل</span>
+            </div>
+          </div>
+          <div style="background:#fff;border:2px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;">
+            + إنشاء قائمة جديدة
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Card Grid</h3>
+      <p>Each list is a card showing name, filters summary, contact count, and stage breakdown. Grid layout, scannable at a glance.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="B" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8f9fa;border-radius:8px;padding:16px;font-size:12px;min-height:200px;">
+        <div style="background:#e2e8f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:600;">📋 القوائم</span>
+          <span style="background:#3b82f6;color:#fff;border-radius:4px;padding:3px 10px;font-size:11px;">+ قائمة جديدة</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0;">
+          <thead>
+            <tr style="background:#f1f5f9;color:#64748b;font-size:11px;text-align:right;">
+              <th style="padding:8px 12px;">اسم القائمة</th>
+              <th style="padding:8px 12px;">الفلاتر</th>
+              <th style="padding:8px 12px;">جهات الاتصال</th>
+              <th style="padding:8px 12px;">آخر تعديل</th>
+              <th style="padding:8px 12px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-top:1px solid #f1f5f9;">
+              <td style="padding:8px 12px;font-weight:600;">عملاء القاهرة</td>
+              <td style="padding:8px 12px;color:#64748b;">القاهرة • عميل</td>
+              <td style="padding:8px 12px;font-weight:700;color:#3b82f6;">142</td>
+              <td style="padding:8px 12px;color:#94a3b8;">منذ يومين</td>
+              <td style="padding:8px 12px;color:#3b82f6;">⋮</td>
+            </tr>
+            <tr style="border-top:1px solid #f1f5f9;">
+              <td style="padding:8px 12px;font-weight:600;">VIP السعودية</td>
+              <td style="padding:8px 12px;color:#64748b;">السعودية • VIP</td>
+              <td style="padding:8px 12px;font-weight:700;color:#3b82f6;">58</td>
+              <td style="padding:8px 12px;color:#94a3b8;">منذ أسبوع</td>
+              <td style="padding:8px 12px;color:#3b82f6;">⋮</td>
+            </tr>
+            <tr style="border-top:1px solid #f1f5f9;">
+              <td style="padding:8px 12px;font-weight:600;">عملاء محتملون</td>
+              <td style="padding:8px 12px;color:#64748b;">عميل محتمل • مرشح</td>
+              <td style="padding:8px 12px;font-weight:700;color:#3b82f6;">317</td>
+              <td style="padding:8px 12px;color:#94a3b8;">منذ 3 أيام</td>
+              <td style="padding:8px 12px;color:#3b82f6;">⋮</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Table / List View</h3>
+      <p>All lists in a table row. Compact, good for many lists. Click a row to open the list detail with the stats breakdown.</p>
+    </div>
+  </div>
+</div>
