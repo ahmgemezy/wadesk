@@ -9,7 +9,10 @@ export type IconName =
   | "Users"
   | "Radio"
   | "MessageSquareText"
-  | "CreditCard";
+  | "CreditCard"
+  | "Zap"
+  | "List"
+  | "Megaphone";
 
 export interface NavItem {
   href: string;

@@ -17,6 +17,20 @@ export const NAV_ITEMS: NavItem[] = [
     minRole: "agent",
   },
   {
+    href: "/lists",
+    labelAr: "القوائم",
+    labelEn: "Lists",
+    icon: "List",
+    minRole: "supervisor",
+  },
+  {
+    href: "/broadcasts",
+    labelAr: "الحملات",
+    labelEn: "Broadcasts",
+    icon: "Megaphone",
+    minRole: "supervisor",
+  },
+  {
     href: "/my-stats",
     labelAr: "إحصائياتي",
     labelEn: "My Stats",
@@ -28,6 +42,13 @@ export const NAV_ITEMS: NavItem[] = [
     labelAr: "التحليلات",
     labelEn: "Analytics",
     icon: "BarChart3",
+    minRole: "supervisor",
+  },
+  {
+    href: "/automations",
+    labelAr: "قواعد تلقائية",
+    labelEn: "Automations",
+    icon: "Zap",
     minRole: "supervisor",
   },
   {
