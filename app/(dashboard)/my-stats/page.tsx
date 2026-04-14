@@ -22,7 +22,7 @@ export default async function MyStatsPage() {
 
   return (
     <div>
-      <div className="p-4 md:p-6" dir="rtl">
+      <div className="p-4 md:p-6">
         <h1 className="text-2xl font-bold mb-2">
           {locale === "ar" ? "إحصائياتي" : "My Stats"}
         </h1>

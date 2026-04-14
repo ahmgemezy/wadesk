@@ -5,6 +5,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
 import { useOrganization } from "@clerk/nextjs";
+import { getCountryFromPhone } from "@/lib/phoneGeo";
+import { getCitiesForCountry, OTHER_CITY_VALUE } from "@/lib/cityData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,8 +157,8 @@ export function ContactDetailSheet({
   const [name, setName] = useState("");
   const [tags, setTags] = useState("");
   const [notes, setNotes] = useState("");
-  const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
+  const [cityOther, setCityOther] = useState("");
   const [category, setCategory] = useState("");
   const [spent, setSpent] = useState("");
   const [stage, setStage] = useState<string>("lead");
@@ -171,8 +173,16 @@ export function ContactDetailSheet({
     setName(contact.customName ?? "");
     setTags(contact.tags.join(", "));
     setNotes(contact.notes ?? "");
-    setCountry(contact.country ?? "");
-    setCity(contact.city ?? "");
+    const geo = getCountryFromPhone(contact.phone);
+    const availableCities = getCitiesForCountry(geo?.countryIso ?? "");
+    const storedCity = contact.city ?? "";
+    if (storedCity && availableCities.length > 0 && !availableCities.includes(storedCity)) {
+      setCity(OTHER_CITY_VALUE);
+      setCityOther(storedCity);
+    } else {
+      setCity(storedCity);
+      setCityOther("");
+    }
     setCategory(contact.category ?? "");
     setSpent(contact.spent != null ? String(contact.spent) : "");
     setStage(contact.stage ?? "lead");
@@ -186,10 +196,10 @@ export function ContactDetailSheet({
     if (newName !== contact.customName) patch.customName = newName;
     const newTags = tags.split(/[,،]/).map((t) => t.trim()).filter(Boolean);
     if (JSON.stringify(newTags) !== JSON.stringify(contact.tags)) patch.tags = newTags;
-    if (notes !== (contact.notes ?? "")) patch.notes = notes || undefined;
-    if (country !== (contact.country ?? "")) patch.country = country || undefined;
-    if (city !== (contact.city ?? "")) patch.city = city || undefined;
-    if (category !== (contact.category ?? "")) patch.category = category || undefined;
+    if (notes.trim() !== (contact.notes ?? "")) patch.notes = notes.trim();
+    const resolvedCity = city === OTHER_CITY_VALUE ? cityOther.trim() : city.trim();
+    if (resolvedCity !== (contact.city ?? "")) patch.city = resolvedCity;
+    if (category.trim() !== (contact.category ?? "")) patch.category = category.trim();
     const spentNum = spent.trim() ? parseFloat(spent) : undefined;
     if (spentNum !== contact.spent) patch.spent = spentNum;
 
@@ -217,7 +227,7 @@ export function ContactDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-full sm:max-w-md p-0 flex flex-col overflow-hidden">
+      <SheetContent side="left" className="w-full sm:max-w-xs p-0 flex flex-col overflow-hidden">
         <SheetHeader className="px-5 pt-5 pb-3 border-b shrink-0">
           <SheetTitle dir={dir}>
             {data === undefined ? <Skeleton className="h-5 w-36" /> : l.title}
@@ -284,7 +294,7 @@ export function ContactDetailSheet({
 
                 {/* Stats row */}
                 <div className="grid grid-cols-2 gap-3">
-                  <StatCard icon={<MessageSquareIcon className="size-4" />} label={l.conversations} value={String(data.conversationCount)} />
+                  <StatCard icon={<MessageSquareIcon className="size-4" />} label={l.conversations} value={String(data?.conversationCount ?? 0)} />
                   {contact.spent != null && (
                     <StatCard icon={<DollarSignIcon className="size-4" />} label={l.spent} value={`$${contact.spent.toLocaleString()}`} highlight />
                   )}
@@ -297,7 +307,7 @@ export function ContactDetailSheet({
                   <div className="grid grid-cols-2 gap-3">
                     <Field label={l.journeyStage as string} icon={<MapPinIcon className="size-3.5" />}>
                       {editing ? (
-                        <Select value={stage} onValueChange={setStage}>
+                        <Select value={stage} onValueChange={(v) => { if (v) setStage(v); }}>
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
                           </SelectTrigger>
@@ -330,20 +340,83 @@ export function ContactDetailSheet({
                         </div>
                       )}
                     </Field>
+
+                    {/* Country — always read-only, auto-detected from phone */}
                     <Field label={l.country} icon={<MapPinIcon className="size-3.5" />}>
-                      {editing ? (
-                        <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder={l.country} className="h-8 text-sm" />
-                      ) : (
-                        <span className="text-sm">{contact.country || "—"}</span>
-                      )}
+                      {(() => {
+                        const geo = getCountryFromPhone(contact.phone);
+                        return geo ? (
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="secondary" className="text-xs font-mono">{geo.countryIso}</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {locale === "ar" ? geo.countryAr : geo.countryEn}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        );
+                      })()}
                     </Field>
+
+                    {/* City — dropdown based on detected country */}
                     <Field label={l.city} icon={<MapPinIcon className="size-3.5" />}>
                       {editing ? (
-                        <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder={l.city} className="h-8 text-sm" />
+                        <div className="space-y-1.5">
+                          {(() => {
+                            const geo = getCountryFromPhone(contact.phone);
+                            const cities = getCitiesForCountry(geo?.countryIso ?? "");
+                            if (cities.length === 0) {
+                              return (
+                                <Input
+                                  value={city === OTHER_CITY_VALUE ? cityOther : city}
+                                  onChange={(e) => {
+                                    setCity(e.target.value);
+                                    setCityOther("");
+                                  }}
+                                  placeholder={l.city}
+                                  className="h-8 text-sm"
+                                />
+                              );
+                            }
+                            return (
+                              <>
+                                <Select
+                                  value={city}
+                                  onValueChange={(v) => {
+                                    if (v) setCity(v);
+                                    if (v && v !== OTHER_CITY_VALUE) setCityOther("");
+                                  }}
+                                >
+                                  <SelectTrigger className="h-8 text-sm">
+                                    <SelectValue placeholder={l.city} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {cities.map((c) => (
+                                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    ))}
+                                    <SelectItem value={OTHER_CITY_VALUE}>
+                                      {locale === "ar" ? "أخرى..." : "Other..."}
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {city === OTHER_CITY_VALUE && (
+                                  <Input
+                                    value={cityOther}
+                                    onChange={(e) => setCityOther(e.target.value)}
+                                    placeholder={locale === "ar" ? "اكتب المدينة" : "Type city name"}
+                                    className="h-8 text-sm"
+                                    autoFocus
+                                  />
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
                       ) : (
                         <span className="text-sm">{contact.city || "—"}</span>
                       )}
                     </Field>
+
                     <Field label={l.category} icon={<FolderIcon className="size-3.5" />}>
                       {editing ? (
                         <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={l.category} className="h-8 text-sm" />

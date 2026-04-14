@@ -15,4 +15,10 @@ crons.interval(
   internal.automations.checkNoReplyTimeouts,
 );
 
+crons.interval(
+  "check-sla-breaches",
+  { minutes: 5 },
+  internal.sla.checkBreaches,
+);
+
 export default crons;

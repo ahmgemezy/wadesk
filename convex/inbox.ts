@@ -4,6 +4,7 @@
 
 import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getCallerIdentity, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
@@ -76,6 +77,8 @@ export const listConversations = query({
           contactStage: (contact?.stage ?? "lead") as string,
           assignedAgentId: conv.assignedAgentId,
           status: conv.status,
+          labels: conv.labels,
+          slaBreachedAt: conv.slaBreachedAt,
           lastMessagePreview: conv.lastMessagePreview,
           lastMessageAt: conv.lastMessageAt,
           unreadCount: conv.unreadCount,
@@ -94,6 +97,16 @@ export const listConversations = query({
 });
 
 // ─── Get Messages ─────────────────────────────────────────────────────────────
+
+export const getConversation = query({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv || conv.tenantId !== tenantId) return null;
+    return conv;
+  },
+});
 
 export const getMessages = query({
   args: { conversationId: v.id("conversations") },
@@ -145,10 +158,12 @@ export const sendMessage = mutation({
     });
 
     if (!isNote) {
+      const conv = await ctx.db.get(args.conversationId);
       await ctx.db.patch(args.conversationId, {
         lastMessageAt: now,
         lastMessagePreview: args.content.slice(0, 80),
         unreadCount: 0,
+        ...(conv?.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
       });
     }
 
@@ -190,6 +205,22 @@ export const updateStatus = mutation({
     }
 
     await ctx.db.patch(args.conversationId, { status: args.status });
+
+    // Schedule CSAT if resolving
+    if (args.status === "resolved") {
+      const csatConfig = await ctx.db
+        .query("csatSettings")
+        .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+        .first();
+      const delayMs = (csatConfig?.delayMinutes ?? 5) * 60 * 1000;
+      const shouldSend = csatConfig?.enabled ?? false;
+      if (shouldSend) {
+        await ctx.scheduler.runAfter(delayMs, internal.csat.sendCsatMessage, {
+          conversationId: args.conversationId,
+          tenantId,
+        });
+      }
+    }
   },
 });
 

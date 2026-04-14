@@ -38,9 +38,12 @@ export function ConversationList({
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<AssignmentFilter>("all");
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
+  const [labelFilter, setLabelFilter] = useState<string | null>(null);
 
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
+
+  const allLabels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip") ?? [];
 
   // Load all conversations for the selected stage — filter assignment client-side
   // so we can show counts on all 3 tabs simultaneously without extra queries.
@@ -73,6 +76,10 @@ export function ConversationList({
       c.lastMessagePreview.toLowerCase().includes(q)
     );
   });
+
+  const labelFiltered = labelFilter
+    ? filtered.filter((c) => (c.labels ?? []).includes(labelFilter))
+    : filtered;
 
   const tabs: { value: AssignmentFilter; label: string; count: number }[] = [
     { value: "all", label: t("All", "الكل"), count: countAll },
@@ -144,6 +151,38 @@ export function ConversationList({
         ))}
       </div>
 
+      {/* Label filter */}
+      {allLabels.length > 0 && (
+        <div className="flex flex-wrap gap-1 px-2 py-1.5 border-b">
+          <button
+            onClick={() => setLabelFilter(null)}
+            className={cn(
+              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all",
+              labelFilter === null
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80",
+            )}
+          >
+            {t("All", "الكل")}
+          </button>
+          {allLabels.map((label) => (
+            <button
+              key={label._id}
+              onClick={() => setLabelFilter(labelFilter === label.name ? null : label.name)}
+              className={cn(
+                "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all flex items-center gap-1",
+                labelFilter === label.name
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
+              )}
+            >
+              {label.emoji && <span>{label.emoji}</span>}
+              {label.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* List */}
       {allConversations === undefined ? (
         <div className="p-3 space-y-2 flex-1 min-h-0 overflow-y-auto">
@@ -151,7 +190,7 @@ export function ConversationList({
             <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : labelFiltered.length === 0 ? (
         <div className="flex items-center justify-center flex-1 text-muted-foreground text-sm p-4 text-center">
           {search
             ? t("No results", "لا توجد نتائج")
@@ -159,7 +198,7 @@ export function ConversationList({
         </div>
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto">
-          {filtered.map((conv) => (
+          {labelFiltered.map((conv) => (
             <ConversationListItem
               key={conv.id}
               conversation={{
@@ -172,6 +211,8 @@ export function ConversationList({
                 lastMessageAt: conv.lastMessageAt,
                 status: conv.status,
                 unreadCount: conv.unreadCount,
+                labels: conv.labels,
+                slaBreachedAt: conv.slaBreachedAt,
               }}
               isActive={conv.id === activeConversationId}
               onClick={() => onSelect?.(conv.id)}

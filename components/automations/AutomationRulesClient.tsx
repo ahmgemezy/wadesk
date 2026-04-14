@@ -124,7 +124,7 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
 
   if (isLoading) {
     return (
-      <div className="p-6 max-w-2xl mx-auto space-y-4" dir="rtl">
+      <div className="p-6 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-8 w-32" />
@@ -140,7 +140,7 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
 
   if (rules === null || rules === undefined) {
     return (
-      <div className="p-6 max-w-2xl mx-auto" dir="rtl">
+      <div className="p-6 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold font-cairo">
             {t("Automation Rules", "قواعد الردود التلقائية")}
@@ -168,7 +168,7 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto" dir="rtl">
+    <div className="p-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold font-cairo">

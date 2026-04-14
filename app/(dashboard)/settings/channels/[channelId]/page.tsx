@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AssignmentModeSelect } from "@/components/settings/assignment-mode-select";
+import { DepartmentMembers } from "@/components/settings/department-members";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Check, X, Trash2 } from "lucide-react";
@@ -27,6 +28,16 @@ export default function ChannelSettingsPage({
   const [editing, setEditing] = useState(false);
   const [nameValue, setNameValue] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const updateSlaThreshold = useMutation(api.sla.updateChannelSlaThreshold);
+  const [slaMinutes, setSlaMinutes] = useState<string>("");
+  const [savingSla, setSavingSla] = useState(false);
+
+  useEffect(() => {
+    if (channel) {
+      setSlaMinutes(channel.slaThresholdMinutes ? String(channel.slaThresholdMinutes) : "");
+    }
+  }, [channel?.slaThresholdMinutes]);
   const router = useRouter();
 
   const startEdit = () => {
@@ -134,6 +145,68 @@ export default function ChannelSettingsPage({
         channelId={channelId}
         currentMode={channel.assignmentMode}
       />
+
+      <div className="space-y-2 border-t pt-6">
+        <h3 className="text-sm font-medium">{t("SLA Threshold", "حد SLA")}</h3>
+        <p className="text-xs text-muted-foreground">
+          {t(
+            "Flag conversations with no agent reply after this many minutes. Leave empty to disable.",
+            "علّم المحادثات التي لم يتم الرد عليها خلال هذه الدقائق. اتركه فارغاً للتعطيل.",
+          )}
+        </p>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={1}
+            max={1440}
+            placeholder={t("e.g. 10", "مثال: 10")}
+            value={slaMinutes}
+            onChange={(e) => setSlaMinutes(e.target.value)}
+            className="w-32"
+          />
+          <span className="text-sm text-muted-foreground">
+            {t("minutes", "دقيقة")}
+          </span>
+          <Button
+            size="sm"
+            disabled={savingSla}
+            onClick={async () => {
+              setSavingSla(true);
+              try {
+                const parsed = parseInt(slaMinutes);
+                await updateSlaThreshold({
+                  channelId,
+                  thresholdMinutes: isNaN(parsed) || parsed <= 0 ? undefined : parsed,
+                });
+                toast.success(t("SLA threshold saved", "تم حفظ حد SLA"));
+              } catch {
+                toast.error(t("Failed to save SLA threshold", "فشل حفظ حد SLA"));
+              } finally {
+                setSavingSla(false);
+              }
+            }}
+          >
+            {savingSla ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
+          </Button>
+          {slaMinutes && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                setSlaMinutes("");
+                await updateSlaThreshold({ channelId, thresholdMinutes: undefined });
+                toast.success(t("SLA disabled", "تم تعطيل SLA"));
+              }}
+            >
+              {t("Disable", "تعطيل")}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t pt-6">
+        <DepartmentMembers channelId={channelId} />
+      </div>
     </div>
   );
 }

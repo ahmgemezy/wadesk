@@ -7,7 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 import { format } from "date-fns";
 import { ar as arLocale, enUS } from "date-fns/locale";
-import { CalendarClock, ChevronLeft } from "lucide-react";
+import { CalendarClock, ChevronLeft, MapPinIcon, GlobeIcon, TagIcon } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -67,6 +67,11 @@ const STAGE_LABELS: Record<string, { ar: string; en: string; color: string }> =
 const TL = {
   ar: {
     notFound: "لم يتم العثور على جهة الاتصال",
+    details: "التفاصيل",
+    country: "الدولة",
+    city: "المدينة",
+    tags: "الوسوم",
+    noTags: "لا توجد وسوم",
     stage: "المرحلة",
     notes: "ملاحظات",
     notesPlaceholder: "أضف ملاحظات عن جهة الاتصال...",
@@ -83,6 +88,11 @@ const TL = {
   },
   en: {
     notFound: "Contact not found",
+    details: "Details",
+    country: "Country",
+    city: "City",
+    tags: "Tags",
+    noTags: "No tags",
     stage: "Stage",
     notes: "Notes",
     notesPlaceholder: "Add notes about this contact...",
@@ -234,6 +244,47 @@ export function ContactSidePanel({
 
             {contact && (
               <div className="flex-1 flex flex-col gap-0 overflow-y-auto">
+
+                {/* Details: country, city, tags */}
+                <section className="p-4 border-b space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {t.details}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {contact.country && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <GlobeIcon className="size-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-muted-foreground">{t.country}:</span>
+                        <span className="font-medium">{contact.country}</span>
+                      </div>
+                    )}
+                    {contact.city && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPinIcon className="size-3.5 text-muted-foreground shrink-0" />
+                        <span className="text-muted-foreground">{t.city}:</span>
+                        <span className="font-medium">{contact.city}</span>
+                      </div>
+                    )}
+                    <div className="flex items-start gap-2 text-sm">
+                      <TagIcon className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                      <span className="text-muted-foreground">{t.tags}:</span>
+                      {contact.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {contact.tags.map((tag) => (
+                            <span
+                              key={tag}
+                              className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground italic text-xs">{t.noTags}</span>
+                      )}
+                    </div>
+                  </div>
+                </section>
 
                 {/* Stage */}
                 <section className="p-4 border-b space-y-2">

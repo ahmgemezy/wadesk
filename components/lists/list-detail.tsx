@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
@@ -7,6 +8,8 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRightIcon, MegaphoneIcon, PencilIcon, UserIcon } from "lucide-react";
+import { CreateListDialog } from "@/components/lists/create-list-dialog";
+import { ContactSidePanel } from "@/components/contacts/contact-side-panel";
 
 const STAGE_COLORS: Record<string, string> = {
   lead: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
@@ -32,6 +35,7 @@ const t = {
     send: "إرسال حملة",
     edit: "تعديل",
     total: "إجمالي جهات الاتصال",
+    countryBreakdown: "توزيع حسب الدولة",
     cityBreakdown: "توزيع حسب المدينة",
     tagDistribution: "توزيع الوسوم",
     other: "أخرى",
@@ -48,6 +52,7 @@ const t = {
     send: "Send Campaign",
     edit: "Edit",
     total: "Total Contacts",
+    countryBreakdown: "Breakdown by Country",
     cityBreakdown: "Breakdown by City",
     tagDistribution: "Tag Distribution",
     other: "Other",
@@ -69,6 +74,8 @@ type Props = {
 export function ListDetail({ listId, locale }: Props) {
   const tx = t[locale];
   const router = useRouter();
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedContactId, setSelectedContactId] = useState<Id<"contacts"> | null>(null);
   const list = useQuery(api.contactLists.getById, { listId });
   const stats = useQuery(api.contactLists.getStats, { listId });
   const contactsResult = useQuery(api.contactLists.getMatchingContacts, {
@@ -113,13 +120,12 @@ export function ListDetail({ listId, locale }: Props) {
       : null,
   ].filter(Boolean).join(" • ");
 
-  const topCities = stats
-    ? Object.entries(stats.cityBreakdown)
-        .filter(([city]) => city !== "unknown")
+  const topCountries = stats
+    ? Object.entries(stats.countryBreakdown)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
+        .slice(0, 10)
     : [];
-  const cityMax = topCities[0]?.[1] ?? 1;
+  const countryMax = topCountries[0]?.[1] ?? 1;
 
   const topTags = stats
     ? Object.entries(stats.tagBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 8)
@@ -148,7 +154,7 @@ export function ListDetail({ listId, locale }: Props) {
             )}
           </div>
           <div className="flex gap-2 shrink-0">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
               <PencilIcon className="size-4 me-1" />
               {tx.edit}
             </Button>
@@ -179,39 +185,43 @@ export function ListDetail({ listId, locale }: Props) {
         ))}
       </div>
 
-      {topCities.length > 0 && (
-        <div className="bg-card border rounded-xl p-5">
-          <h2 className="text-sm font-semibold mb-4">{tx.cityBreakdown}</h2>
-          <div className="flex flex-col gap-3">
-            {topCities.map(([city, count]) => (
-              <div key={city} className="flex items-center justify-between gap-3">
-                <span className="text-sm min-w-20">{city}</span>
-                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full"
-                    style={{ width: `${(count / cityMax) * 100}%` }}
-                  />
-                </div>
-                <span className="text-sm font-semibold w-8 text-end">{count}</span>
+      {(topCountries.length > 0 || topTags.length > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {topCountries.length > 0 && (
+            <div className="bg-card border rounded-xl p-5">
+              <h2 className="text-sm font-semibold mb-4">{tx.countryBreakdown}</h2>
+              <div className="flex flex-col gap-3">
+                {topCountries.map(([country, count]) => (
+                  <div key={country} className="flex items-center justify-between gap-3">
+                    <span className="text-sm min-w-12">{country}</span>
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full"
+                        style={{ width: `${(count / countryMax) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-semibold w-6 text-end">{count}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
 
-      {topTags.length > 0 && (
-        <div className="bg-card border rounded-xl p-5">
-          <h2 className="text-sm font-semibold mb-4">{tx.tagDistribution}</h2>
-          <div className="flex flex-wrap gap-2">
-            {topTags.map(([tag, count]) => (
-              <span
-                key={tag}
-                className="bg-muted text-muted-foreground text-xs px-3 py-1.5 rounded-full"
-              >
-                {tag} <strong className="text-foreground">{count}</strong>
-              </span>
-            ))}
-          </div>
+          {topTags.length > 0 && (
+            <div className="bg-card border rounded-xl p-5">
+              <h2 className="text-sm font-semibold mb-4">{tx.tagDistribution}</h2>
+              <div className="flex flex-wrap gap-2">
+                {topTags.map(([tag, count]) => (
+                  <span
+                    key={tag}
+                    className="bg-muted text-muted-foreground text-xs px-3 py-1.5 rounded-full"
+                  >
+                    {tag} <strong className="text-foreground">{count}</strong>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -248,7 +258,7 @@ export function ListDetail({ listId, locale }: Props) {
               <div
                 key={contact._id}
                 className="flex items-center gap-3 px-5 py-3 hover:bg-muted/40 cursor-pointer transition-colors"
-                onClick={() => router.push(`/contacts/${contact._id}`)}
+                onClick={() => setSelectedContactId(contact._id)}
               >
                 <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">
                   {(contact.displayName ?? contact.phone)[0]?.toUpperCase()}
@@ -269,6 +279,28 @@ export function ListDetail({ listId, locale }: Props) {
           </div>
         )}
       </div>
+
+      <ContactSidePanel
+        contactId={selectedContactId}
+        channelId={null}
+        open={selectedContactId !== null}
+        onClose={() => setSelectedContactId(null)}
+        locale={locale}
+      />
+
+      {list && (
+        <CreateListDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          locale={locale}
+          initialData={{
+            listId,
+            name: list.name,
+            description: list.description,
+            filters: list.filters,
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ export default function AnalyticsError({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 p-8" dir="rtl">
+    <div className="flex flex-col items-center justify-center gap-4 p-8">
       <h2 className="text-lg font-semibold">
         حدث خطأ أثناء تحميل التحليلات
       </h2>

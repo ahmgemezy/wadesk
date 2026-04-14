@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   Sheet,
   SheetContent,
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { XIcon, UsersIcon, CheckIcon, GlobeIcon } from "lucide-react";
+import { XIcon, UsersIcon, CheckIcon, GlobeIcon, MapPinIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 // ─── World Countries (ISO 3166-1 alpha-2, excluding IL) ──────────────────────
@@ -118,6 +119,7 @@ const STAGE_STYLES: Record<Stage, { active: string; idle: string }> = {
 const t = {
   ar: {
     title: "إنشاء قائمة",
+    editTitle: "تعديل القائمة",
     namePlaceholder: "اسم القائمة",
     descriptionPlaceholder: "وصف اختياري",
     country: "الدولة",
@@ -129,6 +131,7 @@ const t = {
     previewLabel: "النتائج المتوقعة",
     contacts: "جهة اتصال",
     save: "حفظ القائمة",
+    update: "تحديث القائمة",
     cancel: "إلغاء",
     nameRequired: "اسم القائمة مطلوب",
     saving: "جاري الحفظ...",
@@ -137,6 +140,7 @@ const t = {
   },
   en: {
     title: "Create List",
+    editTitle: "Edit List",
     namePlaceholder: "List name",
     descriptionPlaceholder: "Optional description",
     country: "Country",
@@ -148,6 +152,7 @@ const t = {
     previewLabel: "Expected results",
     contacts: "contacts",
     save: "Save List",
+    update: "Update List",
     cancel: "Cancel",
     nameRequired: "List name is required",
     saving: "Saving...",
@@ -156,16 +161,31 @@ const t = {
   },
 };
 
+type InitialData = {
+  listId: Id<"contactLists">;
+  name: string;
+  description?: string;
+  filters: {
+    countries?: string[];
+    cities?: string[];
+    stages?: Stage[];
+    tags?: string[];
+  };
+};
+
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   locale: "ar" | "en";
+  initialData?: InitialData;
 };
 
-export function CreateListDialog({ open, onOpenChange, locale }: Props) {
+export function CreateListDialog({ open, onOpenChange, locale, initialData }: Props) {
   const tx = t[locale];
   const isRTL = locale === "ar";
+  const isEditMode = !!initialData;
   const createList = useMutation(api.contactLists.create);
+  const updateList = useMutation(api.contactLists.update);
 
   // Fetch countries that actually exist in this tenant's contacts
   const availableIsoCodes = useQuery(api.contactLists.getAvailableCountries);
@@ -180,16 +200,34 @@ export function CreateListDialog({ open, onOpenChange, locale }: Props) {
     }
   }, [open, backfillCountries]);
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [description, setDescription] = useState(initialData?.description ?? "");
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(initialData?.filters.countries ?? []);
+  // Fetch cities that actually exist in contacts, filtered by selected countries
+  const availableCities = useQuery(api.contactLists.getAvailableCities, {
+    countries: selectedCountries.length > 0 ? selectedCountries : undefined,
+  });
+  const [cities, setCities] = useState<string[]>(initialData?.filters.cities ?? []);
   const [cityInput, setCityInput] = useState("");
-  const [selectedStages, setSelectedStages] = useState<Stage[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
+  const [selectedStages, setSelectedStages] = useState<Stage[]>(initialData?.filters.stages ?? []);
+  const [tags, setTags] = useState<string[]>(initialData?.filters.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState(false);
+
+  // Sync state when initialData changes (e.g. dialog re-opened with different list)
+  useEffect(() => {
+    if (open) {
+      setName(initialData?.name ?? "");
+      setDescription(initialData?.description ?? "");
+      setSelectedCountries(initialData?.filters.countries ?? []);
+      setCities(initialData?.filters.cities ?? []);
+      setSelectedStages(initialData?.filters.stages ?? []);
+      setTags(initialData?.filters.tags ?? []);
+      setNameError(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const filters = useMemo(
     () => ({
@@ -263,11 +301,20 @@ export function CreateListDialog({ open, onOpenChange, locale }: Props) {
     }
     setSaving(true);
     try {
-      await createList({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        filters,
-      });
+      if (isEditMode) {
+        await updateList({
+          listId: initialData.listId,
+          name: name.trim(),
+          description: description.trim() || undefined,
+          filters,
+        });
+      } else {
+        await createList({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          filters,
+        });
+      }
       reset();
       onOpenChange(false);
     } finally {
@@ -303,7 +350,7 @@ export function CreateListDialog({ open, onOpenChange, locale }: Props) {
       >
         {/* Header */}
         <SheetHeader className="px-6 py-4 border-b shrink-0">
-          <SheetTitle className="text-base font-semibold">{tx.title}</SheetTitle>
+          <SheetTitle className="text-base font-semibold">{isEditMode ? tx.editTitle : tx.title}</SheetTitle>
         </SheetHeader>
 
         {/* Two-column body: filters | preview */}
@@ -364,22 +411,54 @@ export function CreateListDialog({ open, onOpenChange, locale }: Props) {
 
             {/* City */}
             <FilterSection label={tx.city}>
-              {cities.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {cities.map((city) => (
-                    <TagChip key={city} onRemove={() => setCities((prev) => prev.filter((c) => c !== city))}>
-                      {city}
-                    </TagChip>
+              {availableCities === undefined ? (
+                <div className="flex flex-wrap gap-2">
+                  {[55, 70, 60, 80].map((w, i) => (
+                    <div key={i} className="h-8 rounded-full bg-muted animate-pulse" style={{ width: w }} />
                   ))}
                 </div>
+              ) : availableCities.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {availableCities.map((city) => (
+                    <ToggleChip
+                      key={city}
+                      selected={cities.includes(city)}
+                      onClick={() =>
+                        setCities((prev) =>
+                          prev.includes(city) ? prev.filter((c) => c !== city) : [...prev, city],
+                        )
+                      }
+                    >
+                      {city}
+                    </ToggleChip>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {cities.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {cities.map((city) => (
+                        <TagChip key={city} onRemove={() => setCities((prev) => prev.filter((c) => c !== city))}>
+                          {city}
+                        </TagChip>
+                      ))}
+                    </div>
+                  )}
+                  <Input
+                    placeholder={tx.cityPlaceholder}
+                    value={cityInput}
+                    onChange={(e) => setCityInput(e.target.value)}
+                    onKeyDown={handleCityKey}
+                    className="h-9 text-sm"
+                  />
+                  {selectedCountries.length > 0 && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <MapPinIcon className="size-3" />
+                      {locale === "ar" ? "لا توجد مدن مسجلة للدول المحددة" : "No cities recorded for the selected countries"}
+                    </p>
+                  )}
+                </>
               )}
-              <Input
-                placeholder={tx.cityPlaceholder}
-                value={cityInput}
-                onChange={(e) => setCityInput(e.target.value)}
-                onKeyDown={handleCityKey}
-                className="h-9 text-sm"
-              />
             </FilterSection>
 
             {/* Stage */}
@@ -470,7 +549,7 @@ export function CreateListDialog({ open, onOpenChange, locale }: Props) {
             {tx.cancel}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? tx.saving : tx.save}
+            {saving ? tx.saving : isEditMode ? tx.update : tx.save}
           </Button>
         </div>
       </SheetContent>

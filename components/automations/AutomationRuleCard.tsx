@@ -70,7 +70,6 @@ export function AutomationRuleCard({
   return (
     <>
       <div
-        dir="rtl"
         className={`rounded-lg border p-4 transition-all ${isDragging ? "shadow-lg opacity-80" : ""} ${removing ? "opacity-0 scale-95" : ""}`}
       >
         <div className="flex items-center gap-3">

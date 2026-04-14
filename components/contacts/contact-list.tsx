@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   SearchIcon,
   PlusIcon,
@@ -29,6 +36,7 @@ import { AddContactDialog } from "./add-contact-dialog";
 import { CsvImportDialog } from "./csv-import-dialog";
 import { BulkTagDialog } from "./bulk-tag-dialog";
 import { cn } from "@/lib/utils";
+import { getCountryFromPhone } from "@/lib/phoneGeo";
 
 // ─── Stage config ─────────────────────────────────────────────────────────────
 
@@ -128,6 +136,7 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
   const isStageFiltered = !isSearching && stageFilter !== "all";
 
   const archiveContact = useMutation(api.contacts.archive);
+  const updateStage = useMutation(api.contacts.updateStage);
 
   // Stage-filtered query (non-paginated — listByStage returns up to 500)
   const stageContacts = useQuery(
@@ -344,11 +353,18 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
       {/* Card Grid */}
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <motion.div
+            initial="hidden"
+            animate="show"
+            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          >
             {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-48 rounded-xl" />
+              <motion.div key={i} variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }}>
+                <Skeleton className="h-48 rounded-xl" />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         ) : contacts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-3">
             <div className="size-16 rounded-full bg-muted flex items-center justify-center">
@@ -364,23 +380,34 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {contacts.map((contact) => (
-                <ContactCard
-                  key={contact._id}
-                  contact={contact}
-                  isSelected={selected.has(contact._id)}
-                  archivedLabel={labels.archivedBadge}
-                  noTagsLabel={labels.noTags}
-                  conversationsLabel={labels.conversations}
-                  viewProfileLabel={labels.viewProfile}
-                  locale={locale}
-                  onToggle={() => toggleSelect(contact._id)}
-                  onClick={handleRowClick}
-                  onViewProfile={(id) => router.push(`/contacts/${id}`)}
-                />
-              ))}
-            </div>
+            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <AnimatePresence mode="popLayout">
+                {contacts.map((contact) => (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.2 }}
+                    key={contact._id}
+                  >
+                    <ContactCard
+                      contact={contact}
+                      isSelected={selected.has(contact._id)}
+                      archivedLabel={labels.archivedBadge}
+                      noTagsLabel={labels.noTags}
+                      conversationsLabel={labels.conversations}
+                      viewProfileLabel={labels.viewProfile}
+                      locale={locale}
+                      onToggle={() => toggleSelect(contact._id)}
+                      onClick={handleRowClick}
+                      onViewProfile={(id) => router.push(`/contacts/${id}`)}
+                      onUpdateStage={(id, stage) => updateStage({ contactId: id, stage }).catch(()=>{})}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
             {results?.status === "CanLoadMore" && (
               <div className="pt-4 text-center">
                 <Button variant="outline" size="sm" onClick={() => results.loadMore(PAGE_SIZE)}>
@@ -439,6 +466,7 @@ interface ContactCardProps {
   onToggle: () => void;
   onClick: (id: Id<"contacts">) => void;
   onViewProfile: (id: Id<"contacts">) => void;
+  onUpdateStage?: (id: Id<"contacts">, stage: Stage) => void;
 }
 
 function ContactCard({
@@ -452,6 +480,7 @@ function ContactCard({
   onToggle,
   onClick,
   onViewProfile,
+  onUpdateStage,
 }: ContactCardProps) {
   const stage = (contact.stage ?? "lead") as Stage;
   const stageCfg = STAGE_CONFIG[stage];
@@ -509,9 +538,39 @@ function ContactCard({
             {archivedLabel}
           </Badge>
         )}
-        <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", stageCfg.color)}>
-          {locale === "ar" ? stageCfg.ar : stageCfg.en}
-        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className={cn(
+                  "text-xs px-2 py-0.5 rounded-full font-medium transition-all hover:ring-2 hover:ring-primary/20",
+                  stageCfg.color
+                )}
+              />
+            }
+          >
+            {locale === "ar" ? stageCfg.ar : stageCfg.en}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
+            {STAGE_TABS.filter((t) => t !== "all").map((tab) => {
+              const cfg = STAGE_CONFIG[tab as Stage];
+              return (
+                <DropdownMenuItem
+                  key={tab}
+                  className="text-xs focus:bg-primary/5 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateStage?.(contact._id, tab as Stage);
+                  }}
+                >
+                  <div className={cn("size-2 rounded-full me-2", cfg.color.replace(/bg-([a-z]+)-100.*/, 'bg-$1-500'))} />
+                  {locale === "ar" ? cfg.ar : cfg.en}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Avatar */}
@@ -535,19 +594,26 @@ function ContactCard({
       </div>
 
       {/* Meta row */}
-      <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground">
-        {(contact.city || contact.country) && (
-          <span className="flex items-center gap-1 truncate">
-            <MapPinIcon className="size-3 shrink-0" />
-            {[contact.city, contact.country].filter(Boolean).join(", ")}
-          </span>
-        )}
-        {contact.category && (
-          <Badge variant="secondary" className="text-xs font-normal">
-            {contact.category}
-          </Badge>
-        )}
-      </div>
+      {(() => {
+        const geo = getCountryFromPhone(contact.phone);
+        const countryIso = geo?.countryIso ?? null;
+        const hasLocation = contact.city || countryIso;
+        return (
+          <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+            {hasLocation && (
+              <span className="flex items-center gap-1 truncate">
+                <MapPinIcon className="size-3 shrink-0" />
+                {[contact.city, countryIso].filter(Boolean).join(", ")}
+              </span>
+            )}
+            {contact.category && (
+              <Badge variant="secondary" className="text-xs font-normal">
+                {contact.category}
+              </Badge>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Tags */}
       <div className="mt-2 flex flex-wrap gap-1 justify-center min-h-5.5">

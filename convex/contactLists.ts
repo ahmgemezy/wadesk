@@ -36,7 +36,8 @@ function contactMatchesFilters(
     }
   }
   if (filters.stages && filters.stages.length > 0) {
-    if (!contact.stage || !filters.stages.includes(contact.stage as Stage)) {
+    const effectiveStage = (contact.stage ?? "lead") as Stage;
+    if (!filters.stages.includes(effectiveStage)) {
       return false;
     }
   }
@@ -76,6 +77,34 @@ export const getAvailableCountries = query({
     for (const c of contacts) {
       const geo = getCountryFromPhone(c.phone);
       if (geo) seen.add(geo.countryIso.toUpperCase());
+    }
+    return Array.from(seen).sort();
+  },
+});
+
+export const getAvailableCities = query({
+  args: {
+    countries: v.optional(v.array(v.string())),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const contacts = await ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+      .collect();
+
+    const upperCountries = args.countries?.map((c) => c.toUpperCase());
+
+    const seen = new Set<string>();
+    for (const c of contacts) {
+      if (!c.city) continue;
+      if (upperCountries && upperCountries.length > 0) {
+        const iso = getCountryFromPhone(c.phone)?.countryIso?.toUpperCase();
+        if (!iso || !upperCountries.includes(iso)) continue;
+      }
+      seen.add(c.city);
     }
     return Array.from(seen).sort();
   },
@@ -148,15 +177,18 @@ export const getStats = query({
     );
 
     const stageBreakdown: Record<string, number> = {};
-    const cityBreakdown: Record<string, number> = {};
+    const countryBreakdown: Record<string, number> = {};
     const tagBreakdown: Record<string, number> = {};
 
     for (const contact of matching) {
       const stage = contact.stage ?? "unknown";
       stageBreakdown[stage] = (stageBreakdown[stage] ?? 0) + 1;
 
-      const city = contact.city ?? "unknown";
-      cityBreakdown[city] = (cityBreakdown[city] ?? 0) + 1;
+      // Use the same phone-derived ISO code as the filter logic — never contact.country
+      const detectedIso = getCountryFromPhone(contact.phone)?.countryIso?.toUpperCase();
+      if (detectedIso) {
+        countryBreakdown[detectedIso] = (countryBreakdown[detectedIso] ?? 0) + 1;
+      }
 
       for (const tag of contact.tags) {
         tagBreakdown[tag] = (tagBreakdown[tag] ?? 0) + 1;
@@ -166,7 +198,7 @@ export const getStats = query({
     return {
       total: matching.length,
       stageBreakdown,
-      cityBreakdown,
+      countryBreakdown,
       tagBreakdown,
     };
   },
@@ -203,7 +235,7 @@ export const previewCount = query({
 
     const stageBreakdown: Record<string, number> = {};
     for (const contact of matching) {
-      const stage = contact.stage ?? "unknown";
+      const stage = contact.stage ?? "lead";
       stageBreakdown[stage] = (stageBreakdown[stage] ?? 0) + 1;
     }
 

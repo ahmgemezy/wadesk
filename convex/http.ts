@@ -185,6 +185,23 @@ export const metaWebhook = httpAction(async (ctx, request) => {
               contentType,
             });
 
+            // ── Check if this is a CSAT response (single digit 1–5) ──────────
+            if (/^[1-5]$/.test(content.trim()) && contentType === "text") {
+              const isCsat: boolean = await ctx.runMutation(internal.csat.checkAndRecordResponse, {
+                tenantId: channel.tenantId,
+                senderPhone: msg.from,
+                content: content.trim(),
+              });
+              if (isCsat) {
+                log("csat_response_recorded", {
+                  orgId: channel.tenantId,
+                  senderPhone: msg.from,
+                  score: content.trim(),
+                });
+                continue; // skip creating a new conversation message
+              }
+            }
+
             const result: {
               messageId: Id<"messages">;
               conversationId: Id<"conversations">;

@@ -39,6 +39,7 @@ export default defineSchema({
     )),
     connectedAt: v.optional(v.number()),
     disconnectedAt: v.optional(v.number()),
+    slaThresholdMinutes: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
@@ -146,6 +147,8 @@ export default defineSchema({
     lastMessagePreview: v.string(),
     unreadCount: v.number(),
     createdAt: v.number(),
+    lastInboundAt: v.optional(v.number()),
+    slaBreachedAt: v.optional(v.number()),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_status", ["tenantId", "status"])
@@ -279,7 +282,7 @@ export default defineSchema({
   notifications: defineTable({
     tenantId: v.string(),
     userId: v.string(),
-    type: v.literal("followup_due"),
+    type: v.union(v.literal("followup_due"), v.literal("sla_breach")),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
     message: v.string(),
@@ -308,6 +311,9 @@ export default defineSchema({
     firstResponseTimeSeconds: v.optional(v.number()),
     resolvedAt: v.optional(v.number()),
     messageCount: v.number(),
+    csatSentAt: v.optional(v.number()),         // timestamp when CSAT message was sent
+    csatScore: v.optional(v.number()),           // 1–5, set when customer replies
+    csatRespondedAt: v.optional(v.number()),     // timestamp of customer reply
   })
     .index("by_tenant_created", ["tenantId", "createdAt"])
     .index("by_tenant_agent", ["tenantId", "assignedAgentId"])
@@ -361,4 +367,38 @@ export default defineSchema({
     .index("by_tenant", ["tenantId"])
     .index("by_rule_conversation", ["ruleId", "conversationId"])
     .index("by_conversation", ["conversationId"]),
+
+  conversationLabels: defineTable({
+    tenantId: v.string(),
+    name: v.string(),
+    color: v.string(),
+    emoji: v.optional(v.string()),
+    createdBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"]),
+
+  channelMembers: defineTable({
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+    userId: v.string(),
+    userName: v.string(),
+    userEmail: v.string(),
+    userImageUrl: v.optional(v.string()),
+    role: v.union(v.literal("org:supervisor"), v.literal("org:agent")),
+    addedBy: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_channel", ["channelId"])
+    .index("by_tenant", ["tenantId"])
+    .index("by_channel_user", ["channelId", "userId"])
+    .index("by_tenant_user", ["tenantId", "userId"]),
+
+  csatSettings: defineTable({
+    tenantId: v.string(),
+    enabled: v.boolean(),
+    delayMinutes: v.number(),          // how many minutes after resolve to send (default: 5)
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"]),
 });

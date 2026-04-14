@@ -65,6 +65,17 @@ export const getAgentPerformance = query({
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
     assertAdminOrSupervisor(orgRole as OrgRole);
 
+    // Build a userId → userName lookup from channelMembers
+    const nameLookup = new Map<string, string>();
+    for await (const member of ctx.db
+      .query("channelMembers")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+    ) {
+      if (!nameLookup.has(member.userId)) {
+        nameLookup.set(member.userId, member.userName);
+      }
+    }
+
     const byAgent = new Map<
       string,
       { agentName: string; conversationsHandled: number; responseTimes: number[] }
@@ -84,8 +95,14 @@ export const getAgentPerformance = query({
           existing.responseTimes.push(doc.firstResponseTimeSeconds);
         }
       } else {
+        // Resolve name: stored name → channelMembers lookup → fallback
+        const resolvedName =
+          doc.agentName ??
+          (key !== "__unassigned__" ? nameLookup.get(key) : undefined) ??
+          (key === "__unassigned__" ? "Unassigned" : "Unknown Agent");
+
         byAgent.set(key, {
-          agentName: doc.agentName ?? "[Former Agent]",
+          agentName: resolvedName,
           conversationsHandled: 1,
           responseTimes:
             doc.firstResponseTimeSeconds !== undefined && doc.firstResponseTimeSeconds !== null
@@ -155,7 +172,7 @@ export const getVolumeOverTime = query({
 export const getMyStats = query({
   args: {},
   handler: async (ctx) => {
-    const { tenantId, callerId } = await getCallerIdentity(ctx);
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
 
     const now = new Date();
     const startOfMonth = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
@@ -163,16 +180,33 @@ export const getMyStats = query({
     let conversationsHandled = 0;
     const responseTimes: number[] = [];
 
-    for await (const doc of ctx.db
-      .query("conversationMetrics")
-      .withIndex("by_tenant_agent", (q) =>
-        q.eq("tenantId", tenantId).eq("assignedAgentId", callerId),
-      )
-    ) {
-      if (doc.createdAt < startOfMonth) continue;
-      conversationsHandled += 1;
-      if (doc.firstResponseTimeSeconds !== undefined && doc.firstResponseTimeSeconds !== null) {
-        responseTimes.push(doc.firstResponseTimeSeconds);
+    const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+
+    if (isAdminOrSupervisor) {
+      for await (const doc of ctx.db
+        .query("conversationMetrics")
+        .withIndex("by_tenant_created", (q) =>
+          q.eq("tenantId", tenantId),
+        )
+      ) {
+        if (doc.createdAt < startOfMonth) continue;
+        conversationsHandled += 1;
+        if (doc.firstResponseTimeSeconds !== undefined && doc.firstResponseTimeSeconds !== null) {
+          responseTimes.push(doc.firstResponseTimeSeconds);
+        }
+      }
+    } else {
+      for await (const doc of ctx.db
+        .query("conversationMetrics")
+        .withIndex("by_tenant_agent", (q) =>
+          q.eq("tenantId", tenantId).eq("assignedAgentId", callerId),
+        )
+      ) {
+        if (doc.createdAt < startOfMonth) continue;
+        conversationsHandled += 1;
+        if (doc.firstResponseTimeSeconds !== undefined && doc.firstResponseTimeSeconds !== null) {
+          responseTimes.push(doc.firstResponseTimeSeconds);
+        }
       }
     }
 

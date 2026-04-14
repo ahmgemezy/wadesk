@@ -105,7 +105,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
 
   if (businessHours === undefined) {
     return (
-      <div className="space-y-3" dir="rtl">
+      <div className="space-y-3">
         <div className="h-7 w-40 rounded bg-muted animate-pulse" />
         <div className="space-y-2">
           {Array.from({ length: 7 }).map((_, i) => (
@@ -117,7 +117,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
   }
 
   return (
-    <div dir="rtl" className="space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center gap-2 mb-1">
         <Clock className="size-5 text-muted-foreground" />
         <h2 className="text-lg font-semibold font-cairo">

@@ -145,11 +145,15 @@ export const setStatus = mutation({
     await ctx.db.patch(args.conversationId, { status: args.status });
 
     if (args.status === "resolved" && conversation.assignedAgentId) {
+      // Resolve agent name from the authenticated identity
+      const identity = await ctx.auth.getUserIdentity();
+      const agentName = identity?.name ?? identity?.email ?? undefined;
+
       await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, {
         conversationId: args.conversationId,
         resolvedAt: Date.now(),
         assignedAgentId: conversation.assignedAgentId,
-        agentName: undefined,
+        agentName,
       });
     }
   },

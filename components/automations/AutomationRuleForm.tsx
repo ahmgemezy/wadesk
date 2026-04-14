@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useT } from "@/lib/i18n/context";
+import { useT, useLocale } from "@/lib/i18n/context";
 import { interpolateTemplate } from "@/lib/automationHelpers";
 import type { TriggerType } from "@/lib/automationHelpers";
 import { AlertTriangle } from "lucide-react";
@@ -76,6 +76,7 @@ export function AutomationRuleForm({
   open,
 }: AutomationRuleFormProps) {
   const t = useT();
+  const locale = useLocale();
   const createRule = useMutation(api.automations.createRule);
   const updateRule = useMutation(api.automations.updateRule);
   const businessHours = useQuery(
@@ -202,7 +203,7 @@ export function AutomationRuleForm({
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}>
-      <SheetContent side="left" className="sm:max-w-md overflow-y-auto" dir="rtl">
+      <SheetContent side={locale === "ar" ? "left" : "right"} className="sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="font-cairo">
             {mode === "edit"

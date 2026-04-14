@@ -33,7 +33,7 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
 
   if (connected) {
     return (
-      <div className="flex flex-col items-center gap-6 text-center" dir="rtl">
+      <div className="flex flex-col items-center gap-6 text-center">
         <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
           <CheckCircle2 className="w-8 h-8 text-green-600" />
         </div>
@@ -51,7 +51,7 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6" dir="rtl">
+    <div className="flex flex-col gap-6">
       <div>
         <h2 className="text-xl font-semibold font-cairo">ربط حساب واتساب بيزنس</h2>
         <p className="text-muted-foreground mt-1 text-sm font-cairo">
