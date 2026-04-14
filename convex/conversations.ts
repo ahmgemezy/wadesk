@@ -244,6 +244,13 @@ export const getOrCreate = mutation({
       totalConversations: (contact.totalConversations ?? 0) + 1,
     });
 
+    await ctx.scheduler.runAfter(0, internal.conversationMetrics.create, {
+      tenantId,
+      conversationId,
+      channelId: args.channelId,
+      createdAt: now,
+    });
+
     return conversationId;
   },
 });

@@ -6,7 +6,7 @@
  * and `messages.ts` to write denormalized metrics records without blocking the
  * main mutation response.
  */
-import { internalMutation } from "./_generated/server";
+import { internalMutation, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 
@@ -16,13 +16,14 @@ export const create = internalMutation({
     conversationId: v.id("conversations"),
     channelId: v.id("channels"),
     createdAt: v.number(),
+    initialMessageCount: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     await ctx.db.insert("conversationMetrics", {
       tenantId: args.tenantId,
       conversationId: args.conversationId,
       channelId: args.channelId,
-      messageCount: 0,
+      messageCount: args.initialMessageCount ?? 0,
       createdAt: args.createdAt,
     });
   },
@@ -89,5 +90,48 @@ export const incrementMessageCount = internalMutation({
     await ctx.db.patch(existing._id, {
       messageCount: existing.messageCount + 1,
     });
+  },
+});
+
+/**
+ * One-time backfill: creates missing conversationMetrics records for any
+ * conversation that doesn't have one yet. Safe to run multiple times.
+ * Run via: npx convex run conversationMetrics:backfillMissingMetrics '{"tenantId":"<your-org-id>"}'
+ */
+export const backfillMissingMetrics = mutation({
+  args: { tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const { tenantId } = args;
+
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_channel", (q) => q.eq("tenantId", tenantId))
+      .collect();
+
+    let created = 0;
+    for (const conv of conversations) {
+      const existing = await ctx.db
+        .query("conversationMetrics")
+        .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+        .first();
+      if (existing) continue;
+
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+        .collect();
+      const messageCount = messages.filter((m) => !m.isInternalNote).length;
+
+      await ctx.db.insert("conversationMetrics", {
+        tenantId,
+        conversationId: conv._id,
+        channelId: conv.channelId,
+        messageCount,
+        createdAt: conv.createdAt,
+      });
+      created++;
+    }
+
+    return { created };
   },
 });

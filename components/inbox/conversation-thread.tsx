@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useQuery, useConvexAuth } from "convex/react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery, useConvexAuth, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./message-bubble";
 import { LabelPicker } from "./label-picker";
 import { useLocale, useTranslatedLabel } from "@/lib/i18n/context";
+import { toast } from "sonner";
 
 type MessageItem = {
   _id: string;
@@ -17,8 +18,12 @@ type MessageItem = {
   isInternalNote: boolean;
   authorId: string | undefined;
   mediaUrl?: string;
+  metaMessageId?: string;
   status: "sending" | "sent" | "delivered" | "read" | "failed";
   timestamp: number;
+  quotedMessageId?: string;
+  deletedAt?: number;
+  reactions?: { emoji: string; reactorId: string }[];
 };
 
 function formatDateLabel(timestamp: number, locale: "ar" | "en"): string {
@@ -59,16 +64,29 @@ function groupByDate(
   return groups;
 }
 
+type ReplyTo = {
+  messageId: string;
+  content: string;
+  authorLabel: string;
+} | null;
+
 export function ConversationThread({
   conversationId,
+  replyTo,
+  onSetReplyTo,
 }: {
   conversationId: string;
+  replyTo?: ReplyTo;
+  onSetReplyTo?: (reply: ReplyTo) => void;
 }) {
   const locale = useLocale();
   const translateLabel = useTranslatedLabel();
   const rawMessages = useQuery(api.inbox.getMessages, {
     conversationId: conversationId as Id<"conversations">,
   });
+
+  const deleteMessageMutation = useMutation(api.messages.deleteMessage);
+  const reactToMessageMutation = useMutation(api.messages.reactToMessage);
 
   const { isAuthenticated } = useConvexAuth();
   const allLabels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip");
@@ -100,9 +118,17 @@ export function ConversationThread({
           isInternalNote: m.isInternalNote,
           authorId: m.authorId,
           mediaUrl: m.mediaUrl,
+          metaMessageId: m.metaMessageId,
           status: m.status as "sending" | "sent" | "delivered" | "read" | "failed",
           timestamp: m.timestamp,
+          quotedMessageId: m.quotedMessageId as string | undefined,
+          deletedAt: m.deletedAt as number | undefined,
+          reactions: m.reactions as { emoji: string; reactorId: string }[] | undefined,
         }));
+
+  const messagesById = new Map(
+    (messages ?? []).map((m) => [m._id, m]),
+  );
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -197,8 +223,41 @@ export function ConversationThread({
                     isInternalNote: msg.isInternalNote,
                     authorId: msg.authorId,
                     mediaUrl: msg.mediaUrl,
+                    metaMessageId: msg.metaMessageId,
                     status: msg.status === "sending" ? "sent" : msg.status,
                     timestamp: msg.timestamp,
+                    quotedMessageId: msg.quotedMessageId,
+                    deletedAt: msg.deletedAt,
+                    reactions: msg.reactions,
+                  }}
+                  quotedMessage={
+                    msg.quotedMessageId
+                      ? (messagesById.get(msg.quotedMessageId) as any ?? null)
+                      : null
+                  }
+                  onReply={(m) =>
+                    onSetReplyTo?.({
+                      messageId: m._id,
+                      content: m.content.slice(0, 100),
+                      authorLabel:
+                        m.direction === "outbound"
+                          ? locale === "en" ? "You" : "أنت"
+                          : locale === "en" ? "Customer" : "العميل",
+                    })
+                  }
+                  onDelete={async (messageId) => {
+                    try {
+                      await deleteMessageMutation({ messageId: messageId as Id<"messages"> });
+                    } catch {
+                      toast.error(locale === "en" ? "Failed to delete message" : "فشل حذف الرسالة");
+                    }
+                  }}
+                  onReact={async (messageId, emoji) => {
+                    try {
+                      await reactToMessageMutation({ messageId: messageId as Id<"messages">, emoji });
+                    } catch {
+                      toast.error(locale === "en" ? "Failed to react" : "فشل التفاعل");
+                    }
                   }}
                 />
               ))}

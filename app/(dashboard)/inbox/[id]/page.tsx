@@ -18,6 +18,11 @@ export default function ConversationPage() {
   const conversationId = params.id;
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
   const [quickReplyContent, setQuickReplyContent] = useState("");
+  const [replyTo, setReplyTo] = useState<{
+    messageId: string;
+    content: string;
+    authorLabel: string;
+  } | null>(null);
 
   const conversation = useQuery(api.conversations.get, {
     conversationId: conversationId as Id<"conversations">,
@@ -49,12 +54,14 @@ export default function ConversationPage() {
             currentAssigneeId={conversation.assignedAgentId ?? undefined}
           />
         </div>
-        <ConversationThread conversationId={conversationId} />
+        <ConversationThread conversationId={conversationId} replyTo={replyTo} onSetReplyTo={setReplyTo} />
         <MessageInput
           conversationId={conversationId}
           onQuickReplyOpen={() => setQuickReplyOpen(true)}
           quickReplyContent={quickReplyContent}
           onQuickReplyConsumed={() => setQuickReplyContent("")}
+          replyTo={replyTo}
+          onClearReply={() => setReplyTo(null)}
         />
       </div>
     </>

@@ -24,6 +24,11 @@ export default function InboxPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
   const [quickReplyContent, setQuickReplyContent] = useState("");
+  const [replyTo, setReplyTo] = useState<{
+    messageId: string;
+    content: string;
+    authorLabel: string;
+  } | null>(null);
 
   const markAsRead = useMutation(api.inbox.markAsRead);
 
@@ -149,12 +154,14 @@ export default function InboxPage() {
               {/* Message thread + composer */}
               <div className="flex flex-1 min-h-0">
                 <div className="flex flex-col flex-1 min-w-0 min-h-0">
-                  <ConversationThread conversationId={selectedId} />
+                  <ConversationThread conversationId={selectedId} replyTo={replyTo} onSetReplyTo={setReplyTo} />
                   <MessageInput
                     conversationId={selectedId}
                     onQuickReplyOpen={() => setQuickReplyOpen(true)}
                     quickReplyContent={quickReplyContent}
                     onQuickReplyConsumed={() => setQuickReplyContent("")}
+                    replyTo={replyTo}
+                    onClearReply={() => setReplyTo(null)}
                   />
                 </div>
 

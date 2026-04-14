@@ -269,12 +269,13 @@ export const createInbound = internalMutation({
         conversationId: conversation!._id,
         channelId: args.channelId,
         createdAt: args.timestamp,
+        initialMessageCount: 1,
+      });
+    } else {
+      await ctx.scheduler.runAfter(0, internal.conversationMetrics.incrementMessageCount, {
+        conversationId: conversation!._id,
       });
     }
-
-    await ctx.scheduler.runAfter(0, internal.conversationMetrics.incrementMessageCount, {
-      conversationId: conversation!._id,
-    });
 
     return { messageId, conversationId: conversation!._id, isNewConversation, isDuplicate: false };
   },

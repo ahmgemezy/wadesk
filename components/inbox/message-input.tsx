@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { TemplatePicker } from "@/components/templates/template-picker";
+import { ReplyContextBanner } from "./reply-context-banner";
 
 // Lazy-load emoji picker to keep initial bundle small
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -50,11 +51,15 @@ export function MessageInput({
   onQuickReplyOpen,
   quickReplyContent,
   onQuickReplyConsumed,
+  replyTo,
+  onClearReply,
 }: {
   conversationId: string;
   onQuickReplyOpen?: () => void;
   quickReplyContent?: string;
   onQuickReplyConsumed?: () => void;
+  replyTo?: { messageId: string; content: string; authorLabel: string } | null;
+  onClearReply?: () => void;
 }) {
   const t = useT();
   const [content, setContent] = useState("");
@@ -108,6 +113,7 @@ export function MessageInput({
   const generateUploadUrl = useMutation(api.messages.generateUploadUrl);
   const sendMediaReply = useAction(api.messages.sendMediaReply);
   const sendLocationReply = useMutation(api.messages.sendLocationReply);
+  const sendQuotedReplyMutation = useMutation(api.messages.sendQuotedReply);
 
   // Close emoji picker on outside click
   useEffect(() => {
@@ -187,11 +193,20 @@ export function MessageInput({
     setContent("");
 
     try {
-      await sendMessage({
-        conversationId: conversationId as Id<"conversations">,
-        content: trimmed,
-        type: isNote ? "note" : "reply",
-      });
+      if (replyTo) {
+        await sendQuotedReplyMutation({
+          conversationId: conversationId as Id<"conversations">,
+          content: trimmed,
+          quotedMessageId: replyTo.messageId as Id<"messages">,
+        });
+        onClearReply?.();
+      } else {
+        await sendMessage({
+          conversationId: conversationId as Id<"conversations">,
+          content: trimmed,
+          type: isNote ? "note" : "reply",
+        });
+      }
     } catch {
       setContent(trimmed);
       toast.error(
@@ -315,6 +330,15 @@ export function MessageInput({
             searchDisabled={false}
           />
         </div>
+      )}
+
+      {/* Reply context banner */}
+      {replyTo && (
+        <ReplyContextBanner
+          quotedContent={replyTo.content}
+          quotedAuthor={replyTo.authorLabel}
+          onClear={() => onClearReply?.()}
+        />
       )}
 
       <Textarea
