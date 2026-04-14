@@ -144,17 +144,30 @@ export const setStatus = mutation({
 
     await ctx.db.patch(args.conversationId, { status: args.status });
 
-    if (args.status === "resolved" && conversation.assignedAgentId) {
+    if (args.status === "resolved") {
       // Resolve agent name from the authenticated identity
       const identity = await ctx.auth.getUserIdentity();
       const agentName = identity?.name ?? identity?.email ?? undefined;
 
-      await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, {
-        conversationId: args.conversationId,
-        resolvedAt: Date.now(),
-        assignedAgentId: conversation.assignedAgentId,
-        agentName,
-      });
+      if (conversation.assignedAgentId) {
+        await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, {
+          conversationId: args.conversationId,
+          resolvedAt: Date.now(),
+          assignedAgentId: conversation.assignedAgentId,
+          agentName,
+        });
+      }
+
+      // Fire conversation_resolved event on the contact's timeline
+      if (conversation.contactId) {
+        await ctx.runMutation(internal.contactEvents.internalCreate, {
+          tenantId,
+          contactId: conversation.contactId,
+          type: "conversation_resolved",
+          actorId: callerId,
+          metadata: { conversationId: args.conversationId },
+        });
+      }
     }
   },
 });
@@ -177,6 +190,61 @@ export const unassignAll = internalMutation({
       }
     }
     return { count };
+  },
+});
+
+export const getOrCreate = mutation({
+  args: {
+    contactId: v.id("contacts"),
+    channelId: v.id("channels"),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const contact = await ctx.db.get(args.contactId);
+    if (!contact || contact.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel || channel.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    // Try to find an existing open conversation for this contact + channel
+    const existing = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_channel", (q) =>
+        q.eq("tenantId", tenantId).eq("channelId", args.channelId),
+      )
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("contactId"), args.contactId),
+          q.neq(q.field("status"), "resolved"),
+        ),
+      )
+      .first();
+
+    if (existing) return existing._id;
+
+    const now = Date.now();
+    const conversationId = await ctx.db.insert("conversations", {
+      tenantId,
+      channelId: args.channelId,
+      contactId: args.contactId,
+      status: "open",
+      labels: [],
+      lastMessageAt: now,
+      lastMessagePreview: "",
+      unreadCount: 0,
+      createdAt: now,
+    });
+
+    await ctx.db.patch(args.contactId, {
+      totalConversations: (contact.totalConversations ?? 0) + 1,
+    });
+
+    return conversationId;
   },
 });
 

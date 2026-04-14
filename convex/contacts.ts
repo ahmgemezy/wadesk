@@ -5,6 +5,21 @@ import { getCallerIdentity, getCallerRole, assertAdminOrSupervisor } from "./lib
 import { paginationOptsValidator } from "convex/server";
 import { getCountryFromPhone } from "../lib/phoneGeo";
 
+async function enrichWithConversationCount<T extends { _id: import("./_generated/dataModel").Id<"contacts">; totalConversations?: number }>(
+  ctx: { db: import("./_generated/server").DatabaseReader },
+  contacts: T[]
+): Promise<T[]> {
+  return Promise.all(
+    contacts.map(async (contact) => {
+      const convs = await ctx.db
+        .query("conversations")
+        .withIndex("by_contact", (q) => q.eq("contactId", contact._id))
+        .collect();
+      return { ...contact, totalConversations: convs.length };
+    })
+  );
+}
+
 export const listForTenant = query({
   args: {
     paginationOpts: paginationOptsValidator,
@@ -12,20 +27,21 @@ export const listForTenant = query({
   },
   handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
-    if (args.includeArchived) {
-      return ctx.db
-        .query("contacts")
-        .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
-        .order("desc")
-        .paginate(args.paginationOpts);
-    }
-    return ctx.db
-      .query("contacts")
-      .withIndex("by_tenant_archived", (q) =>
-        q.eq("tenantId", tenantId).eq("isArchived", false),
-      )
-      .order("desc")
-      .paginate(args.paginationOpts);
+    const result = args.includeArchived
+      ? await ctx.db
+          .query("contacts")
+          .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+          .order("desc")
+          .paginate(args.paginationOpts)
+      : await ctx.db
+          .query("contacts")
+          .withIndex("by_tenant_archived", (q) =>
+            q.eq("tenantId", tenantId).eq("isArchived", false),
+          )
+          .order("desc")
+          .paginate(args.paginationOpts);
+    const enriched = await enrichWithConversationCount(ctx, result.page);
+    return { ...result, page: enriched };
   },
 });
 
@@ -63,10 +79,11 @@ export const search = query({
       )
       .paginate(args.paginationOpts);
 
-    if (args.includeArchived) return results;
-
-    const filtered = results.page.filter((c) => !c.isArchived);
-    return { ...results, page: filtered };
+    const filtered = args.includeArchived
+      ? results.page
+      : results.page.filter((c) => !c.isArchived);
+    const enriched = await enrichWithConversationCount(ctx, filtered);
+    return { ...results, page: enriched };
   },
 });
 
@@ -101,10 +118,16 @@ export const update = mutation({
     country: v.optional(v.string()),
     city: v.optional(v.string()),
     spent: v.optional(v.number()),
+    spentCurrency: v.optional(v.union(
+      v.literal("EGP"),
+      v.literal("SAR"),
+      v.literal("AED"),
+      v.literal("USD"),
+    )),
     category: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { tenantId } = await getCallerIdentity(ctx);
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
     const contact = await ctx.db.get(args.contactId);
     if (!contact || contact.tenantId !== tenantId) {
       throw new Error("Contact not found");
@@ -118,9 +141,21 @@ export const update = mutation({
     if (args.country !== undefined) patch.country = args.country || undefined;
     if (args.city !== undefined) patch.city = args.city || undefined;
     if (args.spent !== undefined) patch.spent = args.spent;
+    if (args.spentCurrency !== undefined) patch.spentCurrency = args.spentCurrency;
     if (args.category !== undefined) patch.category = args.category || undefined;
 
     await ctx.db.patch(args.contactId, patch);
+
+    // Fire tags_changed event when tags are explicitly updated
+    if (args.tags !== undefined) {
+      await ctx.runMutation(internal.contactEvents.internalCreate, {
+        tenantId,
+        contactId: args.contactId,
+        type: "tags_changed",
+        actorId: callerId,
+        metadata: { tags: args.tags },
+      });
+    }
   },
 });
 
