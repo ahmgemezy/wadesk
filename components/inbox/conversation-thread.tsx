@@ -7,7 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./message-bubble";
 import { LabelPicker } from "./label-picker";
-import { useLocale } from "@/lib/i18n/context";
+import { useLocale, useTranslatedLabel } from "@/lib/i18n/context";
 
 type MessageItem = {
   _id: string;
@@ -65,6 +65,7 @@ export function ConversationThread({
   conversationId: string;
 }) {
   const locale = useLocale();
+  const translateLabel = useTranslatedLabel();
   const rawMessages = useQuery(api.inbox.getMessages, {
     conversationId: conversationId as Id<"conversations">,
   });
@@ -154,7 +155,7 @@ export function ConversationThread({
                   className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-muted"
                 >
                   <span className={`size-1.5 rounded-full ${colorClass}`} />
-                  {meta?.emoji ? `${meta.emoji} ` : ""}{name}
+                  {meta?.emoji ? `${meta.emoji} ` : ""}{translateLabel(name)}
                 </span>
               );
             })}

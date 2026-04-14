@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { ConversationListItem } from "./conversation-list-item";
-import { useT } from "@/lib/i18n/context";
+import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 type AssignmentFilter = "all" | "mine" | "unassigned" | "unread";
@@ -35,6 +35,7 @@ export function ConversationList({
   onAssignClick,
 }: ConversationListProps) {
   const t = useT();
+  const translateLabel = useTranslatedLabel();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<AssignmentFilter>("all");
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
@@ -177,7 +178,7 @@ export function ConversationList({
               )}
             >
               {label.emoji && <span>{label.emoji}</span>}
-              {label.name}
+              {translateLabel(label.name)}
             </button>
           ))}
         </div>

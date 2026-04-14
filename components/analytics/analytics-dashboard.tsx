@@ -6,6 +6,10 @@ import { DateRangePicker, type DateRange } from "./date-range-picker";
 import { TeamSummaryCards } from "./team-summary-cards";
 import { AgentPerformanceTable } from "./agent-performance-table";
 import { VolumeChart } from "./volume-chart";
+import { LabelDistributionChart } from "./label-distribution-chart";
+import { CustomerLifecycleChart } from "./customer-lifecycle-chart";
+import { StageFunnelChart } from "./stage-funnel-chart";
+import { ContactActivityTimeline } from "./contact-activity-timeline";
 
 interface AnalyticsDashboardProps {
   locale?: "ar" | "en";
@@ -38,6 +42,15 @@ export function AnalyticsDashboard({ locale = "ar" }: AnalyticsDashboardProps) {
       <AgentPerformanceTable dateRange={dateRange} locale={locale} />
 
       <VolumeChart dateRange={dateRange} locale={locale} />
+
+      <LabelDistributionChart dateRange={dateRange} locale={locale} />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <CustomerLifecycleChart locale={locale} />
+        <StageFunnelChart locale={locale} />
+      </div>
+
+      <ContactActivityTimeline locale={locale} />
     </motion.div>
   );
 }

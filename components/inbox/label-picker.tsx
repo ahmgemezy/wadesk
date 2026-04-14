@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useT } from "@/lib/i18n/context";
+import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 
 const COLOR_MAP: Record<string, string> = {
   red: "bg-red-500",
@@ -30,6 +30,7 @@ interface LabelPickerProps {
 
 export function LabelPicker({ conversationId, activeLabels }: LabelPickerProps) {
   const t = useT();
+  const translateLabel = useTranslatedLabel();
   const { isAuthenticated } = useConvexAuth();
   const labels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip") ?? [];
   const addLabel = useMutation(api.labels.addToConversation);
@@ -82,7 +83,7 @@ export function LabelPicker({ conversationId, activeLabels }: LabelPickerProps) 
                 />
                 <span className="flex-1 text-start truncate">
                   {label.emoji ? `${label.emoji} ` : ""}
-                  {label.name}
+                  {translateLabel(label.name)}
                 </span>
                 {isActive && (
                   <span className="text-[10px] text-primary font-semibold">

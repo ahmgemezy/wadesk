@@ -10,7 +10,7 @@
 **WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Lemon Squeezy (payments)  
 **Current branch:** `009-automation-rules`  
-**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server running
+**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server running · ✅ Outbound text replies wired to Meta API
 
 ---
 
@@ -290,6 +290,98 @@
 
 ---
 
+### Outbound Text Replies → Meta API (Task 013)
+- **Status:** Done
+- **Branch:** `009-automation-rules`
+- **What was built:** `sendReply` mutation in `convex/messages.ts` schedules `internal.actions.sendWhatsAppMessage.sendMessage` immediately after inserting the message — text replies are delivered to Meta API just like media messages. Message status patches from `"sending"` → `"sent"` / `"delivered"` after Meta confirms.
+
+---
+
+### Conversation Labels
+- **Status:** Done
+- **Branch:** `009-automation-rules`
+- **Commit:** `68542d8`
+- **What was built:** Full conversation tagging system for categorization and inbox filtering
+- **New Convex tables:**
+  - `conversationLabels` — label metadata (name, color, emoji) scoped to `tenantId`
+- **New files:**
+  - `convex/labels.ts` — full CRUD (list, create, update, remove); Admin-only delete; Admin+Supervisor create/update
+  - `components/inbox/label-picker.tsx` — Popover with checkbox list for adding/removing labels from a conversation
+  - `components/settings/labels-settings.tsx` — manage tenant label library (create with color picker, delete)
+  - `app/(dashboard)/settings/labels/page.tsx`
+- **Inbox integration:**
+  - `convex/inbox.ts` — `listConversations` returns `labels` per conversation; `getConversation` query added
+  - `components/inbox/conversation-thread.tsx` — label chips bar above messages + LabelPicker trigger
+  - `components/inbox/conversation-list-item.tsx` — label name chips shown below message preview
+  - `components/inbox/conversation-list.tsx` — label filter row (tap a label chip to filter conversations)
+- **Schema changes:** `conversations.labels: v.array(v.string())` was already present; added `conversationLabels` table
+- **Nav:** `/settings/labels` added with `minRole: "supervisor"`
+
+---
+
+### CSAT Flow
+- **Status:** Done
+- **Branch:** `009-automation-rules`
+- **Commit:** `68542d8`
+- **What was built:** Automated customer satisfaction survey sent after conversation is resolved
+- **New Convex tables:**
+  - `csatSettings` — per-tenant settings (enabled toggle, delayMinutes)
+- **Schema changes on `conversationMetrics`:**
+  - `csatSentAt` — timestamp when CSAT was sent
+  - `csatScore` — 1–5, captured when customer replies
+  - `csatRespondedAt` — timestamp of response
+- **New files:**
+  - `convex/csat.ts` — `sendCsatMessage` (internalAction, sends Arabic 1–5 text via Meta API), `checkAndRecordResponse` (internalMutation, intercepts single-digit replies from customer), `getSettings`/`updateSettings` (admin CRUD), `getAverageScore` (for analytics)
+  - `components/settings/csat-settings.tsx` — enable/disable toggle + delay config
+  - `app/(dashboard)/settings/csat/page.tsx`
+- **Trigger:** `inbox.updateStatus` schedules `csat.sendCsatMessage` (with configurable delay) when conversation → `"resolved"`
+- **Webhook interception:** `convex/http.ts` checks if inbound message matches `/^[1-5]$/` and calls `internal.csat.checkAndRecordResponse` before `createInbound` — if it's a CSAT reply, the message is captured as a score and NOT added to the conversation thread
+- **Plan gating:** Growth and above only
+- **Nav:** `/settings/csat` added with `minRole: "admin"`
+
+---
+
+### SLA Alerts
+- **Status:** Done
+- **Branch:** `009-automation-rules`
+- **Commit:** `68542d8`
+- **What was built:** Automatic SLA breach detection with in-app alerts when conversations go unanswered too long
+- **Schema changes on `conversations`:**
+  - `lastInboundAt` — timestamp of last inbound message (tracked in `createInbound`)
+  - `slaBreachedAt` — timestamp when SLA was breached (set by cron, cleared on agent reply)
+- **Schema changes on `channels`:**
+  - `slaThresholdMinutes` — configurable per channel (optional, 0 = disabled)
+- **Schema changes on `notifications`:**
+  - `type` extended: `v.union(v.literal("followup_due"), v.literal("sla_breach"))`
+  - `referenceId` field added (conversationId for SLA breach notifications)
+- **New files:**
+  - `convex/sla.ts` — `checkBreaches` (internalMutation, scans open conversations every 5 min), `updateChannelSlaThreshold` (public mutation, admin-only)
+- **Cron:** `convex/crons.ts` — `check-sla-breaches` runs every 5 minutes → `internal.sla.checkBreaches`
+- **Tracking:** `convex/messages.ts` `createInbound` → patches `lastInboundAt`; `sendReply` clears `slaBreachedAt` on agent reply
+- **Inbox UI:**
+  - `conversation-list-item.tsx` — amber ⚠️ badge when `slaBreachedAt` is set
+  - `conversation-list.tsx` — `slaBreachedAt` passed through from `listConversations`
+- **Channel settings:** SLA threshold number input added to `app/(dashboard)/settings/channels/[channelId]/page.tsx`
+- **Notification bell:** `components/ui/notification-bell.tsx` routes `sla_breach` notifications to `/inbox/{conversationId}` instead of `/contacts`
+- **Notifications sent to:** Channel supervisors (queried from `channelMembers` table)
+
+---
+
+### Department / Channel Member Assignment
+- **Status:** Done
+- **Branch:** `009-automation-rules`
+- **Commit:** `68542d8`
+- **What was built:** Assign specific team members to channels; track per-channel roles for SLA notifications
+- **New Convex tables:**
+  - `channelMembers` — maps `(channelId, userId, role)` with `by_channel` and `by_user` indexes
+- **New files:**
+  - `convex/channelMembers.ts` — `listForChannel`, `isCallerMember`, `addMember`, `removeMember`
+  - `components/settings/department-members.tsx` — member list with add/remove UI inside channel settings
+- **Integration:** `app/(dashboard)/settings/channels/[channelId]/page.tsx` renders `<DepartmentMembers channelId={channelId} />`
+- **Used by SLA:** `sla.checkBreaches` queries `channelMembers` to find supervisors to notify
+
+---
+
 ### Automation Rules Engine
 - **Status:** Done
 - **Branch:** `009-automation-rules`
@@ -345,16 +437,18 @@
 | Read/Unread toggle per conversation | ✅ Done |
 | Unread badge on sidebar | ✅ Done |
 | Stage filter in inbox | ✅ Done |
-| WhatsApp API send (outbound text via Meta) | ⚠️ Partial — messages saved to DB with "sending" status; Meta API call not yet wired for text replies |
+| WhatsApp API send (outbound text via Meta) | ✅ Done |
 | WhatsApp API send (outbound media via Meta) | ✅ Done |
 | Smart contact lists (dynamic segmentation) | ✅ Done |
 | Static contact lists | ✅ Done |
 | Broadcast campaigns (wizard + send) | ✅ Done |
 | Automation rules engine (if-this-send-that) | ✅ Done |
 | Business hours configuration | ✅ Done |
+| Conversation labels (tag + filter) | ✅ Done |
+| CSAT flow (auto-send + capture rating) | ✅ Done |
+| SLA alerts (breach detection + ⚠️ badge) | ✅ Done |
+| Department / channel member assignment | ✅ Done |
 | Round-robin assignment | ❌ Not started |
-| CSAT flow | ❌ Not started |
-| SLA alerts | ❌ Not started |
 | Data export | ❌ Not started |
 | Billing / Lemon Squeezy | ❌ Not started |
 | WhatsApp Catalog | ❌ Deferred Phase 2 |
@@ -365,13 +459,10 @@
 
 | # | Feature | Priority | Notes |
 |---|---|---|---|
-| 013 | Wire outbound text replies → Meta API (patch "sending" → "sent") | **High** | Media already wired; text replies still only saved to DB |
 | 014 | Round-robin assignment mode | Medium | Schema already has `roundRobinIndex` on channels |
-| 015 | CSAT flow | Medium | Auto-send rating request after conversation close |
-| 016 | SLA alerts | Medium | Convex scheduled function checks open conversations |
-| 017 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
-| 018 | Billing / Lemon Squeezy integration | Low | Plan limits partially enforced in Convex already |
-| 019 | Supervisor department/scoping plan | Low | Plan documented in `docs/superpowers/plans/2026-04-09-supervisor-department-scoping.md` |
+| 015 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
+| 016 | Billing / Lemon Squeezy integration | Low | Plan limits partially enforced in Convex already |
+| 017 | Supervisor department/scoping plan | Low | Plan documented in `docs/superpowers/plans/2026-04-09-supervisor-department-scoping.md` |
 
 ---
 

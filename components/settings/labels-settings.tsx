@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { useT } from "@/lib/i18n/context";
+import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 import { useOrganization } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
@@ -23,20 +23,21 @@ const COLORS = [
   { value: "gray",   bg: "bg-gray-400" },
 ];
 
-const DEFAULT_LABELS = [
-  { name: "شكوى",       color: "red",    emoji: "⚠️" },
-  { name: "استفسار",    color: "blue",   emoji: "❓" },
-  { name: "مبيعات",     color: "green",  emoji: "💰" },
-  { name: "دعم فني",    color: "purple", emoji: "🔧" },
-  { name: "VIP",        color: "yellow", emoji: "⭐" },
-];
-
 export function LabelsSettings() {
   const t = useT();
+  const translateLabel = useTranslatedLabel();
   const { isAuthenticated } = useConvexAuth();
   const { membership } = useOrganization();
   const role = membership?.role as string | undefined;
   const isAdmin = role === "org:admin" || role === "admin";
+
+  const DEFAULT_LABELS = [
+    { name: t("Complaint", "شكوى"),       color: "red",    emoji: "⚠️" },
+    { name: t("Inquiry", "استفسار"),      color: "blue",   emoji: "❓" },
+    { name: t("Sales", "مبيعات"),         color: "green",  emoji: "💰" },
+    { name: t("Tech Support", "دعم فني"), color: "purple", emoji: "🔧" },
+    { name: "VIP",                        color: "yellow", emoji: "⭐" },
+  ];
 
   const labels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip") ?? [];
   const createLabel = useMutation(api.labels.create);
@@ -123,14 +124,14 @@ export function LabelsSettings() {
               )}
             />
             <span className="flex-1 text-sm">
-              {label.emoji ? `${label.emoji} ` : ""}{label.name}
+              {label.emoji ? `${label.emoji} ` : ""}{translateLabel(label.name)}
             </span>
             {isAdmin && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="size-7 text-muted-foreground hover:text-destructive"
-                onClick={() => handleRemove(label._id, label.name)}
+                onClick={() => handleRemove(label._id, translateLabel(label.name))}
               >
                 <Trash2 className="size-3.5" />
               </Button>
