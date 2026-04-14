@@ -169,6 +169,149 @@ export const getVolumeOverTime = query({
   },
 });
 
+export const getLabelDistribution = query({
+  args: {
+    startTs: v.number(),
+    endTs: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdminOrSupervisor(orgRole as OrgRole);
+
+    const labelDefs = await ctx.db
+      .query("conversationLabels")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .collect();
+
+    const labelMeta = new Map<string, { color: string; emoji?: string }>();
+    for (const ld of labelDefs) {
+      labelMeta.set(ld.name, { color: ld.color, emoji: ld.emoji });
+    }
+
+    const counts = new Map<string, number>();
+
+    for await (const metric of ctx.db
+      .query("conversationMetrics")
+      .withIndex("by_tenant_created", (q) =>
+        q.eq("tenantId", tenantId).gte("createdAt", args.startTs).lte("createdAt", args.endTs),
+      )
+    ) {
+      const conversation = await ctx.db.get(metric.conversationId);
+      if (!conversation) continue;
+
+      for (const labelName of conversation.labels) {
+        counts.set(labelName, (counts.get(labelName) ?? 0) + 1);
+      }
+    }
+
+    const totalLabeled = Array.from(counts.values()).reduce((a, b) => a + b, 0);
+
+    return Array.from(counts.entries())
+      .map(([name, count]) => {
+        const meta = labelMeta.get(name);
+        return {
+          name,
+          count,
+          color: meta?.color ?? "gray",
+          emoji: meta?.emoji,
+          percentage: totalLabeled > 0 ? Math.round((count / totalLabeled) * 100) : 0,
+        };
+      })
+      .sort((a, b) => b.count - a.count);
+  },
+});
+
+export const getStageDistribution = query({
+  args: {},
+  handler: async (ctx) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdminOrSupervisor(orgRole as OrgRole);
+
+    const counts: Record<string, number> = {
+      lead: 0,
+      prospect: 0,
+      customer: 0,
+      retained: 0,
+      churned: 0,
+    };
+
+    for await (const contact of ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false)
+      )
+    ) {
+      const stage = contact.stage ?? "lead";
+      counts[stage] = (counts[stage] ?? 0) + 1;
+    }
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    const distribution = (["lead", "prospect", "customer", "retained", "churned"] as const).map(
+      (stage) => ({
+        stage,
+        count: counts[stage] ?? 0,
+        percentage: total > 0 ? Math.round(((counts[stage] ?? 0) / total) * 100) : 0,
+      }),
+    );
+
+    const funnelOrder = ["lead", "prospect", "customer", "retained"] as const;
+    const funnel = funnelOrder.map((stage, i) => {
+      const count = counts[stage] ?? 0;
+      const prevStage = i === 0 ? null : funnelOrder[i - 1];
+      const prevCount = prevStage ? (counts[prevStage] ?? 0) : total;
+      const conversionRate = prevCount > 0 ? Math.round((count / prevCount) * 100) : 0;
+      return { stage, count, conversionRate };
+    });
+
+    return { distribution, funnel, total, churned: counts.churned ?? 0 };
+  },
+});
+
+export const getContactActivity = query({
+  args: {
+    contactId: v.id("contacts"),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const contact = await ctx.db.get(args.contactId);
+    if (!contact || contact.tenantId !== tenantId) return null;
+
+    const events: Array<{
+      _id: string;
+      type: string;
+      actorId?: string;
+      metadata: Record<string, unknown>;
+      createdAt: number;
+    }> = [];
+
+    for await (const event of ctx.db
+      .query("contactEvents")
+      .withIndex("by_contact", (q) => q.eq("contactId", args.contactId))
+      .order("desc")
+    ) {
+      events.push({
+        _id: event._id,
+        type: event.type,
+        actorId: event.actorId ?? undefined,
+        metadata: event.metadata as Record<string, unknown>,
+        createdAt: event.createdAt,
+      });
+    }
+
+    return {
+      contact: {
+        _id: contact._id,
+        displayName: contact.customName ?? contact.displayName,
+        phone: contact.phone,
+        stage: contact.stage ?? "lead",
+      },
+      events,
+    };
+  },
+});
+
 export const getMyStats = query({
   args: {},
   handler: async (ctx) => {

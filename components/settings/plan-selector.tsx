@@ -42,7 +42,7 @@ export function PlanSelector() {
             } ${isLoading ? "opacity-60" : ""}`}
           >
             {isActive && (
-              <span className="absolute top-2 end-2 text-xs font-medium text-primary">
+              <span className="absolute top-2 inset-e-2 text-xs font-medium text-primary">
                 {t("Current", "الحالية")}
               </span>
             )}

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@clerk/nextjs";
-import { useT, useLocale } from "@/lib/i18n/context";
+import { useT, useLocale, useTranslatedLabel } from "@/lib/i18n/context";
 import { MailOpen, MailCheck, AlertTriangle } from "lucide-react";
 
 interface ConversationItem {
@@ -43,6 +43,7 @@ export function ConversationListItem({
 }: ConversationListItemProps) {
   const { membership } = useOrganization();
   const t = useT();
+  const translateLabel = useTranslatedLabel();
   const locale = useLocale();
   const markAsRead = useMutation(api.inbox.markAsRead);
   const markAsUnread = useMutation(api.inbox.markAsUnread);
@@ -171,7 +172,7 @@ export function ConversationListItem({
                   key={name}
                   className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground font-medium max-w-[72px] truncate"
                 >
-                  {name}
+                  {translateLabel(name)}
                 </span>
               ))}
             </div>

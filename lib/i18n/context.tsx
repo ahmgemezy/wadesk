@@ -27,3 +27,16 @@ export function useT() {
   const locale = useLocale();
   return (en: string, ar: string): string => (locale === "en" ? en : ar);
 }
+
+/** Utility to translate system default labels consistently */
+export function useTranslatedLabel() {
+  const t = useT();
+  return (name: string) => {
+    if (!name) return name;
+    if (name === "شكوى" || name === "Complaint") return t("Complaint", "شكوى");
+    if (name === "استفسار" || name === "Inquiry") return t("Inquiry", "استفسار");
+    if (name === "مبيعات" || name === "Sales") return t("Sales", "مبيعات");
+    if (name === "دعم فني" || name === "Tech Support" || name === "Technical Support") return t("Tech Support", "دعم فني");
+    return name;
+  };
+}
