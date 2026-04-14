@@ -1,0 +1,60 @@
+<h2>View Switcher — Where does it live?</h2>
+<p class="subtitle">Where should the Cards / Table / Compact toggle appear in the toolbar?</p>
+
+<div class="options">
+
+  <div class="option" data-choice="toolbar-end" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>End of top toolbar row</h3>
+      <p>Sits alongside Add, Import, Export buttons. Always visible, minimal vertical space.</p>
+      <div style="margin-top:10px;background:var(--border);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:6px;font-size:10px">
+        <div style="flex:1;background:var(--bg);border-radius:5px;height:24px;display:flex;align-items:center;padding:0 8px;opacity:0.5">🔍 Search...</div>
+        <div style="background:var(--bg);border-radius:5px;height:24px;padding:0 8px;display:flex;align-items:center;opacity:0.7">+ Add</div>
+        <div style="background:var(--bg);border-radius:5px;height:24px;padding:0 8px;display:flex;align-items:center;opacity:0.7">↑ Import</div>
+        <div style="background:var(--bg);border-radius:5px;height:24px;padding:0 8px;display:flex;align-items:center;opacity:0.7">↓ Export</div>
+        <div style="display:flex;background:var(--bg);border-radius:6px;border:1.5px solid #8b5cf6;overflow:hidden">
+          <div style="padding:4px 7px;background:#8b5cf6;color:white;font-size:10px" title="Cards">⊞</div>
+          <div style="padding:4px 7px;font-size:10px;opacity:0.6" title="Table">≡</div>
+          <div style="padding:4px 7px;font-size:10px;opacity:0.6" title="Compact">☰</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="filter-row" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Filter row — right side</h3>
+      <p>Sits on the same row as the Archive toggle and Select All. Grouped with display controls rather than actions.</p>
+      <div style="margin-top:10px;background:var(--border);border-radius:8px;padding:8px 10px;font-size:10px">
+        <div style="display:flex;gap:6px;margin-bottom:6px">
+          <div style="flex:1;background:var(--bg);border-radius:5px;height:24px;display:flex;align-items:center;padding:0 8px;opacity:0.5">🔍 Search...</div>
+          <div style="background:var(--bg);border-radius:5px;height:24px;padding:0 8px;display:flex;align-items:center;opacity:0.7">+ Add</div>
+          <div style="background:var(--bg);border-radius:5px;height:24px;padding:0 8px;display:flex;align-items:center;opacity:0.7">↑ Import</div>
+          <div style="background:var(--bg);border-radius:5px;height:24px;padding:0 8px;display:flex;align-items:center;opacity:0.7">↓ Export</div>
+        </div>
+        <div style="display:flex;gap:4px;margin-bottom:6px;overflow-x:auto">
+          <div style="background:#8b5cf6;color:white;border-radius:99px;padding:3px 10px;font-size:9px;white-space:nowrap">All</div>
+          <div style="background:var(--bg);border-radius:99px;padding:3px 10px;font-size:9px;opacity:0.6;white-space:nowrap">Lead</div>
+          <div style="background:var(--bg);border-radius:99px;padding:3px 10px;font-size:9px;opacity:0.6;white-space:nowrap">Prospect</div>
+          <div style="background:var(--bg);border-radius:99px;padding:3px 10px;font-size:9px;opacity:0.6;white-space:nowrap">Customer</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;gap:6px">
+            <div style="background:var(--bg);border-radius:5px;height:22px;padding:0 8px;display:flex;align-items:center;opacity:0.7">📁 Archived</div>
+            <div style="background:var(--bg);border-radius:5px;height:22px;padding:0 8px;display:flex;align-items:center;opacity:0.7">☐ Select All</div>
+          </div>
+          <div style="display:flex;background:var(--bg);border-radius:6px;border:1.5px solid #8b5cf6;overflow:hidden">
+            <div style="padding:3px 7px;background:#8b5cf6;color:white;font-size:10px">⊞</div>
+            <div style="padding:3px 7px;font-size:10px;opacity:0.6">≡</div>
+            <div style="padding:3px 7px;font-size:10px;opacity:0.6">☰</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:4px;font-size:11px;opacity:0.5;text-align:center">⊞ = Cards &nbsp;|&nbsp; ≡ = Table &nbsp;|&nbsp; ☰ = Compact List</div>

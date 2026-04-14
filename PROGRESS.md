@@ -8,7 +8,7 @@
 ## Project Summary
 
 **WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf.  
-**Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Lemon Squeezy (payments)  
+**Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Polar.sh (payments)  
 **Current branch:** `009-automation-rules`  
 **Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server running · ✅ Outbound text replies wired to Meta API
 
@@ -449,8 +449,10 @@
 | SLA alerts (breach detection + ⚠️ badge) | ✅ Done |
 | Department / channel member assignment | ✅ Done |
 | Round-robin assignment | ❌ Not started |
-| Data export | ❌ Not started |
-| Billing / Lemon Squeezy | ❌ Not started |
+| Data export (contacts + conversations) | ❌ Not started |
+| WhatsApp Business profile editing | ❌ Not started |
+| Advanced message templates (with variables) | ❌ Not started |
+| Billing / Polar.sh | ❌ Not started |
 | WhatsApp Catalog | ❌ Deferred Phase 2 |
 
 ---
@@ -463,6 +465,8 @@
 | 015 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
 | 016 | Billing / Lemon Squeezy integration | Low | Plan limits partially enforced in Convex already |
 | 017 | Supervisor department/scoping plan | Low | Plan documented in `docs/superpowers/plans/2026-04-09-supervisor-department-scoping.md` |
+| WA-Profile | WhatsApp Business profile editing | Medium | Growth+; Meta Business Management API; read/write profile fields |
+| Templates | Advanced message templates with variables | Medium | Starter+; {{variable}} placeholders; dynamic fill form in inbox |
 
 ---
 
@@ -472,7 +476,7 @@
 |---|---|
 | Convex over Supabase | Real-time first, no SQL complexity |
 | Clerk over NextAuth | Multi-tenant orgs built-in |
-| Lemon Squeezy over Stripe | MoR = handles MENA VAT |
+| Polar.sh over Stripe | MoR = handles MENA VAT + global tax automatically |
 | `ScrollArea` avoided in flex scroll contexts | shadcn ScrollArea's internal wrapper breaks `min-h-0` flex constraints — use plain `div overflow-y-auto` |
 | Convex actions use `ctx.auth.getUserIdentity()` directly | `getCallerIdentity()` calls `ctx.db` which doesn't exist in action context |
 | Outbound media: Convex Storage → Meta Media API | Files uploaded to Convex first, then re-uploaded to Meta to get `media_id` |

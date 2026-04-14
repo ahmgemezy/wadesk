@@ -401,4 +401,18 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_tenant", ["tenantId"]),
+
+  messageTemplates: defineTable({
+    tenantId: v.string(),
+    title: v.string(),
+    body: v.string(),
+    category: v.optional(v.string()),
+    language: v.union(v.literal("ar"), v.literal("en")),
+    variables: v.array(v.string()),
+    createdBy: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_category", ["tenantId", "category"]),
 });

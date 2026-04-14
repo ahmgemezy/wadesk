@@ -80,10 +80,24 @@ export const NAV_ITEMS: NavItem[] = [
         minRole: "supervisor",
       },
       {
+        href: "/settings/templates",
+        labelAr: "قوالب الرسائل",
+        labelEn: "Templates",
+        icon: "FileText",
+        minRole: "supervisor",
+      },
+      {
         href: "/settings/labels",
         labelAr: "التصنيفات",
         labelEn: "Labels",
         icon: "Tag",
+        minRole: "supervisor",
+      },
+      {
+        href: "/settings/export",
+        labelAr: "البيانات والخصوصية",
+        labelEn: "Data & Privacy",
+        icon: "Database",
         minRole: "supervisor",
       },
       {

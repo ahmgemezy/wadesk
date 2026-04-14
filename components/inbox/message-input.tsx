@@ -19,6 +19,7 @@ import {
   Loader2Icon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import { TemplatePicker } from "@/components/templates/template-picker";
 
 // Lazy-load emoji picker to keep initial bundle small
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -63,6 +64,7 @@ export function MessageInput({
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [templateContent, setTemplateContent] = useState<string | null>(null);
 
   const imageRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
@@ -124,6 +126,13 @@ export function MessageInput({
       onQuickReplyConsumed?.();
     }
   }, [quickReplyContent, onQuickReplyConsumed]);
+
+  useEffect(() => {
+    if (templateContent) {
+      setContent(templateContent);
+      setTemplateContent(null);
+    }
+  }, [templateContent]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -339,6 +348,11 @@ export function MessageInput({
             <Button variant="outline" size="sm" onClick={onQuickReplyOpen}>
               💬 {t("Quick Reply", "رد سريع")}
             </Button>
+          )}
+
+          {/* Template picker — hidden in note mode */}
+          {!isNote && (
+            <TemplatePicker onSelect={(text) => setTemplateContent(text)} />
           )}
 
           {/* Attachment & extras — hidden in note mode */}
