@@ -14,7 +14,9 @@ export type IconName =
   | "List"
   | "Megaphone"
   | "Star"
-  | "Tag";
+  | "Tag"
+  | "FileText"
+  | "Database";
 
 export interface NavItem {
   href: string;

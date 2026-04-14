@@ -8,7 +8,7 @@ import { AssignmentModeSelect } from "@/components/settings/assignment-mode-sele
 import { DepartmentMembers } from "@/components/settings/department-members";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Check, X, Trash2 } from "lucide-react";
+import { Pencil, Check, X, Trash2, UserCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
@@ -206,6 +206,17 @@ export default function ChannelSettingsPage({
 
       <div className="border-t pt-6">
         <DepartmentMembers channelId={channelId} />
+      </div>
+
+      <div className="border-t pt-6">
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/settings/channels/${channelId}/profile`)}
+          className="gap-2"
+        >
+          <UserCircle className="size-4" />
+          {t("Business Profile", "الملف التجاري")}
+        </Button>
       </div>
     </div>
   );

@@ -430,6 +430,7 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onComplete={() => setImportDialogOpen(false)}
+        locale={locale}
       />
 
       <AddContactDialog

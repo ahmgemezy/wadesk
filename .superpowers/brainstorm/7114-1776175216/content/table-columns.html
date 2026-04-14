@@ -1,0 +1,79 @@
+<h2>Table View — Which columns?</h2>
+<p class="subtitle">The table needs columns. Which set feels right? Select one.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="minimal" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Minimal (fast, clean)</h3>
+      <p>Only the essentials. Keeps the table uncluttered — agents scan quickly.</p>
+      <div style="margin-top:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:10px">
+        <div style="background:var(--border);padding:5px 10px;display:grid;grid-template-columns:28px 1fr 100px 70px 80px;gap:8px;font-weight:700;opacity:0.7">
+          <span>☐</span><span>Name + Phone</span><span>Stage</span><span>Tags</span><span>Last seen</span>
+        </div>
+        <div style="padding:5px 10px;display:grid;grid-template-columns:28px 1fr 100px 70px 80px;gap:8px;border-top:1px solid var(--border)">
+          <span>☐</span>
+          <div><div style="font-weight:600">Ahmed Ali</div><div style="opacity:0.5;font-family:monospace">+201512345678</div></div>
+          <span style="color:#8b5cf6">● Customer</span>
+          <span style="background:#ede9fe;color:#7c3aed;border-radius:99px;padding:1px 6px">VIP</span>
+          <span style="opacity:0.6">2h ago</span>
+        </div>
+        <div style="padding:5px 10px;display:grid;grid-template-columns:28px 1fr 100px 70px 80px;gap:8px;border-top:1px solid var(--border);opacity:0.65">
+          <span>☐</span>
+          <div><div style="font-weight:600">Sara Mohamed</div><div style="opacity:0.5;font-family:monospace">+966501234567</div></div>
+          <span style="color:#3b82f6">● Lead</span>
+          <span style="opacity:0.4">—</span>
+          <span style="opacity:0.6">1d ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="detailed" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Detailed (more data per row)</h3>
+      <p>Adds location, conversations count, and spent. Best for admin/supervisor reviewing the full contact picture.</p>
+      <div style="margin-top:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:10px">
+        <div style="background:var(--border);padding:5px 10px;display:grid;grid-template-columns:28px 1fr 80px 60px 55px 50px 60px;gap:6px;font-weight:700;opacity:0.7">
+          <span>☐</span><span>Name</span><span>Stage</span><span>Location</span><span>Conv.</span><span>Spent</span><span>Last seen</span>
+        </div>
+        <div style="padding:5px 10px;display:grid;grid-template-columns:28px 1fr 80px 60px 55px 50px 60px;gap:6px;border-top:1px solid var(--border)">
+          <span>☐</span>
+          <div><div style="font-weight:600">Ahmed Ali</div><div style="opacity:0.5;font-family:monospace">+201...</div></div>
+          <span style="color:#8b5cf6">Customer</span>
+          <span style="opacity:0.7">Cairo, EG</span>
+          <span>14</span>
+          <span style="color:#10b981">$320</span>
+          <span style="opacity:0.6">2h ago</span>
+        </div>
+        <div style="padding:5px 10px;display:grid;grid-template-columns:28px 1fr 80px 60px 55px 50px 60px;gap:6px;border-top:1px solid var(--border);opacity:0.65">
+          <span>☐</span>
+          <div><div style="font-weight:600">Sara M.</div><div style="opacity:0.5;font-family:monospace">+966...</div></div>
+          <span style="color:#3b82f6">Lead</span>
+          <span style="opacity:0.7">Riyadh, SA</span>
+          <span>3</span>
+          <span style="opacity:0.3">—</span>
+          <span style="opacity:0.6">1d ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px">
+  <h3>Should columns be sortable?</h3>
+  <p class="subtitle">Click a column header to sort ascending/descending.</p>
+  <div class="options" style="margin-top:8px">
+    <div class="option" data-choice="sortable-yes" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>Yes — sortable columns</h3><p>Name A→Z, Last seen newest first, Stage grouped, etc.</p></div>
+    </div>
+    <div class="option" data-choice="sortable-no" onclick="toggleSelect(this)">
+      <div class="letter">✗</div>
+      <div class="content"><h3>No — keep it simple</h3><p>Same order as the current list (no sorting logic needed).</p></div>
+    </div>
+  </div>
+</div>

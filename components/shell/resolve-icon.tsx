@@ -13,6 +13,8 @@ import {
   Megaphone,
   Star,
   Tag,
+  FileText,
+  Database,
 } from "lucide-react";
 import type { IconName } from "@/lib/shell/types";
 import type { LucideIcon } from "lucide-react";
@@ -32,6 +34,8 @@ const ICON_MAP: Record<IconName, LucideIcon> = {
   Megaphone,
   Star,
   Tag,
+  FileText,
+  Database,
 };
 
 export function resolveIcon(name: IconName): LucideIcon {

@@ -496,7 +496,7 @@ Find the area in the list item JSX where `lastMessagePreview` is rendered (usual
               {(conversation.labels ?? []).slice(0, 4).map((name) => (
                 <span
                   key={name}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground font-medium max-w-[72px] truncate"
+                  className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground font-medium max-w-18 truncate"
                 >
                   {name}
                 </span>

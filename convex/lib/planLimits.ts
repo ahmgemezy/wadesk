@@ -90,3 +90,23 @@ export function assertBroadcastsAllowed(plan: Plan): void {
     });
   }
 }
+
+const TEMPLATE_LIMITS: Record<Plan, number> = {
+  free: 0,
+  starter: 10,
+  growth: 50,
+  business: Infinity,
+};
+
+export function assertTemplateLimitNotReached(
+  currentCount: number,
+  plan: Plan,
+): void {
+  const limit = TEMPLATE_LIMITS[plan] ?? TEMPLATE_LIMITS.free;
+  if (currentCount >= limit) {
+    throw new ConvexError({
+      message: "PLAN_LIMIT_REACHED",
+      data: { plan, limit, feature: "messageTemplates" },
+    });
+  }
+}

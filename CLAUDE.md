@@ -28,7 +28,7 @@ A team inbox built on WhatsApp — multiple agents handle customer conversations
 | UI Components | shadcn/ui |
 | Styling | Tailwind CSS |
 | WhatsApp API | Meta WhatsApp Business Cloud API |
-| Payments | Lemon Squeezy |
+| Payments | Polar.sh |
 | Hosting | Vercel |
 | Language | TypeScript |
 
@@ -80,7 +80,7 @@ These rules apply to EVERY UI component, no exceptions:
 - Freemium scales with Meta verification status
 
 ### Payments
-- Lemon Squeezy as Merchant of Record (handles VAT/tax for MENA)
+- Polar.sh as Merchant of Record (handles VAT/tax globally, supports Egypt USD payouts via Stripe Connect Express)
 
 ---
 
@@ -172,88 +172,71 @@ Every extra step = friction = churn. Keep it ruthlessly simple.
 
 ## 10. Pricing Plans
 
-### Philosophy
-- **Zero markup on Meta messages** — clients pay Meta directly for their messages, WaDesk charges for the inbox software only. This is a core differentiator vs WATI (20% markup) and SleekFlow ($15/number/month).
-- Pricing in local currencies — never show USD to Arab users by default.
-- Freemium entry, no credit card required.
+### Early Adopter Pricing (Anchored)
 
----
+Crossed-out prices are shown on the pricing page to anchor perceived value.
 
-### 🆓 Free — مجاني
+#### 🆓 Free — مجاني | $0/month
 | | |
 |---|---|
 | WhatsApp numbers | 1 |
 | Agents | 3 |
 | Conversations/month | 300 |
-| Features | Basic inbox only (Admin + Agent roles only — no Supervisor role) |
+| Features | Basic inbox only |
 
-**Goal:** Zero friction entry. Let them feel the product before asking for money.
-
----
-
-### 🥈 Starter
+#### 🥈 Starter — ~~$19.99~~ → $9.99/month
 | Market | Price |
 |---|---|
-| 🇪🇬 Egypt | 199 EGP/month |
-| 🇸🇦 Saudi | 49 SAR/month |
-| 🇦🇪 UAE | 49 AED/month |
-| 🌍 International | $15/month |
+| 🇪🇬 Egypt | 499 EGP/month |
+| 🇸🇦 Saudi | 37 SAR/month |
+| 🇦🇪 UAE | 37 AED/month |
+| 🌍 International | $9.99/month |
 
 | | |
 |---|---|
 | WhatsApp numbers | 2 |
 | Agents | 5 |
 | Conversations | Unlimited |
-| Features | Quick replies, Internal notes, Basic analytics (own stats only) |
+| Features | Quick replies, Internal notes, Basic analytics |
 
-**Target:** Small businesses 2–5 people.
-
----
-
-### 🥇 Growth *(Sweet spot — most clients land here)*
+#### 🥇 Growth *(Sweet spot)* — ~~$49.99~~ → $22.99/month
 | Market | Price |
 |---|---|
-| 🇪🇬 Egypt | 399 EGP/month |
-| 🇸🇦 Saudi | 99 SAR/month |
-| 🇦🇪 UAE | 99 AED/month |
-| 🌍 International | $29/month |
+| 🇪🇬 Egypt | 1,149 EGP/month |
+| 🇸🇦 Saudi | 86 SAR/month |
+| 🇦🇪 UAE | 85 AED/month |
+| 🌍 International | $22.99/month |
 
 | | |
 |---|---|
 | WhatsApp numbers | 5 |
 | Agents | 15 |
 | Conversations | Unlimited |
-| Features | Everything in Starter + Business profile editing + Advanced analytics + Priority support |
+| Features | Everything in Starter + Broadcasts + CSAT + SLA + Automation rules + Business profile editing |
 
-**Target:** Growing SMBs with multiple agents or multiple numbers.
-
----
-
-### 💎 Business
+#### 💎 Business — ~~$99.99~~ → $44.99/month
 | Market | Price |
 |---|---|
-| 🇪🇬 Egypt | 799 EGP/month |
-| 🇸🇦 Saudi | 199 SAR/month |
-| 🇦🇪 UAE | 199 AED/month |
-| 🌍 International | $59/month |
+| 🇪🇬 Egypt | 2,249 EGP/month |
+| 🇸🇦 Saudi | 169 SAR/month |
+| 🇦🇪 UAE | 165 AED/month |
+| 🌍 International | $44.99/month |
 
 | | |
 |---|---|
 | WhatsApp numbers | Unlimited |
 | Agents | Unlimited |
 | Conversations | Unlimited |
-| Features | Everything in Growth + API access + Dedicated onboarding + Custom integrations |
+| Features | Everything in Growth + API access + Dedicated onboarding + Advanced SLA rules |
 
-**Target:** Mid-size companies, multiple branches/teams.
+#### Annual billing
+Additional 20% off all paid plans when billed annually.
 
----
-
-### Pricing Notes for Developers
+#### Pricing Notes for Developers
+- Polar.js `PricePreview()` handles automatic geo-based currency display
 - Plan limits enforced in Convex — check `tenant.plan` before allowing feature access
-- WhatsApp number count = count of active channels per tenant
-- Agent count = count of active Clerk org members
-- Lemon Squeezy handles billing, webhooks update `tenant.plan` in Convex on payment events
-- Annual billing = 2 months free (implement as ~17% discount)
+- Annual billing implemented as ~20% discount via Polar price variants
+- Polar webhooks update `tenant.plan` in Convex on payment/subscription events
 
 ---
 
@@ -342,9 +325,10 @@ WHATSAPP_APP_SECRET=             # Meta App Secret (Meta App Dashboard → Setti
 WHATSAPP_API_TOKEN=              # Permanent System User token for sending messages (task 013)
 WHATSAPP_API_VERSION=v19.0       # Meta API version
 
-# Lemon Squeezy
-LEMONSQUEEZY_API_KEY=
-LEMONSQUEEZY_WEBHOOK_SECRET=
+# Polar.sh
+POLAR_ACCESS_TOKEN=
+POLAR_WEBHOOK_SECRET=
+POLAR_ORGANIZATION_ID=
 ```
 
 ---
@@ -355,7 +339,7 @@ LEMONSQUEEZY_WEBHOOK_SECRET=
 |---|---|
 | Convex over Supabase | Real-time first, no SQL complexity, faster to build |
 | Clerk over NextAuth | Multi-tenant orgs built-in, saves weeks of work |
-| Lemon Squeezy over Stripe | MoR = handles MENA VAT automatically |
+| Polar.sh over Stripe | MoR = handles MENA VAT + global tax automatically; 4% + $0.40/transaction |
 | Shared WABA model (Embedded Signup) | Client owns their number, WaDesk can't be shut down |
 | Freemium over free trial only | Lower barrier for Arab SMB market |
 | Arabic-first over bilingual | Differentiation from all global competitors |
@@ -645,6 +629,172 @@ Enforce these rules throughout the entire codebase:
 - Role checks **must be enforced server-side** in Convex functions — never trust client-side checks alone.
 - Use Clerk `organizationMembership.role` to gate all role-sensitive actions.
 - When a Supervisor attempts to invite or remove a member, validate that the target member's role is `agent` before proceeding — reject with a clear error if the target is `admin` or `supervisor`.
+
+---
+
+## 26. Round-Robin Assignment (Task 014)
+
+Conversations are distributed automatically and equally across available agents in a channel.
+
+### How It Works
+- Admin enables Round Robin mode per channel (replaces "First Reply Wins" or "Manual Assignment")
+- When a new conversation comes in, it is assigned to the agent whose turn is next in the rotation
+- Rotation is tracked via `channels.roundRobinIndex` (already in schema) — increments on each assignment, wraps around
+- Only agents who are members of the channel (`channelMembers` table) are included in the rotation
+- If a channel has 0 members → conversation stays Unassigned
+
+### Rules
+- Round Robin mode is Growth and above
+- If an agent is removed from a channel mid-rotation, skip their slot (recalculate index from remaining members)
+- Assignment shown in conversation header just like manual assignment
+- Admin/Supervisor can still manually reassign even in round-robin mode
+- No "online/offline" awareness in v1 — assign regardless of online status
+
+### Schema
+- `channels.assignmentMode`: `"first_reply" | "manual" | "round_robin"` (already exists or add if missing)
+- `channels.roundRobinIndex`: `v.optional(v.number())` (already in schema)
+
+### Plan Gating
+- Available on Growth and above
+- Free and Starter show the option as disabled with upgrade prompt
+
+---
+
+## 27. Data Export (Task 015)
+
+Clients must be able to export all their data at any time. This is a trust signal and a legal right.
+
+### What Is Exported
+| Data | Format | Scope |
+|---|---|---|
+| Contacts | CSV | All contacts for the tenant |
+| Conversations | JSON | All conversations + messages |
+| Analytics summary | CSV | Aggregated metrics |
+
+### UX Flow
+- Settings → Data & Privacy → "Export My Data" button
+- Immediately triggers async Convex action that builds the export
+- Shows progress indicator; when done, provides download link (Convex Storage URL)
+- File naming: `wabdesk-export-[tenantId]-[YYYY-MM-DD].zip` (or individual files if zip is complex)
+- In v1: export contacts CSV and conversations JSON as separate downloads (no zip required)
+
+### Rules
+- Available on ALL plans including Free — data portability is a right
+- Export scoped strictly to caller's `tenantId` — never cross-tenant
+- Only Admin and Supervisor can trigger export
+- Large exports are async — do NOT block the HTTP response
+- No email notification in v1 — just show a "Download ready" state on the same page
+
+### Contacts CSV Columns
+`phone, name, tags, stage, notes, customFields (JSON string), firstSeen, lastSeen, source`
+
+### Conversations JSON Schema
+```json
+[{
+  "id": "...",
+  "contact": { "phone": "...", "name": "..." },
+  "channel": "...",
+  "status": "open|resolved|pending",
+  "assignedAgent": "...",
+  "labels": [],
+  "messages": [{
+    "from": "customer|agent",
+    "type": "text|image|...",
+    "content": "...",
+    "sentAt": "ISO8601",
+    "isInternal": false
+  }],
+  "createdAt": "...",
+  "resolvedAt": "..."
+}]
+```
+
+---
+
+## 28. WhatsApp Business Profile Editing (Task: WA Profile)
+
+Agents can edit their WhatsApp Business profile from within WaDesk via the Meta Business Management API.
+
+### Editable Fields
+| Field | API Endpoint | Notes |
+|---|---|---|
+| Profile photo | `POST /{phone-number-id}/whatsapp_business_profile` | Upload image to Meta first |
+| Business description | Same endpoint | Max 256 chars |
+| Business address | Same endpoint | |
+| Business category | Same endpoint | Predefined category list from Meta |
+| Business website | Same endpoint | |
+| Display name | Separate Meta review process | Show "pending review" state; NOT instant |
+
+### UX Rules
+- Available in Settings → Channels → [Channel] → "Business Profile" tab
+- Display name changes: show amber "Pending Meta Review" badge; poll Meta API every 24h for approval status
+- Profile photo: show current photo with upload button; preview before saving
+- Form auto-saves field-by-field (not one big Save button) — matches WhatsApp Business App UX
+- Show character counters on description field
+
+### Plan Gating
+- Available on Growth and above
+- Free and Starter: show read-only view of current profile with upgrade prompt
+
+### Meta API Details
+- Endpoint: `GET/POST https://graph.facebook.com/v19.0/{phone-number-id}/whatsapp_business_profile`
+- Fields to request: `about, address, description, email, profile_picture_url, websites, vertical`
+- All API calls go through Convex actions (never client-side) using stored encrypted access token
+- Use `getChannelInternal` helper to retrieve decrypted token
+
+---
+
+## 29. Advanced Message Templates with Variables (Task: Templates)
+
+Beyond quick replies — full templates with dynamic placeholders that agents fill in before sending.
+
+### How It Works
+- Template: `"أهلاً {{name}}، طلبك رقم {{order_id}} اتشحن وهيوصلك خلال {{days}} أيام"`
+- Agent selects template → a mini form appears with one input per `{{variable}}` → agent fills fields → sends in one click
+- Templates organized by category: Greetings / Orders / Complaints / Follow-up / General
+
+### Schema — new `messageTemplates` table
+```
+messageTemplates: defineTable({
+  tenantId: v.string(),
+  name: v.string(),               // template display name
+  category: v.string(),           // "greeting" | "order" | "complaint" | "followup" | "general"
+  body: v.string(),               // raw body with {{variable}} placeholders
+  variables: v.array(v.string()), // extracted variable names e.g. ["name", "order_id", "days"]
+  language: v.string(),           // "ar" | "en"
+  createdBy: v.string(),
+  createdAt: v.number(),
+}).index("by_tenant", ["tenantId"])
+  .index("by_tenant_category", ["tenantId", "category"])
+```
+
+### Variable Extraction Rule
+On save, parse `body` with regex `/\{\{(\w+)\}\}/g` and store extracted variable names in `variables[]`. Used to render the fill-in form dynamically.
+
+### UI Components Needed
+- `components/templates/template-picker.tsx` — Popover in MessageInput toolbar (new icon button); shows templates list grouped by category; search box at top
+- `components/templates/template-fill-form.tsx` — Sheet/dialog that opens after picking a template; one labeled input per variable; Preview section shows the rendered message as variables are filled; Confirm button inserts into MessageInput
+- `components/settings/templates-settings.tsx` — Full CRUD for template library (create, edit, delete, preview); category filter tabs
+- `app/(dashboard)/settings/templates/page.tsx`
+
+### Convex Functions Needed
+- `convex/messageTemplates.ts`: `list`, `create`, `update`, `remove` (Admin/Supervisor only for manage; all roles can read)
+
+### Rules
+- Templates scoped to `tenantId`
+- Arabic and English templates supported — language tag shown as badge
+- Admin and Supervisor manage templates; Agents can use them (read-only)
+- Available on Starter and above (Free has 0 custom templates)
+- Variables are case-insensitive when extracted but stored lowercase
+- Empty variable field = block send; show validation error
+
+### Plan Limits
+| Plan | Max Templates |
+|---|---|
+| Free | 0 (read-only seed templates if any) |
+| Starter | 10 |
+| Growth | 50 |
+| Business | Unlimited |
 
 ---
 

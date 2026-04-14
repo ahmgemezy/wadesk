@@ -23,30 +23,100 @@ import {
 
 import type { Id } from "@/convex/_generated/dataModel";
 
- type ImportRow = {
+type ImportRow = {
   phone: string;
   name?: string;
   tags?: string[];
   notes?: string;
- };
+};
 
- type ImportStep = "upload" | "preview" | "options" | "importing" | "summary";
- type DuplicateMode = "skip" | "overwrite";
+type ImportStep = "upload" | "preview" | "options" | "importing" | "summary";
+type DuplicateMode = "skip" | "overwrite";
 
- interface CsvImportDialogProps {
+const labels = {
+  ar: {
+    title: {
+      upload: "استيراد جهات اتصال",
+      preview: "معاينة الاستيراد",
+      options: "خيارات الاستيراد",
+      importing: "جاري الاستيراد...",
+      summary: "ملخص الاستيراد",
+    },
+    desc: (rows: number) => `عرض أول ${rows} صفوف`,
+    uploadDesc: "قم بتحميل ملف CSV يحتوي على بيانات جهات الاتصال",
+    previewDesc: (preview: number, total: number) => `عرض أول ${preview} صفوف من ${total} صف`,
+    dropLabel: "اسحب ملف CSV أو انقر للتحميل",
+    maxRowsError: (max: number) => `الحد الأقصى ${max.toLocaleString()} صف`,
+    rowCount: (n: number) => `${n} صف`,
+    colPhone: "الهاتف",
+    colName: "الاسم",
+    colTags: "الوسوم",
+    moreRows: (n: number) => `+${n} صف أخرى...`,
+    duplicateTitle: "كيفية التعامل مع جهات الاتصال المكررة؟",
+    skipDuplicates: "تخطي جهات الاتصال المكررة",
+    overwriteDuplicates: "الكتابة فوق جهات الاتصال المكررة",
+    startImport: (n: number) => `بدء الاستيراد (${n} صف)`,
+    importing: (n: number) => `جاري استيراد ${n} جهة اتصال...`,
+    added: (n: number) => `${n} مضاف`,
+    skipped: (n: number) => `${n} مكرر تم تخطيه/تحديثه`,
+    failed: (n: number) => `${n} فاشل`,
+    rowError: (row: number, reason: string) => `صف ${row}: ${reason}`,
+    importAnother: "استيراد آخر",
+    cancel: "إلغاء",
+    next: "التالي ← خيارات الاستيراد",
+    done: "تم",
+  },
+  en: {
+    title: {
+      upload: "Import Contacts",
+      preview: "Preview Import",
+      options: "Import Options",
+      importing: "Importing...",
+      summary: "Import Summary",
+    },
+    desc: (rows: number) => `Showing first ${rows} rows`,
+    uploadDesc: "Upload a CSV file containing your contact data",
+    previewDesc: (preview: number, total: number) => `Showing first ${preview} of ${total} rows`,
+    dropLabel: "Drag a CSV file here or click to upload",
+    maxRowsError: (max: number) => `Maximum ${max.toLocaleString()} rows`,
+    rowCount: (n: number) => `${n} rows`,
+    colPhone: "Phone",
+    colName: "Name",
+    colTags: "Tags",
+    moreRows: (n: number) => `+${n} more rows...`,
+    duplicateTitle: "How should duplicate contacts be handled?",
+    skipDuplicates: "Skip duplicate contacts",
+    overwriteDuplicates: "Overwrite duplicate contacts",
+    startImport: (n: number) => `Start Import (${n} rows)`,
+    importing: (n: number) => `Importing ${n} contacts...`,
+    added: (n: number) => `${n} added`,
+    skipped: (n: number) => `${n} duplicate(s) skipped/updated`,
+    failed: (n: number) => `${n} failed`,
+    rowError: (row: number, reason: string) => `Row ${row}: ${reason}`,
+    importAnother: "Import Another",
+    cancel: "Cancel",
+    next: "Next → Import Options",
+    done: "Done",
+  },
+} as const;
+
+interface CsvImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete?: () => void;
- }
+  locale?: "ar" | "en";
+}
 
  const MAX_ROWS = 10000;
  const PREVIEW_ROWS = 10;
 
- export function CsvImportDialog({
+export function CsvImportDialog({
   open,
   onOpenChange,
   onComplete,
- }: CsvImportDialogProps) {
+  locale = "ar",
+}: CsvImportDialogProps) {
+  const l = labels[locale];
    const [step, setStep] = useState<ImportStep>("upload");
    const [rows, setRows] = useState<ImportRow[]>([]);
    const [duplicateMode, setDuplicateMode] = useState<DuplicateMode>("skip");
@@ -127,15 +197,11 @@ import type { Id } from "@/convex/_generated/dataModel";
        <DialogContent className="sm:max-w-136">
          <DialogHeader className="pe-8">
            <DialogTitle>
-             {step === "upload" && "استيراد جهات اتصال"}
-             {step === "preview" && "معاينةة الاستيراد"}
-             {step === "options" && "خيارات الاستيراد"}
-             {step === "importing" && "جاري الاستيراد..."}
-             {step === "summary" && "ملخص الاستيراد"}
+             {l.title[step]}
            </DialogTitle>
            <DialogDescription>
-             {step === "upload" && "قم بتحميل ملف CSV يحتوي على بيانات جهات الاتصال"}
-             {step === "preview" && `عرض أول ${PREVIEW_ROWS} صفوف من ${totalRows} صف`}
+             {step === "upload" && l.uploadDesc}
+             {step === "preview" && l.previewDesc(PREVIEW_ROWS, totalRows)}
            </DialogDescription>
          </DialogHeader>
 
@@ -152,7 +218,7 @@ import type { Id } from "@/convex/_generated/dataModel";
              <label className="flex flex-col items-center gap-2 p-8 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 w-full">
                <UploadIcon className="size-8 text-muted-foreground" />
                <span className="text-sm text-muted-foreground">
-                 {fileName || "اسحب ملف CSV أو اسحبه هنا"}
+                 {fileName || l.dropLabel}
                </span>
                <input
                   type="file"
@@ -166,7 +232,7 @@ import type { Id } from "@/convex/_generated/dataModel";
              </label>
              {totalRows > MAX_ROWS && (
                <p className="text-xs text-destructive">
-                 الحد الأقصى {MAX_ROWS.toLocaleString("ar")} صف - يتم عرض أول {MAX_ROWS} فقط
+                 {l.maxRowsError(MAX_ROWS)}
                </p>
              )}
            </div>
@@ -175,16 +241,16 @@ import type { Id } from "@/convex/_generated/dataModel";
          {step === "preview" && (
            <div className="space-y-3">
              <div className="flex items-center justify-between text-sm">
-               <span>{totalRows} صف</span>
+               <span>{l.rowCount(totalRows)}</span>
                <span className="text-muted-foreground">{fileName}</span>
              </div>
              <ScrollArea className="max-h-64">
                <table className="w-full text-sm">
                  <thead>
                    <tr className="border-b">
-                     <th className="p-2 text-start">الهاتف</th>
-                     <th className="p-2 text-start">الاسم</th>
-                     <th className="p-2 text-start">الوسوم</th>
+                     <th className="p-2 text-start">{l.colPhone}</th>
+                     <th className="p-2 text-start">{l.colName}</th>
+                     <th className="p-2 text-start">{l.colTags}</th>
                    </tr>
                  </thead>
                  <tbody>
@@ -202,7 +268,7 @@ import type { Id } from "@/convex/_generated/dataModel";
                    {totalRows > PREVIEW_ROWS && (
                     <tr className="border-b">
                       <td colSpan={3} className="p-2 text-center text-muted-foreground text-xs">
-                        +{totalRows - PREVIEW_ROWS} صف إخرى...
+                        {l.moreRows(totalRows - PREVIEW_ROWS)}
                       </td>
                     </tr>
                   )}
@@ -211,10 +277,10 @@ import type { Id } from "@/convex/_generated/dataModel";
             </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={handleReset}>
-                إلغاء
+                {l.cancel}
               </Button>
               <Button onClick={() => setStep("options")}>
-                التالي → خيارات الاستيراد
+                {l.next}
               </Button>
             </DialogFooter>
           </div>
@@ -222,7 +288,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 
          {step === "options" && (
            <div className="space-y-4">
-             <p className="text-sm font-medium">كيفية التعامل مع جهات الاتصال المكررة؟</p>
+             <p className="text-sm font-medium">{l.duplicateTitle}</p>
              <div className="flex gap-4">
                <button
                  onClick={() => setDuplicateMode("skip")}
@@ -230,7 +296,7 @@ import type { Id } from "@/convex/_generated/dataModel";
                    duplicateMode === "skip" ? "bg-primary text-primary-foreground" : "bg-muted"
                  }`}
                >
-                 تخطى جهات الاتصال المكررة
+                 {l.skipDuplicates}
                </button>
                <button
                  onClick={() => setDuplicateMode("overwrite")}
@@ -238,15 +304,15 @@ import type { Id } from "@/convex/_generated/dataModel";
                    duplicateMode === "overwrite" ? "bg-primary text-primary-foreground" : "bg-muted"
                  }`}
                >
-                 الكتابة فوق جهات الاتصال المكرر
+                 {l.overwriteDuplicates}
                </button>
              </div>
              <DialogFooter>
                <Button variant="outline" onClick={handleReset}>
-                 إلغاء
+                 {l.cancel}
                </Button>
                <Button onClick={handleImport}>
-                 بدء الاستيراد ({totalRows} صف)
+                 {l.startImport(totalRows)}
                </Button>
              </DialogFooter>
            </div>
@@ -255,7 +321,7 @@ import type { Id } from "@/convex/_generated/dataModel";
          {step === "importing" && (
            <div className="flex flex-col items-center gap-4 py-12">
              <div className="animate-spin size-8 rounded-full border-4 border-muted border-t-primary" />
-             <p className="text-sm text-muted-foreground">جاري استيراد {totalRows} جهة اتصال...</p>
+             <p className="text-sm text-muted-foreground">{l.importing(totalRows)}</p>
            </div>
          )}
 
@@ -263,25 +329,25 @@ import type { Id } from "@/convex/_generated/dataModel";
            <div className="space-y-4">
              <div className="flex items-center gap-3 text-sm">
                <CheckCircle2Icon className="size-5 text-green-500 shrink-0" />
-               <span>{importResult.added} مضاف</span>
+               <span>{l.added(importResult.added)}</span>
              </div>
              {importResult.skipped > 0 && (
                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                 <span>{importResult.skipped} مكرر تم تخطيه/تحديثه</span>
+                 <span>{l.skipped(importResult.skipped)}</span>
                </div>
              )}
              {importResult.failed > 0 && (
                <div className="space-y-2">
                  <div className="flex items-center gap-3 text-sm text-destructive">
                    <AlertCircleIcon className="size-5 shrink-0" />
-                   <span>{importResult.failed} فاشل</span>
+                   <span>{l.failed(importResult.failed)}</span>
                  </div>
                  {importResult.failedRows.length > 0 && (
                    <ScrollArea className="max-h-32">
                      <div className="space-y-1">
                        {importResult.failedRows.map((f) => (
                           <div key={f.row} className="text-xs text-muted-foreground">
-                            صف {f.row}: {f.reason}
+                            {l.rowError(f.row, f.reason)}
                           </div>
                        ))}
                      </div>
@@ -290,9 +356,9 @@ import type { Id } from "@/convex/_generated/dataModel";
                </div>
              )}
              <DialogFooter>
-               <Button onClick={handleReset}>استيراد آخر</Button>
+               <Button onClick={handleReset}>{l.importAnother}</Button>
                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                 تم
+                 {l.done}
                </Button>
              </DialogFooter>
            </div>

@@ -1,0 +1,108 @@
+<h2>Contacts Page — View Modes</h2>
+<p class="subtitle">Which view layouts should agents be able to switch between? Select all that apply.</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="cards" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Cards Grid <span style="font-size:11px;opacity:0.6;font-weight:400">(current)</span></h3>
+      <p>Rich visual cards with avatar, stage badge, tags, location. 4 columns on wide screens. Best for "browse and explore" — agents scan faces/names visually.</p>
+      <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+        <div style="background:var(--border);border-radius:8px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+          <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#7c3aed)"></div>
+          <div style="width:40px;height:5px;border-radius:3px;background:var(--text-muted);opacity:0.5"></div>
+          <div style="width:30px;height:4px;border-radius:3px;background:var(--text-muted);opacity:0.3"></div>
+        </div>
+        <div style="background:var(--border);border-radius:8px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+          <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#06b6d4)"></div>
+          <div style="width:40px;height:5px;border-radius:3px;background:var(--text-muted);opacity:0.5"></div>
+          <div style="width:30px;height:4px;border-radius:3px;background:var(--text-muted);opacity:0.3"></div>
+        </div>
+        <div style="background:var(--border);border-radius:8px;height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">
+          <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#10b981,#14b8a6)"></div>
+          <div style="width:40px;height:5px;border-radius:3px;background:var(--text-muted);opacity:0.5"></div>
+          <div style="width:30px;height:4px;border-radius:3px;background:var(--text-muted);opacity:0.3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="table" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Table / List</h3>
+      <p>Dense rows — name, phone, stage, tags, last seen, conversations count. Sortable columns. Best for power users who manage large lists and prefer data density.</p>
+      <div style="margin-top:10px;border:1px solid var(--border);border-radius:6px;overflow:hidden;font-size:10px">
+        <div style="background:var(--border);padding:4px 8px;display:grid;grid-template-columns:1fr 80px 60px 60px;gap:4px;opacity:0.7;font-weight:600">
+          <span>Name</span><span>Phone</span><span>Stage</span><span>Tags</span>
+        </div>
+        <div style="padding:4px 8px;display:grid;grid-template-columns:1fr 80px 60px 60px;gap:4px;border-top:1px solid var(--border)">
+          <span>Ahmed Ali</span><span style="font-family:monospace">+201...</span><span style="color:#8b5cf6">Customer</span><span>VIP</span>
+        </div>
+        <div style="padding:4px 8px;display:grid;grid-template-columns:1fr 80px 60px 60px;gap:4px;border-top:1px solid var(--border);opacity:0.7">
+          <span>Sara Mohamed</span><span style="font-family:monospace">+966...</span><span style="color:#3b82f6">Lead</span><span>—</span>
+        </div>
+        <div style="padding:4px 8px;display:grid;grid-template-columns:1fr 80px 60px 60px;gap:4px;border-top:1px solid var(--border);opacity:0.5">
+          <span>Khalid Ibrahim</span><span style="font-family:monospace">+971...</span><span style="color:#10b981">Prospect</span><span>Order</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="compact" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Compact List</h3>
+      <p>A middle ground — each contact is one row with small avatar, name, phone, stage pill, and tags. More info per row than a table but friendlier than full cards. Good for medium-density browsing.</p>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:4px">
+        <div style="background:var(--border);border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:8px">
+          <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#7c3aed);flex-shrink:0"></div>
+          <span style="font-size:11px;flex:1">Ahmed Ali</span>
+          <span style="font-size:10px;font-family:monospace;opacity:0.6">+201...</span>
+          <span style="font-size:9px;background:#ede9fe;color:#7c3aed;border-radius:99px;padding:1px 6px">Customer</span>
+        </div>
+        <div style="background:var(--border);border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:8px;opacity:0.75">
+          <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#06b6d4);flex-shrink:0"></div>
+          <span style="font-size:11px;flex:1">Sara Mohamed</span>
+          <span style="font-size:10px;font-family:monospace;opacity:0.6">+966...</span>
+          <span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:99px;padding:1px 6px">Lead</span>
+        </div>
+        <div style="background:var(--border);border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:8px;opacity:0.55">
+          <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#10b981,#14b8a6);flex-shrink:0"></div>
+          <span style="font-size:11px;flex:1">Khalid Ibrahim</span>
+          <span style="font-size:10px;font-family:monospace;opacity:0.6">+971...</span>
+          <span style="font-size:9px;background:#d1fae5;color:#065f46;border-radius:99px;padding:1px 6px">Prospect</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="kanban" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Kanban by Stage</h3>
+      <p>Contacts organized in columns by their stage: Lead → Prospect → Customer → Retained → Churned. Drag-and-drop to move between stages. Great for sales-focused teams tracking the pipeline.</p>
+      <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
+        <div style="background:var(--border);border-radius:6px;padding:5px;min-height:60px">
+          <div style="font-size:9px;font-weight:700;opacity:0.6;margin-bottom:4px">LEAD (12)</div>
+          <div style="background:var(--bg);border-radius:4px;padding:3px 5px;font-size:9px;margin-bottom:2px">Sara M.</div>
+          <div style="background:var(--bg);border-radius:4px;padding:3px 5px;font-size:9px;opacity:0.6">+ 11 more</div>
+        </div>
+        <div style="background:var(--border);border-radius:6px;padding:5px;min-height:60px">
+          <div style="font-size:9px;font-weight:700;opacity:0.6;margin-bottom:4px">PROSPECT (5)</div>
+          <div style="background:var(--bg);border-radius:4px;padding:3px 5px;font-size:9px;margin-bottom:2px">Khalid I.</div>
+          <div style="background:var(--bg);border-radius:4px;padding:3px 5px;font-size:9px;opacity:0.6">+ 4 more</div>
+        </div>
+        <div style="background:var(--border);border-radius:6px;padding:5px;min-height:60px">
+          <div style="font-size:9px;font-weight:700;opacity:0.6;margin-bottom:4px">CUSTOMER (8)</div>
+          <div style="background:var(--bg);border-radius:4px;padding:3px 5px;font-size:9px;margin-bottom:2px">Ahmed A.</div>
+          <div style="background:var(--bg);border-radius:4px;padding:3px 5px;font-size:9px;opacity:0.6">+ 7 more</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="font-size:12px;opacity:0.5;margin-top:16px;text-align:center">You can select multiple. We'll then pick the right set to build.</p>
