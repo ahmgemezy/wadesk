@@ -312,6 +312,98 @@ export const getContactActivity = query({
   },
 });
 
+export const getContactsByRevenueCurrency = query({
+  args: {
+    currency: v.union(v.literal("EGP"), v.literal("SAR"), v.literal("AED"), v.literal("USD")),
+    startTs: v.number(),
+    endTs: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdminOrSupervisor(orgRole as OrgRole);
+
+    const results: Array<{
+      _id: string;
+      displayName: string;
+      phone: string;
+      spent: number;
+      currency: string;
+      stage: string | null;
+      createdAt: number;
+    }> = [];
+
+    for await (const contact of ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+    ) {
+      if (contact.createdAt < args.startTs || contact.createdAt > args.endTs) continue;
+      if (contact.spent == null || contact.spent <= 0) continue;
+      const contactCurrency = contact.spentCurrency ?? "USD";
+      if (contactCurrency !== args.currency) continue;
+
+      results.push({
+        _id: contact._id,
+        displayName: contact.customName ?? contact.displayName,
+        phone: contact.phone,
+        spent: contact.spent,
+        currency: contactCurrency,
+        stage: contact.stage ?? null,
+        createdAt: contact.createdAt,
+      });
+    }
+
+    return results.sort((a, b) => b.spent - a.spent);
+  },
+});
+
+export const getRevenueByCurrency = query({
+  args: {
+    startTs: v.number(),
+    endTs: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdminOrSupervisor(orgRole as OrgRole);
+
+    const totals: Record<string, number> = {
+      EGP: 0,
+      SAR: 0,
+      AED: 0,
+      USD: 0,
+    };
+    let totalContacts = 0;
+    let contactsWithRevenue = 0;
+
+    for await (const contact of ctx.db
+      .query("contacts")
+      .withIndex("by_tenant_archived", (q) =>
+        q.eq("tenantId", tenantId).eq("isArchived", false),
+      )
+    ) {
+      if (contact.createdAt < args.startTs || contact.createdAt > args.endTs) continue;
+      totalContacts++;
+      if (contact.spent != null && contact.spent > 0) {
+        contactsWithRevenue++;
+        const currency = contact.spentCurrency ?? "USD";
+        totals[currency] = (totals[currency] ?? 0) + contact.spent;
+      }
+    }
+
+    const breakdown = (["EGP", "SAR", "AED", "USD"] as const)
+      .map((currency) => ({ currency, amount: totals[currency] ?? 0 }))
+      .filter((entry) => entry.amount > 0);
+
+    const grandTotalUsd = breakdown.reduce((sum, entry) => {
+      // Return raw breakdown per currency — conversion is a UI concern
+      return sum + (entry.currency === "USD" ? entry.amount : 0);
+    }, 0);
+
+    return { breakdown, totalContacts, contactsWithRevenue, grandTotalUsd };
+  },
+});
+
 export const getMyStats = query({
   args: {},
   handler: async (ctx) => {

@@ -522,3 +522,238 @@ export const updateStatusByMetaId = internalMutation({
     await ctx.db.patch(message._id, { status: args.status });
   },
 });
+
+export const setMetaMessageId = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    metaMessageId: v.string(),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const msg = await ctx.db.get(args.messageId);
+    if (!msg || msg.tenantId !== args.tenantId) return;
+    await ctx.db.patch(args.messageId, { metaMessageId: args.metaMessageId });
+  },
+});
+
+export const markDeletedInDb = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const msg = await ctx.db.get(args.messageId);
+    if (!msg || msg.tenantId !== args.tenantId) return;
+    await ctx.db.patch(args.messageId, { deletedAt: Date.now() });
+  },
+});
+
+export const sendQuotedReply = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    content: v.string(),
+    quotedMessageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId) {
+      throw new Error("NOT_FOUND");
+    }
+
+    const isAdminOrSupervisor =
+      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+    if (
+      !isAdminOrSupervisor &&
+      conversation.assignedAgentId !== callerId &&
+      conversation.assignedAgentId !== undefined
+    ) {
+      throw new Error("FORBIDDEN");
+    }
+
+    const quotedMsg = await ctx.db.get(args.quotedMessageId);
+    if (!quotedMsg || quotedMsg.conversationId !== args.conversationId) {
+      throw new Error("QUOTED_MESSAGE_NOT_FOUND");
+    }
+
+    if (!quotedMsg.metaMessageId) {
+      throw new Error("QUOTED_MESSAGE_HAS_NO_META_ID");
+    }
+
+    const now = Date.now();
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId,
+      direction: "outbound",
+      content: args.content,
+      contentType: "text",
+      isInternalNote: false,
+      authorId: callerId,
+      status: "sending",
+      timestamp: now,
+      createdAt: now,
+      quotedMessageId: args.quotedMessageId,
+    });
+
+    const channel = await ctx.db.get(conversation.channelId);
+    const contact = await ctx.db.get(conversation.contactId);
+    if (!channel || !contact) throw new Error("CHANNEL_OR_CONTACT_NOT_FOUND");
+
+    await ctx.db.patch(args.conversationId, {
+      lastMessageAt: now,
+      lastMessagePreview: args.content.slice(0, 100),
+    });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.actions.sendWhatsAppMessage.sendQuotedMessage,
+      {
+        messageId,
+        phoneNumberId: channel.phoneNumberId,
+        contactPhone: contact.phone,
+        content: args.content,
+        quotedMetaMessageId: quotedMsg.metaMessageId,
+        tenantId,
+      },
+    );
+
+    return messageId;
+  },
+});
+
+export const deleteMessage = mutation({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+
+    const msg = await ctx.db.get(args.messageId);
+    if (!msg || msg.tenantId !== tenantId) throw new Error("NOT_FOUND");
+
+    const isAdminOrSupervisor =
+      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+    if (!isAdminOrSupervisor && msg.authorId !== callerId) {
+      throw new Error("FORBIDDEN");
+    }
+
+    if (msg.direction !== "outbound" || msg.isInternalNote) {
+      throw new Error("CANNOT_DELETE_THIS_MESSAGE");
+    }
+
+    if (!msg.metaMessageId) {
+      throw new Error("NO_META_MESSAGE_ID");
+    }
+
+    const conversation = await ctx.db.get(msg.conversationId);
+    if (!conversation) throw new Error("CONVERSATION_NOT_FOUND");
+    const channel = await ctx.db.get(conversation.channelId);
+    if (!channel) throw new Error("CHANNEL_NOT_FOUND");
+
+    await ctx.db.patch(args.messageId, { deletedAt: Date.now() });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.actions.sendWhatsAppMessage.deleteWhatsAppMessage,
+      {
+        messageId: args.messageId,
+        phoneNumberId: channel.phoneNumberId,
+        metaMessageId: msg.metaMessageId,
+        tenantId,
+      },
+    );
+  },
+});
+
+export const reactToMessage = mutation({
+  args: {
+    messageId: v.id("messages"),
+    emoji: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
+
+    const msg = await ctx.db.get(args.messageId);
+    if (!msg || msg.tenantId !== tenantId) throw new Error("NOT_FOUND");
+
+    if (!msg.metaMessageId) throw new Error("NO_META_MESSAGE_ID");
+
+    const conversation = await ctx.db.get(msg.conversationId);
+    if (!conversation) throw new Error("CONVERSATION_NOT_FOUND");
+    const channel = await ctx.db.get(conversation.channelId);
+    const contact = await ctx.db.get(conversation.contactId);
+    if (!channel || !contact) throw new Error("CHANNEL_OR_CONTACT_NOT_FOUND");
+
+    const existing = msg.reactions ?? [];
+    const alreadyReacted = existing.findIndex((r) => r.reactorId === callerId);
+
+    let updatedReactions;
+    if (alreadyReacted !== -1 && existing[alreadyReacted].emoji === args.emoji) {
+      updatedReactions = existing.filter((r) => r.reactorId !== callerId);
+    } else if (alreadyReacted !== -1) {
+      updatedReactions = existing.map((r) =>
+        r.reactorId === callerId ? { emoji: args.emoji, reactorId: callerId } : r,
+      );
+    } else {
+      updatedReactions = [...existing, { emoji: args.emoji, reactorId: callerId }];
+    }
+
+    await ctx.db.patch(args.messageId, { reactions: updatedReactions });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.actions.sendWhatsAppMessage.sendReaction,
+      {
+        phoneNumberId: channel.phoneNumberId,
+        contactPhone: contact.phone,
+        metaMessageId: msg.metaMessageId,
+        emoji: args.emoji,
+        tenantId,
+      },
+    );
+  },
+});
+
+export const handleIncomingReaction = internalMutation({
+  args: {
+    tenantId: v.string(),
+    metaMessageId: v.string(),
+    reactorPhone: v.string(),
+    emoji: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const msg = await ctx.db
+      .query("messages")
+      .withIndex("by_meta_message_id", (q) =>
+        q.eq("metaMessageId", args.metaMessageId),
+      )
+      .first();
+    if (!msg || msg.tenantId !== args.tenantId) return;
+
+    const existing = msg.reactions ?? [];
+
+    let updatedReactions;
+    if (args.emoji === "") {
+      updatedReactions = existing.filter((r) => r.reactorId !== args.reactorPhone);
+    } else {
+      const alreadyReacted = existing.findIndex(
+        (r) => r.reactorId === args.reactorPhone,
+      );
+      if (alreadyReacted !== -1) {
+        updatedReactions = existing.map((r) =>
+          r.reactorId === args.reactorPhone
+            ? { emoji: args.emoji, reactorId: args.reactorPhone }
+            : r,
+        );
+      } else {
+        updatedReactions = [
+          ...existing,
+          { emoji: args.emoji, reactorId: args.reactorPhone },
+        ];
+      }
+    }
+
+    await ctx.db.patch(msg._id, { reactions: updatedReactions });
+  },
+});

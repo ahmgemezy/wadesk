@@ -17,6 +17,7 @@ type MetaMessage = {
   video?: { id: string; caption?: string };
   sticker?: { id: string };
   location?: { latitude: number; longitude: number; name?: string };
+  reaction?: { message_id: string; emoji: string };
 };
 
 type MetaStatus = {
@@ -175,6 +176,20 @@ export const metaWebhook = httpAction(async (ctx, request) => {
 
           // ── Process inbound messages ────────────────────────────────────
           for (const msg of value.messages ?? []) {
+            // ── Handle incoming reactions ────────────────────────────────
+            if (msg.type === "reaction") {
+              const reaction = (msg as any).reaction as { message_id: string; emoji: string } | undefined;
+              if (reaction) {
+                await ctx.runMutation(internal.messages.handleIncomingReaction, {
+                  tenantId: channel.tenantId,
+                  metaMessageId: reaction.message_id,
+                  reactorPhone: msg.from,
+                  emoji: reaction.emoji ?? "",
+                });
+              }
+              continue;
+            }
+
             const { content, contentType, mediaUrl } = parseMessageContent(msg);
             const senderName = value.contacts?.[0]?.profile?.name;
 

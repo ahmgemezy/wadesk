@@ -1,7 +1,50 @@
 "use client";
 
 import { useT, useLocale } from "@/lib/i18n/context";
-import { FileIcon, DownloadIcon, MapPinIcon, MicIcon } from "lucide-react";
+import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div className="absolute top-4 inset-e-4 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        <a
+          href={src}
+          download
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-white bg-black/50 rounded-full p-1.5 hover:bg-black/70"
+          aria-label="Download"
+        >
+          <DownloadIcon className="size-5" />
+        </a>
+        <button
+          className="text-white bg-black/50 rounded-full p-1.5 hover:bg-black/70"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <XIcon className="size-5" />
+        </button>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
 
 type Message = {
   _id: string;
@@ -18,6 +61,7 @@ type Message = {
 export function MessageBubble({ message }: { message: Message }) {
   const t = useT();
   const locale = useLocale();
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const timeStr = new Date(message.timestamp).toLocaleTimeString(
     locale === "en" ? "en-US" : "ar-EG",
@@ -63,21 +107,31 @@ export function MessageBubble({ message }: { message: Message }) {
 
   if ((message.contentType === "image" || message.contentType === "sticker") && message.mediaUrl) {
     return (
-      <div className={isInbound ? "flex justify-start" : "flex justify-end"}>
-        <div className={bubbleBase + " p-1.5"}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={message.mediaUrl}
+      <>
+        {lightboxSrc && (
+          <ImageLightbox
+            src={lightboxSrc}
             alt={t("Image", "صورة")}
-            className="rounded max-w-xs max-h-64 object-cover"
-            loading="lazy"
+            onClose={() => setLightboxSrc(null)}
           />
-          {message.content && message.contentType === "image" && (
-            <p className="text-sm mt-1 px-1.5">{message.content}</p>
-          )}
-          <div className="px-1.5">{timeRow}</div>
+        )}
+        <div className={isInbound ? "flex justify-start" : "flex justify-end"}>
+          <div className={bubbleBase + " p-1.5"}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={message.mediaUrl}
+              alt={t("Image", "صورة")}
+              className="rounded max-w-xs max-h-64 object-cover cursor-zoom-in"
+              loading="lazy"
+              onClick={() => setLightboxSrc(message.mediaUrl!)}
+            />
+            {message.content && message.contentType === "image" && (
+              <p className="text-sm mt-1 px-1.5">{message.content}</p>
+            )}
+            <div className="px-1.5">{timeRow}</div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -90,7 +144,19 @@ export function MessageBubble({ message }: { message: Message }) {
             controls
             className="rounded max-w-xs max-h-64"
           />
-          <div className="px-1.5">{timeRow}</div>
+          <div className="px-1.5 flex items-center justify-between">
+            {timeRow}
+            <a
+              href={message.mediaUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground"
+              aria-label={t("Download", "تحميل")}
+            >
+              <DownloadIcon className="size-4" />
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -103,6 +169,16 @@ export function MessageBubble({ message }: { message: Message }) {
           <div className="flex items-center gap-2 mb-1">
             <MicIcon className="size-4 text-muted-foreground shrink-0" />
             <audio src={message.mediaUrl} controls className="h-8 w-48" />
+            <a
+              href={message.mediaUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              aria-label={t("Download", "تحميل")}
+            >
+              <DownloadIcon className="size-4" />
+            </a>
           </div>
           {timeRow}
         </div>

@@ -10,6 +10,7 @@ import { LabelDistributionChart } from "./label-distribution-chart";
 import { CustomerLifecycleChart } from "./customer-lifecycle-chart";
 import { StageFunnelChart } from "./stage-funnel-chart";
 import { ContactActivityTimeline } from "./contact-activity-timeline";
+import { RevenueWidget } from "./revenue-widget";
 
 interface AnalyticsDashboardProps {
   locale?: "ar" | "en";
@@ -38,6 +39,8 @@ export function AnalyticsDashboard({ locale = "ar" }: AnalyticsDashboardProps) {
       </div>
 
       <TeamSummaryCards dateRange={dateRange} locale={locale} />
+
+      <RevenueWidget dateRange={dateRange} locale={locale} />
 
       <AgentPerformanceTable dateRange={dateRange} locale={locale} />
 

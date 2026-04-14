@@ -102,6 +102,126 @@ export const sendLocation = internalAction({
   },
 });
 
+export const sendQuotedMessage = internalAction({
+  args: {
+    messageId: v.id("messages"),
+    phoneNumberId: v.string(),
+    contactPhone: v.string(),
+    content: v.string(),
+    quotedMetaMessageId: v.string(),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const response = await fetch(
+        `${BASE}/${args.phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: args.contactPhone,
+            context: { message_id: args.quotedMetaMessageId },
+            type: "text",
+            text: { body: args.content },
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        await markFailed(ctx, args.messageId, args.tenantId);
+        return;
+      }
+
+      const data = (await response.json()) as { messages?: { id: string }[] };
+      const metaId = data.messages?.[0]?.id;
+      if (metaId) {
+        await ctx.runMutation(internal.messages.setMetaMessageId, {
+          messageId: args.messageId,
+          metaMessageId: metaId,
+          tenantId: args.tenantId,
+        });
+      }
+
+      await ctx.runMutation(internal.messages.updateStatus, {
+        messageId: args.messageId,
+        status: "delivered",
+        tenantId: args.tenantId,
+      });
+    } catch {
+      await markFailed(ctx, args.messageId, args.tenantId);
+    }
+  },
+});
+
+export const deleteWhatsAppMessage = internalAction({
+  args: {
+    messageId: v.id("messages"),
+    phoneNumberId: v.string(),
+    metaMessageId: v.string(),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const deleteResponse = await fetch(
+        `${BASE}/${args.phoneNumberId}/messages/${args.metaMessageId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+          },
+        },
+      );
+      if (deleteResponse.ok) {
+        await ctx.runMutation(internal.messages.markDeletedInDb, {
+          messageId: args.messageId,
+          tenantId: args.tenantId,
+        });
+      }
+    } catch {
+      // Silent — deletion window may have passed
+    }
+  },
+});
+
+export const sendReaction = internalAction({
+  args: {
+    phoneNumberId: v.string(),
+    contactPhone: v.string(),
+    metaMessageId: v.string(),
+    emoji: v.string(),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, _args) => {
+    try {
+      await fetch(
+        `${BASE}/${_args.phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: _args.contactPhone,
+            type: "reaction",
+            reaction: {
+              message_id: _args.metaMessageId,
+              emoji: _args.emoji,
+            },
+          }),
+        },
+      );
+    } catch {
+      // Silent
+    }
+  },
+});
+
 export const sendMediaMessage = internalAction({
   args: {
     messageId: v.id("messages"),

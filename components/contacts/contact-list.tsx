@@ -6,18 +6,9 @@ import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
 import { useOrganization, useAuth } from "@clerk/nextjs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   SearchIcon,
   PlusIcon,
@@ -27,30 +18,22 @@ import {
   TagIcon,
   ArchiveRestoreIcon,
   XIcon,
-  MapPinIcon,
   PhoneIcon,
-  ExternalLinkIcon,
+  LayoutGrid,
+  Table as TableIcon,
+  List as ListIcon,
 } from "lucide-react";
 import { ContactDetailSheet } from "./contact-detail-sheet";
 import { AddContactDialog } from "./add-contact-dialog";
 import { CsvImportDialog } from "./csv-import-dialog";
 import { BulkTagDialog } from "./bulk-tag-dialog";
+import { ContactCardGrid } from "./contact-card-grid";
+import { ContactTable } from "./contact-table";
+import { ContactCompactList } from "./contact-compact-list";
 import { cn } from "@/lib/utils";
-import { getCountryFromPhone } from "@/lib/phoneGeo";
+import { type Stage, STAGE_CONFIG, STAGE_TABS } from "./contact-stage-config";
 
-// ─── Stage config ─────────────────────────────────────────────────────────────
-
-type Stage = "lead" | "prospect" | "customer" | "retained" | "churned";
-
-const STAGE_CONFIG: Record<Stage, { en: string; ar: string; color: string }> = {
-  lead:     { en: "Lead",     ar: "عميل محتمل",  color: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300" },
-  prospect: { en: "Prospect", ar: "مرشح",        color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
-  customer: { en: "Customer", ar: "عميل",         color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300" },
-  retained: { en: "Retained", ar: "عميل دائم",   color: "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300" },
-  churned:  { en: "Churned",  ar: "مفقود",        color: "bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300" },
-};
-
-const STAGE_TABS: (Stage | "all")[] = ["all", "lead", "prospect", "customer", "retained", "churned"];
+type ViewMode = "cards" | "table" | "compact";
 
 const PAGE_SIZE = 24;
 
@@ -65,17 +48,12 @@ const t = {
     showAll: "إظهار الكل",
     noContacts: "لا توجد جهات اتصال",
     loadMore: "تحميل المزيد",
-    archivedBadge: "مؤرشف",
     selected: (n: number) => `${n} محدد`,
     bulkTag: "إضافة وسوم",
     bulkArchive: "أرشفة",
     bulkUnarchive: "إلغاء أرشفة",
     bulkExport: "تصدير المحدد",
-    clearSelection: "إلغاء التحديد",
-    conversations: "محادثة",
-    noTags: "بدون وسوم",
     selectAll: "تحديد الكل",
-    viewProfile: "عرض الملف",
     all: "الكل",
   },
   en: {
@@ -88,17 +66,12 @@ const t = {
     showAll: "Show All",
     noContacts: "No contacts found",
     loadMore: "Load More",
-    archivedBadge: "Archived",
     selected: (n: number) => `${n} selected`,
     bulkTag: "Add Tags",
     bulkArchive: "Archive",
     bulkUnarchive: "Unarchive",
     bulkExport: "Export Selected",
-    clearSelection: "Clear",
-    conversations: "conv.",
-    noTags: "No tags",
     selectAll: "Select All",
-    viewProfile: "View Profile",
     all: "All",
   },
 } as const;
@@ -117,6 +90,12 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [bulkTagOpen, setBulkTagOpen] = useState(false);
   const [selected, setSelected] = useState<Set<Id<"contacts">>>(new Set());
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "cards";
+    const stored = localStorage.getItem("contacts-view");
+    if (stored === "cards" || stored === "table" || stored === "compact") return stored;
+    return "cards";
+  });
 
   const router = useRouter();
   const dir = locale === "ar" ? "rtl" : "ltr";
@@ -132,13 +111,11 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
     orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
 
   const isSearching = searchQuery.trim().length > 0;
-  // When a stage tab is active (and not searching), use listByStage
   const isStageFiltered = !isSearching && stageFilter !== "all";
 
   const archiveContact = useMutation(api.contacts.archive);
   const updateStage = useMutation(api.contacts.updateStage);
 
-  // Stage-filtered query (non-paginated — listByStage returns up to 500)
   const stageContacts = useQuery(
     api.contacts.listByStage,
     hasOrg && isStageFiltered ? { stage: stageFilter as Stage } : "skip",
@@ -156,7 +133,6 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
     { initialNumItems: PAGE_SIZE },
   );
 
-  // Unified contact list
   let contacts: Doc<"contacts">[] = [];
   if (isSearching) {
     contacts = (searchResults?.results ?? []) as Doc<"contacts">[];
@@ -188,6 +164,11 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
     } else {
       setSelected(new Set(contacts.map((c) => c._id)));
     }
+  }
+
+  function handleViewModeChange(mode: ViewMode) {
+    setViewMode(mode);
+    localStorage.setItem("contacts-view", mode);
   }
 
   const selectedContacts = contacts.filter((c) => selected.has(c._id));
@@ -228,7 +209,22 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
   const hasArchived = selectedContacts.some((c) => c.isArchived);
   const hasActive = selectedContacts.some((c) => !c.isArchived);
 
-  const isLoading = results === undefined;
+  const isLoading =
+    (isSearching && searchResults === undefined) ||
+    (isStageFiltered && stageContacts === undefined) ||
+    (!isSearching && !isStageFiltered && listResults === undefined);
+
+  const viewProps = {
+    contacts,
+    selected,
+    locale,
+    isLoading,
+    onToggle: toggleSelect,
+    onClick: handleRowClick,
+    onViewProfile: (id: Id<"contacts">) => router.push(`/contacts/${id}`),
+    onUpdateStage: (id: Id<"contacts">, stage: Stage) =>
+      updateStage({ contactId: id, stage }).catch(() => {}),
+  };
 
   return (
     <div dir={dir} className="flex flex-col h-full">
@@ -316,56 +312,68 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
             )}
           </div>
 
-          {/* Bulk action bar */}
-          {selected.size > 0 && (
-            <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-lg px-2 py-1">
-              <span className="text-xs font-medium text-primary me-1">{labels.selected(selected.size)}</span>
-              {isAdminOrSupervisor && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setBulkTagOpen(true)}>
-                  <TagIcon className="size-3 me-1" />
-                  {labels.bulkTag}
-                </Button>
-              )}
-              {isAdminOrSupervisor && hasActive && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkArchive(true)}>
-                  <ArchiveIcon className="size-3 me-1" />
-                  {labels.bulkArchive}
-                </Button>
-              )}
-              {isAdminOrSupervisor && hasArchived && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkArchive(false)}>
-                  <ArchiveRestoreIcon className="size-3 me-1" />
-                  {labels.bulkUnarchive}
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleExportCsv(selectedContacts)}>
-                <DownloadIcon className="size-3 me-1" />
-                {labels.bulkExport}
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelected(new Set())}>
-                <XIcon className="size-3" />
-              </Button>
+          <div className="flex items-center gap-2">
+            {/* View switcher */}
+            <div className="flex items-center border rounded-lg p-0.5">
+              {([
+                { mode: "cards" as ViewMode, Icon: LayoutGrid, label: locale === "ar" ? "بطاقات" : "Cards" },
+                { mode: "table" as ViewMode, Icon: TableIcon, label: locale === "ar" ? "جدول" : "Table" },
+                { mode: "compact" as ViewMode, Icon: ListIcon, label: locale === "ar" ? "قائمة" : "List" },
+              ]).map(({ mode, Icon, label: viewLabel }) => (
+                <button
+                  key={mode}
+                  onClick={() => handleViewModeChange(mode)}
+                  aria-label={viewLabel}
+                  className={cn(
+                    "p-1.5 rounded-md transition-all",
+                    viewMode === mode
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                  )}
+                >
+                  <Icon className="size-4" />
+                </button>
+              ))}
             </div>
-          )}
+
+            {/* Bulk action bar */}
+            {selected.size > 0 && (
+              <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-lg px-2 py-1">
+                <span className="text-xs font-medium text-primary me-1">{labels.selected(selected.size)}</span>
+                {isAdminOrSupervisor && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setBulkTagOpen(true)}>
+                    <TagIcon className="size-3 me-1" />
+                    {labels.bulkTag}
+                  </Button>
+                )}
+                {isAdminOrSupervisor && hasActive && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkArchive(true)}>
+                    <ArchiveIcon className="size-3 me-1" />
+                    {labels.bulkArchive}
+                  </Button>
+                )}
+                {isAdminOrSupervisor && hasArchived && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkArchive(false)}>
+                    <ArchiveRestoreIcon className="size-3 me-1" />
+                    {labels.bulkUnarchive}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleExportCsv(selectedContacts)}>
+                  <DownloadIcon className="size-3 me-1" />
+                  {labels.bulkExport}
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelected(new Set())}>
+                  <XIcon className="size-3" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Card Grid */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
-        {isLoading ? (
-          <motion.div
-            initial="hidden"
-            animate="show"
-            variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-          >
-            {Array.from({ length: 8 }).map((_, i) => (
-              <motion.div key={i} variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }}>
-                <Skeleton className="h-48 rounded-xl" />
-              </motion.div>
-            ))}
-          </motion.div>
-        ) : contacts.length === 0 ? (
+        {!isLoading && contacts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-3">
             <div className="size-16 rounded-full bg-muted flex items-center justify-center">
               <PhoneIcon className="size-7 opacity-40" />
@@ -380,35 +388,10 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
           </div>
         ) : (
           <>
-            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              <AnimatePresence mode="popLayout">
-                {contacts.map((contact) => (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ duration: 0.2 }}
-                    key={contact._id}
-                  >
-                    <ContactCard
-                      contact={contact}
-                      isSelected={selected.has(contact._id)}
-                      archivedLabel={labels.archivedBadge}
-                      noTagsLabel={labels.noTags}
-                      conversationsLabel={labels.conversations}
-                      viewProfileLabel={labels.viewProfile}
-                      locale={locale}
-                      onToggle={() => toggleSelect(contact._id)}
-                      onClick={handleRowClick}
-                      onViewProfile={(id) => router.push(`/contacts/${id}`)}
-                      onUpdateStage={(id, stage) => updateStage({ contactId: id, stage }).catch(()=>{})}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </motion.div>
-            {results?.status === "CanLoadMore" && (
+            {viewMode === "cards" && <ContactCardGrid {...viewProps} />}
+            {viewMode === "table" && <ContactTable {...viewProps} />}
+            {viewMode === "compact" && <ContactCompactList {...viewProps} />}
+            {!isLoading && results?.status === "CanLoadMore" && (
               <div className="pt-4 text-center">
                 <Button variant="outline" size="sm" onClick={() => results.loadMore(PAGE_SIZE)}>
                   {labels.loadMore}
@@ -450,217 +433,6 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
         locale={locale}
         onDone={() => { setBulkTagOpen(false); setSelected(new Set()); }}
       />
-    </div>
-  );
-}
-
-// ─── Contact Card ────────────────────────────────────────────────────────────
-
-interface ContactCardProps {
-  contact: Doc<"contacts">;
-  isSelected: boolean;
-  archivedLabel: string;
-  noTagsLabel: string;
-  conversationsLabel: string;
-  viewProfileLabel: string;
-  locale: "ar" | "en";
-  onToggle: () => void;
-  onClick: (id: Id<"contacts">) => void;
-  onViewProfile: (id: Id<"contacts">) => void;
-  onUpdateStage?: (id: Id<"contacts">, stage: Stage) => void;
-}
-
-function ContactCard({
-  contact,
-  isSelected,
-  archivedLabel,
-  noTagsLabel,
-  conversationsLabel,
-  viewProfileLabel,
-  locale,
-  onToggle,
-  onClick,
-  onViewProfile,
-  onUpdateStage,
-}: ContactCardProps) {
-  const stage = (contact.stage ?? "lead") as Stage;
-  const stageCfg = STAGE_CONFIG[stage];
-  const initials = (contact.customName ?? contact.displayName ?? contact.phone)
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
-  const avatarColors = [
-    "from-violet-500 to-purple-600",
-    "from-blue-500 to-cyan-600",
-    "from-emerald-500 to-teal-600",
-    "from-orange-500 to-amber-600",
-    "from-rose-500 to-pink-600",
-    "from-indigo-500 to-blue-600",
-  ];
-  const colorIndex = contact.phone.charCodeAt(contact.phone.length - 1) % avatarColors.length;
-
-  return (
-    <div
-      onClick={() => onClick(contact._id)}
-      className={cn(
-        "group relative rounded-xl border bg-card p-4 cursor-pointer",
-        "transition-all duration-200 ease-out",
-        "hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/30",
-        "dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)]",
-        "transform-3d",
-        isSelected && "border-primary ring-1 ring-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.2)]",
-        contact.isArchived && "opacity-60",
-      )}
-      style={{
-        perspective: "1000px",
-      }}
-    >
-      {/* Checkbox */}
-      <div
-        className="absolute top-3 inset-s-3 z-10"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onToggle}
-          className={cn(
-            "transition-opacity",
-            isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-          )}
-        />
-      </div>
-
-      {/* Stage badge + archived badge */}
-      <div className="absolute top-3 inset-e-3 flex flex-col items-end gap-1">
-        {contact.isArchived && (
-          <Badge variant="outline" className="text-xs">
-            {archivedLabel}
-          </Badge>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                onClick={(e) => e.stopPropagation()}
-                className={cn(
-                  "text-xs px-2 py-0.5 rounded-full font-medium transition-all hover:ring-2 hover:ring-primary/20",
-                  stageCfg.color
-                )}
-              />
-            }
-          >
-            {locale === "ar" ? stageCfg.ar : stageCfg.en}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-            {STAGE_TABS.filter((t) => t !== "all").map((tab) => {
-              const cfg = STAGE_CONFIG[tab as Stage];
-              return (
-                <DropdownMenuItem
-                  key={tab}
-                  className="text-xs focus:bg-primary/5 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onUpdateStage?.(contact._id, tab as Stage);
-                  }}
-                >
-                  <div className={cn("size-2 rounded-full me-2", cfg.color.replace(/bg-([a-z]+)-100.*/, 'bg-$1-500'))} />
-                  {locale === "ar" ? cfg.ar : cfg.en}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Avatar */}
-      <div className="flex flex-col items-center gap-3 pt-2">
-        <div className={cn(
-          "size-14 rounded-full bg-linear-to-br flex items-center justify-center text-white font-semibold text-lg shadow-inner",
-          avatarColors[colorIndex],
-        )}>
-          {initials || "?"}
-        </div>
-
-        {/* Name */}
-        <div className="text-center min-w-0 w-full">
-          <p className="font-medium text-sm truncate">
-            {contact.customName ?? contact.displayName}
-          </p>
-          <p className="text-xs text-muted-foreground font-mono mt-0.5" dir="ltr">
-            {contact.phone}
-          </p>
-        </div>
-      </div>
-
-      {/* Meta row */}
-      {(() => {
-        const geo = getCountryFromPhone(contact.phone);
-        const countryIso = geo?.countryIso ?? null;
-        const hasLocation = contact.city || countryIso;
-        return (
-          <div className="mt-3 flex items-center justify-center gap-3 text-xs text-muted-foreground">
-            {hasLocation && (
-              <span className="flex items-center gap-1 truncate">
-                <MapPinIcon className="size-3 shrink-0" />
-                {[contact.city, countryIso].filter(Boolean).join(", ")}
-              </span>
-            )}
-            {contact.category && (
-              <Badge variant="secondary" className="text-xs font-normal">
-                {contact.category}
-              </Badge>
-            )}
-          </div>
-        );
-      })()}
-
-      {/* Tags */}
-      <div className="mt-2 flex flex-wrap gap-1 justify-center min-h-5.5">
-        {contact.tags.length > 0 ? (
-          <>
-            {contact.tags.slice(0, 2).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs font-normal">
-                {tag}
-              </Badge>
-            ))}
-            {contact.tags.length > 2 && (
-              <Badge variant="outline" className="text-xs">
-                +{contact.tags.length - 2}
-              </Badge>
-            )}
-          </>
-        ) : (
-          <span className="text-xs text-muted-foreground/50">{noTagsLabel}</span>
-        )}
-      </div>
-
-      {/* Spend */}
-      {contact.spent != null && (
-        <div className="mt-2 text-center">
-          <span className="text-xs font-medium text-emerald-500">
-            ${contact.spent.toLocaleString()}
-          </span>
-        </div>
-      )}
-
-      {/* View Profile link */}
-      <div
-        className="mt-3 flex justify-center"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          onClick={() => onViewProfile(contact._id)}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-        >
-          <ExternalLinkIcon className="size-3" />
-          {viewProfileLabel}
-        </button>
-      </div>
-
-      {/* Hover glow */}
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-linear-to-br from-primary/5 to-transparent" />
     </div>
   );
 }

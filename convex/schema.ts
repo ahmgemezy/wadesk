@@ -62,6 +62,12 @@ export default defineSchema({
     country: v.optional(v.string()),
     city: v.optional(v.string()),
     spent: v.optional(v.number()),
+    spentCurrency: v.optional(v.union(
+      v.literal("EGP"),
+      v.literal("SAR"),
+      v.literal("AED"),
+      v.literal("USD"),
+    )),
     category: v.optional(v.string()),
     createdAt: v.number(),
     stage: v.optional(v.union(
@@ -186,6 +192,12 @@ export default defineSchema({
     ),
     timestamp: v.number(),
     createdAt: v.number(),
+    quotedMessageId: v.optional(v.id("messages")),
+    deletedAt: v.optional(v.number()),
+    reactions: v.optional(v.array(v.object({
+      emoji: v.string(),
+      reactorId: v.string(),
+    }))),
   })
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_tenant", ["tenantId"])

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
@@ -41,7 +42,15 @@ import {
   DollarSignIcon,
   MessageSquareIcon,
   CheckIcon,
+  SendIcon,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const tl = {
   ar: {
@@ -81,6 +90,11 @@ const tl = {
     stageRetained: "عميل وفي",
     stageChurned: "خسرناه",
     lastEditedBy: "آخر تعديل",
+    sendMessage: "إرسال رسالة",
+    selectChannel: "اختر القناة",
+    selectChannelDesc: "اختر القناة التي تريد بدء المحادثة منها",
+    startConversation: "بدء المحادثة",
+    noChannels: "لا توجد قنوات متاحة",
   },
   en: {
     title: "Contact Profile",
@@ -119,6 +133,11 @@ const tl = {
     stageRetained: "Retained",
     stageChurned: "Churned",
     lastEditedBy: "Last edited by",
+    sendMessage: "Send Message",
+    selectChannel: "Select Channel",
+    selectChannelDesc: "Choose which channel to start the conversation from",
+    startConversation: "Start Conversation",
+    noChannels: "No channels available",
   },
 };
 
@@ -147,6 +166,10 @@ export function ContactDetailSheet({
   const deleteField = useMutation(api.customFields.delete_);
   const archiveContact = useMutation(api.contacts.archive);
 
+  const router = useRouter();
+  const channels = useQuery(api.channels.listForTenant);
+  const getOrCreateConversation = useMutation(api.conversations.getOrCreate);
+
   const { membership, memberships } = useOrganization({ memberships: { infinite: true } });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const orgRole = (membership as any)?.role as string | undefined;
@@ -161,10 +184,14 @@ export function ContactDetailSheet({
   const [cityOther, setCityOther] = useState("");
   const [category, setCategory] = useState("");
   const [spent, setSpent] = useState("");
+  const [spentCurrency, setSpentCurrency] = useState<"EGP" | "SAR" | "AED" | "USD">("USD");
   const [stage, setStage] = useState<string>("lead");
   const [newFieldKey, setNewFieldKey] = useState("");
   const [newFieldValue, setNewFieldValue] = useState("");
   const [showNewField, setShowNewField] = useState(false);
+  const [showChannelPicker, setShowChannelPicker] = useState(false);
+  const [selectedChannelId, setSelectedChannelId] = useState<Id<"channels"> | null>(null);
+  const [startingConversation, setStartingConversation] = useState(false);
 
   const contact = data?.contact ?? null;
 
@@ -185,6 +212,7 @@ export function ContactDetailSheet({
     }
     setCategory(contact.category ?? "");
     setSpent(contact.spent != null ? String(contact.spent) : "");
+    setSpentCurrency((contact.spentCurrency as "EGP" | "SAR" | "AED" | "USD") ?? "USD");
     setStage(contact.stage ?? "lead");
     setEditing(true);
   }
@@ -202,6 +230,7 @@ export function ContactDetailSheet({
     if (category.trim() !== (contact.category ?? "")) patch.category = category.trim();
     const spentNum = spent.trim() ? parseFloat(spent) : undefined;
     if (spentNum !== contact.spent) patch.spent = spentNum;
+    if (spentNum != null && spentCurrency !== (contact.spentCurrency ?? "USD")) patch.spentCurrency = spentCurrency;
 
     if (Object.keys(patch).length > 0) {
       await updateContact({ contactId, ...patch } as Parameters<typeof updateContact>[0]);
@@ -210,6 +239,33 @@ export function ContactDetailSheet({
       await updateStage({ contactId, stage: stage as any });
     }
     setEditing(false);
+  }
+
+  async function handleStartConversation() {
+    if (!contactId || !selectedChannelId) return;
+    setStartingConversation(true);
+    try {
+      const convId = await getOrCreateConversation({
+        contactId,
+        channelId: selectedChannelId,
+      });
+      setShowChannelPicker(false);
+      onOpenChange(false);
+      router.push(`/inbox/${convId}`);
+    } finally {
+      setStartingConversation(false);
+    }
+  }
+
+  function handleSendMessageClick() {
+    if (!channels) return;
+    if (channels.length === 1) {
+      setSelectedChannelId(channels[0]._id);
+      setShowChannelPicker(true);
+    } else {
+      setSelectedChannelId(null);
+      setShowChannelPicker(true);
+    }
   }
 
   async function handleAddField() {
@@ -226,6 +282,7 @@ export function ContactDetailSheet({
   const contactConversations = conversations?.filter((c) => c.contactId === contactId);
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="w-full sm:max-w-xs p-0 flex flex-col overflow-hidden">
         <SheetHeader className="px-5 pt-5 pb-3 border-b shrink-0">
@@ -292,11 +349,21 @@ export function ContactDetailSheet({
                   )}
                 </div>
 
+                {/* Send Message */}
+                <Button
+                  className="w-full"
+                  onClick={handleSendMessageClick}
+                  disabled={!channels || channels.length === 0}
+                >
+                  <SendIcon className="size-4 me-2" />
+                  {l.sendMessage}
+                </Button>
+
                 {/* Stats row */}
                 <div className="grid grid-cols-2 gap-3">
                   <StatCard icon={<MessageSquareIcon className="size-4" />} label={l.conversations} value={String(data?.conversationCount ?? 0)} />
                   {contact.spent != null && (
-                    <StatCard icon={<DollarSignIcon className="size-4" />} label={l.spent} value={`$${contact.spent.toLocaleString()}`} highlight />
+                    <StatCard icon={<DollarSignIcon className="size-4" />} label={l.spent} value={`${contact.spent.toLocaleString()} ${contact.spentCurrency ?? "USD"}`} highlight />
                   )}
                 </div>
 
@@ -426,9 +493,26 @@ export function ContactDetailSheet({
                     </Field>
                     <Field label={l.spent} icon={<DollarSignIcon className="size-3.5" />}>
                       {editing ? (
-                        <Input value={spent} onChange={(e) => setSpent(e.target.value)} placeholder="0" type="number" className="h-8 text-sm" dir="ltr" />
+                        <div className="flex flex-col gap-1.5" dir="ltr">
+                          <Select value={spentCurrency} onValueChange={(v) => setSpentCurrency(v as "EGP" | "SAR" | "AED" | "USD")}>
+                            <SelectTrigger className="h-8 text-sm w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="EGP">EGP</SelectItem>
+                              <SelectItem value="SAR">SAR</SelectItem>
+                              <SelectItem value="AED">AED</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input value={spent} onChange={(e) => setSpent(e.target.value)} placeholder="0" type="number" className="h-8 text-sm w-full" dir="ltr" />
+                        </div>
                       ) : (
-                        <span className="text-sm">{contact.spent != null ? `$${contact.spent.toLocaleString()}` : "—"}</span>
+                        <span className="text-sm" dir="ltr">
+                          {contact.spent != null
+                            ? `${contact.spent.toLocaleString()} ${contact.spentCurrency ?? "USD"}`
+                            : "—"}
+                        </span>
                       )}
                     </Field>
                   </div>
@@ -549,6 +633,48 @@ export function ContactDetailSheet({
         </ScrollArea>
       </SheetContent>
     </Sheet>
+
+    {/* Channel Picker Dialog */}
+    <Dialog open={showChannelPicker} onOpenChange={setShowChannelPicker}>
+      <DialogContent dir={dir}>
+        <DialogHeader>
+          <DialogTitle>{l.selectChannel}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{l.selectChannelDesc}</p>
+        </DialogHeader>
+        {!channels || channels.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">{l.noChannels}</p>
+        ) : (
+          <div className="space-y-2 py-2">
+            {channels.map((ch) => (
+              <button
+                key={ch._id}
+                onClick={() => setSelectedChannelId(ch._id)}
+                className={`w-full text-start p-3 rounded-lg border transition-colors ${
+                  selectedChannelId === ch._id
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/40 hover:bg-muted/40"
+                }`}
+              >
+                <p className="font-medium text-sm">{ch.displayName || ch.displayPhone || ch.phoneNumberId}</p>
+                <p className="text-xs text-muted-foreground font-mono" dir="ltr">{ch.displayPhone || ch.phoneNumberId}</p>
+              </button>
+            ))}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setShowChannelPicker(false)}>
+            {l.cancel}
+          </Button>
+          <Button
+            onClick={handleStartConversation}
+            disabled={!selectedChannelId || startingConversation}
+          >
+            {l.startConversation}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
