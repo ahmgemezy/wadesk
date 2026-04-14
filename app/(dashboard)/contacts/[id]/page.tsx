@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRight, ArrowLeft, CalendarClock } from "lucide-react";
+import { ArrowRight, ArrowLeft, CalendarClock, GlobeIcon, MapPinIcon, TagIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { toast } from "sonner";
@@ -171,6 +171,48 @@ export default function ContactProfilePage({
 
         {/* Right: details + follow-ups */}
         <div className="overflow-y-auto p-6 space-y-6">
+
+          {/* Contact details */}
+          {(contact.country || contact.city || contact.tags?.length > 0 || contact.notes) && (
+            <div>
+              <h3 className="font-medium text-sm mb-3">{t("Details", "التفاصيل")}</h3>
+              <div className="space-y-2 text-sm">
+                {contact.country && (
+                  <div className="flex items-center gap-2">
+                    <GlobeIcon className="size-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">{t("Country", "الدولة")}:</span>
+                    <span>{contact.country}</span>
+                  </div>
+                )}
+                {contact.city && (
+                  <div className="flex items-center gap-2">
+                    <MapPinIcon className="size-3.5 text-muted-foreground shrink-0" />
+                    <span className="text-muted-foreground">{t("City", "المدينة")}:</span>
+                    <span>{contact.city}</span>
+                  </div>
+                )}
+                {contact.tags?.length > 0 && (
+                  <div className="flex items-start gap-2">
+                    <TagIcon className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">{t("Tags", "الوسوم")}:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {contact.tags.map((tag) => (
+                        <span key={tag} className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {contact.notes && (
+                  <div className="mt-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground whitespace-pre-wrap">
+                    {contact.notes}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Stats */}
           <div>
             <h3 className="font-medium text-sm mb-3">{t("Stats", "الإحصائيات")}</h3>

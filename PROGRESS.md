@@ -9,7 +9,7 @@
 
 **WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Lemon Squeezy (payments)  
-**Current branch:** `008-dashboard-shell` (all recent work is here, not yet merged into `002-agent-roles`)  
+**Current branch:** `009-automation-rules`  
 **Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server running
 
 ---
@@ -247,6 +247,79 @@
 
 ---
 
+### Smart Contact Lists
+- **Status:** Done
+- **Branch:** `009-automation-rules`
+- **Commits:** `eca897a` → `2fbc031`
+- **What was built:** Dynamic/static contact lists for segmentation and broadcast targeting
+- **New Convex tables:**
+  - `contactLists` — stores list metadata, filter criteria, type (`smart` | `static`), cached contact count
+- **New files:**
+  - `convex/contactLists.ts` — full CRUD + `getMatchingContacts`, `getAvailableCountries`, `backfillCountries`
+  - `components/lists/lists-page.tsx` — card grid layout showing all lists with stats
+  - `components/lists/list-card.tsx` — individual list card with type badge and count
+  - `components/lists/list-detail.tsx` — list detail page showing matching contacts (avatar, name, phone, stage)
+  - `components/lists/create-list-dialog.tsx` — two-column sheet: filter builder (left) + live preview panel (right)
+  - `app/(dashboard)/lists/page.tsx` and `app/(dashboard)/lists/[id]/page.tsx`
+- **Key features:**
+  - Smart lists: filter by tags, stage, country (derived from phone prefix), custom fields — count updates live
+  - Static lists: manually curated contact sets
+  - Country detection from phone number prefix via `lib/cityData.ts` (no stored `country` field dependency)
+  - `backfillCountries` mutation for existing contacts that predate the auto-detect feature
+  - Plan limits enforced via `convex/lib/planLimits.ts`
+- **Plan limits:** Free 3 lists · Starter 10 · Growth 50 · Business unlimited
+
+---
+
+### Broadcast Campaigns
+- **Status:** Done (UI complete; Meta API send wired but gated behind plan check)
+- **Branch:** `009-automation-rules`
+- **Commits:** `5eaffa3`, `dc00b7c`
+- **What was built:** Broadcast campaign creation wizard and campaign list page
+- **New Convex tables:**
+  - `broadcasts` — campaign record (name, status, listId, templateId, scheduledAt, sentCount, failedCount)
+- **New files:**
+  - `convex/broadcasts.ts` — queries, mutations, `sendBroadcast` action (sends via Meta template API)
+  - `components/broadcasts/broadcasts-page.tsx` — campaign list with status badges (draft/scheduled/sending/sent/failed)
+  - `components/broadcasts/create-broadcast-wizard.tsx` — 3-step wizard: pick list → compose message → schedule/send
+  - `app/(dashboard)/broadcasts/page.tsx` and `app/(dashboard)/broadcasts/new/page.tsx`
+- **Key decisions:**
+  - Broadcasts only available on Growth and above (plan-gated)
+  - Sends use pre-approved WhatsApp template messages (Meta requirement for outbound to non-24h window contacts)
+  - Scheduled broadcasts use Convex scheduled functions
+
+---
+
+### Automation Rules Engine
+- **Status:** Done
+- **Branch:** `009-automation-rules`
+- **Commit:** `9375d11`
+- **What was built:** If-this-then-that automation engine for auto-responding to conversations
+- **New Convex tables:**
+  - `automationRules` — rule config (tenantId, channelId, trigger type, conditions, actions, enabled flag)
+  - `businessHours` — per-tenant business hours config (days, open/close times, timezone)
+  - `ruleFireLog` — append-only log of every rule execution (ruleId, conversationId, firedAt, result)
+- **New files:**
+  - `convex/automations.ts` — full CRUD for rules + business hours config
+  - `lib/automationHelpers.ts` — rule evaluation helpers (keyword matching, hours check, etc.)
+  - `components/automations/AutomationRulesClient.tsx` — main automations dashboard (rule list + enable/disable toggle)
+  - `components/automations/AutomationRuleCard.tsx` — individual rule card with trigger type badge
+  - `components/automations/AutomationRuleForm.tsx` — create/edit rule form (trigger + action config)
+  - `components/automations/BusinessHoursForm.tsx` — per-tenant business hours configuration UI
+  - `app/(dashboard)/automations/page.tsx`
+  - `components/ui/switch.tsx` — shadcn Switch component (added for toggle controls)
+- **4 trigger types:**
+  1. `keyword` — fires when inbound message contains a specific keyword/phrase
+  2. `outside_hours` — fires when message received outside configured business hours
+  3. `first_message` — fires on first-ever message from a contact
+  4. `no_reply_timeout` — fires when no agent reply within N minutes (checked via Convex cron)
+- **Actions supported:** send auto-reply message (WhatsApp text via Meta API)
+- **Integrations:** webhook handler in `convex/http.ts` evaluates rules on every inbound message; cron in `convex/crons.ts` handles `no_reply_timeout`
+- **Plan limits:** Free 2 rules · Starter 10 · Growth 30 · Business unlimited
+- **Role gating:** Admin + Supervisor can manage rules; Business Hours config is Admin-only
+
+---
+
 ## What's Done vs. What's Pending — Feature Checklist
 
 | Feature | Status |
@@ -274,13 +347,17 @@
 | Stage filter in inbox | ✅ Done |
 | WhatsApp API send (outbound text via Meta) | ⚠️ Partial — messages saved to DB with "sending" status; Meta API call not yet wired for text replies |
 | WhatsApp API send (outbound media via Meta) | ✅ Done |
+| Smart contact lists (dynamic segmentation) | ✅ Done |
+| Static contact lists | ✅ Done |
+| Broadcast campaigns (wizard + send) | ✅ Done |
+| Automation rules engine (if-this-send-that) | ✅ Done |
+| Business hours configuration | ✅ Done |
 | Round-robin assignment | ❌ Not started |
 | CSAT flow | ❌ Not started |
 | SLA alerts | ❌ Not started |
 | Data export | ❌ Not started |
 | Billing / Lemon Squeezy | ❌ Not started |
 | WhatsApp Catalog | ❌ Deferred Phase 2 |
-| Broadcast / bulk campaigns | ❌ Deferred Phase 2 |
 
 ---
 
@@ -294,6 +371,7 @@
 | 016 | SLA alerts | Medium | Convex scheduled function checks open conversations |
 | 017 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
 | 018 | Billing / Lemon Squeezy integration | Low | Plan limits partially enforced in Convex already |
+| 019 | Supervisor department/scoping plan | Low | Plan documented in `docs/superpowers/plans/2026-04-09-supervisor-department-scoping.md` |
 
 ---
 

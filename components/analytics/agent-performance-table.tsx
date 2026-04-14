@@ -81,37 +81,39 @@ export function AgentPerformanceTable({ dateRange, locale = "ar" }: AgentPerform
   }
 
   return (
-    <Card>
+    <Card className="bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
       <CardHeader>
-        <CardTitle>
+        <CardTitle className={`font-sans tracking-tight ${locale === "ar" ? "text-right" : ""}`}>
           {locale === "ar" ? "أداء الوكلاء" : "Agent Performance"}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{locale === "ar" ? "اسم الوكيل" : "Agent Name"}</TableHead>
-              <TableHead className="text-center">
-                {locale === "ar" ? "المحادثات" : "Conversations"}
-              </TableHead>
-              <TableHead className="text-center">
-                {locale === "ar" ? "متوسط وقت الرد" : "Avg Response Time"}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((agent) => (
-              <TableRow key={agent.agentId ?? "unassigned"}>
-                <TableCell className="font-medium">{agent.agentName}</TableCell>
-                <TableCell className="text-center">{agent.conversationsHandled}</TableCell>
-                <TableCell className="text-center">
-                  {formatResponseTime(agent.avgFirstResponseTimeSeconds, locale)}
-                </TableCell>
+          <Table className="table-fixed">
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-border/50">
+                <TableHead className="font-sans text-start">
+                  {locale === "ar" ? "اسم الوكيل" : "Agent Name"}
+                </TableHead>
+                <TableHead className="text-center font-sans">
+                  {locale === "ar" ? "المحادثات" : "Conversations"}
+                </TableHead>
+                <TableHead className="text-center font-sans">
+                  {locale === "ar" ? "متوسط وقت الرد" : "Avg Response Time"}
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {data.map((agent) => (
+                <TableRow key={agent.agentId ?? "unassigned"} className="border-border/30 hover:bg-muted/30">
+                  <TableCell className="font-medium font-sans text-start">{agent.agentName}</TableCell>
+                  <TableCell className="text-center font-sans font-medium">{agent.conversationsHandled}</TableCell>
+                  <TableCell className="text-center font-sans">
+                    {formatResponseTime(agent.avgFirstResponseTimeSeconds, locale)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
       </CardContent>
     </Card>
   );

@@ -48,7 +48,7 @@ export function AgentMyStats({ locale = "ar" }: AgentMyStatsProps) {
 
   if (!data) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 p-4 md:p-6" dir="rtl">
+      <div className="grid gap-4 sm:grid-cols-2 p-4 md:p-6">
         {Array.from({ length: 2 }).map((_, i) => (
           <Card key={i}>
             <CardHeader>
@@ -64,7 +64,7 @@ export function AgentMyStats({ locale = "ar" }: AgentMyStatsProps) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 p-4 md:p-6" dir="rtl">
+    <div className="grid gap-4 sm:grid-cols-2 p-4 md:p-6">
       {cards.map((card) => (
         <Card key={card.label}>
           <CardHeader>

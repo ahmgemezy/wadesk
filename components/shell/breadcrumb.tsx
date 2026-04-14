@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import Link from "next/link";
 
 const SECTION_LABELS: Record<string, { ar: string; en: string }> = {
   settings:       { ar: "الإعدادات",      en: "Settings" },
@@ -34,6 +35,7 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
       {segments.map((segment, index) => {
         const isLast = index === segments.length - 1;
         const prevSegment = index > 0 ? segments[index - 1] : undefined;
+        const href = "/" + segments.slice(0, index + 1).join("/");
 
         return (
           <span key={`${segment}-${index}`} className="flex items-center gap-1.5">
@@ -42,12 +44,18 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
                 {locale === "ar" ? "‹" : "›"}
               </span>
             )}
-            <span
-              className={isLast ? "text-foreground font-medium" : "text-muted-foreground"}
-              aria-current={isLast ? "page" : undefined}
-            >
-              <DynamicSegment segment={segment} prevSegment={prevSegment} locale={locale} />
-            </span>
+            {isLast ? (
+              <span className="text-foreground font-medium" aria-current="page">
+                <DynamicSegment segment={segment} prevSegment={prevSegment} locale={locale} />
+              </span>
+            ) : (
+              <Link
+                href={href}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <DynamicSegment segment={segment} prevSegment={prevSegment} locale={locale} />
+              </Link>
+            )}
           </span>
         );
       })}

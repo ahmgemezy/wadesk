@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./message-bubble";
+import { LabelPicker } from "./label-picker";
 import { useLocale } from "@/lib/i18n/context";
 
 type MessageItem = {
@@ -68,6 +69,25 @@ export function ConversationThread({
     conversationId: conversationId as Id<"conversations">,
   });
 
+  const { isAuthenticated } = useConvexAuth();
+  const allLabels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip");
+  const activeConv = useQuery(
+    api.inbox.getConversation,
+    isAuthenticated ? { conversationId: conversationId as Id<"conversations"> } : "skip"
+  );
+  const activeLabels: string[] = activeConv?.labels ?? [];
+
+  const COLOR_MAP: Record<string, string> = {
+    red: "bg-red-500",
+    green: "bg-green-500",
+    blue: "bg-blue-500",
+    yellow: "bg-yellow-400",
+    purple: "bg-purple-500",
+    orange: "bg-orange-500",
+    pink: "bg-pink-500",
+    gray: "bg-gray-400",
+  };
+
   const messages: MessageItem[] | undefined =
     rawMessages === undefined
       ? undefined
@@ -117,8 +137,32 @@ export function ConversationThread({
   const groups = groupByDate(messages, locale);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="p-4 space-y-4">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b flex-wrap min-h-9">
+        {rawMessages !== undefined && (
+          <>
+            <LabelPicker
+              conversationId={conversationId}
+              activeLabels={activeLabels}
+            />
+            {activeLabels.map((name) => {
+              const meta = (allLabels ?? []).find((l) => l.name === name);
+              const colorClass = meta ? (COLOR_MAP[meta.color] ?? "bg-gray-400") : "bg-gray-400";
+              return (
+                <span
+                  key={name}
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-muted"
+                >
+                  <span className={`size-1.5 rounded-full ${colorClass}`} />
+                  {meta?.emoji ? `${meta.emoji} ` : ""}{name}
+                </span>
+              );
+            })}
+          </>
+        )}
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="p-4 space-y-4">
         {groups.map((group) => (
           <div key={group.date}>
             {/* Date divider */}
@@ -161,6 +205,7 @@ export function ConversationThread({
           </div>
         ))}
         <div ref={bottomRef} />
+      </div>
       </div>
     </div>
   );

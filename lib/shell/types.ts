@@ -12,7 +12,9 @@ export type IconName =
   | "CreditCard"
   | "Zap"
   | "List"
-  | "Megaphone";
+  | "Megaphone"
+  | "Star"
+  | "Tag";
 
 export interface NavItem {
   href: string;

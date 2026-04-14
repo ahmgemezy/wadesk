@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { query, mutation, action, internalQuery, internalMutation, internalAction } from "./_generated/server";
-import { getCallerRole, getCallerIdentity, assertAdmin } from "./lib/auth";
+import { getCallerRole, getCallerIdentity, assertAdmin, type OrgRole } from "./lib/auth";
 import { getChannelLimit } from "./lib/planLimits";
 import { encrypt } from "./lib/encryption";
 import { internal } from "./_generated/api";
@@ -484,5 +484,28 @@ export const retryWebhookSubscription = internalAction({
     } else {
       console.error("[CHANNEL] Webhook subscription failed after", MAX_ATTEMPTS, "attempts — manual intervention required");
     }
+  },
+});
+
+export const updateSlaThreshold = mutation({
+  args: {
+    channelId: v.id("channels"),
+    thresholdMinutes: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as OrgRole);
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel || channel.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    await ctx.db.patch(args.channelId, {
+      slaThresholdMinutes:
+        args.thresholdMinutes && args.thresholdMinutes > 0
+          ? args.thresholdMinutes
+          : undefined,
+    });
   },
 });

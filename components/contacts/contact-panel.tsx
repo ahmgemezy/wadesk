@@ -13,6 +13,7 @@ import { PencilIcon, PlusIcon, Trash2Icon, XIcon, CalendarClockIcon, StickyNoteI
 import { cn } from "@/lib/utils";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { FollowUpModal } from "./follow-up-modal";
+import { motion } from "framer-motion";
 
 type Stage = "lead" | "prospect" | "customer" | "retained" | "churned";
 
@@ -57,12 +58,36 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
 
   if (data === undefined || customFields === undefined) {
     return (
-      <div dir={isRtl ? "rtl" : "ltr"} className="p-4 space-y-4">
-        <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-4 w-1/3" />
-      </div>
+      <motion.div
+        dir={isRtl ? "rtl" : "ltr"}
+        className="p-4 space-y-6"
+        initial="hidden"
+        animate="show"
+        variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+      >
+        <motion.div variants={{ hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }} className="space-y-2">
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-3 w-1/3" />
+        </motion.div>
+        
+        <motion.div variants={{ hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }} className="space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-16 rounded-full" />
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+        </motion.div>
+        
+        <motion.div variants={{ hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }} className="space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-20 w-full rounded-md" />
+        </motion.div>
+        
+        <motion.div variants={{ hidden: { opacity: 0, x: -10 }, show: { opacity: 1, x: 0 } }} className="space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-12 w-full rounded-md" />
+        </motion.div>
+      </motion.div>
     );
   }
 
@@ -141,7 +166,12 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
       )}
 
       <div dir={isRtl ? "rtl" : "ltr"} className="h-full overflow-y-auto">
-        <div className="p-4 space-y-5">
+        <motion.div 
+          className="p-4 space-y-5"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+        >
 
           {/* ── Name + edit ── */}
           <div className="flex items-start justify-between gap-2">
@@ -400,7 +430,7 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
             )}
           </div>
 
-        </div>
+        </motion.div>
       </div>
     </>
   );

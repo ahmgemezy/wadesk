@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@clerk/nextjs";
 import { useT, useLocale } from "@/lib/i18n/context";
-import { MailOpen, MailCheck } from "lucide-react";
+import { MailOpen, MailCheck, AlertTriangle } from "lucide-react";
 
 interface ConversationItem {
   _id: string;
@@ -24,6 +24,8 @@ interface ConversationItem {
   status: string;
   unreadCount: number;
   assignedAgentId?: string;
+  labels?: string[];
+  slaBreachedAt?: number;
 }
 
 interface ConversationListItemProps {
@@ -113,6 +115,15 @@ export function ConversationListItem({
               {displayName}
             </span>
             <div className="flex items-center gap-1 shrink-0">
+              {conversation.slaBreachedAt && (
+                <span
+                  title={t("SLA breach — no reply yet", "انتهاك SLA — لم يتم الرد بعد")}
+                  className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-semibold shrink-0"
+                >
+                  <AlertTriangle className="size-2.5" />
+                  SLA
+                </span>
+              )}
               <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
               <button
                 onClick={handleToggleRead}
@@ -152,6 +163,19 @@ export function ConversationListItem({
           >
             {conversation.lastMessagePreview}
           </p>
+
+          {(conversation.labels ?? []).length > 0 && (
+            <div className="flex gap-1 mt-1 flex-wrap">
+              {(conversation.labels ?? []).slice(0, 4).map((name) => (
+                <span
+                  key={name}
+                  className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground font-medium max-w-[72px] truncate"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Row 4: status + assigned agent */}
           <div className="flex items-center gap-2 mt-1">

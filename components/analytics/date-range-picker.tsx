@@ -52,21 +52,27 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {PRESETS.map((preset) => {
-        const isActive =
-          differenceInDays(value.to, value.from) === preset.days &&
-          format(value.to, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-        return (
-          <Button
-            key={preset.days}
-            variant={isActive ? "default" : "outline"}
-            size="sm"
-            onClick={() => handlePreset(preset.days)}
-          >
-            {locale === "ar" ? preset.labelAr : preset.labelEn}
-          </Button>
-        );
-      })}
+      <div className="hidden sm:inline-flex items-center rounded-full border bg-muted/40 p-1 shadow-sm">
+        {PRESETS.map((preset) => {
+          const isActive =
+            differenceInDays(value.to, value.from) === preset.days &&
+            format(value.to, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+          return (
+            <button
+              key={preset.days}
+              onClick={() => handlePreset(preset.days)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:text-foreground",
+                isActive 
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-border" 
+                  : "text-muted-foreground"
+              )}
+            >
+              {locale === "ar" ? preset.labelAr : preset.labelEn}
+            </button>
+          );
+        })}
+      </div>
 
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger render={<div />} nativeButton={false}>

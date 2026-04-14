@@ -86,6 +86,7 @@ export const sendReply = mutation({
       lastMessageAt: Date.now(),
       lastMessagePreview: args.content.slice(0, 100),
       assignedAgentId,
+      ...(conversation.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
     });
 
     await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMessage, {
@@ -215,6 +216,7 @@ export const createInbound = internalMutation({
         lastMessagePreview: args.content.slice(0, 100),
         unreadCount: 1,
         createdAt: args.timestamp,
+        lastInboundAt: args.timestamp,
         ...(args.assignedAgentId ? { assignedAgentId: args.assignedAgentId } : {}),
       });
       conversation = await ctx.db.get(conversationId);
@@ -228,9 +230,11 @@ export const createInbound = internalMutation({
         lastMessageAt: args.timestamp,
         lastMessagePreview: args.content.slice(0, 100),
         unreadCount: (conversation.unreadCount ?? 0) + 1,
+        lastInboundAt: args.timestamp,
       };
       if (conversation.status === "resolved") {
         patch.status = "open";
+        patch.slaBreachedAt = undefined;
       }
       await ctx.db.patch(conversation._id, patch);
     }

@@ -1,10 +1,27 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { DateRange } from "./date-range-picker";
+import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { useEffect, useState } from "react";
+
+function AnimatedCounter({ value, duration = 1 }: { value: number, duration?: number }) {
+  const [hasMounted, setHasMounted] = useState(false);
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) => Math.round(latest).toLocaleString());
+
+  useEffect(() => {
+    setHasMounted(true);
+    const controls = animate(count, value, { duration, ease: "easeOut" });
+    return controls.stop;
+  }, [value, count, duration]);
+
+  if (!hasMounted) return <>{value.toLocaleString()}</>;
+  return <motion.span>{rounded}</motion.span>;
+}
 
 interface TeamSummaryCardsProps {
   dateRange: DateRange;
@@ -35,13 +52,18 @@ function formatResponseTime(seconds: number | null, locale: "ar" | "en"): string
 export function TeamSummaryCards({ dateRange, locale = "ar" }: TeamSummaryCardsProps) {
   const startTs = dateRange.from.getTime();
   const endTs = dateRange.to.getTime();
+  const { isAuthenticated } = useConvexAuth();
 
   const data = useQuery(api.analytics.getTeamSummary, { startTs, endTs });
+  const csatData = useQuery(
+    api.csat.getAverageScorePublic,
+    isAuthenticated ? { fromTimestamp: startTs } : "skip"
+  );
 
   if (!data) {
     return (
-      <div className="grid gap-4 sm:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardHeader>
               <Skeleton className="h-4 w-24" />
@@ -63,35 +85,73 @@ export function TeamSummaryCards({ dateRange, locale = "ar" }: TeamSummaryCardsP
     );
   }
 
-  const cards = [
+  const cards: { id: string; label: string; value: string | number; isNumeric: boolean; suffix?: string; subtext?: string }[] = [
     {
+      id: "conversations",
       label: locale === "ar" ? "إجمالي المحادثات" : "Total Conversations",
-      value: data.totalConversations.toLocaleString(),
+      value: data.totalConversations,
+      isNumeric: true,
     },
     {
+      id: "responseTime",
       label: locale === "ar" ? "متوسط وقت الرد" : "Avg. First Response Time",
       value: formatResponseTime(data.avgFirstResponseTimeSeconds, locale),
+      isNumeric: false,
     },
     {
+      id: "messages",
       label: locale === "ar" ? "إجمالي الرسائل" : "Total Messages",
-      value: data.totalMessages.toLocaleString(),
+      value: data.totalMessages,
+      isNumeric: true,
+    },
+    {
+      id: "csat",
+      label: locale === "ar" ? "متوسط تقييم CSAT" : "Avg CSAT Score",
+      value: csatData === undefined
+        ? "..."
+        : csatData === null
+          ? (locale === "ar" ? "لا توجد بيانات" : "No data")
+          : csatData.average,
+      isNumeric: typeof csatData?.average === "number",
+      suffix: csatData ? "/ 5" : undefined,
+      subtext: csatData
+        ? (locale === "ar" ? `من ${csatData.count} تقييم` : `from ${csatData.count} ratings`)
+        : undefined,
     },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <motion.div 
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+      initial="hidden"
+      animate="show"
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1 } } }}
+    >
       {cards.map((card) => (
-        <Card key={card.label}>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {card.label}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{card.value}</div>
-          </CardContent>
-        </Card>
+        <motion.div key={card.id} variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+          <Card className="overflow-hidden relative group bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground font-sans">
+                {card.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold tracking-tight font-sans text-foreground">
+                {card.isNumeric ? <AnimatedCounter value={card.value as number} /> : card.value}
+                {card.suffix && (
+                  <span className="text-sm text-muted-foreground ms-1">{card.suffix}</span>
+                )}
+              </div>
+              {card.subtext && (
+                <p className="text-xs text-muted-foreground mt-1">{card.subtext}</p>
+              )}
+            </CardContent>
+            
+            {/* Sparkline background highlight effect */}
+            <div className="absolute inset-0 bg-linear-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          </Card>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }

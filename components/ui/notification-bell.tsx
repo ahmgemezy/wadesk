@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Bell } from "lucide-react";
+import { Bell, AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   Popover,
@@ -25,10 +25,14 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
 
   const isRtl = locale === "ar";
 
-  function handleNotificationClick(notificationId: Id<"notifications">) {
+  function handleNotificationClick(notificationId: Id<"notifications">, type: string, referenceId: string) {
     try {
       markRead({ notificationId });
-      router.push(`/contacts`);
+      if (type === "sla_breach") {
+        router.push(`/inbox/${referenceId}`);
+      } else {
+        router.push(`/contacts`);
+      }
     } catch {
       // Silently ignore errors
     }
@@ -74,12 +78,18 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
             notifications.map((n) => (
               <button
                 key={n._id}
-                onClick={() => handleNotificationClick(n._id)}
+                onClick={() => handleNotificationClick(n._id, n.type, n.referenceId)}
                 className={cn(
                   "w-full text-start px-4 py-3 hover:bg-muted transition-colors border-b last:border-b-0",
                   !n.read && "bg-blue-50 dark:bg-blue-950/20",
                 )}
               >
+                {n.type === "sla_breach" && (
+                  <span className="inline-flex items-center gap-1 text-amber-600 text-[10px] font-semibold mb-0.5">
+                    <AlertTriangle className="size-3" />
+                    {isRtl ? "انتهاك SLA" : "SLA Breach"}
+                  </span>
+                )}
                 <p className="text-sm font-medium">{n.contactName ?? "—"}</p>
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                   {n.message}

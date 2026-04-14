@@ -10,7 +10,7 @@ import { resolveRole } from "@/lib/shell/role-utils";
 import { filterNavItems } from "@/lib/shell/nav-config";
 import type { ResolvedUser } from "@/lib/shell/types";
 import { Separator } from "@/components/ui/separator";
-import { NotificationBell } from "@/components/ui/notification-bell";
+import { ClientNotificationBell } from "@/components/shell/client-notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
 
@@ -86,7 +86,7 @@ export default async function DashboardLayout({
           <Separator orientation="vertical" className="h-4" />
           <div className="ms-auto flex items-center gap-1">
             <ThemeToggle />
-            <NotificationBell locale={locale} />
+            <ClientNotificationBell locale={locale} />
           </div>
         </header>
         <div className="flex-1 overflow-y-auto min-h-0 pb-16 md:pb-0">

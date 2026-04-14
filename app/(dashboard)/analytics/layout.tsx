@@ -34,7 +34,7 @@ export default async function AnalyticsLayout({
 
   if (plan === "free" || plan === "starter") {
     return (
-      <div className="p-4 md:p-6" dir="rtl">
+      <div className="p-4 md:p-6">
         <h1 className="text-2xl font-bold mb-6">التحليلات</h1>
         <AnalyticsUpsellTeaser locale="ar" />
       </div>

@@ -113,12 +113,12 @@ export const update = mutation({
     const patch: Record<string, unknown> = {};
     if (args.customName !== undefined) patch.customName = args.customName;
     if (args.tags !== undefined) patch.tags = args.tags;
-    if (args.notes !== undefined) patch.notes = args.notes;
+    if (args.notes !== undefined) patch.notes = args.notes || undefined;
     if (args.assignedAgentId !== undefined) patch.assignedAgentId = args.assignedAgentId;
-    if (args.country !== undefined) patch.country = args.country;
-    if (args.city !== undefined) patch.city = args.city;
+    if (args.country !== undefined) patch.country = args.country || undefined;
+    if (args.city !== undefined) patch.city = args.city || undefined;
     if (args.spent !== undefined) patch.spent = args.spent;
-    if (args.category !== undefined) patch.category = args.category;
+    if (args.category !== undefined) patch.category = args.category || undefined;
 
     await ctx.db.patch(args.contactId, patch);
   },

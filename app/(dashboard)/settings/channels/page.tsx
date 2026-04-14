@@ -70,7 +70,7 @@ export default function ChannelsListPage() {
 
   if (channels === undefined || plan === undefined) {
     return (
-      <div className="p-6 max-w-2xl mx-auto space-y-4" dir="rtl">
+      <div className="p-6 max-w-2xl mx-auto space-y-4">
         <div className="h-8 rounded bg-muted animate-pulse w-48" />
         <div className="space-y-3">
           <div className="h-16 rounded-lg bg-muted animate-pulse" />
@@ -81,7 +81,7 @@ export default function ChannelsListPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto" dir="rtl">
+    <div className="p-6 max-w-2xl mx-auto">
       {/* Reconnect required banner */}
       {reconnectRequired.length > 0 && (
         <Alert className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800">
