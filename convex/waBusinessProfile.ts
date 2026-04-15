@@ -33,12 +33,20 @@ export const getProfile = action({
       }
     );
     const text = await res.text();
-    const data = JSON.parse(text);
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new ConvexError({
+        code: "META_API_ERROR",
+        message: "Meta API returned an unexpected response",
+      });
+    }
     if (!res.ok) {
       console.error("[WA_PROFILE] GET failed:", data);
       throw new ConvexError({
         code: "META_API_ERROR",
-        message: data?.error?.message ?? "Unknown error",
+        message: (data?.error as Record<string, string>)?.message ?? "Unknown error",
       });
     }
     return data;
@@ -78,12 +86,20 @@ export const updateProfile = action({
       }
     );
     const text = await res.text();
-    const data = JSON.parse(text);
+    let data: Record<string, unknown>;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new ConvexError({
+        code: "META_API_ERROR",
+        message: "Meta API returned an unexpected response",
+      });
+    }
     if (!res.ok) {
       console.error("[WA_PROFILE] UPDATE failed:", data);
       throw new ConvexError({
         code: "META_API_ERROR",
-        message: data?.error?.message ?? "Unknown error",
+        message: (data?.error as Record<string, string>)?.message ?? "Unknown error",
       });
     }
     return { success: true, data };

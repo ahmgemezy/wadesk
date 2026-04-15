@@ -1,6 +1,7 @@
 "use client";
 
 import { use } from "react";
+import { notFound } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { WABusinessProfile } from "@/components/settings/wa-business-profile";
@@ -13,6 +14,7 @@ export default function WABusinessProfilePage({
 }) {
   const t = useT();
   const { channelId: rawChannelId } = use(params);
+  if (!rawChannelId || typeof rawChannelId !== "string") notFound();
   const channelId = rawChannelId as Id<"channels">;
 
   return (

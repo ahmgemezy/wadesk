@@ -134,7 +134,7 @@ function ContactCard({
 
       <div className="flex flex-col items-center gap-3 pt-2">
         <div className={cn(
-          "size-14 rounded-full bg-linear-to-br flex items-center justify-center text-white font-semibold text-lg shadow-inner",
+          "size-14 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-semibold text-lg shadow-inner",
           avatarColors[colorIndex],
         )}>
           {initials || "?"}
@@ -211,7 +211,7 @@ function ContactCard({
         </button>
       </div>
 
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-linear-to-br from-primary/5 to-transparent" />
+      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-gradient-to-br from-primary/5 to-transparent" />
     </div>
   );
 }

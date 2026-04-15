@@ -206,6 +206,7 @@ export const metaWebhook = httpAction(async (ctx, request) => {
                 tenantId: channel.tenantId,
                 senderPhone: msg.from,
                 content: content.trim(),
+                channelId: channel._id,
               });
               if (isCsat) {
                 log("csat_response_recorded", {

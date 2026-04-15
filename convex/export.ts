@@ -45,16 +45,19 @@ export const listMessagesForConversation = internalQuery({
 });
 
 export const getContactForExport = internalQuery({
-  args: { contactId: v.id("contacts") },
+  args: { contactId: v.id("contacts"), tenantId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db.get(args.contactId);
+    const doc = await ctx.db.get(args.contactId);
+    if (!doc || doc.tenantId !== args.tenantId) throw new ConvexError("FORBIDDEN");
+    return doc;
   },
 });
 
 export const getChannelForExport = internalQuery({
-  args: { channelId: v.id("channels") },
+  args: { channelId: v.id("channels"), tenantId: v.string() },
   handler: async (ctx, args) => {
     const channel = await ctx.db.get(args.channelId);
+    if (!channel || channel.tenantId !== args.tenantId) throw new ConvexError("FORBIDDEN");
     return channel ? { name: channel.displayName, phone: channel.displayPhone ?? channel.phoneNumberId } : null;
   },
 });
@@ -147,9 +150,11 @@ async function buildConversationsExportData(
         }) as Promise<Array<Record<string, unknown>>>,
         ctx.runQuery(internal.export.getContactForExport, {
           contactId: conv.contactId as Id<"contacts">,
+          tenantId,
         }) as Promise<Record<string, unknown> | null>,
         ctx.runQuery(internal.export.getChannelForExport, {
           channelId: conv.channelId as Id<"channels">,
+          tenantId,
         }) as Promise<{ name: string; phone: string } | null>,
       ]);
 

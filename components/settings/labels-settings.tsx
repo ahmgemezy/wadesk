@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 import { useOrganization } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
@@ -39,7 +40,8 @@ export function LabelsSettings() {
     { name: "VIP",                        color: "yellow", emoji: "⭐" },
   ];
 
-  const labels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip") ?? [];
+  const labelsQuery = useQuery(api.labels.list, isAuthenticated ? undefined : "skip");
+  const labels = labelsQuery ?? [];
   const createLabel = useMutation(api.labels.create);
   const removeLabel = useMutation(api.labels.remove);
 
@@ -106,39 +108,50 @@ export function LabelsSettings() {
         )}
       </div>
 
-      <div className="space-y-1.5">
-        {labels.length === 0 && (
-          <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
-            {t("No labels yet. Create your first one below.", "لا توجد تصنيفات بعد. أنشئ أول تصنيف أدناه.")}
-          </p>
-        )}
-        {labels.map((label) => (
-          <div
-            key={label._id}
-            className="flex items-center gap-3 rounded-lg border px-3 py-2"
-          >
-            <span
-              className={cn(
-                "size-3 rounded-full shrink-0",
-                COLORS.find((c) => c.value === label.color)?.bg ?? "bg-gray-400",
+      {labelsQuery === undefined ? (
+        <div className="space-y-1.5">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg border px-3 py-2">
+              <Skeleton className="size-3 rounded-full shrink-0" />
+              <Skeleton className="h-4 w-24 flex-1" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {labels.length === 0 && (
+            <p className="text-sm text-muted-foreground py-4 text-center border rounded-lg">
+              {t("No labels yet. Create your first one below.", "لا توجد تصنيفات بعد. أنشئ أول تصنيف أدناه.")}
+            </p>
+          )}
+          {labels.map((label) => (
+            <div
+              key={label._id}
+              className="flex items-center gap-3 rounded-lg border px-3 py-2"
+            >
+              <span
+                className={cn(
+                  "size-3 rounded-full shrink-0",
+                  COLORS.find((c) => c.value === label.color)?.bg ?? "bg-gray-400",
+                )}
+              />
+              <span className="flex-1 text-sm">
+                {label.emoji ? `${label.emoji} ` : ""}{translateLabel(label.name)}
+              </span>
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => handleRemove(label._id, translateLabel(label.name))}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
               )}
-            />
-            <span className="flex-1 text-sm">
-              {label.emoji ? `${label.emoji} ` : ""}{translateLabel(label.name)}
-            </span>
-            {isAdmin && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 text-muted-foreground hover:text-destructive"
-                onClick={() => handleRemove(label._id, translateLabel(label.name))}
-              >
-                <Trash2 className="size-3.5" />
-              </Button>
-            )}
-          </div>
-        ))}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <form onSubmit={handleCreate} className="space-y-3 border-t pt-4">
         <h3 className="text-sm font-medium">{t("New Label", "تصنيف جديد")}</h3>

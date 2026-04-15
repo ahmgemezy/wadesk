@@ -152,7 +152,7 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
                             <span className="text-muted-foreground">
                               {locale === "ar" ? "محادثات" : "conversations"}
                             </span>
-                            <span className="text-muted-foreground ml-1">
+                            <span className="text-muted-foreground ms-1">
                               ({item.percentage}%)
                             </span>
                           </p>

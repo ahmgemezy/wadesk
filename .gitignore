@@ -18,3 +18,6 @@ coverage/
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+tsconfig.tsbuildinfo
+.superpowers/brainstorm/*/state/

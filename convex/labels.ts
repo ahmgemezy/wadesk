@@ -60,9 +60,9 @@ export const remove = mutation({
       .collect();
 
     for (const conv of conversations) {
-      if (conv.labels.includes(label.name)) {
+      if ((conv.labels ?? []).includes(label.name)) {
         await ctx.db.patch(conv._id, {
-          labels: conv.labels.filter((n) => n !== label.name),
+          labels: (conv.labels ?? []).filter((n) => n !== label.name),
         });
       }
     }

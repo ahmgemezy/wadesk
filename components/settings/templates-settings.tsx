@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { PlusIcon, PencilIcon, Trash2Icon, Loader2Icon } from "lucide-react";
 import { extractVariables } from "@/lib/templateHelpers";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function TemplatesSettings() {
   const t = useT();
@@ -223,7 +224,21 @@ export function TemplatesSettings() {
         </DialogContent>
       </Dialog>
 
-      {templates && templates.length === 0 ? (
+      {templates === undefined ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="pb-2 pe-16 space-y-0">
+                <Skeleton className="h-5 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : templates && templates.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg border-dashed bg-muted/30">
           <h3 className="text-lg font-medium">
             {t("No Templates Yet", "لا توجد قوالب بعد")}

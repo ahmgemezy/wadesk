@@ -87,7 +87,7 @@ export function ContactCompactList({
             </div>
 
             <div className={cn(
-              "size-7 rounded-full bg-linear-to-br flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow-inner",
+              "size-7 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-semibold text-xs shrink-0 shadow-inner",
               avatarColors[colorIndex],
             )}>
               {initials || "?"}

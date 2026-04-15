@@ -463,7 +463,7 @@
 |---|---|---|---|
 | 014 | Round-robin assignment mode | Medium | Schema already has `roundRobinIndex` on channels |
 | 015 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
-| 016 | Billing / Lemon Squeezy integration | Low | Plan limits partially enforced in Convex already |
+| 016 | Billing / Polar.sh integration | Low | Plan limits partially enforced in Convex already |
 | 017 | Supervisor department/scoping plan | Low | Plan documented in `docs/superpowers/plans/2026-04-09-supervisor-department-scoping.md` |
 | WA-Profile | WhatsApp Business profile editing | Medium | Growth+; Meta Business Management API; read/write profile fields |
 | Templates | Advanced message templates with variables | Medium | Starter+; {{variable}} placeholders; dynamic fill form in inbox |

@@ -181,7 +181,7 @@ export const getStats = query({
     const tagBreakdown: Record<string, number> = {};
 
     for (const contact of matching) {
-      const stage = contact.stage ?? "unknown";
+      const stage = contact.stage ?? "lead";
       stageBreakdown[stage] = (stageBreakdown[stage] ?? 0) + 1;
 
       // Use the same phone-derived ISO code as the filter logic — never contact.country

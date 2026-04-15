@@ -82,7 +82,7 @@ export function DataExport() {
           </div>
           {exporting === "contacts" ? (
             <Button disabled size="sm">
-              <Loader2Icon className="size-4 animate-spin mr-2" />
+              <Loader2Icon className="size-4 animate-spin me-2" />
               {t("Preparing your export...", "جاري تجهيز التصدير...")}
             </Button>
           ) : (
@@ -91,7 +91,7 @@ export function DataExport() {
               variant="outline"
               onClick={() => handleExport("contacts")}
             >
-              <DownloadIcon className="size-4 mr-2" />
+              <DownloadIcon className="size-4 me-2" />
               {t("Export", "تصدير")}
             </Button>
           )}
@@ -128,7 +128,7 @@ export function DataExport() {
             </div>
             {exporting === "conversations" ? (
               <Button disabled size="sm">
-                <Loader2Icon className="size-4 animate-spin mr-2" />
+                <Loader2Icon className="size-4 animate-spin me-2" />
                 {t("Preparing your export...", "جاري تجهيز التصدير...")}
               </Button>
             ) : (
@@ -137,7 +137,7 @@ export function DataExport() {
                 variant="outline"
                 onClick={() => handleExport("conversations")}
               >
-                <DownloadIcon className="size-4 mr-2" />
+                <DownloadIcon className="size-4 me-2" />
                 {t("Export", "تصدير")}
               </Button>
             )}

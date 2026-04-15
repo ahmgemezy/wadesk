@@ -193,9 +193,16 @@ export default function ChannelSettingsPage({
               size="sm"
               variant="ghost"
               onClick={async () => {
-                setSlaMinutes("");
-                await updateSlaThreshold({ channelId, thresholdMinutes: undefined });
-                toast.success(t("SLA disabled", "تم تعطيل SLA"));
+                setSavingSla(true);
+                try {
+                  await updateSlaThreshold({ channelId, thresholdMinutes: undefined });
+                  setSlaMinutes("");
+                  toast.success(t("SLA disabled", "تم تعطيل SLA"));
+                } catch {
+                  toast.error(t("Failed to disable SLA", "فشل تعطيل SLA"));
+                } finally {
+                  setSavingSla(false);
+                }
               }}
             >
               {t("Disable", "تعطيل")}

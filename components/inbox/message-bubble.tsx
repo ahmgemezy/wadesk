@@ -153,7 +153,7 @@ export function MessageBubble({
     !message.isInternalNote &&
     message.direction === "outbound" &&
     !!message.metaMessageId &&
-    Date.now() - message.timestamp < 55_000;
+    Date.now() - message.timestamp < 216_000_000;
 
   if (message.deletedAt) {
     return (

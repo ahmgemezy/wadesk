@@ -21,11 +21,10 @@ export const checkBreaches = internalMutation({
   handler: async (ctx) => {
     const now = Date.now();
 
-    // Get all channels that have SLA configured
-    const allChannels = await ctx.db.query("channels").collect();
-    const slaChannels = allChannels.filter(
-      (c) => c.slaThresholdMinutes != null && (c.slaThresholdMinutes ?? 0) > 0,
-    );
+    const slaChannels = await ctx.db
+      .query("channels")
+      .withIndex("by_sla_configured", (q) => q.eq("slaEnabled", true))
+      .collect();
 
     for (const channel of slaChannels) {
       const thresholdMs = (channel.slaThresholdMinutes ?? 0) * 60 * 1000;
@@ -97,8 +96,10 @@ export const updateChannelSlaThreshold = mutation({
     }
 
     const threshold = args.thresholdMinutes;
+    const enabled = threshold && threshold > 0;
     await ctx.db.patch(args.channelId, {
-      slaThresholdMinutes: threshold && threshold > 0 ? threshold : undefined,
+      slaThresholdMinutes: enabled ? threshold : undefined,
+      slaEnabled: enabled ? true : undefined,
     });
   },
 });

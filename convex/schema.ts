@@ -40,12 +40,14 @@ export default defineSchema({
     connectedAt: v.optional(v.number()),
     disconnectedAt: v.optional(v.number()),
     slaThresholdMinutes: v.optional(v.number()),
+    slaEnabled: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phoneNumberId"])
     .index("by_phone_number_id", ["phoneNumberId"])
-    .index("by_tenant_status", ["tenantId", "status"]),
+    .index("by_tenant_status", ["tenantId", "status"])
+    .index("by_sla_configured", ["slaEnabled"]),
 
   contacts: defineTable({
     tenantId: v.string(),

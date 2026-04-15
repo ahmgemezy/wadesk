@@ -7,8 +7,9 @@
  * main mutation response.
  */
 import { internalMutation, mutation } from "./_generated/server";
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import type { Id } from "./_generated/dataModel";
+import { getCallerIdentity } from "./lib/auth";
 
 export const create = internalMutation({
   args: {
@@ -101,6 +102,11 @@ export const incrementMessageCount = internalMutation({
 export const backfillMissingMetrics = mutation({
   args: { tenantId: v.string() },
   handler: async (ctx, args) => {
+    const { tenantId: callerTenantId } = await getCallerIdentity(ctx);
+    if (callerTenantId !== args.tenantId) {
+      throw new ConvexError("FORBIDDEN");
+    }
+
     const { tenantId } = args;
 
     const conversations = await ctx.db

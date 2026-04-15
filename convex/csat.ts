@@ -44,6 +44,8 @@ export const sendCsatMessage = internalAction({
     const accessToken = process.env.META_SYSTEM_USER_TOKEN;
     if (!accessToken) return;
 
+    // TODO: Replace free-form text with a pre-approved WhatsApp template message
+    // (e.g. template named "csat_request") to comply with the 24-hour messaging window.
     const message =
       `شكراً على تواصلك مع ${channel.displayName} 😊\n\n` +
       `كيف كانت تجربتك معنا؟\n\n` +
@@ -109,15 +111,14 @@ export const checkAndRecordResponse = internalMutation({
     tenantId: v.string(),
     senderPhone: v.string(),
     content: v.string(),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args): Promise<boolean> => {
-    // Only single digit 1–5 counts as a CSAT response
     const trimmed = args.content.trim();
     if (!/^[1-5]$/.test(trimmed)) return false;
 
     const score = parseInt(trimmed, 10);
 
-    // Find contact by phone
     const contact = await ctx.db
       .query("contacts")
       .withIndex("by_tenant_phone", (q) =>
@@ -126,12 +127,24 @@ export const checkAndRecordResponse = internalMutation({
       .first();
     if (!contact) return false;
 
-    // Find the most recent conversation for this contact
-    const conversations = await ctx.db
-      .query("conversations")
-      .withIndex("by_contact", (q) => q.eq("contactId", contact._id))
-      .order("desc")
-      .take(1);
+    let conversations;
+    if (args.channelId) {
+      conversations = await ctx.db
+        .query("conversations")
+        .withIndex("by_tenant_channel", (q) =>
+          q.eq("tenantId", args.tenantId).eq("channelId", args.channelId!),
+        )
+        .order("desc")
+        .collect();
+      conversations = conversations.filter((c) => c.contactId === contact._id);
+      if (conversations.length > 0) conversations = [conversations[0]];
+    } else {
+      conversations = await ctx.db
+        .query("conversations")
+        .withIndex("by_contact", (q) => q.eq("contactId", contact._id))
+        .order("desc")
+        .take(1);
+    }
     if (conversations.length === 0) return false;
 
     const conversation = conversations[0];

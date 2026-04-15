@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 
 import { useT } from "@/lib/i18n/context";
 import { Plus, Pencil, Trash2, MessageSquare } from "lucide-react";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function QuickRepliesPage() {
   const quickReplies = useQuery(api.quickReplies.list, {}) as
@@ -31,6 +33,7 @@ export default function QuickRepliesPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [category, setCategory] = useState("");
+  const [saving, setSaving] = useState(false);
 
   // Reset form when sheet closes/opens for creation
   const openForCreate = () => {
@@ -51,23 +54,28 @@ export default function QuickRepliesPage() {
 
   const handleSave = async () => {
     if (!title.trim() || !body.trim()) return;
-
-    if (editingId) {
-      await updateReply({
-        id: editingId as Id<"quickReplies">,
-        title: title.trim(),
-        content: body.trim(),
-        category: category.trim() || undefined,
-      });
-    } else {
-      await createReply({
-        title: title.trim(),
-        content: body.trim(),
-        category: category.trim() || undefined,
-      });
+    setSaving(true);
+    try {
+      if (editingId) {
+        await updateReply({
+          id: editingId as Id<"quickReplies">,
+          title: title.trim(),
+          content: body.trim(),
+          category: category.trim() || undefined,
+        });
+      } else {
+        await createReply({
+          title: title.trim(),
+          content: body.trim(),
+          category: category.trim() || undefined,
+        });
+      }
+      setIsSheetOpen(false);
+    } catch {
+      toast.error(t("Failed to save reply", "فشل حفظ الرد"));
+    } finally {
+      setSaving(false);
     }
-
-    setIsSheetOpen(false);
   };
 
   return (
@@ -80,7 +88,21 @@ export default function QuickRepliesPage() {
         </Button>
       </div>
 
-      {quickReplies && quickReplies.length === 0 ? (
+      {quickReplies === undefined ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader className="pb-2 pe-16 space-y-0">
+                <Skeleton className="h-5 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-3/4" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : quickReplies.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg border-dashed bg-muted/30">
           <MessageSquare className="size-12 text-muted-foreground/50 mb-4" />
           <h3 className="text-lg font-medium">{t("No Quick Replies Yet", "لا توجد ردود سريعة بعد")}</h3>
@@ -96,7 +118,7 @@ export default function QuickRepliesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickReplies?.map((qr) => (
             <Card key={qr._id} className="relative group overflow-hidden flex flex-col">
-              <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-2 end-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button variant="ghost" size="icon-sm" onClick={() => openForEdit(qr)}>
                   <Pencil className="size-3.5" />
                   <span className="sr-only">Edit</span>
@@ -105,7 +127,14 @@ export default function QuickRepliesPage() {
                   variant="ghost" 
                   size="icon-sm" 
                   className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => removeReply({ id: qr._id as Id<"quickReplies"> })}
+                  onClick={async () => {
+                    if (!confirm(t("Delete this reply?", "حذف هذا الرد؟"))) return;
+                    try {
+                      await removeReply({ id: qr._id as Id<"quickReplies"> });
+                    } catch {
+                      toast.error(t("Failed to delete reply", "فشل حذف الرد"));
+                    }
+                  }}
                 >
                   <Trash2 className="size-3.5" />
                   <span className="sr-only">Delete</span>
@@ -172,8 +201,8 @@ export default function QuickRepliesPage() {
           </div>
 
           <div className="p-6 border-t mt-auto flex flex-col gap-2">
-            <Button onClick={handleSave} disabled={!title.trim() || !body.trim()} className="w-full">
-              {t("Save", "حفظ")}
+            <Button onClick={handleSave} disabled={saving || !title.trim() || !body.trim()} className="w-full">
+              {saving ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
             </Button>
             <Button variant="outline" onClick={() => setIsSheetOpen(false)} className="w-full">
               {t("Cancel", "إلغاء")}

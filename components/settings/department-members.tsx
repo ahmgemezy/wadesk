@@ -66,6 +66,7 @@ export function DepartmentMembers({ channelId }: Props) {
       setOrgMembers(result as OrgMember[]);
     } catch {
       setOrgMembers([]);
+      toast.error(t("Failed to load team members", "فشل تحميل أعضاء الفريق"));
     }
   }, [listOrgMembers]);
 

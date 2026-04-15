@@ -65,7 +65,7 @@ export function ContactActivityTimeline({ locale = "ar" }: ContactActivityTimeli
       <CardContent>
         <div ref={containerRef} className="relative mb-4">
           <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <SearchIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => {
@@ -75,7 +75,7 @@ export function ContactActivityTimeline({ locale = "ar" }: ContactActivityTimeli
               }}
               onFocus={() => { if (searchQuery.trim().length >= 2) setShowDropdown(true); }}
               placeholder={locale === "ar" ? "ابحث عن جهة اتصال..." : "Search for a contact..."}
-              className="pl-9"
+              className="ps-9"
             />
           </div>
 

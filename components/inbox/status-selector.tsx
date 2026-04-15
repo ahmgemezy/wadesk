@@ -36,7 +36,7 @@ export function StatusSelector({
         }
       >
         {t("Status", "الحالة")}
-        <ChevronDownIcon className="size-3 text-muted-foreground" />
+        <ChevronDownIcon className="size-3 text-muted-foreground rtl:-scale-x-100" />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         {statuses.map((s) => (

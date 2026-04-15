@@ -99,7 +99,7 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [channelId]);
+  }, [channelId, getProfile]);
 
   const isPlanLocked = plan !== undefined && (plan === "free" || plan === "starter");
 

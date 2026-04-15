@@ -51,7 +51,7 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2" dir={locale === "ar" ? "rtl" : "ltr"}>
       <div className="hidden sm:inline-flex items-center rounded-full border bg-muted/40 p-1 shadow-sm">
         {PRESETS.map((preset) => {
           const isActive =

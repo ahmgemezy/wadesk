@@ -18,6 +18,7 @@ import {
 import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
 import { useState } from "react";
+import { toast } from "sonner";
 import type { TriggerType } from "@/lib/automationHelpers";
 
 const TRIGGER_LABELS: Record<TriggerType, { en: string; ar: string }> = {
@@ -39,7 +40,7 @@ interface AutomationRuleCardProps {
     responseTemplate: string;
   };
   onEdit: (ruleId: Id<"automationRules">) => void;
-  onDelete: (ruleId: Id<"automationRules">) => void;
+  onDelete: (ruleId: Id<"automationRules">) => Promise<void>;
   isDragging?: boolean;
   dragHandleProps?: Record<string, unknown>;
 }
@@ -58,8 +59,12 @@ export function AutomationRuleCard({
 
   const triggerLabel = TRIGGER_LABELS[rule.triggerType];
 
-  const handleToggle = (checked: boolean) => {
-    toggleRule({ ruleId: rule._id, enabled: checked });
+  const handleToggle = async (checked: boolean) => {
+    try {
+      await toggleRule({ ruleId: rule._id, enabled: checked });
+    } catch {
+      toast.error(t("Failed to toggle rule", "فشل تبديل القاعدة"));
+    }
   };
 
   const responsePreview =

@@ -101,7 +101,7 @@ export function ContactTable({
           cmp = (a.spent ?? 0) - (b.spent ?? 0);
           break;
         case "lastSeen":
-          cmp = a.lastSeenAt - b.lastSeenAt;
+          cmp = (a.lastSeenAt ?? 0) - (b.lastSeenAt ?? 0);
           break;
       }
       return sortDir === "asc" ? cmp : -cmp;
