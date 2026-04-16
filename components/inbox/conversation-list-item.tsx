@@ -72,9 +72,9 @@ export function ConversationListItem({
 
   const statusColor =
     conversation.status === "open"
-      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+      ? "bg-accent/70 text-accent-foreground dark:bg-accent/40 dark:text-accent-foreground"
       : conversation.status === "pending"
-        ? "bg-accent/30 text-accent-foreground"
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
         : "bg-muted text-muted-foreground";
 
   const displayName = conversation.contactName ?? t("Contact", "عميل");
@@ -92,8 +92,8 @@ export function ConversationListItem({
   return (
     <div
       className={cn(
-        "group w-full text-start p-3 border-b hover:bg-secondary transition-colors cursor-pointer",
-        isActive && "bg-secondary border-s-[3px] border-s-primary",
+        "group w-full text-start p-3 border-b hover:bg-secondary/70 transition-colors cursor-pointer",
+        isActive && "bg-accent/60 border-s-[3px] border-s-primary",
         !conversation.assignedAgentId && !isActive && "bg-(--unassigned-bg)",
       )}
       onClick={onClick}

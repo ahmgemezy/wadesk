@@ -93,7 +93,7 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
       dir={locale === "ar" ? "rtl" : "ltr"}
     >
       <SidebarHeader className="p-3 flex flex-row items-center gap-2">
-        <span className="text-base font-bold flex-1 tracking-tight text-primary group-data-[collapsible=icon]:hidden">
+        <span className="text-base font-bold flex-1 tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
           WaDesk
         </span>
         <LocaleSwitcher locale={locale} />
