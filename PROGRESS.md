@@ -99,16 +99,26 @@
 ---
 
 ### 010 — WhatsApp Embedded Signup
-- **Status:** Done
-- **What was built:** Full Meta WhatsApp Embedded Signup — Admin connects WABA; tokens stored AES-256-GCM encrypted; webhook auto-subscribed; channels page with status badges, disconnect, reconnect
+- **Status:** Done ✅ (spec compliance pass complete)
+- **What was built:** Full Meta WhatsApp Embedded Signup — Admin connects WABA; tokens stored AES-256-GCM encrypted; webhook auto-subscribed; channels page with status badges, disconnect (with Meta webhook revocation), reconnect
+- **Note:** Spec specified a `wabaPhoneNumbers` table — implemented as `channels` instead (better design: multi-number ready from day one). The `by_phone_number_id` index exists on `channels` — Task 011 webhook router is fully unblocked.
 - **New files:**
   - `convex/lib/encryption.ts` — AES-256-GCM encrypt/decrypt
-  - `components/onboarding/embedded-signup-button.tsx` — FB JS SDK popup
+  - `components/onboarding/embedded-signup-button.tsx` — FB JS SDK popup with postMessage WABA data capture
   - `components/onboarding/channel-status-badge.tsx`
+  - `components/onboarding/step-connect-whatsapp.tsx` — onboarding wizard step (with skip option)
+  - `types/meta.ts` — `WABAPhoneNumber`, `WABADetails`, `FBLoginResponse`, `TokenExchangeResponse`
+- **Modified files (spec compliance pass):**
+  - `convex/channels.ts` — added `disconnectChannel` action (decrypts token → calls `DELETE /subscribed_apps` on Meta → patches DB); updated import to include `decrypt`
+  - `app/(dashboard)/settings/channels/page.tsx` — calls `disconnectChannel` action instead of `disconnect` mutation
+  - `components/onboarding/step-connect-whatsapp.tsx` — added `onSkip` prop + `handleSkip` (calls `markStep` then `onSkip?.()`)
+  - `components/onboarding/onboarding-wizard.tsx` — passes `onSkip={() => {}}` to `StepConnectWhatsApp`
+  - `lib/shell/nav-config.ts` — changed `/settings/channels` from `minRole: "admin"` to `minRole: "supervisor"` (spec: all roles can view connection status)
 - **Key decisions:**
-  - `accessToken` encrypted at rest; never returned to client
+  - `accessToken` encrypted at rest (AES-256-GCM); never returned to client
   - Reconnection reuses existing `channelId` — preserves conversation history
   - Webhook subscription failure → 5-retry scheduled job (60s intervals)
+  - Disconnect is best-effort: Meta webhook revocation attempted but DB disconnect proceeds regardless (network failure shouldn't block admin from disconnecting)
 - **Env vars required:**
   ```
   NEXT_PUBLIC_META_APP_ID=
@@ -290,10 +300,19 @@
 
 ---
 
-### Outbound Text Replies → Meta API (Task 013)
-- **Status:** Done
+### Task 013 — Full WhatsApp Message Send Pipeline
+- **Status:** Done (completed and hardened)
 - **Branch:** `009-automation-rules`
-- **What was built:** `sendReply` mutation in `convex/messages.ts` schedules `internal.actions.sendWhatsAppMessage.sendMessage` immediately after inserting the message — text replies are delivered to Meta API just like media messages. Message status patches from `"sending"` → `"sent"` / `"delivered"` after Meta confirms.
+- **What was built / fixed:**
+  - `convex/schema.ts` — added `failureReason: v.optional(v.string())` to messages table
+  - `convex/inbox.ts` `sendMessage` mutation — now schedules `sendWhatsAppMessage.sendMessage` action after inserting; also handles first-reply assignment, SLA breach clear, metrics recording; added permission check for agents
+  - `convex/actions/sendWhatsAppMessage.ts` — `sendMessage`, `sendLocation`, `sendQuotedMessage`, `sendMediaMessage` actions all now (1) extract and store wamid via `setMetaMessageId`, (2) update status to `"sent"` (not `"delivered"`) on success — `"delivered"` and `"read"` come from the webhook; `markFailed` accepts and stores `failureReason`
+  - `convex/messages.ts` `updateStatus` — accepts optional `failureReason` and patches it to DB
+  - `components/inbox/message-input.tsx` — Enter sends (Shift+Enter adds newline); character count warning at 3500+ chars (red at 4096+); send disabled when > 4096 chars
+  - `components/inbox/message-bubble.tsx` — `StatusTick` shows animated `·` for "sending"; shows `✗ Retry` button for "failed" messages; `onRetry` prop added to `MessageBubble`
+  - `components/inbox/conversation-thread.tsx` — passes real `status` (no longer maps "sending" → "sent"); wires `onRetry` to call `sendMessage` mutation with original content
+- **Status flow:** `"sending"` (optimistic) → `"sent"` (Meta accepted) → `"delivered"` (webhook) → `"read"` (webhook)
+- **Architecture:** mutation writes DB + schedules action; action calls Meta API + patches status — never throw, always handle errors gracefully
 
 ---
 
@@ -461,6 +480,7 @@
 
 | # | Feature | Priority | Notes |
 |---|---|---|---|
+| 013 | Send WhatsApp Messages via Cloud API | High | Outbound text via Meta Cloud API; patch message status to `"sent"` after delivery |
 | 014 | Round-robin assignment mode | Medium | Schema already has `roundRobinIndex` on channels |
 | 015 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
 | 016 | Billing / Polar.sh integration | Low | Plan limits partially enforced in Convex already |

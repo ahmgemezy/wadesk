@@ -6,11 +6,12 @@ import { internal } from "../_generated/api";
 
 const BASE = "https://graph.facebook.com/v21.0";
 
-async function markFailed(ctx: { runMutation: Function }, messageId: string, tenantId: string) {
+async function markFailed(ctx: { runMutation: Function }, messageId: string, tenantId: string, reason?: string) {
   await ctx.runMutation(internal.messages.updateStatus, {
     messageId: messageId as any,
     status: "failed",
     tenantId,
+    failureReason: reason,
   });
 }
 
@@ -34,25 +35,37 @@ export const sendMessage = internalAction({
           },
           body: JSON.stringify({
             messaging_product: "whatsapp",
+            recipient_type: "individual",
             to: args.contactPhone,
             type: "text",
-            text: { body: args.content },
+            text: { body: args.content, preview_url: false },
           }),
         },
       );
 
       if (!response.ok) {
-        await markFailed(ctx, args.messageId, args.tenantId);
+        const errBody = await response.text().catch(() => "");
+        await markFailed(ctx, args.messageId, args.tenantId, errBody);
         return;
+      }
+
+      const data = (await response.json()) as { messages?: { id: string }[] };
+      const metaId = data.messages?.[0]?.id;
+      if (metaId) {
+        await ctx.runMutation(internal.messages.setMetaMessageId, {
+          messageId: args.messageId,
+          metaMessageId: metaId,
+          tenantId: args.tenantId,
+        });
       }
 
       await ctx.runMutation(internal.messages.updateStatus, {
         messageId: args.messageId,
-        status: "delivered",
+        status: "sent",
         tenantId: args.tenantId,
       });
-    } catch {
-      await markFailed(ctx, args.messageId, args.tenantId);
+    } catch (err) {
+      await markFailed(ctx, args.messageId, args.tenantId, String(err));
     }
   },
 });
@@ -91,9 +104,19 @@ export const sendLocation = internalAction({
 
       if (!res.ok) { await markFailed(ctx, args.messageId, args.tenantId); return; }
 
+      const locData = (await res.json()) as { messages?: { id: string }[] };
+      const locMetaId = locData.messages?.[0]?.id;
+      if (locMetaId) {
+        await ctx.runMutation(internal.messages.setMetaMessageId, {
+          messageId: args.messageId,
+          metaMessageId: locMetaId,
+          tenantId: args.tenantId,
+        });
+      }
+
       await ctx.runMutation(internal.messages.updateStatus, {
         messageId: args.messageId,
-        status: "delivered",
+        status: "sent",
         tenantId: args.tenantId,
       });
     } catch {
@@ -148,7 +171,7 @@ export const sendQuotedMessage = internalAction({
 
       await ctx.runMutation(internal.messages.updateStatus, {
         messageId: args.messageId,
-        status: "delivered",
+        status: "sent",
         tenantId: args.tenantId,
       });
     } catch {
@@ -279,9 +302,19 @@ export const sendMediaMessage = internalAction({
 
       if (!sendRes.ok) { await markFailed(ctx, args.messageId, args.tenantId); return; }
 
+      const mediaData = (await sendRes.json()) as { messages?: { id: string }[] };
+      const mediaMetaId = mediaData.messages?.[0]?.id;
+      if (mediaMetaId) {
+        await ctx.runMutation(internal.messages.setMetaMessageId, {
+          messageId: args.messageId,
+          metaMessageId: mediaMetaId,
+          tenantId: args.tenantId,
+        });
+      }
+
       await ctx.runMutation(internal.messages.updateStatus, {
         messageId: args.messageId,
-        status: "delivered",
+        status: "sent",
         tenantId: args.tenantId,
       });
     } catch {

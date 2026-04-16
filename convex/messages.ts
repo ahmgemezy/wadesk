@@ -495,11 +495,15 @@ export const updateStatus = internalMutation({
       v.literal("failed"),
     ),
     tenantId: v.string(),
+    failureReason: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const message = await ctx.db.get(args.messageId);
     if (!message || message.tenantId !== args.tenantId) return;
-    await ctx.db.patch(args.messageId, { status: args.status });
+    await ctx.db.patch(args.messageId, {
+      status: args.status,
+      ...(args.failureReason !== undefined ? { failureReason: args.failureReason } : {}),
+    });
   },
 });
 

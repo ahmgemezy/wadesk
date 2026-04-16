@@ -185,6 +185,7 @@ export default defineSchema({
     authorId: v.optional(v.string()),
     mediaUrl: v.optional(v.string()),
     metaMessageId: v.optional(v.string()),
+    failureReason: v.optional(v.string()),
     status: v.union(
       v.literal("sending"),
       v.literal("sent"),

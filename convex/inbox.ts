@@ -135,10 +135,20 @@ export const sendMessage = mutation({
     type: v.union(v.literal("reply"), v.literal("note")),
   },
   handler: async (ctx, args) => {
-    const { tenantId, callerId } = await getCallerIdentity(ctx);
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) {
       throw new ConvexError("NOT_FOUND");
+    }
+
+    const isAdminOrSupervisor =
+      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+    if (
+      !isAdminOrSupervisor &&
+      conversation.assignedAgentId !== callerId &&
+      conversation.assignedAgentId !== undefined
+    ) {
+      throw new ConvexError("FORBIDDEN");
     }
 
     const isNote = args.type === "note";
@@ -158,12 +168,39 @@ export const sendMessage = mutation({
     });
 
     if (!isNote) {
-      const conv = await ctx.db.get(args.conversationId);
+      const channel = await ctx.db.get(conversation.channelId);
+      const contact = await ctx.db.get(conversation.contactId);
+
+      let assignedAgentId = conversation.assignedAgentId;
+      if (!assignedAgentId && channel?.assignmentMode === "first_reply") {
+        assignedAgentId = callerId;
+      }
+
       await ctx.db.patch(args.conversationId, {
         lastMessageAt: now,
         lastMessagePreview: args.content.slice(0, 80),
         unreadCount: 0,
-        ...(conv?.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
+        assignedAgentId,
+        ...(conversation.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
+      });
+
+      if (channel && contact) {
+        await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMessage, {
+          messageId,
+          phoneNumberId: channel.phoneNumberId,
+          contactPhone: contact.phone,
+          content: args.content,
+          tenantId,
+        });
+      }
+
+      await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordFirstResponse, {
+        conversationId: args.conversationId,
+        firstResponseAt: now,
+      });
+
+      await ctx.scheduler.runAfter(0, internal.conversationMetrics.incrementMessageCount, {
+        conversationId: args.conversationId,
       });
     }
 

@@ -133,12 +133,14 @@ export function MessageBubble({
   onReply,
   onDelete,
   onReact,
+  onRetry,
 }: {
   message: Message;
   quotedMessage?: Message | null;
   onReply: (message: Message) => void;
   onDelete: (messageId: string) => void;
   onReact: (messageId: string, emoji: string) => void;
+  onRetry?: (content: string) => void;
 }) {
   const t = useT();
   const locale = useLocale();
@@ -173,10 +175,10 @@ export function MessageBubble({
     return (
       <div className="flex justify-start">
         <div className="max-w-[75%] rounded-[20px] rounded-ee-sm bg-[--internal-note-bg] p-3 border border-dashed border-[--internal-note-border]">
-          <div className="text-xs font-medium text-[--agent-bubble-text] mb-1">
+          <div className="text-xs font-medium text-[--internal-note-text] mb-1">
             {t("Internal Note", "ملاحظة داخلية")}
           </div>
-          <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+          <div className="text-sm whitespace-pre-wrap text-[--internal-note-text]">{message.content}</div>
           <div className="text-xs text-muted-foreground mt-1 text-start">{timeStr}</div>
         </div>
       </div>
@@ -187,12 +189,17 @@ export function MessageBubble({
   const bubbleBase = `max-w-[75%] rounded-[20px] p-3 ${
     isInbound
       ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm"
-      : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"
+      : "bg-gradient-to-br from-[#00e5a0] to-[#00c4b4] text-[#0a1020] rounded-es-sm"
   }`;
   const timeRow = (
     <div className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isInbound ? "justify-start" : "justify-end"}`}>
       <span>{timeStr}</span>
-      {!isInbound && <StatusTick status={message.status} />}
+      {!isInbound && (
+        <StatusTick
+          status={message.status}
+          onRetry={message.status === "failed" && onRetry ? () => onRetry(message.content) : undefined}
+        />
+      )}
     </div>
   );
 
@@ -221,7 +228,7 @@ export function MessageBubble({
 
   if (message.contentType === "unsupported") {
     return (
-      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"}`}>
+      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
         <div className={bubbleBase}>
           <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -245,7 +252,7 @@ export function MessageBubble({
             onClose={() => setLightboxSrc(null)}
           />
         )}
-        <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"}`}>
+        <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
           {actionMenu}
           <div className={bubbleBase + " p-1.5"}>
             {quotedPreview}
@@ -270,7 +277,7 @@ export function MessageBubble({
 
   if (message.contentType === "video" && message.mediaUrl) {
     return (
-      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"}`}>
+      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
         <div className={bubbleBase + " p-1.5"}>
           {quotedPreview}
@@ -300,7 +307,7 @@ export function MessageBubble({
 
   if (message.contentType === "audio" && message.mediaUrl) {
     return (
-      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"}`}>
+      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
         <div className={bubbleBase}>
           {quotedPreview}
@@ -328,7 +335,7 @@ export function MessageBubble({
   if (message.contentType === "document") {
     const filename = message.content || t("Document", "مستند");
     return (
-      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"}`}>
+      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
         <div className={bubbleBase}>
           {quotedPreview}
@@ -361,7 +368,7 @@ export function MessageBubble({
     const name = parts[1] ?? t("Location", "الموقع");
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${coords}`;
     return (
-      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"}`}>
+      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
         <div className={bubbleBase}>
           {quotedPreview}
@@ -383,7 +390,7 @@ export function MessageBubble({
   }
 
   return (
-    <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"}`}>
+    <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
       {actionMenu}
       <div className={bubbleBase}>
         {quotedPreview}
@@ -395,9 +402,24 @@ export function MessageBubble({
   );
 }
 
-function StatusTick({ status }: { status: string }) {
-  if (status === "failed") return <span className="text-red-500 text-xs">✗</span>;
+function StatusTick({ status, onRetry }: { status: string; onRetry?: () => void }) {
+  if (status === "failed") {
+    return (
+      <span className="flex items-center gap-1">
+        <span className="text-red-500 text-xs">✗</span>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="text-xs text-red-500 underline hover:text-red-600 leading-none"
+          >
+            Retry
+          </button>
+        )}
+      </span>
+    );
+  }
   if (status === "read") return <span className="text-blue-400 text-xs">✓✓</span>;
   if (status === "delivered") return <span className="text-muted-foreground text-xs">✓✓</span>;
+  if (status === "sending") return <span className="text-muted-foreground text-xs animate-pulse">·</span>;
   return <span className="text-muted-foreground text-xs">✓</span>;
 }

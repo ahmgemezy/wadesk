@@ -87,6 +87,7 @@ export function ConversationThread({
 
   const deleteMessageMutation = useMutation(api.messages.deleteMessage);
   const reactToMessageMutation = useMutation(api.messages.reactToMessage);
+  const sendMessageMutation = useMutation(api.inbox.sendMessage);
 
   const { isAuthenticated } = useConvexAuth();
   const allLabels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip");
@@ -224,7 +225,7 @@ export function ConversationThread({
                     authorId: msg.authorId,
                     mediaUrl: msg.mediaUrl,
                     metaMessageId: msg.metaMessageId,
-                    status: msg.status === "sending" ? "sent" : msg.status,
+                    status: msg.status,
                     timestamp: msg.timestamp,
                     quotedMessageId: msg.quotedMessageId,
                     deletedAt: msg.deletedAt,
@@ -257,6 +258,17 @@ export function ConversationThread({
                       await reactToMessageMutation({ messageId: messageId as Id<"messages">, emoji });
                     } catch {
                       toast.error(locale === "en" ? "Failed to react" : "فشل التفاعل");
+                    }
+                  }}
+                  onRetry={async (content) => {
+                    try {
+                      await sendMessageMutation({
+                        conversationId: conversationId as Id<"conversations">,
+                        content,
+                        type: "reply",
+                      });
+                    } catch {
+                      toast.error(locale === "en" ? "Failed to resend message" : "فشل إعادة إرسال الرسالة");
                     }
                   }}
                 />

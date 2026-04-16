@@ -262,13 +262,13 @@ export function MessageInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit();
     }
   };
 
-  const canSend = !uploading && (!!attachment || !!location || !!content.trim());
+  const canSend = !uploading && (!!attachment || !!location || (!!content.trim() && content.length <= 4096));
 
   return (
     <div className="relative border-t p-3 space-y-2 shrink-0">
@@ -353,11 +353,17 @@ export function MessageInput({
         }
         className={`min-h-20 resize-none ${
           isNote
-            ? "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800"
+            ? "bg-[--internal-note-bg] border-[--internal-note-border] text-[--internal-note-text] placeholder:text-[--internal-note-text]/50"
             : ""
         }`}
         dir="auto"
       />
+
+      {content.length > 3500 && (
+        <div className={`text-xs text-end ${content.length > 4096 ? "text-red-500" : "text-muted-foreground"}`}>
+          {content.length} / 4096
+        </div>
+      )}
 
       <div className="flex items-center justify-between gap-1">
         <div className="flex items-center gap-1 flex-wrap">
