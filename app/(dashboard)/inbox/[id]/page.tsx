@@ -47,12 +47,16 @@ export default function ConversationPage() {
         }}
       />
       <div className="flex flex-col h-full">
-        <div className="border-b p-2 flex items-center justify-between">
-          <StatusSelector conversationId={conversationId} />
-          <AssignAgentDialog
-            conversationId={conversationId}
-            currentAssigneeId={conversation.assignedAgentId ?? undefined}
-          />
+        <div className="border-b px-4 py-2.5 flex items-center justify-between gap-3 bg-background shrink-0 min-h-[52px]">
+          <div className="flex items-center gap-2 min-w-0">
+            <StatusSelector conversationId={conversationId} />
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <AssignAgentDialog
+              conversationId={conversationId}
+              currentAssigneeId={conversation.assignedAgentId ?? undefined}
+            />
+          </div>
         </div>
         <ConversationThread conversationId={conversationId} replyTo={replyTo} onSetReplyTo={setReplyTo} />
         <MessageInput

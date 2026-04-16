@@ -178,7 +178,7 @@ export function ConversationThread({
               return (
                 <span
                   key={name}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-muted"
+                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-accent/20 text-accent-foreground"
                 >
                   <span className={`size-1.5 rounded-full ${colorClass}`} />
                   {meta?.emoji ? `${meta.emoji} ` : ""}{translateLabel(name)}
@@ -188,17 +188,17 @@ export function ConversationThread({
           </>
         )}
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto bg-muted/30">
         <div className="p-4 space-y-4">
         {groups.map((group) => (
           <div key={group.date}>
             {/* Date divider */}
-            <div className="flex items-center gap-3 my-3">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-[10px] text-muted-foreground px-2 whitespace-nowrap">
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px bg-border/60" />
+              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full whitespace-nowrap">
                 {group.date}
               </span>
-              <div className="flex-1 h-px bg-border" />
+              <div className="flex-1 h-px bg-border/60" />
             </div>
 
             {/* Messages for this date */}

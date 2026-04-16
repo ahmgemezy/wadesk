@@ -81,9 +81,9 @@ export default async function DashboardLayout({
     <SidebarProvider className="h-svh overflow-hidden">
       <AppSidebar user={resolvedUser} navItems={navItems} locale={locale} />
       <SidebarInset className="overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b">
-          <SidebarTrigger className="-ms-1" />
-          <Separator orientation="vertical" className="h-4" />
+        <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+          <SidebarTrigger className="-ms-1 text-muted-foreground hover:text-foreground" />
+          <Separator orientation="vertical" className="h-4 opacity-50" />
           <div className="ms-auto flex items-center gap-1">
             <ThemeToggle />
             <ClientNotificationBell locale={locale} />

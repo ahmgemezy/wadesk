@@ -72,10 +72,10 @@ export function ConversationListItem({
 
   const statusColor =
     conversation.status === "open"
-      ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
       : conversation.status === "pending"
-        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
-        : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400";
+        ? "bg-accent/30 text-accent-foreground"
+        : "bg-muted text-muted-foreground";
 
   const displayName = conversation.contactName ?? t("Contact", "عميل");
   const phone = conversation.contactPhone;
@@ -92,8 +92,9 @@ export function ConversationListItem({
   return (
     <div
       className={cn(
-        "group w-full text-start p-3 border-b hover:bg-accent/50 transition-colors cursor-pointer",
-        isActive && "bg-accent border-s-2 border-s-primary",
+        "group w-full text-start p-3 border-b hover:bg-secondary transition-colors cursor-pointer",
+        isActive && "bg-secondary border-s-[3px] border-s-primary",
+        !conversation.assignedAgentId && !isActive && "bg-(--unassigned-bg)",
       )}
       onClick={onClick}
     >
@@ -170,7 +171,7 @@ export function ConversationListItem({
               {(conversation.labels ?? []).slice(0, 4).map((name) => (
                 <span
                   key={name}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground font-medium max-w-[72px] truncate"
+                  className="inline-flex items-center gap-0.5 rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] leading-none text-accent-foreground font-medium max-w-[72px] truncate"
                 >
                   {translateLabel(name)}
                 </span>
@@ -194,7 +195,7 @@ export function ConversationListItem({
               </span>
             )}
             {!conversation.assignedAgentId && (
-              <span className="text-[10px] text-amber-600 dark:text-amber-400">
+              <span className="text-[10px] text-[--unassigned-dot]">
                 {t("Unassigned", "غير معين")}
               </span>
             )}

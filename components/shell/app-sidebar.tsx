@@ -93,7 +93,7 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
       dir={locale === "ar" ? "rtl" : "ltr"}
     >
       <SidebarHeader className="p-3 flex flex-row items-center gap-2">
-        <span className="text-sm font-semibold flex-1 group-data-[collapsible=icon]:hidden">
+        <span className="text-base font-bold flex-1 tracking-tight text-primary group-data-[collapsible=icon]:hidden">
           WaDesk
         </span>
         <LocaleSwitcher locale={locale} />
@@ -140,7 +140,7 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
                       <Icon />
                       <span>{label}</span>
                       {isInbox && totalUnread > 0 && (
-                        <span className="ms-auto min-w-5 h-5 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center px-1 leading-none group-data-[collapsible=icon]:hidden">
+                        <span className="ms-auto min-w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1 leading-none group-data-[collapsible=icon]:hidden">
                           {totalUnread > 99 ? "99+" : totalUnread}
                         </span>
                       )}

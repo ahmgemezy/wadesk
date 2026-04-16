@@ -84,8 +84,8 @@ function QuotedMessagePreview({ quoted, isOutbound }: { quoted: Message; isOutbo
     <div
       className={`rounded px-2 py-1 mb-1 text-xs border-s-2 ${
         isOutbound
-          ? "bg-green-50 dark:bg-green-950 border-green-400"
-          : "bg-gray-100 dark:bg-gray-800 border-gray-400"
+          ? "bg-[--internal-note-bg] border-[--accent]"
+          : "bg-[--muted] border-[--border]"
       }`}
     >
       <div className="flex items-center gap-1 text-muted-foreground mb-0.5">
@@ -158,7 +158,7 @@ export function MessageBubble({
   if (message.deletedAt) {
     return (
       <div className={message.direction === "inbound" ? "flex justify-start" : "flex justify-end"}>
-        <div className={`max-w-[75%] rounded-lg p-3 ${message.direction === "inbound" ? "bg-muted" : "bg-green-100 dark:bg-green-900"} opacity-50 italic`}>
+        <div className={`max-w-[75%] rounded-[20px] p-3 ${message.direction === "inbound" ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm" : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"} opacity-50 italic`}>
           <div className="text-sm text-muted-foreground flex items-center gap-1">
             <Trash2Icon className="size-3" />
             {t(message.direction === "outbound" ? "You deleted this message" : "This message was deleted", message.direction === "outbound" ? "حذفت هذه الرسالة" : "تم حذف هذه الرسالة")}
@@ -172,8 +172,8 @@ export function MessageBubble({
   if (message.isInternalNote) {
     return (
       <div className="flex justify-start">
-        <div className="max-w-[75%] rounded-lg bg-amber-50 dark:bg-amber-950 p-3 border border-amber-200 dark:border-amber-800">
-          <div className="text-xs font-medium text-amber-700 dark:text-amber-300 mb-1">
+        <div className="max-w-[75%] rounded-[20px] rounded-ee-sm bg-[--internal-note-bg] p-3 border border-dashed border-[--internal-note-border]">
+          <div className="text-xs font-medium text-[--agent-bubble-text] mb-1">
             {t("Internal Note", "ملاحظة داخلية")}
           </div>
           <div className="text-sm whitespace-pre-wrap">{message.content}</div>
@@ -184,7 +184,11 @@ export function MessageBubble({
   }
 
   const isInbound = message.direction === "inbound";
-  const bubbleBase = `max-w-[75%] rounded-lg p-3 ${isInbound ? "bg-muted" : "bg-green-100 dark:bg-green-900"}`;
+  const bubbleBase = `max-w-[75%] rounded-[20px] p-3 ${
+    isInbound
+      ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm"
+      : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"
+  }`;
   const timeRow = (
     <div className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isInbound ? "justify-start" : "justify-end"}`}>
       <span>{timeStr}</span>
