@@ -41,6 +41,7 @@ export const assignRoundRobin = internalAction({
         conversationId: args.conversationId,
         agentId: assignedAgentId,
         tenantId: args.tenantId,
+        assignmentType: "round_robin",
       });
     }
 

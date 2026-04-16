@@ -145,6 +145,12 @@ export default defineSchema({
     channelId: v.id("channels"),
     contactId: v.id("contacts"),
     assignedAgentId: v.optional(v.string()),
+    assignedAt: v.optional(v.number()),
+    assignmentType: v.optional(v.union(
+      v.literal("round_robin"),
+      v.literal("manual"),
+      v.literal("unassigned"),
+    )),
     status: v.union(
       v.literal("open"),
       v.literal("pending"),

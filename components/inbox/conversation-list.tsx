@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useConvexAuth } from "convex/react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useOrganization } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,21 @@ export function ConversationList({
 
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
+  const { memberships } = useOrganization({ memberships: true });
+
+  // Build a userId → display name map for the assigned agent label
+  const memberNames = Object.fromEntries(
+    (memberships?.data ?? []).map((m) => {
+      const uid = m.publicUserData?.userId ?? "";
+      const name =
+        [m.publicUserData?.firstName, m.publicUserData?.lastName]
+          .filter(Boolean)
+          .join(" ") ||
+        m.publicUserData?.identifier ||
+        uid;
+      return [uid, name];
+    }),
+  );
 
   const allLabels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip") ?? [];
 
@@ -188,7 +203,10 @@ export function ConversationList({
       {allConversations === undefined ? (
         <div className="p-3 space-y-2 flex-1 min-h-0 overflow-y-auto">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+            <div
+              key={i}
+              className="h-20 rounded-lg bg-gradient-to-r from-muted via-muted/60 to-muted animate-shimmer"
+            />
           ))}
         </div>
       ) : labelFiltered.length === 0 ? (
@@ -208,6 +226,9 @@ export function ConversationList({
                 contactPhone: conv.contactPhone,
                 contactAvatarInitials: conv.contactAvatarInitials,
                 assignedAgentId: conv.assignedAgentId,
+                assignedAgentName: conv.assignedAgentId
+                  ? (memberNames[conv.assignedAgentId] ?? undefined)
+                  : undefined,
                 lastMessagePreview: conv.lastMessagePreview,
                 lastMessageAt: conv.lastMessageAt,
                 status: conv.status,

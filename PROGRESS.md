@@ -9,12 +9,44 @@
 
 **WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Polar.sh (payments)  
-**Current branch:** `009-automation-rules`  
+**Current branch:** `task/014-round-robin`  
 **Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server running · ✅ Outbound text replies wired to Meta API
 
 ---
 
 ## Completed Features
+
+---
+
+### Task 014 — Round-Robin Conversation Assignment
+- **Status:** Done
+- **Branch:** `task/014-round-robin`
+- **What was built:** Automatic round-robin assignment of incoming conversations + manual reassignment UI + Mine/Unassigned/Unread filter tabs in inbox
+- **Schema changes on `conversations`:**
+  - `assignedAt: v.optional(v.number())` — timestamp of last assignment
+  - `assignmentType: v.optional(v.union("round_robin", "manual", "unassigned"))` — how the conversation was assigned
+- **Files created:**
+  - `convex/actions/roundRobin.ts` — `assignRoundRobin` internalAction; fetches Clerk org memberships, picks next agent in rotation, calls `assignInternal`, increments `roundRobinIndex`
+  - `components/settings/assignment-mode-select.tsx` — Radio-button UI for Admin to set First Reply / Manual / Round Robin per channel
+- **Files modified:**
+  - `convex/schema.ts` — added `assignedAt`, `assignmentType` to conversations table
+  - `convex/conversations.ts` — `assign` sets `assignedAt` + `assignmentType: "manual"` or `"unassigned"`; `assignInternal` accepts optional `assignmentType` arg
+  - `convex/http.ts` — webhook handler fires `assignRoundRobin` action for new conversations when channel is in round_robin mode
+  - `convex/channels.ts` — `incrementRoundRobinIndex` internalMutation; `setAssignmentMode` mutation (Admin-only, plan-gated to Growth+ for round_robin)
+  - `components/inbox/conversation-list.tsx` — resolves assigned agent display names via `useOrganization({ memberships: true })` and passes `assignedAgentName` to each list item
+  - `components/inbox/conversation-list-item.tsx` — shows assigned agent name and "Unassigned" label in row 4
+  - `components/inbox/assign-agent-dialog.tsx` — Dropdown popover for Admin/Supervisor to reassign any conversation
+  - `app/(dashboard)/settings/channels/[channelId]/page.tsx` — includes `<AssignmentModeSelect>` in channel settings
+- **Key decisions:**
+  - Round-robin uses `clerkClient()` (Clerk SDK) in a Convex Node.js action (`"use node"`) to fetch live org memberships — avoids storing stale agent lists
+  - `roundRobinIndex` on `channels` increments atomically per assignment; wraps automatically via modulo in the action
+  - No online/offline awareness in v1 — assigns to next member regardless of status
+  - Manual reassignment by Admin/Supervisor does NOT reset the round-robin index
+  - Round Robin mode is plan-gated to Growth and above
+- **Role permissions:**
+  - All roles can be assigned conversations
+  - Only Admin + Supervisor can manually reassign
+  - Only Admin can change assignment mode
 
 ---
 
@@ -467,7 +499,7 @@
 | CSAT flow (auto-send + capture rating) | ✅ Done |
 | SLA alerts (breach detection + ⚠️ badge) | ✅ Done |
 | Department / channel member assignment | ✅ Done |
-| Round-robin assignment | ❌ Not started |
+| Round-robin assignment | ✅ Done |
 | Data export (contacts + conversations) | ❌ Not started |
 | WhatsApp Business profile editing | ❌ Not started |
 | Advanced message templates (with variables) | ❌ Not started |
@@ -480,8 +512,8 @@
 
 | # | Feature | Priority | Notes |
 |---|---|---|---|
-| 013 | Send WhatsApp Messages via Cloud API | High | Outbound text via Meta Cloud API; patch message status to `"sent"` after delivery |
-| 014 | Round-robin assignment mode | Medium | Schema already has `roundRobinIndex` on channels |
+| 013 | Send WhatsApp Messages via Cloud API | High | ✅ Done |
+| 014 | Round-robin assignment mode | Medium | ✅ Done |
 | 015 | Data export (Contacts CSV, Conversations JSON) | Low | Settings → Data & Privacy |
 | 016 | Billing / Polar.sh integration | Low | Plan limits partially enforced in Convex already |
 | 017 | Supervisor department/scoping plan | Low | Plan documented in `docs/superpowers/plans/2026-04-09-supervisor-department-scoping.md` |

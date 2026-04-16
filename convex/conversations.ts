@@ -112,6 +112,8 @@ export const assign = mutation({
 
     await ctx.db.patch(args.conversationId, {
       assignedAgentId: args.agentId,
+      assignedAt: args.agentId ? Date.now() : undefined,
+      assignmentType: args.agentId ? "manual" : "unassigned",
       lastMessageAt: Date.now(),
     });
   },
@@ -260,12 +262,18 @@ export const assignInternal = internalMutation({
     conversationId: v.id("conversations"),
     agentId: v.string(),
     tenantId: v.string(),
+    assignmentType: v.optional(v.union(
+      v.literal("round_robin"),
+      v.literal("manual"),
+    )),
   },
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== args.tenantId) return;
     await ctx.db.patch(args.conversationId, {
       assignedAgentId: args.agentId,
+      assignedAt: Date.now(),
+      assignmentType: args.assignmentType ?? "manual",
       lastMessageAt: Date.now(),
     });
   },
