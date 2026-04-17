@@ -116,7 +116,11 @@ export const send = action({
       name: c.customName ?? c.displayName,
     }));
 
-    // Set status to "sending", reset counters
+    if (recipientSnapshot.length === 0) {
+      throw new ConvexError({ message: "No contacts match the selected list filters." });
+    }
+
+    // Set status to "sending", reset counters and retryMap in one mutation
     await ctx.runMutation(internal.broadcasts.updateStatus, {
       broadcastId: args.broadcastId,
       status: "sending",
@@ -124,11 +128,7 @@ export const send = action({
       recipientCount: recipientSnapshot.length,
       sentCount: 0,
       failedCount: 0,
-    });
-
-    // Reset retryMap
-    await ctx.runMutation(internal.broadcasts.resetForSend, {
-      broadcastId: args.broadcastId,
+      retryMap: {},
     });
 
     // Schedule first batch
@@ -270,6 +270,7 @@ export const updateStatus = internalMutation({
     sentCount: v.optional(v.number()),
     failedCount: v.optional(v.number()),
     sentAt: v.optional(v.number()),
+    retryMap: v.optional(v.record(v.string(), v.number())),
   },
   handler: async (ctx, args) => {
     const patch: Record<string, unknown> = {
@@ -280,6 +281,7 @@ export const updateStatus = internalMutation({
     if (args.sentCount !== undefined) patch.sentCount = args.sentCount;
     if (args.failedCount !== undefined) patch.failedCount = args.failedCount;
     if (args.sentAt !== undefined) patch.sentAt = args.sentAt;
+    if (args.retryMap !== undefined) patch.retryMap = args.retryMap;
     await ctx.db.patch(args.broadcastId, patch);
   },
 });
@@ -293,16 +295,11 @@ export const getTenantInternal = internalQuery({
       .first(),
 });
 
+// Intentionally unscoped (no tenantId check) — for use by internal batch processor only.
+// The caller (processBroadcastBatch) is an internalAction and cannot be called by clients.
 export const getInternal = internalQuery({
   args: { broadcastId: v.id("broadcasts") },
   handler: async (ctx, args) => ctx.db.get(args.broadcastId),
-});
-
-export const resetForSend = internalMutation({
-  args: { broadcastId: v.id("broadcasts") },
-  handler: async (ctx, args) => {
-    await ctx.db.patch(args.broadcastId, { retryMap: {} });
-  },
 });
 
 export const incrementSent = internalMutation({
@@ -339,6 +336,7 @@ export const markComplete = internalMutation({
   handler: async (ctx, args) => {
     const b = await ctx.db.get(args.broadcastId);
     if (!b) return;
+    if (b.status === "sent" || b.status === "failed") return; // already terminal — idempotent
     const status = (b.sentCount ?? 0) > 0 ? "sent" : "failed";
     await ctx.db.patch(args.broadcastId, { status, sentAt: Date.now() });
   },
