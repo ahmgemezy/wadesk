@@ -84,20 +84,49 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
           {broadcasts.map((b) => (
             <div
               key={b._id}
-              className="bg-card border rounded-xl p-4 flex items-center justify-between"
+              className="bg-card border rounded-xl p-4"
             >
-              <div>
-                <div className="font-medium text-sm">{b.name}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {b.recipientCount} {tx.recipients} •{" "}
-                  {new Date(b.createdAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB")}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-sm">{b.name}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    {b.recipientCount} {tx.recipients} •{" "}
+                    {new Date(b.createdAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB")}
+                  </div>
                 </div>
+                {b.status === "sending" ? (
+                  <span className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-blue-100 text-blue-700 shrink-0">
+                    <svg className="size-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    {STATUS_LABELS["sending"][locale]}
+                  </span>
+                ) : (
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${STATUS_COLORS[b.status] ?? ""}`}
+                  >
+                    {STATUS_LABELS[b.status]?.[locale] ?? b.status}
+                  </span>
+                )}
               </div>
-              <span
-                className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUS_COLORS[b.status] ?? ""}`}
-              >
-                {STATUS_LABELS[b.status]?.[locale] ?? b.status}
-              </span>
+              {b.status === "sending" && b.recipientCount > 0 && (
+                <div className="mt-2">
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {locale === "ar"
+                      ? `${b.sentCount ?? 0} تم · ${b.failedCount ?? 0} فشل`
+                      : `${b.sentCount ?? 0} sent · ${b.failedCount ?? 0} failed`}
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-blue-500 transition-all duration-500"
+                      style={{
+                        width: `${Math.min(100, (((b.sentCount ?? 0) + (b.failedCount ?? 0)) / b.recipientCount) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
