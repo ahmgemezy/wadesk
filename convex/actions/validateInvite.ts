@@ -38,7 +38,7 @@ export const validateAndJoin = action({
       await client.organizations.createOrganizationMembership({
         organizationId: tenantId,
         userId,
-        role: "org:agent" as OrgRole,
+        role: link.defaultRole as OrgRole,
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);

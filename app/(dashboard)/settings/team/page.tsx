@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { resolveRole } from "@/lib/shell/role-utils";
 import { TeamMemberList } from "@/components/settings/team-member-list";
+import { InviteLinks } from "@/components/settings/invite-links";
+import { SettingsPageLayout } from "@/components/settings/settings-page-layout";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +24,16 @@ export default async function TeamSettingsPage() {
   const t = (en: string, ar: string) => locale === "en" ? en : ar;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">
-        {t("Team Settings", "إعدادات الفريق")}
-      </h1>
-      <TeamMemberList />
-    </div>
+    <SettingsPageLayout
+      title={t("Team Settings", "إعدادات الفريق")}
+      description={t("Manage team members and roles", "إدارة أعضاء الفريق والأدوار")}
+    >
+      <div className="space-y-10">
+        <TeamMemberList />
+        <div className="border-t pt-8">
+          <InviteLinks />
+        </div>
+      </div>
+    </SettingsPageLayout>
   );
 }

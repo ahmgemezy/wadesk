@@ -227,10 +227,11 @@ export default defineSchema({
   inviteLinks: defineTable({
     tenantId: v.string(),
     token: v.string(),
+    label: v.optional(v.string()),
     createdBy: v.string(),
     expiresAt: v.number(),
     revoked: v.boolean(),
-    defaultRole: v.literal("org:agent"),
+    defaultRole: v.union(v.literal("org:agent"), v.literal("org:supervisor")),
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
