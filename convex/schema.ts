@@ -129,11 +129,16 @@ export default defineSchema({
       v.literal("sent"),
       v.literal("failed"),
     ),
-    recipientSnapshot: v.array(v.id("contacts")),
+    recipientSnapshot: v.array(v.object({
+      contactId: v.id("contacts"),
+      phone: v.string(),
+      name: v.optional(v.string()),
+    })),
     recipientCount: v.number(),
     sentCount: v.optional(v.number()),
     failedCount: v.optional(v.number()),
     sentAt: v.optional(v.number()),
+    retryMap: v.optional(v.record(v.string(), v.number())),
     createdBy: v.string(),
     createdAt: v.number(),
   })
