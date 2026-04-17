@@ -9,7 +9,7 @@
 
 **WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Polar.sh (payments)  
-**Current branch:** `task/014-round-robin`  
+**Current branch:** `task/015-broadcasts-sending-loop`  
 **Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server running · ✅ Outbound text replies wired to Meta API
 
 ---
@@ -313,8 +313,29 @@
 
 ---
 
-### Broadcast Campaigns
-- **Status:** Done (UI complete; Meta API send wired but gated behind plan check)
+### Broadcast Campaigns — Sending Loop (Task 015-A)
+- **Status:** Done
+- **Branch:** `task/015-broadcasts-sending-loop`
+- **What was built:** Batched broadcast sending loop with real-time progress UI and per-contact retry logic
+- **Schema changes on `broadcasts`:**
+  - `recipientSnapshot` changed from `v.array(v.id("contacts"))` to `v.array(v.object({ contactId, phone, name }))` — snapshot now stores phone/name at send time
+  - `retryMap: v.optional(v.record(v.string(), v.number()))` — tracks per-contact attempt count (up to 3)
+- **New files:**
+  - `convex/actions/processBroadcastBatch.ts` — `internalAction` that processes 50 contacts per invocation, calls Meta API, retries failed contacts up to 3×, schedules next batch with 2s delay, schedules retry batches with 60s delay
+- **Modified files:**
+  - `convex/broadcasts.ts` — rewrote `send` action (role check, plan check, snapshot build, schedules batch 0); added `getInternal`, `incrementSent`, `markFailed`, `incrementRetry`, `markComplete` (idempotent), `getTenantInternal` internalMutations/Queries; updated `updateStatus` to accept `retryMap`
+  - `convex/lib/planLimits.ts` — `assertBroadcastsAllowed` now blocks both `free` and `starter` (Growth+ only, matching CLAUDE.md §10)
+  - `components/broadcasts/broadcasts-page.tsx` — real-time progress bar + animated spinner badge for `status === "sending"`; bilingual sent/failed counter line
+- **Key decisions:**
+  - Batch size: 50 contacts/batch, 2s between batches, 60s before retry batches
+  - Max 3 attempts per contact; exhausted contacts counted in `failedCount`
+  - `markComplete` is idempotent — guards against double-call on terminal status
+  - Channel `accessToken` (AES-256-GCM encrypted) used for Meta API token; falls back to `META_SYSTEM_USER_TOKEN` env var
+  - Empty contact list throws immediately in `send` action (no silent fail)
+  - Real-time UI updates via Convex subscription — no polling
+
+### Broadcast Campaigns — Creation Wizard
+- **Status:** Done (UI complete; sending loop implemented above)
 - **Branch:** `009-automation-rules`
 - **Commits:** `5eaffa3`, `dc00b7c`
 - **What was built:** Broadcast campaign creation wizard and campaign list page
