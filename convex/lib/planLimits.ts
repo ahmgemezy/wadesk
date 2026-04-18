@@ -1,5 +1,23 @@
 import { ConvexError } from "convex/values";
 
+export type Plan = "free" | "starter" | "growth" | "business";
+
+export const PLAN_RANK: Record<Plan, number> = {
+  free: 0,
+  starter: 1,
+  growth: 2,
+  business: 3,
+};
+
+export function assertPlanAtLeast(current: Plan, required: Plan): void {
+  if (PLAN_RANK[current] < PLAN_RANK[required]) {
+    throw new ConvexError({
+      message: "PLAN_LIMIT_REACHED",
+      data: { currentPlan: current, requiredPlan: required },
+    });
+  }
+}
+
 const AGENT_LIMITS: Record<string, number> = {
   free: 3,
   starter: 5,
@@ -13,8 +31,6 @@ const CHANNEL_LIMITS: Record<string, number> = {
   growth: 5,
   business: Infinity,
 };
-
-export type Plan = "free" | "starter" | "growth" | "business";
 
 export function assertSupervisorRoleAllowed(plan: Plan): void {
   if (plan === "free") {
