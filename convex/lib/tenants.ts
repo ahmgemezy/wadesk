@@ -63,3 +63,29 @@ export const ensureTenant = internalMutation({
     });
   },
 });
+
+export const getTenantInternal = internalQuery({
+  args: { tenantId: v.string() },
+  handler: async (ctx, args) => {
+    return ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+  },
+});
+
+export const getSubscriptionStatus = query({
+  args: {},
+  handler: async (ctx): Promise<{ plan: Plan; hasSubscription: boolean }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.orgId) return { plan: "free", hasSubscription: false };
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", identity.orgId as string))
+      .first();
+    return {
+      plan: (tenant?.plan as Plan) ?? "free",
+      hasSubscription: !!tenant?.paddle_subscription_id,
+    };
+  },
+});
