@@ -89,3 +89,11 @@ export const getSubscriptionStatus = query({
     };
   },
 });
+
+export const getTenantBySubscriptionId = internalQuery({
+  args: { subscriptionId: v.string() },
+  handler: async (ctx, args) => {
+    const all = await ctx.db.query("tenants").collect();
+    return all.find((t) => t.paddle_subscription_id === args.subscriptionId) ?? null;
+  },
+});
