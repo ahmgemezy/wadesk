@@ -12,6 +12,9 @@ export default defineSchema({
     ),
     orgName: v.optional(v.string()),
     createdAt: v.number(),
+    paddle_customer_id: v.optional(v.string()),
+    paddle_subscription_id: v.optional(v.string()),
+    plan_activated_at: v.optional(v.number()),
   })
     .index("by_tenantId", ["tenantId"]),
 
