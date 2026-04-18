@@ -2,6 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { paddleWebhook } from "./billing";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -333,5 +334,6 @@ async function verifyHmac(
 const http = httpRouter();
 http.route({ path: "/meta-webhook", method: "GET", handler: metaWebhook });
 http.route({ path: "/meta-webhook", method: "POST", handler: metaWebhook });
+http.route({ path: "/paddle-webhook", method: "POST", handler: paddleWebhook });
 
 export default http;
