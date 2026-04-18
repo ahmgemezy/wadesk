@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ClientNotificationBell } from "@/components/shell/client-notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
+import { PaddleProvider } from "@/components/paddle-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -92,6 +93,7 @@ export default async function DashboardLayout({
         <div className="flex-1 overflow-y-auto min-h-0 pb-16 md:pb-0">
           <ConvexAuthGuard>
             {children}
+            <PaddleProvider />
           </ConvexAuthGuard>
         </div>
       </SidebarInset>
