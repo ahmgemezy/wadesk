@@ -10,6 +10,7 @@ import { MessageInput } from "@/components/inbox/message-input";
 import { StatusSelector } from "@/components/inbox/status-selector";
 import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
+import { TransferDepartmentDialog } from "@/components/inbox/transfer-department-dialog";
 import { ContactPanel } from "@/components/contacts/contact-panel";
 import { SeedButton } from "@/components/dev/seed-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -140,6 +141,15 @@ export default function InboxPage() {
 
                 {/* Dev seed button */}
                 <SeedButton />
+
+                {/* Department transfer */}
+                {selectedConversation?.channelId && (
+                  <TransferDepartmentDialog
+                    conversationId={selectedId}
+                    channelId={selectedConversation.channelId}
+                    currentDepartmentId={selectedConversation.departmentId}
+                  />
+                )}
 
                 {/* Controls */}
                 <StatusSelector conversationId={selectedId} />

@@ -7,10 +7,10 @@
 
 ---
 
-**Last Updated:** 2026-04-24 15:30 UTC  
-**Current Branch:** feat/013-departments  
+**Last Updated:** 2026-04-24 16:45 UTC  
+**Current Branch:** feat/013-departments (merged broadcasts from task/015)  
 **Main Branch:** 002-agent-roles  
-**Build Status:** ✅ TypeScript: 0 errors
+**Build Status:** ✅ TypeScript: 0 errors | ✅ Broadcasts batched sending complete
 
 ---
 
@@ -241,15 +241,17 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 
 ### ✅ Broadcast Campaigns
 - **File:** `app/(dashboard)/broadcasts/page.tsx`, `app/(dashboard)/broadcasts/new/page.tsx`
-- **Backend:** `convex/broadcasts.ts`
-- **Status:** ✅ Complete
+- **Backend:** `convex/broadcasts.ts`, `convex/actions/processBroadcastBatch.ts`
+- **Status:** ✅ Complete (including batched sending loop)
 - **Features:**
   - Campaign lifecycle: `draft`, `sending`, `sent`, `failed`
   - Contact list targeting (filters: countries, cities, stages, tags) — `convex/contactLists.ts`
   - Meta template message integration (pre-approved templates)
   - Recipient snapshot at send time (immutable record)
-  - Plan gating (Starter+)
-  - Send progress tracking (sent/failed counts)
+  - **Batched sending:** 50 messages per action to prevent timeout
+  - **Retry logic:** MAX_RETRIES=3 with retry map tracking
+  - Real-time progress tracking (sent/failed counts updated live)
+  - Plan gating (Growth+ for sending, Starter+ for draft creation)
 
 ### ✅ Follow-up Scheduling
 - **File:** `components/contacts/follow-up-dialog.tsx`
@@ -484,7 +486,17 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 
 ## 8. Recent Changes (Last 5 Sessions)
 
-### 2026-04-24: Deep Architecture Audit + TypeScript Error Fixes (This Session)
+### 2026-04-24 (16:45): Broadcasts Batched Sending Loop Integration
+- ✅ Merged `task/015-broadcasts-sending-loop` into `feat/013-departments`
+- ✅ Added `convex/actions/processBroadcastBatch.ts` — production-ready batched sending
+- ✅ Updated `convex/broadcasts.ts` — replaced naive loop with scheduler-based batching
+- ✅ Added retry logic (MAX_RETRIES=3) and retry map tracking
+- ✅ Added real-time progress tracking (sentCount/failedCount)
+- ✅ Updated plan gating: broadcasts sending requires Growth+ (draft creation: Starter+)
+- ✅ Resolved merge conflicts in PROGRESS.md
+- ✅ Verified TypeScript: 0 errors after merge
+
+### 2026-04-24 (15:30): Deep Architecture Audit + TypeScript Error Fixes
 - ✅ Created `PROJECT_STATE.md` (this file)
 - ✅ Performed comprehensive codebase scan
 - ✅ Identified 6 potential issues (documented in "Known Issues" section)

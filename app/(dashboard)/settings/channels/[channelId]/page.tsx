@@ -5,7 +5,7 @@ import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { AssignmentModeSelect } from "@/components/settings/assignment-mode-select";
-import { DepartmentMembers } from "@/components/settings/department-members";
+import { DepartmentList } from "@/components/settings/department-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Check, X, Trash2, UserCircle } from "lucide-react";
@@ -93,7 +93,7 @@ export default function ChannelSettingsPage({
   if (!channel) {
     return (
       <div className="p-6 max-w-2xl mx-auto text-center text-muted-foreground">
-        {t("Department not found", "الإدارة غير موجودة")}
+        {t("Channel not found", "القناة غير موجودة")}
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function ChannelSettingsPage({
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
-          {t("Department Settings", "إعدادات الإدارة")}
+          {t("Number Settings", "إعدادات الرقم")}
         </h1>
         <Button
           variant="destructive"
@@ -212,7 +212,7 @@ export default function ChannelSettingsPage({
       </div>
 
       <div className="border-t pt-6">
-        <DepartmentMembers channelId={channelId} />
+        <DepartmentList channelId={channelId} />
       </div>
 
       <div className="border-t pt-6">

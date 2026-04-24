@@ -455,12 +455,12 @@ export default defineSchema({
 
   departments: defineTable({
     tenantId: v.string(),
+    channelId: v.optional(v.id("channels")),
     name: v.string(),
     description: v.optional(v.string()),
-    supervisors: v.optional(v.array(v.string())), // Clerk userIds - optional for backward compatibility
+    supervisors: v.optional(v.array(v.string())),
     createdBy: v.string(),
     createdAt: v.number(),
-    // Legacy fields from previous implementation
     nameAr: v.optional(v.string()),
     color: v.optional(v.string()),
     slug: v.optional(v.string()),
@@ -468,5 +468,25 @@ export default defineSchema({
     isArchived: v.optional(v.boolean()),
     updatedAt: v.optional(v.number()),
   })
-    .index("by_tenant", ["tenantId"]),
+    .index("by_tenant", ["tenantId"])
+    .index("by_channel", ["channelId"])
+    .index("by_channel_default", ["channelId", "isDefault"])
+    .index("by_tenant_channel", ["tenantId", "channelId"]),
+
+  departmentMembers: defineTable({
+    tenantId: v.string(),
+    departmentId: v.id("departments"),
+    userId: v.string(),
+    userName: v.optional(v.string()),
+    userEmail: v.optional(v.string()),
+    userImageUrl: v.optional(v.string()),
+    role: v.union(v.literal("org:supervisor"), v.literal("org:agent")),
+    addedBy: v.string(),
+    addedAt: v.optional(v.number()),
+    createdAt: v.optional(v.number()),
+  })
+    .index("by_department", ["departmentId"])
+    .index("by_tenant", ["tenantId"])
+    .index("by_department_user", ["departmentId", "userId"])
+    .index("by_tenant_user", ["tenantId", "userId"]),
 });

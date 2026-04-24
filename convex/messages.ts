@@ -206,7 +206,16 @@ export const createInbound = internalMutation({
     let isNewConversation = false;
 
     if (!conversation) {
-      const conversationId = await ctx.db.insert("conversations", {
+      let departmentId: Id<"departments"> | undefined;
+      const defaultDept = await ctx.runQuery(
+        internal.departments.getDefaultForChannel,
+        { channelId: args.channelId }
+      ) as { _id: Id<"departments"> } | null;
+      if (defaultDept) {
+        departmentId = defaultDept._id;
+      }
+
+      const conversationId: Id<"conversations"> = await ctx.db.insert("conversations", {
         tenantId: args.tenantId,
         channelId: args.channelId,
         contactId,
@@ -217,6 +226,8 @@ export const createInbound = internalMutation({
         unreadCount: 1,
         createdAt: args.timestamp,
         lastInboundAt: args.timestamp,
+        departmentId,
+        departmentAssignedAt: departmentId ? args.timestamp : undefined,
         ...(args.assignedAgentId ? { assignedAgentId: args.assignedAgentId } : {}),
       });
       conversation = await ctx.db.get(conversationId);

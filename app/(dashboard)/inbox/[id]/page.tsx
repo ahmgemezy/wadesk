@@ -8,6 +8,7 @@ import { ConversationThread } from "@/components/inbox/conversation-thread";
 import { MessageInput } from "@/components/inbox/message-input";
 import { StatusSelector } from "@/components/inbox/status-selector";
 import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
+import { TransferDepartmentDialog } from "@/components/inbox/transfer-department-dialog";
 import { useState } from "react";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
 import { useT } from "@/lib/i18n/context";
@@ -52,6 +53,13 @@ export default function ConversationPage() {
             <StatusSelector conversationId={conversationId} />
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {conversation.channelId && (
+              <TransferDepartmentDialog
+                conversationId={conversationId}
+                channelId={conversation.channelId as string}
+                currentDepartmentId={conversation.departmentId ? (conversation.departmentId as string) : undefined}
+              />
+            )}
             <AssignAgentDialog
               conversationId={conversationId}
               currentAssigneeId={conversation.assignedAgentId ?? undefined}

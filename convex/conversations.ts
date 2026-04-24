@@ -3,6 +3,7 @@ import { ConvexError } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCallerIdentity } from "./lib/auth";
+import type { Id } from "./_generated/dataModel";
 
 function isAdminOrSupervisor(orgRole: string): boolean {
   return orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
@@ -229,8 +230,17 @@ export const getOrCreate = mutation({
 
     if (existing) return existing._id;
 
+    let departmentId: Id<"departments"> | undefined;
+    const defaultDept = await ctx.runQuery(
+      internal.departments.getDefaultForChannel,
+      { channelId: args.channelId }
+    ) as { _id: Id<"departments"> } | null;
+    if (defaultDept) {
+      departmentId = defaultDept._id;
+    }
+
     const now = Date.now();
-    const conversationId = await ctx.db.insert("conversations", {
+    const conversationId: Id<"conversations"> = await ctx.db.insert("conversations", {
       tenantId,
       channelId: args.channelId,
       contactId: args.contactId,
@@ -240,6 +250,8 @@ export const getOrCreate = mutation({
       lastMessagePreview: "",
       unreadCount: 0,
       createdAt: now,
+      departmentId,
+      departmentAssignedAt: departmentId ? now : undefined,
     });
 
     await ctx.db.patch(args.contactId, {
@@ -275,6 +287,62 @@ export const assignInternal = internalMutation({
       assignedAt: Date.now(),
       assignmentType: args.assignmentType ?? "manual",
       lastMessageAt: Date.now(),
+    });
+  },
+});
+
+export const transferToDepartment = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    targetDepartmentId: v.id("departments"),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+    if (!isAdminOrSupervisor(orgRole)) {
+      throw new ConvexError("FORBIDDEN");
+    }
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    const targetDept = await ctx.db.get(args.targetDepartmentId);
+    if (!targetDept || targetDept.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+    if (targetDept.isArchived) {
+      throw new ConvexError("DEPARTMENT_ARCHIVED");
+    }
+
+    if (!targetDept.channelId || targetDept.channelId !== conversation.channelId) {
+      throw new ConvexError("CROSS_CHANNEL_TRANSFER_NOT_ALLOWED");
+    }
+
+    const oldDept = conversation.departmentId
+      ? await ctx.db.get(conversation.departmentId)
+      : null;
+
+    const now = Date.now();
+    await ctx.db.patch(args.conversationId, {
+      departmentId: args.targetDepartmentId,
+      departmentAssignedAt: now,
+      departmentAssignedBy: callerId,
+    });
+
+    const fromName = oldDept?.name ?? "Unassigned";
+    const toName = targetDept.name;
+    await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId,
+      direction: "outbound",
+      content: `Conversation transferred from "${fromName}" to "${toName}"`,
+      contentType: "text",
+      isInternalNote: true,
+      authorId: callerId,
+      status: "sent",
+      timestamp: now,
+      createdAt: now,
     });
   },
 });

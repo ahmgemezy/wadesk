@@ -575,12 +575,6 @@ All tables are real, indexed, and used by live queries:
 
 ## 🔄 Partially Completed
 
-### Broadcasts — Sending Loop Not Implemented
-- **What's done:** Full wizard UI, `broadcasts.create` mutation (draft), `broadcasts.send` action starts and sets status to "sending"
-- **What's missing:** The `send` action does not loop through `recipientSnapshot` to call `sendMessage` for each contact. The action reads the data but individual per-recipient WhatsApp sends are not implemented.
-- **Files:** `convex/broadcasts.ts` → `send` action
-
-
 ### Revenue Analytics — Schema Exists, No UI
 - **What's done:** `contacts.spent`, `contacts.spentCurrency` fields in schema; `followUps.expectedRevenue`, `followUps.currency` fields; `RevenueWidget` component exists
 - **What's missing:** No UI to input actual revenue per conversation or per contact. No analytics query for revenue over time. `RevenueWidget` displays the field but there's no editor.
@@ -595,7 +589,8 @@ All tables are real, indexed, and used by live queries:
 
 | Feature | Notes from CLAUDE.md |
 |---|---|
-| **Polar.sh Billing Integration** | Pricing page exists but no checkout flow. `tenant.plan` is set manually/seeded. No webhook from Polar to update plan on payment. |
+| ~~**Paddle Billing Integration**~~ | ✅ Completed — Paddle.js checkout, plan switching, webhook processing all implemented (Apr 17-24) |
+| ~~**Broadcasts Sending Loop**~~ | ✅ Completed — Batched sending with retry logic implemented (merged from task/015) |
 | **Invite by WhatsApp** | CLAUDE.md §19: Admin enters agent phone → send invite via WhatsApp. Only email invite implemented. |
 | ~~**Shareable Invite Link UI**~~ | ✅ Completed — multi-link per tenant with labels, role-gated creation, copy/regenerate/revoke, expiry support, bilingual |
 | **Conversation / Message Search** | No full-text search across conversations or message content. |

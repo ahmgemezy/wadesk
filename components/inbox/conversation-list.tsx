@@ -235,6 +235,7 @@ export function ConversationList({
                 unreadCount: conv.unreadCount,
                 labels: conv.labels,
                 slaBreachedAt: conv.slaBreachedAt,
+                departmentName: conv.departmentName,
               }}
               isActive={conv.id === activeConversationId}
               onClick={() => onSelect?.(conv.id)}

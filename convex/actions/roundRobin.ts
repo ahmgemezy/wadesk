@@ -19,24 +19,43 @@ export const assignRoundRobin = internalAction({
 
     if (!channel || channel.assignmentMode !== "round_robin") return;
 
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: args.tenantId,
-      limit: 100,
-    });
+    const channelMembers: { userId: string; userName: string }[] =
+      await ctx.runQuery(internal.departmentMembers.getMembersForChannel, {
+        channelId: args.channelId,
+      });
 
-    const activeMembers = memberships.data
-      .filter((m) => m.role !== undefined)
-      .sort((a, b) =>
-        (a.publicUserData?.userId ?? "").localeCompare(b.publicUserData?.userId ?? ""),
-      );
+    const agentIds = channelMembers.map((m) => m.userId);
 
-    if (activeMembers.length === 0) return;
+    if (agentIds.length === 0) {
+      const client = await clerkClient();
+      const memberships = await client.organizations.getOrganizationMembershipList({
+        organizationId: args.tenantId,
+        limit: 100,
+      });
+      const activeMembers = memberships.data
+        .filter((m) => m.role !== undefined)
+        .sort((a, b) =>
+          (a.publicUserData?.userId ?? "").localeCompare(b.publicUserData?.userId ?? ""),
+        );
 
-    const idx = channel.roundRobinIndex % activeMembers.length;
-    const assignedAgentId = activeMembers[idx].publicUserData?.userId;
+      if (activeMembers.length === 0) return;
 
-    if (assignedAgentId) {
+      const idx = channel.roundRobinIndex % activeMembers.length;
+      const assignedAgentId = activeMembers[idx].publicUserData?.userId;
+
+      if (assignedAgentId) {
+        await ctx.runMutation(internal.conversations.assignInternal, {
+          conversationId: args.conversationId,
+          agentId: assignedAgentId,
+          tenantId: args.tenantId,
+          assignmentType: "round_robin",
+        });
+      }
+    } else {
+      const sortedIds = [...agentIds].sort();
+      const idx = channel.roundRobinIndex % sortedIds.length;
+      const assignedAgentId = sortedIds[idx];
+
       await ctx.runMutation(internal.conversations.assignInternal, {
         conversationId: args.conversationId,
         agentId: assignedAgentId,

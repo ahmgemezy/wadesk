@@ -36,29 +36,27 @@ interface OrgMember {
 type DeptRole = "org:supervisor" | "org:agent";
 
 interface Props {
-  channelId: Id<"channels">;
+  departmentId: Id<"departments">;
 }
 
-export function DepartmentMembers({ channelId }: Props) {
+export function DepartmentMembers({ departmentId }: Props) {
   const t = useT();
   const { membership } = useOrganization();
   const { user } = useUser();
   const orgRole = ((membership as unknown) as Record<string, unknown>)?.role as string | undefined;
   const isAdmin = orgRole === "org:admin" || orgRole === "admin";
-  const isSupervisor = orgRole === "org:supervisor";
   const currentUserId = user?.id;
 
-  const members = useQuery(api.channelMembers.listForChannel, { channelId });
-  const isCallerMember = useQuery(api.channelMembers.isCallerMember, { channelId });
-  const addMember = useMutation(api.channelMembers.addMember);
-  const removeMember = useMutation(api.channelMembers.removeMember);
+  const members = useQuery(api.departmentMembers.listForDepartment, { departmentId });
+  const addMember = useMutation(api.departmentMembers.addMember);
+  const removeMember = useMutation(api.departmentMembers.removeMember);
   const listOrgMembers = useAction(api.orgMembers.list);
 
   const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
   const [addOpen, setAddOpen] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
 
-  const canManage = isAdmin || (isSupervisor && isCallerMember === true);
+  const canManage = isAdmin;
 
   const fetchOrgMembers = useCallback(async () => {
     try {
@@ -76,7 +74,7 @@ export function DepartmentMembers({ channelId }: Props) {
     }
   }, [canManage, addOpen, fetchOrgMembers]);
 
-  if (members === undefined || isCallerMember === undefined) {
+  if (members === undefined) {
     return (
       <div className="space-y-2">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -92,7 +90,7 @@ export function DepartmentMembers({ channelId }: Props) {
     if (memberUserIds.has(m.userId)) return false;
     if (m.role === "org:admin") return false;
     if (m.status !== "active") return false;
-    if (isSupervisor && m.role !== "org:agent") return false;
+    if (!isAdmin && m.role !== "org:agent") return false;
     return true;
   });
 
@@ -103,7 +101,7 @@ export function DepartmentMembers({ channelId }: Props) {
     const deptRole = orgMember.role as DeptRole;
     try {
       await addMember({
-        channelId,
+        departmentId,
         userId: orgMember.userId,
         userName: orgMember.name ?? orgMember.email,
         userEmail: orgMember.email,
@@ -124,7 +122,7 @@ export function DepartmentMembers({ channelId }: Props) {
   const handleRemove = async (userId: string) => {
     setRemoving(userId);
     try {
-      await removeMember({ channelId, userId });
+      await removeMember({ departmentId, userId });
       toast.success(t("Member removed", "تم إزالة العضو"));
     } catch {
       toast.error(t("Failed to remove member", "فشل إزالة العضو"));
@@ -251,8 +249,8 @@ export function DepartmentMembers({ channelId }: Props) {
 interface MemberRowProps {
   member: {
     userId: string;
-    userName: string;
-    userEmail: string;
+    userName?: string;
+    userEmail?: string;
     userImageUrl?: string;
     role: "org:supervisor" | "org:agent";
   };
@@ -264,27 +262,30 @@ interface MemberRowProps {
 }
 
 function MemberRow({ member, canRemove, isRemoving, isSelf, onRemove, t }: MemberRowProps) {
+  const displayName = member.userName ?? member.userEmail ?? member.userId;
   return (
     <div className="flex items-center gap-3 rounded-lg border px-3 py-2">
       {member.userImageUrl ? (
         <img src={member.userImageUrl} alt="" className="size-8 rounded-full shrink-0" />
       ) : (
         <div className="size-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
-          {member.userName.charAt(0).toUpperCase()}
+          {displayName.charAt(0).toUpperCase()}
         </div>
       )}
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">
-          {member.userName}
+          {displayName}
           {isSelf && (
             <span className="ms-1.5 text-xs text-muted-foreground">
               ({t("you", "أنت")})
             </span>
           )}
         </div>
-        <div className="text-xs text-muted-foreground truncate" dir="ltr">
-          {member.userEmail}
-        </div>
+        {member.userEmail && (
+          <div className="text-xs text-muted-foreground truncate" dir="ltr">
+            {member.userEmail}
+          </div>
+        )}
       </div>
       <Badge variant={member.role === "org:supervisor" ? "secondary" : "outline"} className="shrink-0 gap-1">
         {member.role === "org:supervisor" ? (

@@ -200,7 +200,7 @@ export const create = mutation({
       throw new ConvexError("DUPLICATE_PHONE_NUMBER");
     }
 
-    return ctx.db.insert("channels", {
+    const channelId = await ctx.db.insert("channels", {
       tenantId,
       displayName: args.displayName.trim(),
       phoneNumberId: args.phoneNumberId,
@@ -212,6 +212,16 @@ export const create = mutation({
       connectedAt: Date.now(),
       createdAt: Date.now(),
     });
+
+    const identity = await ctx.auth.getUserIdentity();
+    await ctx.runMutation(internal.departments.createDefaultDepartment, {
+      tenantId,
+      channelId,
+      name: "General",
+      createdBy: identity?.subject ?? "system",
+    });
+
+    return channelId;
   },
 });
 
@@ -408,8 +418,7 @@ export const upsertChannel = internalMutation({
       return existing._id;
     }
 
-    // New channel
-    return ctx.db.insert("channels", {
+    const channelId = await ctx.db.insert("channels", {
       tenantId: args.tenantId,
       phoneNumberId: args.phoneNumberId,
       displayPhone: args.displayPhone,
@@ -424,6 +433,15 @@ export const upsertChannel = internalMutation({
       connectedAt: args.status === "active" ? Date.now() : undefined,
       createdAt: Date.now(),
     });
+
+    await ctx.runMutation(internal.departments.createDefaultDepartment, {
+      tenantId: args.tenantId,
+      channelId,
+      name: "General",
+      createdBy: args.connectedByUserId,
+    });
+
+    return channelId;
   },
 });
 

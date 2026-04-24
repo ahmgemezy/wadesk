@@ -12,13 +12,10 @@ import { MailOpen, MailCheck, AlertTriangle } from "lucide-react";
 
 interface ConversationItem {
   _id: string;
-  // Contact info — populated when available (real data or mock)
   contactName?: string;
   contactPhone?: string;
   contactAvatarInitials?: string;
-  // Assigned agent
   assignedAgentName?: string;
-  // Conversation meta
   lastMessagePreview: string;
   lastMessageAt: number;
   status: string;
@@ -26,6 +23,7 @@ interface ConversationItem {
   assignedAgentId?: string;
   labels?: string[];
   slaBreachedAt?: number;
+  departmentName?: string;
 }
 
 interface ConversationListItemProps {
@@ -179,7 +177,7 @@ export function ConversationListItem({
             </div>
           )}
 
-          {/* Row 4: status + assigned agent */}
+          {/* Row 4: status + department + assigned agent */}
           <div className="flex items-center gap-2 mt-1">
             <span
               className={cn(
@@ -189,6 +187,11 @@ export function ConversationListItem({
             >
               {statusLabel}
             </span>
+            {conversation.departmentName && (
+              <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 truncate max-w-[80px]">
+                {conversation.departmentName}
+              </span>
+            )}
             {conversation.assignedAgentName && (
               <span className="text-[10px] text-muted-foreground truncate">
                 {conversation.assignedAgentName}

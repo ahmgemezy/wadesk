@@ -25,6 +25,8 @@ export const listConversations = query({
       v.literal("retained"),
       v.literal("churned"),
     )),
+    departmentId: v.optional(v.id("departments")),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -33,30 +35,33 @@ export const listConversations = query({
       orgRole === "admin" ||
       orgRole === "org:supervisor";
 
-    // Fetch all conversations for tenant ordered by lastMessageAt desc
     const all = await ctx.db
       .query("conversations")
       .withIndex("by_last_message", (q) => q.eq("tenantId", tenantId))
       .order("desc")
       .collect();
 
-    // Filter by assignment
     let filtered = all;
     if (args.filter === "mine") {
       filtered = all.filter((c) => c.assignedAgentId === callerId);
     } else if (args.filter === "unassigned") {
       filtered = all.filter((c) => !c.assignedAgentId);
     } else if (!isAdminOrSupervisor) {
-      // "all" for agents: only their own conversations + unassigned queue
       filtered = all.filter(
         (c) => c.assignedAgentId === callerId || !c.assignedAgentId,
       );
     }
 
-    // Limit to 50 (pagination in a later task)
-    const page = filtered.slice(0, 200); // fetch more to allow for stage filtering
+    if (args.channelId) {
+      filtered = filtered.filter((c) => c.channelId === args.channelId);
+    }
 
-    // Join contacts for display info
+    if (args.departmentId) {
+      filtered = filtered.filter((c) => c.departmentId === args.departmentId);
+    }
+
+    const page = filtered.slice(0, 200);
+
     const rawResult = await Promise.all(
       page.map(async (conv) => {
         const contact = await ctx.db.get(conv.contactId);
@@ -68,6 +73,13 @@ export const listConversations = query({
           .slice(0, 2)
           .join("")
           .toUpperCase() || "؟";
+
+        let departmentName: string | undefined;
+        if (conv.departmentId) {
+          const dept = await ctx.db.get(conv.departmentId);
+          departmentName = dept?.name;
+        }
+
         return {
           id: conv._id as string,
           contactId: conv.contactId as string,
@@ -82,11 +94,13 @@ export const listConversations = query({
           lastMessagePreview: conv.lastMessagePreview,
           lastMessageAt: conv.lastMessageAt,
           unreadCount: conv.unreadCount,
+          channelId: conv.channelId as string,
+          departmentId: conv.departmentId ? (conv.departmentId as string) : undefined,
+          departmentName,
         };
       }),
     );
 
-    // Apply stage filter (after join, before cap)
     const stageFiltered =
       args.contactStage && args.contactStage !== "all"
         ? rawResult.filter((r) => r.contactStage === args.contactStage)
@@ -366,6 +380,27 @@ export const seed = mutation({
 
     const channelId = channel._id as Id<"channels">;
 
+    let departmentId: Id<"departments"> | undefined;
+    const existingDept = await ctx.db
+      .query("departments")
+      .withIndex("by_channel_default", (q) =>
+        q.eq("channelId", channelId).eq("isDefault", true)
+      )
+      .first();
+    if (existingDept) {
+      departmentId = existingDept._id;
+    } else {
+      departmentId = await ctx.db.insert("departments", {
+        tenantId,
+        channelId,
+        name: "General",
+        isDefault: true,
+        isArchived: false,
+        createdBy: "seed",
+        createdAt: Date.now(),
+      });
+    }
+
     const seedContacts = [
       { phone: "+201012345678", displayName: "أحمد محمد", customName: "Ahmed Mohamed" },
       { phone: "+201098765432", displayName: "فاطمة علي", customName: "Fatma Ali" },
@@ -441,6 +476,8 @@ export const seed = mutation({
         lastMessagePreview: previews[i],
         unreadCount: i % 3 === 0 ? 2 : 0,
         createdAt: now - 1000 * 60 * 60,
+        departmentId,
+        departmentAssignedAt: departmentId ? now - 1000 * 60 * 60 : undefined,
       });
 
       const msgBase = now - 1000 * 60 * 5;
