@@ -24,8 +24,10 @@ export const listForTransfer = query({
   handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
     const channel = await ctx.db.get(args.channelId);
+    // Defensive: if channel doesn't exist or belongs to wrong tenant, return empty array
+    // This handles orphaned conversations with invalid channelIds gracefully
     if (!channel || channel.tenantId !== tenantId) {
-      throw new ConvexError("NOT_FOUND");
+      return [];
     }
     const all = await ctx.db
       .query("departments")

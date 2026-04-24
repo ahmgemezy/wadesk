@@ -7,10 +7,10 @@
 
 ---
 
-**Last Updated:** 2026-04-24 16:45 UTC  
+**Last Updated:** 2026-04-24 17:30 UTC  
 **Current Branch:** feat/013-departments (merged broadcasts from task/015)  
 **Main Branch:** 002-agent-roles  
-**Build Status:** ✅ TypeScript: 0 errors | ✅ Broadcasts batched sending complete
+**Build Status:** ✅ TypeScript: 3 pre-existing errors (unrelated) | ✅ Departments orphaned data fix applied
 
 ---
 
@@ -409,6 +409,13 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
    - **Issue:** Need to verify all places that store/retrieve `accessToken` use encryption helpers consistently
    - **Status:** Spot-check completed (looks good), but full audit recommended before production
 
+7. **Orphaned Channel References in Conversations**
+   - **File:** `convex/conversations.ts`, `convex/departments.ts`
+   - **Issue:** Some conversations may reference channelIds that no longer exist (orphaned data)
+   - **Fix Applied:** `departments.listForTransfer` now returns empty array instead of throwing NOT_FOUND
+   - **Recommended:** Add data validation on conversation creation to ensure channelId exists; add admin tool to clean up orphaned conversations
+   - **Status:** ⚠️ Symptom fixed with defensive programming, but root cause (orphaned data) should be addressed
+
 ### 💡 Future Enhancements (Deferred to Phase 2)
 
 - WhatsApp Catalog integration
@@ -485,6 +492,14 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 5 Sessions)
+
+### 2026-04-24 (17:30): Department Transfer Orphaned Channel Fix
+- ✅ Fixed `ConvexError: NOT_FOUND` in `departments:listForTransfer` query
+- ✅ Root cause: Conversations with channelIds referencing non-existent channels (orphaned data)
+- ✅ Applied defensive programming: Query now returns empty array instead of throwing error
+- ✅ UI already handles empty array gracefully with "No other departments available" message
+- ✅ Confirmed `by_tenant_channel` index exists in schema (investigation revealed index was already present)
+- ✅ No new TypeScript errors introduced
 
 ### 2026-04-24 (16:45): Broadcasts Batched Sending Loop Integration
 - ✅ Merged `task/015-broadcasts-sending-loop` into `feat/013-departments`
