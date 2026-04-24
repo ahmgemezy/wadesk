@@ -199,21 +199,32 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### 011 — Webhook Receiver
-- **Status:** Done
+- **Status:** Done + Extended (2026-04-25)
 - **What was built:** Full Meta WhatsApp Cloud API webhook receiver — inbound messages appear in Inbox in real-time
 - **New files:**
   - `app/api/webhook/whatsapp/route.ts` — HMAC verification, fires to Convex
-  - `convex/http.ts` — shared-secret + HMAC dual auth, all content types
+  - `convex/http.ts` — shared-secret + HMAC dual auth, all content types (`/meta-webhook`)
 - **Supported inbound types:** text · image · audio · document · video · sticker · location
 - **Key decisions:**
   - Dedup by `metaMessageId` — Meta sends duplicates, skipped silently
   - Resolved conversations auto-reopen to `"open"` when customer messages again
+- **Extension (2026-04-25) — structured `/webhooks/meta` endpoint:**
+  - `convex/webhooks/verify.ts` — timing-safe HMAC-SHA256 using Web Crypto API
+  - `convex/webhooks/processors/messages.ts` — modular inbound message processor
+  - `convex/webhooks/processors/statuses.ts` — outbound status update processor
+  - `convex/webhooks/processors/templates.ts` — template status stub (logs to webhook_events)
+  - `convex/webhooks/meta.ts` — new HTTP action at `/webhooks/meta`, routes by wabaId
+  - `convex/webhookEvents.ts` — `insert` internalMutation for debug logging
+  - Schema additions: `webhook_events` table, `channels.by_waba_id` index, `channels.getByWabaId` query
+  - `/meta-webhook` legacy endpoint preserved for backward compat
 - **Env vars required:**
   ```
   CONVEX_SITE_URL=
   WHATSAPP_WEBHOOK_VERIFY_TOKEN=
+  META_WEBHOOK_VERIFY_TOKEN=
   WHATSAPP_WEBHOOK_SECRET=
   WHATSAPP_APP_SECRET=
+  META_APP_SECRET=
   WHATSAPP_API_TOKEN=
   WHATSAPP_API_VERSION=v19.0
   ```

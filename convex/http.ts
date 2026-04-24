@@ -3,6 +3,7 @@ import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { paddleWebhook } from "./billing";
+import { metaWebhookV2 } from "./webhooks/meta";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -378,6 +379,9 @@ async function verifyHmac(
 const http = httpRouter();
 http.route({ path: "/meta-webhook", method: "GET", handler: metaWebhook });
 http.route({ path: "/meta-webhook", method: "POST", handler: metaWebhook });
+// New structured webhook endpoint — routes by wabaId, modular processor files
+http.route({ path: "/webhooks/meta", method: "GET", handler: metaWebhookV2 });
+http.route({ path: "/webhooks/meta", method: "POST", handler: metaWebhookV2 });
 http.route({ path: "/paddle-webhook", method: "POST", handler: paddleWebhook });
 
 export default http;

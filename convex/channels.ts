@@ -37,6 +37,16 @@ export const listByPhoneId = internalQuery({
   },
 });
 
+export const getByWabaId = internalQuery({
+  args: { wabaId: v.string() },
+  handler: async (ctx, args) => {
+    return ctx.db
+      .query("channels")
+      .withIndex("by_waba_id", (q) => q.eq("wabaId", args.wabaId))
+      .first();
+  },
+});
+
 export const listByTenantId = internalQuery({
   args: { tenantId: v.string() },
   handler: async (ctx, args) => {

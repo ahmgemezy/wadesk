@@ -49,6 +49,7 @@ export default defineSchema({
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phoneNumberId"])
     .index("by_phone_number_id", ["phoneNumberId"])
+    .index("by_waba_id", ["wabaId"])
     .index("by_tenant_status", ["tenantId", "status"])
     .index("by_sla_configured", ["slaEnabled"]),
 
@@ -495,4 +496,16 @@ export default defineSchema({
     .index("by_tenant", ["tenantId"])
     .index("by_department_user", ["departmentId", "userId"])
     .index("by_tenant_user", ["tenantId", "userId"]),
+
+  webhook_events: defineTable({
+    tenantId: v.optional(v.string()),
+    wabaId: v.string(),
+    eventType: v.string(),
+    payload: v.any(),
+    processedAt: v.optional(v.number()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_waba_id", ["wabaId"])
+    .index("by_tenant", ["tenantId"]),
 });

@@ -14,14 +14,13 @@ import { ClientNotificationBell } from "@/components/shell/client-notification-b
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
 import { PaddleProvider } from "@/components/paddle-provider";
+import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 
 export const dynamic = "force-dynamic";
 
-function detectLocale(headersList: Headers, cookieLocale: string | undefined): "ar" | "en" {
+function detectLocale(cookieLocale: string | undefined): "ar" | "en" {
   if (cookieLocale === "ar" || cookieLocale === "en") return cookieLocale;
-  const lang = headersList.get("accept-language") ?? "";
-  if (lang.includes("ar")) return "ar";
-  return "en";
+  return "ar"; // Arabic-first product — default to RTL when no cookie
 }
 
 export default async function DashboardLayout({
@@ -74,12 +73,14 @@ export default async function DashboardLayout({
 
   const navItems = filterNavItems(role);
 
-  const headersList = await headers();
   const cookieStore = await cookies();
-  const locale = detectLocale(headersList, cookieStore.get("locale")?.value);
+  const locale = detectLocale(cookieStore.get("locale")?.value);
+  const sidebarCookie = cookieStore.get("sidebar_state")?.value;
+  // Default to collapsed when no cookie exists (incognito / first visit)
+  const sidebarOpen = sidebarCookie === "true";
 
   return (
-    <SidebarProvider className="h-svh overflow-hidden">
+    <SidebarProvider defaultOpen={sidebarOpen} className="h-svh overflow-hidden">
       <AppSidebar user={resolvedUser} navItems={navItems} locale={locale} />
       <SidebarInset className="overflow-hidden">
         <header className="flex h-12 shrink-0 items-center gap-2 px-4 border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">

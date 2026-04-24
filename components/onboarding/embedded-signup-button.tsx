@@ -69,12 +69,18 @@ export function EmbeddedSignupButton({
   const appId = process.env.NEXT_PUBLIC_META_APP_ID ?? "";
   const configId = process.env.NEXT_PUBLIC_META_CONFIG_ID ?? "";
 
+  // If FB SDK already loaded from a previous mount, mark ready immediately
+  useEffect(() => {
+    if (window.FB) setSdkReady(true);
+  }, []);
+
   // Listen for postMessage from Meta's popup (WABA + phone number IDs)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (
+        typeof event.data === "object" &&
         event.data?.type === "WA_EMBEDDED_SIGNUP" &&
-        event.data?.event === "FINISH"
+        (event.data?.event === "FINISH" || event.data?.event === "FINISH_AND_CLOSE")
       ) {
         wabaDataRef.current = event.data.data as WabaMessageData;
       }
@@ -83,6 +89,38 @@ export function EmbeddedSignupButton({
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  const processSignup = async (code: string) => {
+    try {
+      // Poll for postMessage data (up to 5s) — Meta sends it just before FB.login callback fires
+      const wabaData = await new Promise<WabaMessageData | null>((resolve) => {
+        if (wabaDataRef.current) { resolve(wabaDataRef.current); return; }
+        const deadline = Date.now() + 5000;
+        const poll = setInterval(() => {
+          if (wabaDataRef.current) { clearInterval(poll); resolve(wabaDataRef.current); }
+          else if (Date.now() >= deadline) { clearInterval(poll); resolve(null); }
+        }, 100);
+      });
+
+      if (!wabaData) {
+        onError(t("No account data received from Meta — please try again", "لم يتم استلام بيانات الحساب من ميتا — حاول مرة تانية"));
+        return;
+      }
+
+      const result = await completeSignup({
+        code,
+        wabaId: wabaData.waba_id,
+        phoneNumberId: wabaData.phone_number_id,
+        displayPhone: wabaData.display_phone_number ?? wabaData.phone_number_id,
+        displayName: "WhatsApp Business",
+      });
+      onSuccess(result.channelId, result.displayPhone);
+    } catch (err) {
+      onError(getErrorMessage(err, t));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClick = () => {
     if (!sdkReady || loading || disabled) return;
 
@@ -90,38 +128,14 @@ export function EmbeddedSignupButton({
     setLoading(true);
 
     window.FB.login(
-      async (response) => {
+      (response) => {
         const code = response.authResponse?.code;
         if (!code) {
           setLoading(false);
           onError(t("Connection cancelled", "تم إلغاء عملية الربط"));
           return;
         }
-
-        // Wait briefly for postMessage to arrive
-        await new Promise((r) => setTimeout(r, 500));
-
-        const wabaData = wabaDataRef.current;
-        if (!wabaData) {
-          setLoading(false);
-          onError(t("No account data received from Meta — please try again", "لم يتم استلام بيانات الحساب من ميتا — حاول مرة تانية"));
-          return;
-        }
-
-        try {
-          const result = await completeSignup({
-            code,
-            wabaId: wabaData.waba_id,
-            phoneNumberId: wabaData.phone_number_id,
-            displayPhone: wabaData.display_phone_number ?? wabaData.phone_number_id,
-            displayName: "WhatsApp Business",
-          });
-          onSuccess(result.channelId, result.displayPhone);
-        } catch (err) {
-          onError(getErrorMessage(err, t));
-        } finally {
-          setLoading(false);
-        }
+        void processSignup(code);
       },
       {
         config_id: configId,

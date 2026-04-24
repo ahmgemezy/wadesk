@@ -22,3 +22,5 @@ coverage/
 tsconfig.tsbuildinfo
 .superpowers/brainstorm/*/state/
 .worktrees/
+
+certificates
