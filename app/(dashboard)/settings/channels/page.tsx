@@ -44,7 +44,7 @@ export default function ChannelsListPage() {
   ).length ?? 0;
   const atLimit = channelLimit !== Infinity && activeCount >= channelLimit;
 
-  const reconnectRequired = channels?.filter((c: ChannelItem) => c.status === "reconnect_required") ?? [];
+  const reconnectRequired = channels?.filter((c: ChannelItem) => c.status === "reconnect_required" || c.status === "disconnected") ?? [];
 
   const handleDisconnect = async (channelId: Id<"channels">, name: string) => {
     if (!confirm(t(`Disconnect "${name}"? No new messages will arrive on this number.`, `قطع اتصال "${name}"؟ لن تصل رسائل جديدة لهذا الرقم.`))) return;
@@ -87,7 +87,7 @@ export default function ChannelsListPage() {
         <Alert className="mb-6 border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800">
           <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
           <AlertDescription className="text-yellow-800 dark:text-yellow-300 font-cairo">
-            {t("One of your numbers needs reconnection — reconnect to resume messages", "انتهت صلاحية اتصال أحد أرقامك — أعد الاتصال لاستئناف الرسائل")}
+            {t("One or more numbers are disconnected — reconnect to resume messages", "رقم واحد أو أكثر غير متصل — أعد الاتصال لاستئناف الرسائل")}
           </AlertDescription>
         </Alert>
       )}
@@ -165,7 +165,7 @@ export default function ChannelsListPage() {
       ) : (
         <div className="space-y-3">
           {channels.map((channel: ChannelItem) => {
-            const needsReconnect = channel.status === "reconnect_required";
+            const needsReconnect = channel.status === "reconnect_required" || channel.status === "disconnected";
             const isReconnecting = reconnectChannelId === channel._id;
 
             return (
@@ -211,7 +211,10 @@ export default function ChannelsListPage() {
                         <EmbeddedSignupButton
                           onSuccess={handleSignupSuccess}
                           onError={handleSignupError}
-                          label={t("Reconnect", "إعادة الاتصال")}
+                          label={channel.status === "disconnected"
+                            ? t("Reactivate", "إعادة التفعيل")
+                            : t("Reconnect", "إعادة الاتصال")
+                          }
                         />
                       </>
                     )}
@@ -221,7 +224,10 @@ export default function ChannelsListPage() {
                         variant="outline"
                         onClick={() => { setReconnectChannelId(channel._id); setSignupError(null); }}
                       >
-                        {t("Reconnect", "إعادة الاتصال")}
+                        {channel.status === "disconnected"
+                          ? t("Reactivate", "إعادة التفعيل")
+                          : t("Reconnect", "إعادة الاتصال")
+                        }
                       </Button>
                     )}
                   </div>

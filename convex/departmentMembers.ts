@@ -199,12 +199,27 @@ export const getMembersForChannel = internalQuery({
       for (const m of members) {
         allMembers.push({
           userId: m.userId,
-          userName: m.userName,
+          userName: m.userName ?? "",
           role: m.role,
           departmentId: m.departmentId,
         });
       }
     }
     return allMembers;
+  },
+});
+
+export const getMembersForDepartment = internalQuery({
+  args: { departmentId: v.id("departments") },
+  handler: async (ctx, args) => {
+    const members = await ctx.db
+      .query("departmentMembers")
+      .withIndex("by_department", (q) => q.eq("departmentId", args.departmentId))
+      .collect();
+
+    return members.map((m) => ({
+      userId: m.userId,
+      userName: m.userName ?? "",
+    }));
   },
 });

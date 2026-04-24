@@ -5,6 +5,7 @@ import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { DepartmentMembers } from "@/components/settings/department-members";
+import { DepartmentAssignmentMode } from "@/components/settings/department-assignment-mode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Check, X, ArrowLeft } from "lucide-react";
@@ -83,7 +84,7 @@ export default function DepartmentDetailPage({
         className="gap-1"
       >
         <ArrowLeft className="size-4" />
-        {t("Back to Number Settings", "العودة لإعدادات الرقم")}
+        {t("Back to Departments", "العودة للإدارات")}
       </Button>
 
       <div className="flex items-center justify-between">
@@ -138,6 +139,13 @@ export default function DepartmentDetailPage({
       {!editing && dept.description && (
         <p className="text-sm text-muted-foreground">{dept.description}</p>
       )}
+
+      <div className="border-t pt-6">
+        <DepartmentAssignmentMode
+          departmentId={departmentId}
+          currentMode={dept.assignmentMode ?? "first_reply"}
+        />
+      </div>
 
       <div className="border-t pt-6">
         <DepartmentMembers departmentId={departmentId} />

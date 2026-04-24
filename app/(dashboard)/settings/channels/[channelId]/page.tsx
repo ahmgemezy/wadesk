@@ -4,7 +4,6 @@ import { useState, use, useEffect } from "react";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { AssignmentModeSelect } from "@/components/settings/assignment-mode-select";
 import { DepartmentList } from "@/components/settings/department-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,9 +100,32 @@ export default function ChannelSettingsPage({
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
-          {t("Number Settings", "إعدادات الرقم")}
-        </h1>
+        <div className="flex items-center gap-2">
+          {editing ? (
+            <>
+              <Input
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                disabled={saving}
+                className="max-w-sm text-2xl font-bold h-auto px-3 py-1"
+                autoFocus
+              />
+              <Button size="icon-sm" onClick={saveName} disabled={saving || !nameValue.trim()}>
+                <Check className="size-4" />
+              </Button>
+              <Button size="icon-sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
+                <X className="size-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-bold">{channel.displayName}</h1>
+              <Button size="icon-sm" variant="ghost" onClick={startEdit}>
+                <Pencil className="size-4" />
+              </Button>
+            </>
+          )}
+        </div>
         <Button
           variant="destructive"
           size="sm"
@@ -113,38 +135,6 @@ export default function ChannelSettingsPage({
           {t("Delete", "حذف")}
         </Button>
       </div>
-
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium">{t("Name", "الاسم")}</h3>
-        {editing ? (
-          <div className="flex items-center gap-2">
-            <Input
-              value={nameValue}
-              onChange={(e) => setNameValue(e.target.value)}
-              disabled={saving}
-              className="max-w-sm"
-            />
-            <Button size="icon-sm" onClick={saveName} disabled={saving || !nameValue.trim()}>
-              <Check className="size-4" />
-            </Button>
-            <Button size="icon-sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
-              <X className="size-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{channel.displayName}</span>
-            <Button size="icon-sm" variant="ghost" onClick={startEdit}>
-              <Pencil className="size-3" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <AssignmentModeSelect
-        channelId={channelId}
-        currentMode={channel.assignmentMode}
-      />
 
       <div className="space-y-2 border-t pt-6">
         <h3 className="text-sm font-medium">{t("SLA Threshold", "حد SLA")}</h3>

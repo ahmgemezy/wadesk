@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCallerIdentity } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
@@ -266,6 +266,13 @@ export const getOrCreate = mutation({
     });
 
     return conversationId;
+  },
+});
+
+export const getInternal = internalQuery({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    return ctx.db.get(args.conversationId);
   },
 });
 

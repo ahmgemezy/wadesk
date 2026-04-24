@@ -9,7 +9,8 @@ import Link from "next/link";
 const SECTION_LABELS: Record<string, { ar: string; en: string }> = {
   settings:       { ar: "الإعدادات",      en: "Settings" },
   team:           { ar: "الفريق",          en: "Team" },
-  channels:       { ar: "الإدارات",        en: "Departments" },
+  channels:       { ar: "القنوات",        en: "Channels" },
+  departments:    { ar: "الإدارات",        en: "Departments" },
   "quick-replies":{ ar: "الردود السريعة",  en: "Quick Replies" },
   billing:        { ar: "الفواتير",         en: "Billing" },
   inbox:          { ar: "الصندوق",          en: "Inbox" },
@@ -36,6 +37,11 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
         const isLast = index === segments.length - 1;
         const prevSegment = index > 0 ? segments[index - 1] : undefined;
         const href = "/" + segments.slice(0, index + 1).join("/");
+
+        // Skip "departments" segment - it will be combined with the department name
+        if (segment === "departments") {
+          return null;
+        }
 
         return (
           <span key={`${segment}-${index}`} className="flex items-center gap-1.5">
@@ -86,6 +92,17 @@ function DynamicSegment({
     isAuthenticated && isContact ? { contactId: segment as Id<"contacts"> } : "skip"
   );
 
+  const isDepartment = prevSegment === "departments";
+  const department = useQuery(
+    api.departments.get,
+    isAuthenticated && isDepartment ? { departmentId: segment as Id<"departments"> } : "skip"
+  );
+
+  // Debug logging
+  if (isChannel && typeof window !== "undefined") {
+    console.log("Breadcrumb channel:", { segment, prevSegment, channel, displayName: channel?.displayName });
+  }
+
   if (isChannel) {
     return <>{channel?.displayName ?? "…"}</>;
   }
@@ -97,6 +114,12 @@ function DynamicSegment({
       contactQuery?.contact?.phone ??
       "…";
     return <>{name}</>;
+  }
+
+  if (isDepartment) {
+    const departmentLabel = locale === "ar" ? "الإدارات" : "Departments";
+    const departmentName = department?.name ?? "…";
+    return <>{departmentLabel} - {departmentName}</>;
   }
 
   const label = SECTION_LABELS[segment];

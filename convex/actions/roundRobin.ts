@@ -9,24 +9,37 @@ export const assignRoundRobin = internalAction({
   args: {
     tenantId: v.string(),
     channelId: v.id("channels"),
+    departmentId: v.optional(v.id("departments")),
     conversationId: v.id("conversations"),
   },
   handler: async (ctx, args) => {
-    const channel = await ctx.runQuery(internal.channels.getById, {
-      channelId: args.channelId,
-      tenantId: args.tenantId,
-    });
-
-    if (!channel || channel.assignmentMode !== "round_robin") return;
-
-    const channelMembers: { userId: string; userName: string }[] =
-      await ctx.runQuery(internal.departmentMembers.getMembersForChannel, {
+    // If no departmentId provided, try to get the default department for the channel
+    let departmentId = args.departmentId;
+    if (!departmentId) {
+      const defaultDept = await ctx.runQuery(internal.departments.getDefaultForChannel, {
         channelId: args.channelId,
       });
+      if (!defaultDept) return; // No department to assign to
+      departmentId = defaultDept._id;
+    }
 
-    const agentIds = channelMembers.map((m) => m.userId);
+    // Get the department to check assignment mode
+    const department = await ctx.runQuery(internal.departments.getInternal, {
+      departmentId,
+    });
+
+    if (!department || department.assignmentMode !== "round_robin") return;
+
+    // Get department members
+    const deptMembers: { userId: string; userName: string }[] =
+      await ctx.runQuery(internal.departmentMembers.getMembersForDepartment, {
+        departmentId,
+      });
+
+    const agentIds = deptMembers.map((m) => m.userId);
 
     if (agentIds.length === 0) {
+      // Fallback: use all org members
       const client = await clerkClient();
       const memberships = await client.organizations.getOrganizationMembershipList({
         organizationId: args.tenantId,
@@ -40,7 +53,7 @@ export const assignRoundRobin = internalAction({
 
       if (activeMembers.length === 0) return;
 
-      const idx = channel.roundRobinIndex % activeMembers.length;
+      const idx = (department.roundRobinIndex ?? 0) % activeMembers.length;
       const assignedAgentId = activeMembers[idx].publicUserData?.userId;
 
       if (assignedAgentId) {
@@ -52,8 +65,9 @@ export const assignRoundRobin = internalAction({
         });
       }
     } else {
+      // Assign to next department member in rotation
       const sortedIds = [...agentIds].sort();
-      const idx = channel.roundRobinIndex % sortedIds.length;
+      const idx = (department.roundRobinIndex ?? 0) % sortedIds.length;
       const assignedAgentId = sortedIds[idx];
 
       await ctx.runMutation(internal.conversations.assignInternal, {
@@ -64,8 +78,9 @@ export const assignRoundRobin = internalAction({
       });
     }
 
-    await ctx.runMutation(internal.channels.incrementRoundRobinIndex, {
-      channelId: args.channelId,
+    // Increment the department's round-robin index
+    await ctx.runMutation(internal.departments.incrementRoundRobinIndex, {
+      departmentId,
       tenantId: args.tenantId,
     });
   },

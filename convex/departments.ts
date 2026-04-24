@@ -87,6 +87,8 @@ export const create = mutation({
       color: args.color,
       createdBy: callerId,
       createdAt: Date.now(),
+      assignmentMode: "first_reply",
+      roundRobinIndex: 0,
     });
   },
 });
@@ -189,6 +191,13 @@ export const getDefaultForChannel = internalQuery({
   },
 });
 
+export const getInternal = internalQuery({
+  args: { departmentId: v.id("departments") },
+  handler: async (ctx, args) => {
+    return ctx.db.get(args.departmentId);
+  },
+});
+
 export const createDefaultDepartment = internalMutation({
   args: {
     tenantId: v.string(),
@@ -213,6 +222,66 @@ export const createDefaultDepartment = internalMutation({
       isArchived: false,
       createdBy: args.createdBy,
       createdAt: Date.now(),
+      assignmentMode: "first_reply",
+      roundRobinIndex: 0,
+    });
+  },
+});
+
+export const setAssignmentMode = mutation({
+  args: {
+    departmentId: v.id("departments"),
+    mode: v.union(
+      v.literal("first_reply"),
+      v.literal("manual"),
+      v.literal("round_robin"),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as OrgRole);
+
+    const dept = await ctx.db.get(args.departmentId);
+    if (!dept || dept.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    if (args.mode === "round_robin") {
+      // Check plan limits
+      const tenantDoc = await ctx.db
+        .query("tenants")
+        .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
+        .first();
+
+      if (!tenantDoc) {
+        throw new ConvexError("TENANT_NOT_FOUND");
+      }
+
+      const plan = tenantDoc.plan;
+      if (plan === "free" || plan === "starter") {
+        throw new ConvexError({ code: "PLAN_REQUIRED", requiredPlan: "growth" });
+      }
+    }
+
+    await ctx.db.patch(args.departmentId, {
+      assignmentMode: args.mode,
+      roundRobinIndex: args.mode === "round_robin" ? (dept.roundRobinIndex ?? 0) : undefined,
+    });
+  },
+});
+
+export const incrementRoundRobinIndex = internalMutation({
+  args: {
+    departmentId: v.id("departments"),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const dept = await ctx.db.get(args.departmentId);
+    if (!dept || dept.tenantId !== args.tenantId) return;
+
+    const currentIndex = dept.roundRobinIndex ?? 0;
+    await ctx.db.patch(args.departmentId, {
+      roundRobinIndex: currentIndex + 1,
     });
   },
 });

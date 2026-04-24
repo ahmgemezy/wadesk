@@ -282,12 +282,26 @@ export const metaWebhook = httpAction(async (ctx, request) => {
               isNewConversation: result.isNewConversation,
             });
 
-            if (channel.assignmentMode === "round_robin" && result.isNewConversation) {
-              await ctx.runAction(internal.actions.roundRobin.assignRoundRobin, {
-                tenantId: channel.tenantId,
-                channelId: channel._id,
+            if (result.isNewConversation) {
+              // Get the conversation to find its department
+              const conversation = await ctx.runQuery(internal.conversations.getInternal, {
                 conversationId: result.conversationId,
               });
+
+              if (conversation?.departmentId) {
+                const department = await ctx.runQuery(internal.departments.getInternal, {
+                  departmentId: conversation.departmentId,
+                });
+
+                if (department?.assignmentMode === "round_robin") {
+                  await ctx.runAction(internal.actions.roundRobin.assignRoundRobin, {
+                    tenantId: channel.tenantId,
+                    channelId: channel._id,
+                    departmentId: conversation.departmentId,
+                    conversationId: result.conversationId,
+                  });
+                }
+              }
             }
 
             await ctx.runMutation(internal.automations.evaluateAndFireAutomations, {

@@ -67,8 +67,8 @@ export const NAV_ITEMS: NavItem[] = [
       },
       {
         href: "/settings/channels",
-        labelAr: "الإدارات",
-        labelEn: "Departments",
+        labelAr: "القنوات",
+        labelEn: "Channels",
         icon: "Radio",
         minRole: "admin",
       },

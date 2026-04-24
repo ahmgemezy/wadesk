@@ -467,6 +467,12 @@ export default defineSchema({
     isDefault: v.optional(v.boolean()),
     isArchived: v.optional(v.boolean()),
     updatedAt: v.optional(v.number()),
+    assignmentMode: v.optional(v.union(
+      v.literal("first_reply"),
+      v.literal("manual"),
+      v.literal("round_robin"),
+    )),
+    roundRobinIndex: v.optional(v.number()),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_channel", ["channelId"])
