@@ -19,6 +19,14 @@ type MetaMessage = {
   sticker?: { id: string };
   location?: { latitude: number; longitude: number; name?: string };
   reaction?: { message_id: string; emoji: string };
+  // Interactive replies (button_reply / list_reply) — v16.0+
+  interactive?: {
+    type: "button_reply" | "list_reply";
+    button_reply?: { id: string; title: string };
+    list_reply?: { id: string; title: string; description?: string };
+  };
+  // System messages (e.g. user changed phone number) — v16.0+
+  system?: { body: string; type: string; wa_id?: string };
 };
 
 type MetaStatus = {
@@ -26,7 +34,17 @@ type MetaStatus = {
   status: "sent" | "delivered" | "read" | "failed";
   timestamp: string;
   recipient_id: string;
-  errors?: { code: number; title: string }[];
+  // v16.0+: errors include message + error_data.details in addition to code/title
+  errors?: { code: number; title: string; message?: string; error_data?: { details: string } }[];
+  // v23.0 and below: conversation object present; removed in v24.0+
+  conversation?: { id: string; expiration_timestamp?: string; origin?: { type: string } };
+  // v24.0+: pricing.type replaces the deprecated billable field
+  pricing?: {
+    billable?: boolean;
+    pricing_model?: string;
+    type?: "regular" | "free_group_customer_service";
+    category?: "group_marketing" | "group_utility" | "group_service";
+  };
 };
 
 type ContentType =
@@ -76,6 +94,18 @@ function parseMessageContent(msg: MetaMessage): {
       const label = loc?.name ?? `${loc?.latitude ?? ""},${loc?.longitude ?? ""}`;
       return { content: `[Location: ${label}]`, contentType: "location" };
     }
+    case "interactive": {
+      const interactive = msg.interactive;
+      if (interactive?.type === "button_reply") {
+        return { content: interactive.button_reply?.title ?? "[Button Reply]", contentType: "text" };
+      }
+      if (interactive?.type === "list_reply") {
+        return { content: interactive.list_reply?.title ?? "[List Reply]", contentType: "text" };
+      }
+      return { content: "[Interactive]", contentType: "unsupported" };
+    }
+    case "system":
+      return { content: msg.system?.body ?? "[System Message]", contentType: "unsupported" };
     default:
       return { content: "[Unsupported message type]", contentType: "unsupported" };
   }
