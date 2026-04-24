@@ -74,11 +74,21 @@ export const create = mutation({
 export const send = action({
   args: { broadcastId: v.id("broadcasts") },
   handler: async (ctx, args) => {
+    // Auth + role check
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError({ message: "UNAUTHORIZED" });
     if (!identity.orgId) throw new ConvexError({ message: "NO_ORG" });
     const tenantId = identity.orgId as string;
 
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+
+    // Plan check
+    const tenant = await ctx.runQuery(internal.broadcasts.getTenantInternal, { tenantId });
+    const plan = (tenant?.plan ?? "free") as import("./lib/planLimits").Plan;
+    assertBroadcastsAllowed(plan);
+
+    // Fetch broadcast
     const broadcast: Doc<"broadcasts"> | null = await ctx.runQuery(internal.broadcasts.getByIdInternal, {
       broadcastId: args.broadcastId,
       tenantId,
@@ -88,81 +98,47 @@ export const send = action({
       throw new ConvexError({ message: "Broadcast already sent or in progress" });
     }
 
-    const channel: Doc<"channels"> | null = await ctx.runQuery(internal.broadcasts.getChannelInternal, {
-      channelId: broadcast.channelId,
-      tenantId,
-    });
-    if (!channel) throw new ConvexError({ message: "Channel not found" });
-
+    // Fetch list and contacts to build snapshot
     const list: Doc<"contactLists"> | null = await ctx.runQuery(internal.broadcasts.getListInternal, {
       listId: broadcast.listId,
       tenantId,
     });
     if (!list) throw new ConvexError({ message: "List not found" });
 
-    const allContacts: Doc<"contacts">[] = await ctx.runQuery(
+    const contacts: Doc<"contacts">[] = await ctx.runQuery(
       internal.broadcasts.getContactsForList,
       { tenantId, filters: list.filters },
     );
 
-    const recipientSnapshot = allContacts.map((c) => c._id);
+    const recipientSnapshot = contacts.map((c) => ({
+      contactId: c._id,
+      phone: c.phone,
+      name: c.customName ?? c.displayName,
+    }));
 
+    if (recipientSnapshot.length === 0) {
+      throw new ConvexError({ message: "No contacts match the selected list filters." });
+    }
+
+    // Set status to "sending", reset counters and retryMap in one mutation
     await ctx.runMutation(internal.broadcasts.updateStatus, {
       broadcastId: args.broadcastId,
       status: "sending",
       recipientSnapshot,
       recipientCount: recipientSnapshot.length,
+      sentCount: 0,
+      failedCount: 0,
+      retryMap: {},
     });
 
-    const token = process.env.META_SYSTEM_USER_TOKEN;
-    if (!token) throw new ConvexError({ message: "META_SYSTEM_USER_TOKEN not set" });
-
-    let sentCount = 0;
-    let failedCount = 0;
-
-    for (const contact of allContacts) {
-      try {
-        const res = await fetch(
-          `${META_BASE}/${channel.phoneNumberId}/messages`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              messaging_product: "whatsapp",
-              to: contact.phone,
-              type: "template",
-              template: {
-                name: broadcast.templateName,
-                language: { code: broadcast.templateLanguage },
-              },
-            }),
-          },
-        );
-
-        if (res.ok) {
-          sentCount++;
-        } else {
-          failedCount++;
-        }
-      } catch {
-        failedCount++;
-      }
-    }
-
-    await ctx.runMutation(internal.broadcasts.updateStatus, {
+    // Schedule first batch
+    await ctx.scheduler.runAfter(0, internal.actions.processBroadcastBatch.processBroadcastBatch, {
       broadcastId: args.broadcastId,
-      status: failedCount === allContacts.length && allContacts.length > 0
-        ? "failed"
-        : "sent",
-      recipientSnapshot,
-      recipientCount: recipientSnapshot.length,
-      sentCount,
-      failedCount,
-      sentAt: Date.now(),
+      batchIndex: 0,
+      batchSize: 50,
     });
+
+    return { scheduled: true };
   },
 });
 
@@ -285,11 +261,16 @@ export const updateStatus = internalMutation({
       v.literal("sent"),
       v.literal("failed"),
     ),
-    recipientSnapshot: v.array(v.id("contacts")),
+    recipientSnapshot: v.array(v.object({
+      contactId: v.id("contacts"),
+      phone: v.string(),
+      name: v.optional(v.string()),
+    })),
     recipientCount: v.number(),
     sentCount: v.optional(v.number()),
     failedCount: v.optional(v.number()),
     sentAt: v.optional(v.number()),
+    retryMap: v.optional(v.record(v.string(), v.number())),
   },
   handler: async (ctx, args) => {
     const patch: Record<string, unknown> = {
@@ -300,6 +281,63 @@ export const updateStatus = internalMutation({
     if (args.sentCount !== undefined) patch.sentCount = args.sentCount;
     if (args.failedCount !== undefined) patch.failedCount = args.failedCount;
     if (args.sentAt !== undefined) patch.sentAt = args.sentAt;
+    if (args.retryMap !== undefined) patch.retryMap = args.retryMap;
     await ctx.db.patch(args.broadcastId, patch);
+  },
+});
+
+export const getTenantInternal = internalQuery({
+  args: { tenantId: v.string() },
+  handler: async (ctx, args) =>
+    ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first(),
+});
+
+// Intentionally unscoped (no tenantId check) — for use by internal batch processor only.
+// The caller (processBroadcastBatch) is an internalAction and cannot be called by clients.
+export const getInternal = internalQuery({
+  args: { broadcastId: v.id("broadcasts") },
+  handler: async (ctx, args) => ctx.db.get(args.broadcastId),
+});
+
+export const incrementSent = internalMutation({
+  args: { broadcastId: v.id("broadcasts") },
+  handler: async (ctx, args) => {
+    const b = await ctx.db.get(args.broadcastId);
+    if (!b) return;
+    await ctx.db.patch(args.broadcastId, { sentCount: (b.sentCount ?? 0) + 1 });
+  },
+});
+
+export const markFailed = internalMutation({
+  args: { broadcastId: v.id("broadcasts") },
+  handler: async (ctx, args) => {
+    const b = await ctx.db.get(args.broadcastId);
+    if (!b) return;
+    await ctx.db.patch(args.broadcastId, { failedCount: (b.failedCount ?? 0) + 1 });
+  },
+});
+
+export const incrementRetry = internalMutation({
+  args: { broadcastId: v.id("broadcasts"), contactId: v.string() },
+  handler: async (ctx, args) => {
+    const b = await ctx.db.get(args.broadcastId);
+    if (!b) return;
+    const retryMap = { ...(b.retryMap ?? {}) };
+    retryMap[args.contactId] = (retryMap[args.contactId] ?? 0) + 1;
+    await ctx.db.patch(args.broadcastId, { retryMap });
+  },
+});
+
+export const markComplete = internalMutation({
+  args: { broadcastId: v.id("broadcasts") },
+  handler: async (ctx, args) => {
+    const b = await ctx.db.get(args.broadcastId);
+    if (!b) return;
+    if (b.status === "sent" || b.status === "failed") return; // already terminal — idempotent
+    const status = (b.sentCount ?? 0) > 0 ? "sent" : "failed";
+    await ctx.db.patch(args.broadcastId, { status, sentAt: Date.now() });
   },
 });

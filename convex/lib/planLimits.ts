@@ -99,10 +99,10 @@ export function assertListLimitNotReached(
 }
 
 export function assertBroadcastsAllowed(plan: Plan): void {
-  if (plan === "free") {
+  if (plan === "free" || plan === "starter") {
     throw new ConvexError({
       message: "PLAN_LIMIT_REACHED",
-      data: { reason: "Broadcasts are not available on the Free plan. Upgrade to Starter or above." },
+      data: { reason: "Broadcasts are available on Growth and above. Please upgrade your plan." },
     });
   }
 }
