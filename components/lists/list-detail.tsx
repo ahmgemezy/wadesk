@@ -128,7 +128,7 @@ export function ListDetail({ listId, locale }: Props) {
   const countryMax = topCountries[0]?.[1] ?? 1;
 
   const topTags = stats
-    ? Object.entries(stats.tagBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 8)
+    ? [...stats.tagBreakdown].sort((a, b) => b.count - a.count).slice(0, 8).map(({ tag, count }) => [tag, count] as [string, number])
     : [];
 
   const stageEntries = stats

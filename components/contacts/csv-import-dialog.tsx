@@ -136,8 +136,8 @@ export function CsvImportDialog({
          header: true,
          skipEmptyLines: true,
          complete: (results) => {
-           const mapped: ImportRow[] = results.data
-             .map((row: Record<string, unknown>) => ({
+           const mapped: ImportRow[] = (results.data as Record<string, unknown>[])
+             .map((row) => ({
                phone: String(row.phone ?? ""),
                name: row.name ? String(row.name) : undefined,
                tags: row.tags

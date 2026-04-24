@@ -217,7 +217,6 @@ export function MessageBubble({
 
   const actionMenu = (
     <MessageActionMenu
-      messageId={message._id}
       isOutbound={!isInbound}
       canDelete={canDelete}
       onReply={() => onReply(message)}

@@ -178,7 +178,7 @@ export const getStats = query({
 
     const stageBreakdown: Record<string, number> = {};
     const countryBreakdown: Record<string, number> = {};
-    const tagBreakdown: Record<string, number> = {};
+    const tagBreakdownMap: Map<string, number> = new Map();
 
     for (const contact of matching) {
       const stage = contact.stage ?? "lead";
@@ -191,9 +191,11 @@ export const getStats = query({
       }
 
       for (const tag of contact.tags) {
-        tagBreakdown[tag] = (tagBreakdown[tag] ?? 0) + 1;
+        tagBreakdownMap.set(tag, (tagBreakdownMap.get(tag) ?? 0) + 1);
       }
     }
+
+    const tagBreakdown = Array.from(tagBreakdownMap.entries()).map(([tag, count]) => ({ tag, count }));
 
     return {
       total: matching.length,

@@ -31,7 +31,7 @@ export const updatePlan = mutation({
   args: { plan: v.union(v.literal("free"), v.literal("starter"), v.literal("growth"), v.literal("business")) },
   handler: async (ctx, args) => {
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
-    assertAdmin(orgRole);
+    assertAdmin(orgRole as import("./auth").OrgRole);
 
     const tenant = await ctx.db
       .query("tenants")

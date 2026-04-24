@@ -295,7 +295,7 @@ export function ContactSidePanel({
                     <Badge className={`${stageLabel?.color ?? ""} border-0 text-xs`}>
                       {stageLabel?.[locale] ?? stage}
                     </Badge>
-                    <Select value={stage} onValueChange={(v) => void handleStageChange(v)}>
+                    <Select value={stage ?? "lead"} onValueChange={(v) => v && void handleStageChange(v)}>
                       <SelectTrigger className="ms-auto h-7 w-auto text-xs px-2 py-1">
                         <SelectValue />
                       </SelectTrigger>

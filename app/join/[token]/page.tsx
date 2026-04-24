@@ -15,7 +15,7 @@ export default function JoinPage() {
   const { isLoaded, isSignedIn, orgId } = useAuth();
   const token = params.token as string;
 
-  const validateAndJoin = useAction(api.validateInvite.validateAndJoin);
+  const validateAndJoin = useAction(api.actions.validateInvite.validateAndJoin);
 
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);

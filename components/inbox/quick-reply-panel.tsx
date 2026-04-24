@@ -30,7 +30,7 @@ export function QuickReplyPanel({
     _id: string;
     title: string;
     content: string;
-    category: string | undefined;
+    category?: string;
   };
 
   const quickReplies: QuickReply[] | undefined = useQuery(api.quickReplies.list, open ? {} : "skip");

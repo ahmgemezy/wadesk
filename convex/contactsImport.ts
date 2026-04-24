@@ -36,7 +36,7 @@ export const importBatch = action({
     if (!identity.orgId) throw new ConvexError("NO_ORG");
     const orgRole = (identity.orgRole ?? "org:agent") as OrgRole;
     assertAdminOrSupervisor(orgRole);
-    const tenantId = identity.orgId;
+    const tenantId = identity.orgId as string;
 
     if (args.rows.length > MAX_ROWS) {
       throw new ConvexError({ message: "TOO_MANY_ROWS", data: { max: MAX_ROWS } });
@@ -52,7 +52,7 @@ export const importBatch = action({
 
       const result: BatchChunkResult = await ctx.runMutation(
         internal.contactsImportHelpers.importBatchChunk,
-        { tenantId, rows: batch, onDuplicate: args.onDuplicate, startIndex: i },
+        { tenantId, rows: batch, onDuplicate: args.onDuplicate as "skip" | "overwrite", startIndex: i },
       );
       added += result.added;
       skipped += result.skipped;

@@ -86,12 +86,14 @@ export default defineSchema({
     stageUpdatedBy: v.optional(v.string()),
     totalConversations: v.optional(v.number()),
     wabaId: v.optional(v.string()),
+    departmentId: v.optional(v.id("departments")),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phone"])
     .index("by_tenant_archived", ["tenantId", "isArchived"])
     .index("by_tenant_stage", ["tenantId", "stage"])
     .index("by_tenant_assigned", ["tenantId", "assignedAgentId"])
+    .index("by_org_department", ["tenantId", "departmentId"])
     .searchIndex("search_by_name", {
       searchField: "displayName",
       filterFields: ["tenantId"],
@@ -154,6 +156,10 @@ export default defineSchema({
       v.literal("manual"),
       v.literal("unassigned"),
     )),
+    previousAgentId: v.optional(v.string()),
+    departmentId: v.optional(v.id("departments")),
+    departmentAssignedAt: v.optional(v.number()),
+    departmentAssignedBy: v.optional(v.string()),
     status: v.union(
       v.literal("open"),
       v.literal("pending"),
@@ -172,7 +178,8 @@ export default defineSchema({
     .index("by_tenant_agent", ["tenantId", "assignedAgentId"])
     .index("by_tenant_channel", ["tenantId", "channelId"])
     .index("by_last_message", ["tenantId", "lastMessageAt"])
-    .index("by_contact", ["contactId"]),
+    .index("by_contact", ["contactId"])
+    .index("by_tenant_department", ["tenantId", "departmentId"]),
 
   messages: defineTable({
     conversationId: v.id("conversations"),
@@ -440,4 +447,21 @@ export default defineSchema({
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_category", ["tenantId", "category"]),
+
+  departments: defineTable({
+    tenantId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    supervisors: v.optional(v.array(v.string())), // Clerk userIds - optional for backward compatibility
+    createdBy: v.string(),
+    createdAt: v.number(),
+    // Legacy fields from previous implementation
+    nameAr: v.optional(v.string()),
+    color: v.optional(v.string()),
+    slug: v.optional(v.string()),
+    isDefault: v.optional(v.boolean()),
+    isArchived: v.optional(v.boolean()),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_tenant", ["tenantId"]),
 });
