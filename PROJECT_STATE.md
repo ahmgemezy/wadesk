@@ -10,7 +10,7 @@
 **Last Updated:** 2026-04-25 UTC  
 **Current Branch:** feat/013-departments (merged broadcasts from task/015)  
 **Main Branch:** 002-agent-roles  
-**Build Status:** ✅ TypeScript: 3 pre-existing errors (unrelated) | ✅ Departments orphaned data fix applied
+**Build Status:** ✅ TypeScript: 0 errors | ✅ Template Library feature complete
 
 ---
 
@@ -492,6 +492,15 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 5 Sessions)
+
+### 2026-04-25: Template Library Feature
+- ✅ Pre-built template library in Settings → Templates; two tabs (My Templates / Template Library)
+- ✅ ~50 curated templates across 14 categories (8 Meta + 6 Quick-Reply); Arabic + English
+- ✅ Preview sheet with WhatsApp bubble + variable highlighting
+- ✅ Quick-reply templates pre-fill create dialog; Meta templates submit via Convex action to Meta Graph API
+- ✅ Variable auto-conversion {{named}} → {{1}} in `submitToMeta` Convex action
+- ✅ New files: `lib/templateLibrary.ts`, `components/templates/library-template-card.tsx`, `components/templates/library-template-preview.tsx`, `components/templates/meta-submit-form.tsx`, `components/templates/template-library-tab.tsx`, `components/ui/tabs.tsx`
+- ✅ Modified: `components/settings/templates-settings.tsx`, `convex/metaTemplates.ts`
 
 ### 2026-04-25: Delete Conversation (Admin Only)
 - ✅ Added `conversations.remove` mutation — admin-only (uses `assertAdmin`), cascades to `messages` and `conversationMetrics`
