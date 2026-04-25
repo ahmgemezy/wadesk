@@ -377,11 +377,12 @@ export const evaluateAndFireAutomations = internalMutation({
     isNewConversation: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const agentOutbound = await ctx.db
+    const lastOutbound = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) =>
         q.eq("conversationId", args.conversationId),
       )
+      .order("desc")
       .filter((q) =>
         q.and(
           q.eq(q.field("direction"), "outbound"),
@@ -391,11 +392,22 @@ export const evaluateAndFireAutomations = internalMutation({
       .first();
 
     if (
-      agentOutbound &&
-      agentOutbound.authorId != null &&
-      agentOutbound.authorId !== "automation"
+      lastOutbound &&
+      lastOutbound.authorId != null &&
+      lastOutbound.authorId !== "automation"
     ) {
-      return;
+      const lastInbound = await ctx.db
+        .query("messages")
+        .withIndex("by_conversation", (q) =>
+          q.eq("conversationId", args.conversationId),
+        )
+        .order("desc")
+        .filter((q) => q.eq(q.field("direction"), "inbound"))
+        .first();
+
+      if (lastInbound && lastOutbound.createdAt > lastInbound.createdAt) {
+        return;
+      }
     }
 
     const rules = await ctx.db

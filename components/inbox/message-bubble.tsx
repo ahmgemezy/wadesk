@@ -5,6 +5,27 @@ import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIc
 import { useState, useEffect } from "react";
 import { MessageActionMenu } from "./message-action-menu";
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+function linkify(text: string) {
+  const parts = text.split(URL_REGEX);
+  return parts.map((part, i) =>
+    URL_REGEX.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline break-all opacity-80 hover:opacity-100"
+      >
+        {part}
+      </a>
+    ) : (
+      part
+    )
+  );
+}
+
 function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -178,7 +199,7 @@ export function MessageBubble({
           <div className="text-xs font-medium text-[--internal-note-text] mb-1">
             {t("Internal Note", "ملاحظة داخلية")}
           </div>
-          <div className="text-sm whitespace-pre-wrap text-[--internal-note-text]">{message.content}</div>
+          <div className="text-sm whitespace-pre-wrap text-[--internal-note-text]">{linkify(message.content)}</div>
           <div className="text-xs text-muted-foreground mt-1 text-start">{timeStr}</div>
         </div>
       </div>
@@ -393,7 +414,7 @@ export function MessageBubble({
       {actionMenu}
       <div className={bubbleBase}>
         {quotedPreview}
-        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+        <div className="text-sm whitespace-pre-wrap">{linkify(message.content)}</div>
         {timeRow}
         {reactionBadges}
       </div>

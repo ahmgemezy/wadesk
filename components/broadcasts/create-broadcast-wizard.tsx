@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { CheckIcon, MegaphoneIcon, RefreshCwIcon } from "lucide-react";
+import { CheckIcon, MegaphoneIcon, RefreshCwIcon, XIcon } from "lucide-react";
 import { WhatsAppTemplatePreview } from "./whatsapp-template-preview";
 import type { TemplateComponent } from "./whatsapp-template-preview";
 
@@ -39,6 +39,7 @@ const t = {
     warning: "\u26A0\uFE0F هذا القالب غير معتمد من Meta بعد — قد لا يُرسل بنجاح.",
     success: "تم إرسال الحملة بنجاح!",
     nameRequired: "اسم الحملة مطلوب",
+    cancel: "إلغاء",
   },
   en: {
     title: "New Broadcast Campaign",
@@ -65,6 +66,7 @@ const t = {
     warning: "\u26A0\uFE0F This template is not yet approved by Meta — it may not send successfully.",
     success: "Campaign sent successfully!",
     nameRequired: "Campaign name is required",
+    cancel: "Cancel",
   },
 };
 
@@ -178,7 +180,9 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-xl font-semibold mb-6">{tx.title}</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-semibold">{tx.title}</h1>
+      </div>
 
       <div className="flex items-center gap-2 mb-8">
         {steps.map((label, i) => {
@@ -251,7 +255,8 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
               </p>
             )}
           </div>
-          <div className="flex justify-end mt-2">
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => router.push("/broadcasts")}>{tx.cancel}</Button>
             <Button
               onClick={() => setStep(2)}
               disabled={!selectedListId || !name.trim()}
@@ -361,7 +366,10 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
           )}
 
           <div className="flex justify-between mt-2">
-            <Button variant="outline" onClick={() => setStep(1)}>{tx.back}</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setStep(1)}>{tx.back}</Button>
+              <Button variant="outline" onClick={() => router.push("/broadcasts")}>{tx.cancel}</Button>
+            </div>
             <Button
               onClick={() => setStep(3)}
               disabled={!selectedChannelId || !selectedTemplate}
@@ -409,7 +417,10 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
           </div>
 
           <div className="flex justify-between mt-2">
-            <Button variant="outline" onClick={() => setStep(2)}>{tx.back}</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setStep(2)}>{tx.back}</Button>
+              <Button variant="outline" onClick={() => router.push("/broadcasts")}>{tx.cancel}</Button>
+            </div>
             <Button onClick={handleSend} disabled={sending}>
               <MegaphoneIcon className="size-4 me-1" />
               {sending ? tx.sending : tx.send}
