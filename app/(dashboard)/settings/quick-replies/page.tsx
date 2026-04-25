@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -13,13 +13,17 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 
 import { useT } from "@/lib/i18n/context";
-import { Plus, Pencil, Trash2, MessageSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, MessageSquare, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 export default function QuickRepliesPage() {
   const quickReplies = useQuery(api.quickReplies.list, {}) as
     | { _id: string; title: string; content: string; category?: string }[]
+    | undefined;
+  const messageTemplates = useQuery(api.messageTemplates.list, {}) as
+    | { _id: string; title: string; body: string; category?: string; language: string }[]
     | undefined;
   const createReply = useMutation(api.quickReplies.create);
   const removeReply = useMutation(api.quickReplies.remove);
@@ -156,6 +160,46 @@ export default function QuickRepliesPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {messageTemplates && messageTemplates.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="size-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">{t("Message Templates", "قوالب الرسائل")}</h2>
+            </div>
+            <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/settings/templates" />}>
+              {t("Manage Templates", "إدارة القوالب")}
+              <ExternalLink className="ms-2 size-3.5" />
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "Templates from the template library. Edit them in Templates settings.",
+              "قوالب من مكتبة القوالب. عدّلها من إعدادات القوالب."
+            )}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {messageTemplates.map((tpl) => (
+              <Card key={tpl._id} className="relative group overflow-hidden flex flex-col">
+                <CardHeader className="pb-2 pe-16 space-y-0 text-start">
+                  {tpl.category && (
+                    <Badge variant="secondary" className="mb-2 w-fit font-normal text-[10px] uppercase tracking-wider">
+                      {tpl.category}
+                    </Badge>
+                  )}
+                  <CardTitle className="text-base font-semibold leading-tight line-clamp-1">
+                    {tpl.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 text-sm text-muted-foreground whitespace-pre-wrap text-start opacity-90 line-clamp-4">
+                  {tpl.body}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 

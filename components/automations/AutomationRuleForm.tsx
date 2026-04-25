@@ -27,7 +27,12 @@ import { toast } from "sonner";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { interpolateTemplate } from "@/lib/automationHelpers";
 import type { TriggerType } from "@/lib/automationHelpers";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, FileTextIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const TRIGGER_OPTIONS: { value: TriggerType; ar: string; en: string }[] = [
   { value: "keyword", en: "Keyword", ar: "كلمة مفتاحية" },
@@ -81,6 +86,10 @@ export function AutomationRuleForm({
   const updateRule = useMutation(api.automations.updateRule);
   const businessHours = useQuery(
     api.automations.getBusinessHours,
+    open ? {} : "skip"
+  );
+  const messageTemplates = useQuery(
+    api.messageTemplates.list,
     open ? {} : "skip"
   );
 
@@ -346,9 +355,43 @@ export function AutomationRuleForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium font-cairo">
-              {t("Response Text", "نص الرد")}
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium font-cairo">
+                {t("Response Text", "نص الرد")}
+              </label>
+              <Popover>
+                <PopoverTrigger render={<Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground" />}>
+                  <FileTextIcon className="size-3.5" />
+                  {t("Templates", "القوالب")}
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0" align="end">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {!messageTemplates?.length ? (
+                      <p className="text-sm text-muted-foreground p-2 text-center">
+                        {t("No templates", "لا توجد قوالب")}
+                      </p>
+                    ) : (
+                      messageTemplates.map((tpl) => (
+                        <button
+                          key={tpl._id}
+                          className="w-full text-start px-3 py-2 rounded-md hover:bg-muted text-sm"
+                          onClick={() => {
+                            setResponseTemplate(tpl.body);
+                          }}
+                        >
+                          <span className="font-medium">{tpl.title}</span>
+                          {tpl.category && (
+                            <span className="text-xs text-muted-foreground ms-1">
+                              · {tpl.category}
+                            </span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             <Textarea
               ref={textareaRef}
               value={responseTemplate}

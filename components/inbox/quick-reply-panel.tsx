@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+
+type ReplyItem = {
+  _id: string;
+  title: string;
+  content: string;
+  category?: string;
+};
 
 interface QuickReplyPanelProps {
   open: boolean;
@@ -26,30 +33,42 @@ export function QuickReplyPanel({
 }: QuickReplyPanelProps) {
   const t = useT();
   const [search, setSearch] = useState("");
-  type QuickReply = {
-    _id: string;
-    title: string;
-    content: string;
-    category?: string;
-  };
 
-  const quickReplies: QuickReply[] | undefined = useQuery(api.quickReplies.list, open ? {} : "skip");
+  const quickReplies = useQuery(api.quickReplies.list, open ? {} : "skip");
+  const messageTemplates = useQuery(api.messageTemplates.list, open ? {} : "skip");
 
-  const filtered = quickReplies?.filter(
-    (qr: QuickReply) =>
-      qr.title.includes(search) ||
-      qr.content.includes(search) ||
-      (qr.category?.includes(search) ?? false),
+  const allItems: ReplyItem[] | undefined = useMemo(() => {
+    if (!quickReplies || !messageTemplates) return undefined;
+    const fromQR: ReplyItem[] = quickReplies.map((qr) => ({
+      _id: qr._id,
+      title: qr.title,
+      content: qr.content,
+      category: qr.category,
+    }));
+    const fromMT: ReplyItem[] = messageTemplates.map((mt) => ({
+      _id: `mt_${mt._id}`,
+      title: mt.title,
+      content: mt.body,
+      category: mt.category,
+    }));
+    return [...fromQR, ...fromMT];
+  }, [quickReplies, messageTemplates]);
+
+  const filtered = allItems?.filter(
+    (item) =>
+      item.title.toLowerCase().includes(search.toLowerCase()) ||
+      item.content.toLowerCase().includes(search.toLowerCase()) ||
+      (item.category?.toLowerCase().includes(search.toLowerCase()) ?? false),
   );
 
   const grouped = filtered?.reduce(
-    (acc: Record<string, QuickReply[]>, qr: QuickReply) => {
-      const cat = qr.category ?? t("General", "عام");
+    (acc: Record<string, ReplyItem[]>, item: ReplyItem) => {
+      const cat = item.category ?? t("General", "عام");
       if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(qr);
+      acc[cat].push(item);
       return acc;
     },
-    {} as Record<string, QuickReply[]>,
+    {} as Record<string, ReplyItem[]>,
   );
 
   return (
