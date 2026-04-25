@@ -21,4 +21,10 @@ crons.interval(
   internal.sla.checkBreaches,
 );
 
+crons.interval(
+  "sync-pending-broadcast-templates",
+  { minutes: 30 },
+  internal.broadcastTemplates.syncAllPendingInternal,
+);
+
 export default crons;

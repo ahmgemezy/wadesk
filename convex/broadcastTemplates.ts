@@ -185,3 +185,274 @@ export const remove = mutation({
     await ctx.db.delete(args.id);
   },
 });
+
+// ── Internal helpers ──────────────────────────────────────────────────────────
+
+export const getTemplateInternal = internalQuery({
+  args: { id: v.id("broadcastTemplates"), tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const tpl = await ctx.db.get(args.id);
+    if (!tpl || tpl.tenantId !== args.tenantId) return null;
+    return tpl;
+  },
+});
+
+export const getChannelInternal = internalQuery({
+  args: { channelId: v.id("channels"), tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const ch = await ctx.db.get(args.channelId);
+    if (!ch || ch.tenantId !== args.tenantId) return null;
+    return ch;
+  },
+});
+
+export const getTemplateByIdInternal = internalQuery({
+  args: { id: v.id("broadcastTemplates") },
+  handler: async (ctx, args) => ctx.db.get(args.id),
+});
+
+export const patchStatusInternal = internalMutation({
+  args: {
+    id: v.id("broadcastTemplates"),
+    metaStatus: v.union(
+      v.literal("draft"), v.literal("pending"), v.literal("approved"),
+      v.literal("rejected"), v.literal("paused"),
+    ),
+    metaTemplateId: v.optional(v.string()),
+    metaRejectionReason: v.optional(v.string()),
+    metaSubmittedAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const patch: Record<string, unknown> = {
+      metaStatus: args.metaStatus,
+      updatedAt: Date.now(),
+    };
+    if (args.metaTemplateId !== undefined) patch.metaTemplateId = args.metaTemplateId;
+    if (args.metaRejectionReason !== undefined) patch.metaRejectionReason = args.metaRejectionReason;
+    if (args.metaSubmittedAt !== undefined) patch.metaSubmittedAt = args.metaSubmittedAt;
+    await ctx.db.patch(args.id, patch);
+  },
+});
+
+export const listPendingInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return ctx.db
+      .query("broadcastTemplates")
+      .filter((q) => q.eq(q.field("metaStatus"), "pending"))
+      .collect();
+  },
+});
+
+// ── Helper: build Meta API components ─────────────────────────────────────────
+
+function buildMetaComponents(tpl: {
+  headerType: string;
+  headerText?: string;
+  body: string;
+  variables: string[];
+  footer?: string;
+  buttons?: Array<{
+    type: string;
+    text: string;
+    value: string;
+    isDynamic?: boolean;
+  }>;
+}): unknown[] {
+  const components: unknown[] = [];
+
+  // Header
+  if (tpl.headerType !== "NONE") {
+    if (tpl.headerType === "TEXT") {
+      components.push({ type: "HEADER", format: "TEXT", text: tpl.headerText ?? "" });
+    } else {
+      components.push({ type: "HEADER", format: tpl.headerType });
+    }
+  }
+
+  // Body — map named {{variable}} to positional {{1}}, {{2}} …
+  let metaBody = tpl.body;
+  const varExamples: string[] = [];
+  tpl.variables.forEach((varName, idx) => {
+    metaBody = metaBody.replaceAll(`{{${varName}}}`, `{{${idx + 1}}}`);
+    varExamples.push(`example_${varName}`);
+  });
+  const bodyComp: Record<string, unknown> = { type: "BODY", text: metaBody };
+  if (varExamples.length > 0) {
+    bodyComp.example = { body_text: [varExamples] };
+  }
+  components.push(bodyComp);
+
+  // Footer
+  if (tpl.footer) {
+    components.push({ type: "FOOTER", text: tpl.footer });
+  }
+
+  // Buttons
+  if (tpl.buttons && tpl.buttons.length > 0) {
+    const metaButtons = tpl.buttons.map((btn) => {
+      if (btn.type === "URL") {
+        const url = btn.isDynamic ? `${btn.value}{{1}}` : btn.value;
+        const btnObj: Record<string, unknown> = { type: "URL", text: btn.text, url };
+        if (btn.isDynamic) btnObj.example = ["example-suffix"];
+        return btnObj;
+      }
+      if (btn.type === "PHONE_NUMBER") {
+        return { type: "PHONE_NUMBER", text: btn.text, phone_number: btn.value };
+      }
+      return { type: "QUICK_REPLY", text: btn.text };
+    });
+    components.push({ type: "BUTTONS", buttons: metaButtons });
+  }
+
+  return components;
+}
+
+// ── submit action ─────────────────────────────────────────────────────────────
+
+export const submit = action({
+  args: { id: v.id("broadcastTemplates") },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+
+    const identity = await ctx.auth.getUserIdentity();
+    const tenantId = identity!.orgId as string;
+
+    const tpl = await ctx.runQuery(internal.broadcastTemplates.getTemplateInternal, {
+      id: args.id,
+      tenantId,
+    });
+    if (!tpl) throw new ConvexError("NOT_FOUND");
+    if (tpl.metaStatus !== "draft" && tpl.metaStatus !== "rejected") {
+      throw new ConvexError("TEMPLATE_LOCKED");
+    }
+
+    const channel = await ctx.runQuery(internal.broadcastTemplates.getChannelInternal, {
+      channelId: tpl.channelId,
+      tenantId,
+    });
+    if (!channel) throw new ConvexError("CHANNEL_NOT_FOUND");
+
+    const { decrypt } = await import("./lib/encryption");
+    const token = channel.accessToken ? await decrypt(channel.accessToken) : null;
+    if (!token) throw new ConvexError("CHANNEL_TOKEN_MISSING");
+
+    const components = buildMetaComponents(tpl);
+
+    const res = await fetch(`${META_BASE}/${channel.wabaId}/message_templates`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: tpl.name,
+        language: tpl.language,
+        category: tpl.category,
+        components,
+      }),
+    });
+
+    const data = await res.json() as { id?: string; error?: { message: string } };
+
+    if (!res.ok || data.error) {
+      const errMsg = data.error?.message ?? `HTTP ${res.status}`;
+      throw new ConvexError(`Meta API error: ${errMsg}`);
+    }
+
+    await ctx.runMutation(internal.broadcastTemplates.patchStatusInternal, {
+      id: args.id,
+      metaStatus: "pending",
+      metaTemplateId: data.id,
+      metaSubmittedAt: Date.now(),
+    });
+
+    return { success: true };
+  },
+});
+
+// ── syncStatus action ─────────────────────────────────────────────────────────
+
+export const syncStatus = action({
+  args: { id: v.id("broadcastTemplates") },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+
+    const identity = await ctx.auth.getUserIdentity();
+    const tenantId = identity!.orgId as string;
+
+    const tpl = await ctx.runQuery(internal.broadcastTemplates.getTemplateInternal, {
+      id: args.id,
+      tenantId,
+    });
+    if (!tpl || tpl.metaStatus !== "pending") return;
+
+    await ctx.runAction(internal.broadcastTemplates.syncStatusInternal, { id: args.id });
+  },
+});
+
+export const syncStatusInternal = internalAction({
+  args: { id: v.id("broadcastTemplates") },
+  handler: async (ctx, args) => {
+    const tpl = await ctx.runQuery(internal.broadcastTemplates.getTemplateByIdInternal, {
+      id: args.id,
+    });
+    if (!tpl || tpl.metaStatus !== "pending") return;
+
+    const channel = await ctx.runQuery(internal.broadcastTemplates.getChannelInternal, {
+      channelId: tpl.channelId,
+      tenantId: tpl.tenantId,
+    });
+    if (!channel) return;
+
+    const { decrypt } = await import("./lib/encryption");
+    const token = channel.accessToken ? await decrypt(channel.accessToken) : null;
+    if (!token) return;
+
+    const res = await fetch(
+      `${META_BASE}/${channel.wabaId}/message_templates?name=${encodeURIComponent(tpl.name)}&fields=status,rejected_reason`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+
+    if (!res.ok) return;
+
+    const data = await res.json() as {
+      data?: Array<{ status: string; rejected_reason?: string }>;
+    };
+    const entry = data.data?.[0];
+    if (!entry) return;
+
+    const newStatus = entry.status.toLowerCase() as "approved" | "rejected" | "paused" | "pending";
+    if (newStatus === tpl.metaStatus) return;
+
+    await ctx.runMutation(internal.broadcastTemplates.patchStatusInternal, {
+      id: args.id,
+      metaStatus: newStatus,
+      metaRejectionReason: entry.rejected_reason,
+    });
+
+    // Notify creator on approval
+    if (newStatus === "approved") {
+      await ctx.runMutation(internal.notifications.internalCreate, {
+        tenantId: tpl.tenantId,
+        userId: tpl.createdBy,
+        referenceId: tpl._id,
+        message: `Template "${tpl.title}" was approved by Meta and is ready to use in Broadcasts.`,
+      });
+    }
+  },
+});
+
+// ── Cron handler ──────────────────────────────────────────────────────────────
+
+export const syncAllPendingInternal = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const pending = await ctx.runQuery(internal.broadcastTemplates.listPendingInternal, {});
+    for (const tpl of pending) {
+      await ctx.runAction(internal.broadcastTemplates.syncStatusInternal, { id: tpl._id });
+    }
+  },
+});
