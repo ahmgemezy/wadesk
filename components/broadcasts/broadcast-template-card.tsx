@@ -52,7 +52,7 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
   const [removing, setRemoving] = useState(false);
 
   const isLocked = template.metaStatus === "pending" || template.metaStatus === "approved";
-  const status = STATUS_CONFIG[template.metaStatus];
+  const status = STATUS_CONFIG[template.metaStatus] ?? STATUS_CONFIG.draft;
 
   async function handleDelete() {
     setRemoving(true);
@@ -82,7 +82,7 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
     <TooltipProvider>
       <Card className="relative group overflow-hidden flex flex-col">
         {/* Action buttons */}
-        <div className="absolute top-2 inset-e-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-2 end-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
           {template.metaStatus === "pending" && (
             <Button
               variant="ghost"
@@ -123,6 +123,7 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
               size="icon-sm"
               onClick={() => onEdit(template._id)}
               disabled={isLocked}
+              title={t("Edit template", "تحرير القالب")}
             >
               <PencilIcon className="size-3.5" />
             </Button>
@@ -181,13 +182,15 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
             {template.title}
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {template.category}
+            {template.category === "MARKETING"
+              ? t("Marketing", "تسويق")
+              : t("Utility", "أداة")}
           </p>
         </CardHeader>
 
         {template.metaStatus === "rejected" && template.metaRejectionReason && (
           <CardContent className="pt-0">
-            <div className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 px-3 py-2 text-xs text-red-700 dark:text-red-400">
+            <div className="rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 px-3 py-2 text-xs text-red-700 dark:text-red-200">
               {template.metaRejectionReason}
             </div>
           </CardContent>
