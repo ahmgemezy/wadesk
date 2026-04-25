@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getCallerIdentity } from "./lib/auth";
+import { getCallerIdentity, getCallerRole, assertAdmin } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
 function isAdminOrSupervisor(orgRole: string): boolean {
@@ -266,6 +266,39 @@ export const getOrCreate = mutation({
     });
 
     return conversationId;
+  },
+});
+
+export const remove = mutation({
+  args: { conversationId: v.id("conversations") },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    // Delete all messages in this conversation
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+    for (const msg of messages) {
+      await ctx.db.delete(msg._id);
+    }
+
+    // Delete the conversation metrics record if present
+    const metrics = await ctx.db
+      .query("conversationMetrics")
+      .withIndex("by_tenant_created", (q) => q.eq("tenantId", tenantId))
+      .filter((q) => q.eq(q.field("conversationId"), args.conversationId))
+      .first();
+    if (metrics) await ctx.db.delete(metrics._id);
+
+    await ctx.db.delete(args.conversationId);
   },
 });
 

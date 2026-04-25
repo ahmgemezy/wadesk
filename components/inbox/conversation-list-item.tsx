@@ -8,7 +8,26 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@clerk/nextjs";
 import { useT, useLocale, useTranslatedLabel } from "@/lib/i18n/context";
-import { MailOpen, MailCheck, AlertTriangle } from "lucide-react";
+import { MailOpen, MailCheck, AlertTriangle, MoreHorizontal, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ConversationItem {
   _id: string;
@@ -43,8 +62,12 @@ export function ConversationListItem({
   const t = useT();
   const translateLabel = useTranslatedLabel();
   const locale = useLocale();
+  const router = useRouter();
   const markAsRead = useMutation(api.inbox.markAsRead);
   const markAsUnread = useMutation(api.inbox.markAsUnread);
+  const removeConversation = useMutation(api.conversations.remove);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   function handleToggleRead(e: React.MouseEvent) {
     e.stopPropagation();
@@ -56,9 +79,24 @@ export function ConversationListItem({
     }
   }
 
-  const isAdminOrSupervisor =
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await removeConversation({ conversationId: conversation._id as Id<"conversations"> });
+      toast.success(t("Conversation deleted", "تم حذف المحادثة"));
+      if (isActive) router.push("/inbox");
+    } catch {
+      toast.error(t("Failed to delete conversation", "فشل حذف المحادثة"));
+      setDeleting(false);
+    }
+  }
+
+  const isAdmin =
     membership?.role === "org:admin" ||
-    membership?.role === "admin" ||
+    membership?.role === "admin";
+
+  const isAdminOrSupervisor =
+    isAdmin ||
     membership?.role === "org:supervisor";
 
   const statusLabel =
@@ -88,6 +126,7 @@ export function ConversationListItem({
   const timeAgo = formatTimeAgo(conversation.lastMessageAt, locale);
 
   return (
+    <>
     <div
       className={cn(
         "group w-full text-start p-3 border-b hover:bg-secondary/70 transition-colors cursor-pointer",
@@ -138,6 +177,25 @@ export function ConversationListItem({
                   ? <MailOpen className="size-3" />
                   : <MailCheck className="size-3" />}
               </button>
+              {isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    onClick={(e) => e.stopPropagation()}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground rounded p-0.5"
+                  >
+                    <MoreHorizontal className="size-3" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive gap-2"
+                      onSelect={() => setConfirmOpen(true)}
+                    >
+                      <Trash2 className="size-3.5" />
+                      {t("Delete conversation", "حذف المحادثة")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {conversation.unreadCount > 0 && (
                 <Badge className="text-[10px] rounded-full px-1.5 h-4 min-w-4 flex items-center justify-center">
                   {conversation.unreadCount}
@@ -169,7 +227,7 @@ export function ConversationListItem({
               {(conversation.labels ?? []).slice(0, 4).map((name) => (
                 <span
                   key={name}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] leading-none text-accent-foreground font-medium max-w-[72px] truncate"
+                  className="inline-flex items-center gap-0.5 rounded-full bg-accent/20 px-1.5 py-0.5 text-[10px] leading-none text-accent-foreground font-medium max-w-18 truncate"
                 >
                   {translateLabel(name)}
                 </span>
@@ -188,7 +246,7 @@ export function ConversationListItem({
               {statusLabel}
             </span>
             {conversation.departmentName && (
-              <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 truncate max-w-[80px]">
+              <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 truncate max-w-20">
                 {conversation.departmentName}
               </span>
             )}
@@ -217,6 +275,34 @@ export function ConversationListItem({
         </div>
       </div>
     </div>
+    {isAdmin && (
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("Delete conversation?", "حذف المحادثة؟")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "This will permanently delete the conversation and all its messages. The contact will not be deleted.",
+                "سيتم حذف المحادثة وجميع رسائلها نهائياً. لن يتم حذف جهة الاتصال.",
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("Cancel", "إلغاء")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? t("Deleting...", "جاري الحذف...") : t("Delete", "حذف")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    )}
+    </>
   );
 }
 

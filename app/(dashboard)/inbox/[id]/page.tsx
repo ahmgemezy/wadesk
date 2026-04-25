@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ConversationThread } from "@/components/inbox/conversation-thread";
 import { MessageInput } from "@/components/inbox/message-input";
 import { StatusSelector } from "@/components/inbox/status-selector";
@@ -12,22 +12,56 @@ import { TransferDepartmentDialog } from "@/components/inbox/transfer-department
 import { useState } from "react";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
 import { useT } from "@/lib/i18n/context";
+import { useOrganization } from "@clerk/nextjs";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export default function ConversationPage() {
   const t = useT();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const conversationId = params.id;
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
   const [quickReplyContent, setQuickReplyContent] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [replyTo, setReplyTo] = useState<{
     messageId: string;
     content: string;
     authorLabel: string;
   } | null>(null);
 
+  const { membership } = useOrganization();
+  const isAdmin = membership?.role === "org:admin" || membership?.role === "admin";
+
+  const removeConversation = useMutation(api.conversations.remove);
+
   const conversation = useQuery(api.conversations.get, {
     conversationId: conversationId as Id<"conversations">,
   });
+
+  async function handleDelete() {
+    setDeleting(true);
+    try {
+      await removeConversation({ conversationId: conversationId as Id<"conversations"> });
+      toast.success(t("Conversation deleted", "تم حذف المحادثة"));
+      router.push("/inbox");
+    } catch {
+      toast.error(t("Failed to delete conversation", "فشل حذف المحادثة"));
+      setDeleting(false);
+    }
+  }
 
   if (!conversation) {
     return (
@@ -64,6 +98,40 @@ export default function ConversationPage() {
               conversationId={conversationId}
               currentAssigneeId={conversation.assignedAgentId ?? undefined}
             />
+            {isAdmin && (
+              <AlertDialog>
+                <AlertDialogTrigger
+                  render={
+                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10 size-8">
+                      <Trash2 className="size-4" />
+                    </Button>
+                  }
+                />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {t("Delete conversation?", "حذف المحادثة؟")}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t(
+                        "This will permanently delete the conversation and all its messages. This action cannot be undone.",
+                        "سيتم حذف المحادثة وجميع رسائلها نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+                      )}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("Cancel", "إلغاء")}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deleting ? t("Deleting...", "جاري الحذف...") : t("Delete", "حذف")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
         <ConversationThread conversationId={conversationId} replyTo={replyTo} onSetReplyTo={setReplyTo} />

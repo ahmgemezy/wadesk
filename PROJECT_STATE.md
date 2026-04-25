@@ -7,7 +7,7 @@
 
 ---
 
-**Last Updated:** 2026-04-24 17:30 UTC  
+**Last Updated:** 2026-04-25 UTC  
 **Current Branch:** feat/013-departments (merged broadcasts from task/015)  
 **Main Branch:** 002-agent-roles  
 **Build Status:** ✅ TypeScript: 3 pre-existing errors (unrelated) | ✅ Departments orphaned data fix applied
@@ -492,6 +492,13 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 5 Sessions)
+
+### 2026-04-25: Delete Conversation (Admin Only)
+- ✅ Added `conversations.remove` mutation — admin-only (uses `assertAdmin`), cascades to `messages` and `conversationMetrics`
+- ✅ Added delete button (trash icon) in conversation header — visible to `org:admin` only
+- ✅ Confirmation AlertDialog before deletion (Arabic + English copy)
+- ✅ Redirects to `/inbox` after successful deletion
+- ✅ Added `components/ui/alert-dialog.tsx` (Base UI backed shadcn component)
 
 ### 2026-04-24 (17:30): Department Transfer Orphaned Channel Fix
 - ✅ Fixed `ConvexError: NOT_FOUND` in `departments:listForTransfer` query
