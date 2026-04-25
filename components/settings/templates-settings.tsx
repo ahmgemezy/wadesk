@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { PlusIcon, PencilIcon, Trash2Icon, Loader2Icon } from "lucide-react";
 import { extractVariables } from "@/lib/templateHelpers";
 import { TemplateLibraryTab } from "@/components/templates/template-library-tab";
+import { BroadcastTemplatesTab } from "@/components/broadcasts/broadcast-templates-tab";
+import { BroadcastTemplateBuilder } from "@/components/broadcasts/broadcast-template-builder";
 import type { LibraryTemplate } from "@/lib/templateLibrary";
 
 export function TemplatesSettings() {
@@ -49,6 +51,8 @@ export function TemplatesSettings() {
   const [category, setCategory] = useState("");
   const [language, setLanguage] = useState<"ar" | "en">("ar");
   const [saving, setSaving] = useState(false);
+  const [broadcastBuilderOpen, setBroadcastBuilderOpen] = useState(false);
+  const [broadcastEditingId, setBroadcastEditingId] = useState<string | null>(null);
 
   const detectedVars = extractVariables(body);
 
@@ -120,6 +124,9 @@ export function TemplatesSettings() {
           </TabsTrigger>
           <TabsTrigger value="library">
             📚 {t("Template Library", "مكتبة القوالب")}
+          </TabsTrigger>
+          <TabsTrigger value="broadcast-templates">
+            {t("Broadcast Templates", "قوالب البث")}
           </TabsTrigger>
         </TabsList>
 
@@ -228,6 +235,15 @@ export function TemplatesSettings() {
             onUseQuickReply={(tpl) => openForCreate(tpl)}
           />
         </TabsContent>
+
+        <TabsContent value="broadcast-templates">
+          <BroadcastTemplatesTab
+            onCreateClick={() => {
+              setBroadcastEditingId(null);
+              setBroadcastBuilderOpen(true);
+            }}
+          />
+        </TabsContent>
       </Tabs>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -325,6 +341,26 @@ export function TemplatesSettings() {
               {t("Save", "حفظ")}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={broadcastBuilderOpen} onOpenChange={setBroadcastBuilderOpen}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {broadcastEditingId
+                ? t("Edit Broadcast Template", "تعديل قالب البث")
+                : t("Create Broadcast Template", "إنشاء قالب البث")}
+            </DialogTitle>
+          </DialogHeader>
+          <BroadcastTemplateBuilder
+            templateId={broadcastEditingId ?? undefined}
+            onClose={() => setBroadcastBuilderOpen(false)}
+            onSave={() => {
+              setBroadcastBuilderOpen(false);
+              setBroadcastEditingId(null);
+            }}
+          />
         </DialogContent>
       </Dialog>
     </>
