@@ -4,7 +4,7 @@ import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
-const META_BASE = "https://graph.facebook.com/v19.0";
+const META_BASE = "https://graph.facebook.com/v25.0";
 
 export type MetaTemplateComponent = {
   type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
@@ -201,3 +201,88 @@ export const insertNotification = internalMutation({
     });
   },
 });
+
+export const submitToMeta = action({
+  args: {
+    channelId: v.id("channels"),
+    name: v.string(),
+    body: v.string(),
+    metaCategory: v.union(
+      v.literal("MARKETING"),
+      v.literal("UTILITY"),
+      v.literal("AUTHENTICATION"),
+    ),
+    language: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.orgId) throw new ConvexError("UNAUTHORIZED");
+    const tenantId = identity.orgId as string;
+
+    const channel = await ctx.runQuery(internal.metaTemplates.getChannelInternal, {
+      channelId: args.channelId,
+      tenantId,
+    });
+    if (!channel) throw new ConvexError("CHANNEL_NOT_FOUND");
+
+    const token = process.env.META_SYSTEM_USER_TOKEN;
+    if (!token) throw new ConvexError("META_SYSTEM_USER_TOKEN not configured");
+
+    const numberedBody = convertToNumberedVars(args.body);
+
+    const payload = {
+      name: args.name,
+      language: args.language,
+      category: args.metaCategory,
+      components: [{ type: "BODY", text: numberedBody }],
+    };
+
+    const res = await fetch(
+      `${META_BASE}/${channel.wabaId}/message_templates`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    const data = await res.json() as Record<string, unknown>;
+
+    if (!res.ok) {
+      const errMsg =
+        (data?.error as Record<string, unknown> | undefined)?.message ??
+        `Meta API error ${res.status}`;
+      throw new ConvexError(String(errMsg));
+    }
+
+    await ctx.runMutation(internal.metaTemplates.upsertBatch, {
+      tenantId,
+      channelId: args.channelId,
+      wabaId: channel.wabaId,
+      templates: [
+        {
+          name: args.name,
+          language: args.language,
+          status: "PENDING",
+          category: args.metaCategory,
+          components: payload.components,
+        },
+      ],
+    });
+
+    return { id: String(data.id ?? ""), status: "PENDING" };
+  },
+});
+
+function convertToNumberedVars(body: string): string {
+  let counter = 0;
+  const seen = new Map<string, number>();
+  return body.replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
+    const lower = name.toLowerCase();
+    if (!seen.has(lower)) seen.set(lower, ++counter);
+    return `{{${seen.get(lower)}}}`;
+  });
+}
