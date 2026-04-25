@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { LibraryTemplateCard } from "@/components/templates/library-template-card";
 import { LibraryTemplatePreview } from "@/components/templates/library-template-preview";
 import { MetaSubmitForm } from "@/components/templates/meta-submit-form";
@@ -24,6 +25,8 @@ type TypeFilter = "all" | LibraryTemplateType;
 
 export function TemplateLibraryTab({ onUseQuickReply }: Props) {
   const t = useT();
+  const plan = useQuery(api.lib.tenants.getCurrentPlan);
+  const isFree = plan === "free";
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -68,10 +71,12 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
   }
 
   function handleUseQuickReply(template: LibraryTemplate) {
+    if (isFree) return;
     onUseQuickReply(template);
   }
 
   function handleUseMeta(template: LibraryTemplate) {
+    if (isFree) return;
     setMetaFormTemplate(template);
     setMetaFormOpen(true);
   }
@@ -84,6 +89,15 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
 
   return (
     <div className="space-y-4">
+      {isFree && (
+        <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+          {t(
+            "Browse templates freely! Upgrade to Starter to save quick-reply templates or submit Meta templates for approval.",
+            "تصفّح القوالب بحرية! ارتقِ إلى خطة ستارتر لحفظ قوالب الرد السريع أو إرسال قوالب ميتا للمراجعة.",
+          )}
+        </div>
+      )}
+
       <div className="relative">
         <SearchIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <Input
@@ -145,7 +159,7 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {filtered.length} {t("templates", "قالب")}
+        {filtered.length} {filtered.length === 1 ? t("template", "قالب") : filtered.length === 2 ? t("templates", "قالبان") : t("templates", "قوالب")}
       </p>
 
       {filtered.length === 0 ? (
@@ -172,6 +186,7 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
         onClose={() => setPreviewOpen(false)}
         onUseQuickReply={handleUseQuickReply}
         onUseMeta={handleUseMeta}
+        isFree={isFree}
       />
 
       <MetaSubmitForm

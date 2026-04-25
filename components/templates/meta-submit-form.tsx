@@ -34,11 +34,12 @@ interface Props {
 const META_CATEGORIES: MetaCategory[] = ["MARKETING", "UTILITY", "AUTHENTICATION"];
 
 function toNameSlug(title: string): string {
-  return title
+  const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, "")
     .trim()
     .replace(/\s+/g, "_");
+  return slug || "template";
 }
 
 export function MetaSubmitForm({ template, open, onClose }: Props) {

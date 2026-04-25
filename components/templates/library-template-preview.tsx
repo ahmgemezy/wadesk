@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+import Link from "next/link";
 import {
   Sheet,
   SheetContent,
@@ -8,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ClipboardCopyIcon } from "lucide-react";
+import { ClipboardCopyIcon, LockIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { LibraryTemplate } from "@/lib/templateLibrary";
 import { CATEGORY_LABELS } from "@/lib/templateLibrary";
@@ -20,9 +22,10 @@ interface Props {
   onClose: () => void;
   onUseQuickReply: (template: LibraryTemplate) => void;
   onUseMeta: (template: LibraryTemplate) => void;
+  isFree?: boolean;
 }
 
-function highlightVars(body: string): React.ReactNode[] {
+function highlightVars(body: string): ReactNode[] {
   const parts = body.split(/(\{\{\w+\}\})/g);
   return parts.map((part, i) => {
     if (/^\{\{\w+\}\}$/.test(part)) {
@@ -45,6 +48,7 @@ export function LibraryTemplatePreview({
   onClose,
   onUseQuickReply,
   onUseMeta,
+  isFree = false,
 }: Props) {
   const t = useT();
 
@@ -140,15 +144,31 @@ export function LibraryTemplatePreview({
         )}
 
         <div className="flex gap-2">
-          <Button className="flex-1" onClick={handleUse}>
-            {template.type === "meta"
-              ? t("Submit to Meta", "إرسال لميتا")
-              : t("Use This Template", "استخدم هذا القالب")}
-          </Button>
-          <Button variant="outline" size="icon" onClick={handleCopy} title={t("Copy body", "نسخ النص")}>
+          {isFree ? (
+            <Button className="flex-1" disabled>
+              <LockIcon className="size-4 me-2" />
+              {t("Upgrade to use", "ارتقِ للاستخدام")}
+            </Button>
+          ) : (
+            <Button className="flex-1" onClick={handleUse}>
+              {template.type === "meta"
+                ? t("Submit to Meta", "إرسال لميتا")
+                : t("Use This Template", "استخدم هذا القالب")}
+            </Button>
+          )}
+          <Button variant="outline" size="icon" onClick={handleCopy} aria-label={t("Copy body", "نسخ النص")} title={t("Copy body", "نسخ النص")}>
             <ClipboardCopyIcon className="size-4" />
           </Button>
         </div>
+
+        {isFree && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            <Link href="/settings/billing" className="text-primary underline underline-offset-2 hover:text-primary/80">
+              {t("Upgrade to Starter or above", "ارتقِ إلى ستارتر أو أعلى")}
+            </Link>{" "}
+            {t("to save templates or submit to Meta.", "لحفظ القوالب أو إرسالها لميتا.")}
+          </p>
+        )}
       </SheetContent>
     </Sheet>
   );

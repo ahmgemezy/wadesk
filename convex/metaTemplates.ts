@@ -3,6 +3,8 @@ import { action, internalMutation, internalQuery, query } from "./_generated/ser
 import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import { getCallerRole, assertAdminOrSupervisor } from "./lib/auth";
+import { assertPlanAtLeast, type Plan } from "./lib/planLimits";
 
 const META_BASE = "https://graph.facebook.com/v25.0";
 
@@ -218,6 +220,12 @@ export const submitToMeta = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity?.orgId) throw new ConvexError("UNAUTHORIZED");
     const tenantId = identity.orgId as string;
+
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+
+    const plan: Plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
+    assertPlanAtLeast(plan, "starter");
 
     const channel = await ctx.runQuery(internal.metaTemplates.getChannelInternal, {
       channelId: args.channelId,
