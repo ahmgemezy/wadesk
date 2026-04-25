@@ -10,7 +10,7 @@ import {
 import { assertBroadcastsAllowed } from "./lib/planLimits";
 import type { Doc } from "./_generated/dataModel";
 
-const META_BASE = "https://graph.facebook.com/v21.0";
+const META_BASE = "https://graph.facebook.com/v25.0";
 
 export const listForTenant = query({
   args: {},

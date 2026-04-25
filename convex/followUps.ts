@@ -245,7 +245,7 @@ export const processDue = internalAction({
         continue;
       }
 
-      const apiVersion = process.env.WHATSAPP_API_VERSION ?? "v19.0";
+      const apiVersion = process.env.WHATSAPP_API_VERSION ?? "v25.0";
       const url = `https://graph.facebook.com/${apiVersion}/${channel.phoneNumberId}/messages`;
 
       try {

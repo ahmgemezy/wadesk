@@ -5,7 +5,7 @@ import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { decrypt } from "../lib/encryption";
 
-const META_BASE = "https://graph.facebook.com/v21.0";
+const META_BASE = "https://graph.facebook.com/v25.0";
 const MAX_RETRIES = 3;
 
 export const processBroadcastBatch = internalAction({

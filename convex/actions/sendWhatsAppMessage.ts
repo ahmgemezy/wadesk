@@ -4,7 +4,7 @@ import { internalAction } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
 
-const BASE = `https://graph.facebook.com/${process.env.WHATSAPP_API_VERSION ?? "v21.0"}`;
+const BASE = `https://graph.facebook.com/${process.env.WHATSAPP_API_VERSION ?? "v25.0"}`;
 
 async function markFailed(ctx: { runMutation: Function }, messageId: string, tenantId: string, reason?: string) {
   await ctx.runMutation(internal.messages.updateStatus, {

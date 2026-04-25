@@ -4,7 +4,7 @@ import { internal } from "./_generated/api";
 import { getCallerRole, assertAdmin } from "./lib/auth";
 import { decrypt } from "./lib/encryption";
 
-const META_API_BASE = "https://graph.facebook.com/v19.0";
+const META_API_BASE = "https://graph.facebook.com/v25.0";
 
 async function assertAdminAndGetTenantId(ctx: Parameters<typeof getCallerRole>[0]) {
   const role = await getCallerRole(ctx);

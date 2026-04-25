@@ -20,7 +20,7 @@ declare global {
       init: (options: { appId: string; autoLogAppEvents?: boolean; xfbml?: boolean; version: string }) => void;
       login: (
         callback: (response: { authResponse?: { code?: string } }) => void,
-        options: { config_id: string; response_type: string; override_default_response_type: boolean }
+        options: { config_id: string; response_type: string; override_default_response_type: boolean; scope?: string; extras?: Record<string, string> }
       ) => void;
     };
   }
@@ -47,6 +47,8 @@ function getErrorMessage(error: unknown, t: (en: string, ar: string) => string):
         return t("Meta account verification failed — please try again", "فشل التحقق من حساب ميتا — حاول مرة تانية");
       case "TOKEN_REVOKED":
         return t("Token expired — please reconnect your account", "انتهت صلاحية الرمز — أعد ربط حسابك");
+      case "WABA_DISCOVERY_FAILED":
+        return t("Could not find a WhatsApp Business account — make sure your Meta account has a WABA with a phone number", "لم يتم العثور على حساب واتساب بيزنس — تأكد أن حساب ميتا الخاص بك يحتوي على WABA برقم هاتف");
       default:
         return t("An error occurred during connection — please try again", "حدث خطأ أثناء الربط — حاول مرة تانية");
     }
@@ -77,12 +79,29 @@ export function EmbeddedSignupButton({
   // Listen for postMessage from Meta's popup (WABA + phone number IDs)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      let parsed: unknown = event.data;
+      if (typeof event.data === "string") {
+        try {
+          parsed = JSON.parse(event.data);
+        } catch {
+          // not JSON — ignore
+        }
+      }
+
+      console.log("[WA-DEBUG] postMessage:", {
+        origin: event.origin,
+        rawType: typeof event.data,
+        dataType: (parsed as Record<string, unknown>)?.type,
+        dataEvent: (parsed as Record<string, unknown>)?.event,
+      });
+
       if (
-        typeof event.data === "object" &&
-        event.data?.type === "WA_EMBEDDED_SIGNUP" &&
-        (event.data?.event === "FINISH" || event.data?.event === "FINISH_AND_CLOSE")
+        typeof parsed === "object" &&
+        parsed !== null &&
+        (parsed as Record<string, unknown>)?.type === "WA_EMBEDDED_SIGNUP" &&
+        ((parsed as Record<string, unknown>)?.event === "FINISH" || (parsed as Record<string, unknown>)?.event === "FINISH_AND_CLOSE")
       ) {
-        wabaDataRef.current = event.data.data as WabaMessageData;
+        wabaDataRef.current = (parsed as { data: WabaMessageData }).data;
       }
     };
     window.addEventListener("message", handleMessage);
@@ -91,10 +110,10 @@ export function EmbeddedSignupButton({
 
   const processSignup = async (code: string) => {
     try {
-      // Poll for postMessage data (up to 5s) — Meta sends it just before FB.login callback fires
+      // Poll for postMessage data (up to 10s) — Meta sends it just before FB.login callback fires
       const wabaData = await new Promise<WabaMessageData | null>((resolve) => {
         if (wabaDataRef.current) { resolve(wabaDataRef.current); return; }
-        const deadline = Date.now() + 5000;
+        const deadline = Date.now() + 10_000;
         const poll = setInterval(() => {
           if (wabaDataRef.current) { clearInterval(poll); resolve(wabaDataRef.current); }
           else if (Date.now() >= deadline) { clearInterval(poll); resolve(null); }
@@ -102,9 +121,12 @@ export function EmbeddedSignupButton({
       });
 
       if (!wabaData) {
+        console.error("[WA-DEBUG] No WABA data received after 10s polling");
         onError(t("No account data received from Meta — please try again", "لم يتم استلام بيانات الحساب من ميتا — حاول مرة تانية"));
         return;
       }
+
+      console.log("[WA-DEBUG] WABA data received:", wabaData);
 
       const result = await completeSignup({
         code,
@@ -127,8 +149,15 @@ export function EmbeddedSignupButton({
     wabaDataRef.current = null;
     setLoading(true);
 
+    console.log("[WA-DEBUG] Opening FB.login popup", { appId, configId });
+
     window.FB.login(
       (response) => {
+        console.log("[WA-DEBUG] FB.login callback:", {
+          authResponse: response.authResponse
+            ? { code: response.authResponse.code ? "(present)" : "(missing)" }
+            : "(missing)",
+        });
         const code = response.authResponse?.code;
         if (!code) {
           setLoading(false);
@@ -141,6 +170,10 @@ export function EmbeddedSignupButton({
         config_id: configId,
         response_type: "code",
         override_default_response_type: true,
+        scope: "whatsapp_business_management,whatsapp_business_messaging",
+        extras: {
+          setup: "",
+        },
       }
     );
   };
@@ -157,7 +190,7 @@ export function EmbeddedSignupButton({
             appId,
             autoLogAppEvents: true,
             xfbml: true,
-            version: "v21.0",
+            version: "v25.0",
           });
           setSdkReady(true);
         }}

@@ -228,7 +228,7 @@ export const inviteByWhatsApp = action({
     }
 
     const response = await fetch(
-      `https://graph.facebook.com/v21.0/${channel.phoneNumberId}/messages`,
+      `https://graph.facebook.com/v25.0/${channel.phoneNumberId}/messages`,
       {
         method: "POST",
         headers: {

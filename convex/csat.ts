@@ -8,7 +8,7 @@ import { query, mutation, internalMutation, internalAction, internalQuery } from
 import { internal } from "./_generated/api";
 import { getCallerIdentity, assertAdmin, type OrgRole } from "./lib/auth";
 
-const META_API_BASE = "https://graph.facebook.com/v21.0";
+const META_API_BASE = "https://graph.facebook.com/v25.0";
 
 // ── Send CSAT message ────────────────────────────────────────────────────────
 // Called by ctx.scheduler from inbox.updateStatus when status → "resolved".

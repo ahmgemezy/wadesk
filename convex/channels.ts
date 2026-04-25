@@ -292,6 +292,7 @@ export const remove = mutation({
 export const completeEmbeddedSignup = action({
   args: {
     code: v.string(),
+    accessToken: v.optional(v.string()),
     wabaId: v.string(),
     phoneNumberId: v.string(),
     displayPhone: v.string(),
@@ -318,31 +319,33 @@ export const completeEmbeddedSignup = action({
       }
     }
 
-    // 3. Exchange code for access token
-    const appId = process.env.META_APP_ID ?? process.env.NEXT_PUBLIC_META_APP_ID ?? "";
-    const appSecret = process.env.META_APP_SECRET ?? "";
-    const tokenUrl =
-      `https://graph.facebook.com/v21.0/oauth/access_token` +
-      `?client_id=${encodeURIComponent(appId)}` +
-      `&client_secret=${encodeURIComponent(appSecret)}` +
-      `&code=${encodeURIComponent(args.code)}`;
+    // 3. Get access token — use provided token or exchange code
+    let accessToken = args.accessToken ?? "";
+    if (!accessToken) {
+      const appId = process.env.META_APP_ID ?? process.env.NEXT_PUBLIC_META_APP_ID ?? "";
+      const appSecret = process.env.META_APP_SECRET ?? "";
+      const tokenUrl =
+        `https://graph.facebook.com/v25.0/oauth/access_token` +
+        `?client_id=${encodeURIComponent(appId)}` +
+        `&client_secret=${encodeURIComponent(appSecret)}` +
+        `&code=${encodeURIComponent(args.code)}`;
 
-    const tokenRes = await fetch(tokenUrl);
-    const tokenData = (await tokenRes.json()) as { access_token?: string; error?: { message?: string } };
+      const tokenRes = await fetch(tokenUrl);
+      const tokenData = (await tokenRes.json()) as { access_token?: string; error?: { message?: string; code?: number } };
 
-    if (!tokenRes.ok || !tokenData.access_token) {
-      console.error("[CHANNEL] Token exchange failed:", tokenData);
-      throw new ConvexError({
-        code: "TOKEN_EXCHANGE_FAILED",
-        reason: tokenData.error?.message ?? "Unknown error",
-      });
-    }
+      if (!tokenRes.ok || !tokenData.access_token) {
+        console.error("[CHANNEL] Token exchange failed:", tokenData);
+        throw new ConvexError({
+          code: "TOKEN_EXCHANGE_FAILED",
+          reason: tokenData.error?.message ?? "Unknown error",
+        });
+      }
 
-    const accessToken = tokenData.access_token;
+      accessToken = tokenData.access_token;
 
-    // Check for token revocation (error code 190)
-    if ((tokenData as { error?: { code?: number } }).error?.code === 190) {
-      throw new ConvexError("TOKEN_REVOKED");
+      if (tokenData.error?.code === 190) {
+        throw new ConvexError("TOKEN_REVOKED");
+      }
     }
 
     // 4. Encrypt token
@@ -350,7 +353,7 @@ export const completeEmbeddedSignup = action({
 
     // 5. Subscribe webhook on the WABA
     const webhookRes = await fetch(
-      `https://graph.facebook.com/v21.0/${args.wabaId}/subscribed_apps`,
+      `https://graph.facebook.com/v25.0/${args.wabaId}/subscribed_apps`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -389,6 +392,67 @@ export const completeEmbeddedSignup = action({
     await ctx.runMutation(internal.channels.markWhatsappConnected, { tenantId });
 
     return { channelId, displayPhone: args.displayPhone };
+  },
+});
+
+export const discoverWabaFromCode = action({
+  args: {
+    accessToken: v.string(),
+  },
+  handler: async (ctx, args): Promise<{ wabaId: string; phoneNumberId: string; displayPhone: string }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || !identity.orgId) throw new ConvexError("UNAUTHORIZED");
+
+    const accessToken = args.accessToken;
+    const apiBase = process.env.META_GRAPH_API_BASE_URL ?? "https://graph.facebook.com";
+
+    const userRes = await fetch(`${apiBase}/v25.0/me?fields=id&access_token=${accessToken}`);
+    const userData = (await userRes.json()) as { id?: string };
+    if (!userData.id) {
+      console.error("[CHANNEL] Fallback: Could not get user ID:", userData);
+      throw new ConvexError("WABA_DISCOVERY_FAILED");
+    }
+
+    const businessesRes = await fetch(
+      `${apiBase}/v25.0/${userData.id}/businesses?access_token=${accessToken}`
+    );
+    const businessesData = (await businessesRes.json()) as { data?: { id: string }[] };
+    const businesses = businessesData.data ?? [];
+
+    if (businesses.length === 0) {
+      console.error("[CHANNEL] Fallback: No businesses found for user");
+      throw new ConvexError("WABA_DISCOVERY_FAILED");
+    }
+
+    for (const biz of businesses) {
+      const wabasRes = await fetch(
+        `${apiBase}/v25.0/${biz.id}/owned_whatsapp_business_accounts?access_token=${accessToken}`
+      );
+      const wabasData = (await wabasRes.json()) as { data?: { id: string }[] };
+      const wabas = wabasData.data ?? [];
+
+      for (const waba of wabas) {
+        const phonesRes = await fetch(
+          `${apiBase}/v25.0/${waba.id}/phone_numbers?access_token=${accessToken}`
+        );
+        const phonesData = (await phonesRes.json()) as {
+          data?: { id: string; display_phone_number?: string; verified_name?: string }[];
+        };
+        const phones = phonesData.data ?? [];
+
+        if (phones.length > 0) {
+          const phone = phones[0];
+          return {
+            wabaId: waba.id,
+            phoneNumberId: phone.id,
+            displayPhone: phone.display_phone_number ?? phone.id,
+          };
+        }
+      }
+    }
+
+    console.error("[CHANNEL] Fallback: No WABA with phone numbers found");
+    throw new ConvexError("WABA_DISCOVERY_FAILED");
   },
 });
 
@@ -483,7 +547,7 @@ export const retryWebhookSubscription = internalAction({
     const MAX_ATTEMPTS = 5;
 
     const webhookRes = await fetch(
-      `https://graph.facebook.com/v21.0/${args.wabaId}/subscribed_apps`,
+      `https://graph.facebook.com/v25.0/${args.wabaId}/subscribed_apps`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${args.accessToken}` },
