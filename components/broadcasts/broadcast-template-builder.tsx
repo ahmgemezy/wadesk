@@ -31,23 +31,9 @@ interface BtnField {
 }
 
 interface Props {
-  open: boolean;
+  templateId?: string | null;
   onClose: () => void;
-  editingId?: Id<"broadcastTemplates"> | null;
-  initialData?: {
-    channelId: Id<"channels">;
-    name: string;
-    title: string;
-    language: string;
-    category: Category;
-    headerType: HeaderType;
-    headerText?: string;
-    headerMediaUrl?: string;
-    body: string;
-    footer?: string;
-    buttons?: BtnField[];
-    metaStatus: string;
-  } | null;
+  onSave: () => void;
 }
 
 function slugify(text: string) {
@@ -67,9 +53,12 @@ const HEADER_OPTIONS: { value: HeaderType; label: string; labelAr: string }[] = 
   { value: "DOCUMENT", label: "Document", labelAr: "مستند" },
 ];
 
-export function BroadcastTemplateBuilder({ open, onClose, editingId, initialData }: Props) {
+export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props) {
   const t = useT();
   const channels = useQuery(api.channels.listForTenant);
+  const template = useQuery(api.broadcastTemplates.getById,
+    templateId ? { id: templateId as Id<"broadcastTemplates"> } : "skip"
+  );
 
   const create = useMutation(api.broadcastTemplates.create);
   const update = useMutation(api.broadcastTemplates.update);
@@ -90,36 +79,34 @@ export function BroadcastTemplateBuilder({ open, onClose, editingId, initialData
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const isLocked = initialData?.metaStatus === "pending" || initialData?.metaStatus === "approved";
+  const isLocked = template?.metaStatus === "pending" || template?.metaStatus === "approved";
 
   useEffect(() => {
-    if (open) {
-      if (initialData) {
-        setChannelId(initialData.channelId);
-        setTitle(initialData.title);
-        setName(initialData.name);
-        setLanguage(initialData.language as "ar" | "en");
-        setCategory(initialData.category);
-        setHeaderType(initialData.headerType);
-        setHeaderText(initialData.headerText ?? "");
-        setHeaderMediaUrl(initialData.headerMediaUrl ?? "");
-        setBody(initialData.body);
-        setFooter(initialData.footer ?? "");
-        setShowFooter(!!initialData.footer);
-        setButtons(initialData.buttons ?? []);
-      } else {
-        setChannelId("");
-        setTitle(""); setName(""); setLanguage("ar"); setCategory("MARKETING");
-        setHeaderType("NONE"); setHeaderText(""); setHeaderMediaUrl("");
-        setBody(""); setFooter(""); setShowFooter(false); setButtons([]);
-      }
+    if (template) {
+      setChannelId(template.channelId);
+      setTitle(template.title);
+      setName(template.name);
+      setLanguage(template.language as "ar" | "en");
+      setCategory(template.category);
+      setHeaderType(template.headerType);
+      setHeaderText(template.headerText ?? "");
+      setHeaderMediaUrl(template.headerMediaUrl ?? "");
+      setBody(template.body);
+      setFooter(template.footer ?? "");
+      setShowFooter(!!template.footer);
+      setButtons(template.buttons ?? []);
+    } else {
+      setChannelId("");
+      setTitle(""); setName(""); setLanguage("ar"); setCategory("MARKETING");
+      setHeaderType("NONE"); setHeaderText(""); setHeaderMediaUrl("");
+      setBody(""); setFooter(""); setShowFooter(false); setButtons([]);
     }
-  }, [open, initialData]);
+  }, [template]);
 
   // Auto-generate Meta name from title
   function handleTitleChange(v: string) {
     setTitle(v);
-    if (!editingId) setName(slugify(v));
+    if (!templateId) setName(slugify(v));
   }
 
   const detectedVars = extractVariables(body);
@@ -178,14 +165,14 @@ export function BroadcastTemplateBuilder({ open, onClose, editingId, initialData
         buttons: buttons.length > 0 ? buttons : undefined,
       };
 
-      if (editingId) {
-        await update({ id: editingId, ...payload });
+      if (templateId) {
+        await update({ id: templateId as Id<"broadcastTemplates">, ...payload });
         toast.success(t("Template saved", "تم حفظ القالب"));
       } else {
         await create(payload);
         toast.success(t("Template created", "تم إنشاء القالب"));
       }
-      onClose();
+      onSave();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error(msg.includes("PLAN_LIMIT") ? t("Plan limit reached", "وصلت لحد الخطة") : t("Failed to save", "فشل الحفظ"));
@@ -195,12 +182,12 @@ export function BroadcastTemplateBuilder({ open, onClose, editingId, initialData
   }
 
   async function handleSubmitToMeta() {
-    if (!editingId) return;
+    if (!templateId) return;
     setSubmitting(true);
     try {
-      await submit({ id: editingId });
+      await submit({ id: templateId as Id<"broadcastTemplates"> });
       toast.success(t("Submitted to Meta for review", "تم الإرسال لميتا للمراجعة"));
-      onClose();
+      onSave();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error(msg.replace("ConvexError: Meta API error: ", ""));
@@ -210,22 +197,13 @@ export function BroadcastTemplateBuilder({ open, onClose, editingId, initialData
   }
 
   const canSave = !isLocked && !!title.trim() && !!body.trim() && !!channelId;
-  const canSubmitToMeta = editingId && !isLocked && !!title.trim() && !!body.trim() && !!channelId;
+  const canSubmitToMeta = templateId && !isLocked && !!title.trim() && !!body.trim() && !!channelId;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {editingId
-              ? t("Edit Broadcast Template", "تعديل قالب الحملة")
-              : t("New Broadcast Template", "قالب حملة جديد")}
-          </DialogTitle>
-        </DialogHeader>
-
+    <div className="space-y-4">
         {isLocked && (
           <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
-            {initialData?.metaStatus === "pending"
+            {template?.metaStatus === "pending"
               ? t("This template is pending Meta review and cannot be edited.", "هذا القالب قيد مراجعة ميتا ولا يمكن تعديله.")
               : t("Approved templates cannot be edited.", "لا يمكن تعديل القوالب المعتمدة.")}
           </div>
@@ -491,33 +469,32 @@ export function BroadcastTemplateBuilder({ open, onClose, editingId, initialData
           </div>
         </div>
 
-        {/* Action bar */}
-        <div className="flex justify-between items-center pt-4 border-t mt-2">
-          <Button variant="outline" onClick={onClose}>
-            {t("Cancel", "إلغاء")}
-          </Button>
-          <div className="flex gap-2">
-            {canSubmitToMeta && (
-              <Button
-                variant="outline"
-                onClick={handleSubmitToMeta}
-                disabled={submitting || saving}
-              >
-                {submitting && <Loader2Icon className="size-4 me-2 animate-spin" />}
-                <SendIcon className="size-4 me-2" />
-                {t("Submit to Meta", "إرسال لميتا")}
-              </Button>
-            )}
+      {/* Action bar */}
+      <div className="flex justify-between items-center pt-4 border-t mt-2">
+        <Button variant="outline" onClick={onClose}>
+          {t("Cancel", "إلغاء")}
+        </Button>
+        <div className="flex gap-2">
+          {canSubmitToMeta && (
             <Button
-              onClick={handleSave}
-              disabled={!canSave || saving || submitting}
+              variant="outline"
+              onClick={handleSubmitToMeta}
+              disabled={submitting || saving}
             >
-              {saving && <Loader2Icon className="size-4 me-2 animate-spin" />}
-              {t("Save as Draft", "حفظ كمسودة")}
+              {submitting && <Loader2Icon className="size-4 me-2 animate-spin" />}
+              <SendIcon className="size-4 me-2" />
+              {t("Submit to Meta", "إرسال لميتا")}
             </Button>
-          </div>
+          )}
+          <Button
+            onClick={handleSave}
+            disabled={!canSave || saving || submitting}
+          >
+            {saving && <Loader2Icon className="size-4 me-2 animate-spin" />}
+            {t("Save as Draft", "حفظ كمسودة")}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
