@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
+import type { Id, Doc } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,10 @@ const t = {
     selectList: "اختر القائمة",
     selectChannel: "اختر رقم WhatsApp",
     selectTemplate: "اختر قالب الرسالة",
+    selectTemplateSource: "اختر مصدر القالب",
+    metaTemplates: "قوالب Meta",
+    broadcastTemplates: "قوالب البث",
+    broadcastTemplatesDesc: "(مُنشأة في WaDesk)",
     campaignName: "اسم الحملة",
     campaignNamePlaceholder: "مثال: عرض رمضان 2026",
     contacts: "جهة اتصال",
@@ -36,10 +40,18 @@ const t = {
     audience: "الجمهور",
     message: "القالب",
     channel: "رقم الإرسال",
-    warning: "\u26A0\uFE0F هذا القالب غير معتمد من Meta بعد — قد لا يُرسل بنجاح.",
+    warning: "⚠️ هذا القالب غير معتمد من Meta بعد — قد لا يُرسل بنجاح.",
     success: "تم إرسال الحملة بنجاح!",
     nameRequired: "اسم الحملة مطلوب",
     cancel: "إلغاء",
+    mediaUrl: "رابط الوسائط",
+    mediaUrlPlaceholder: "https://cdn.example.com/product.jpg",
+    mediaUrlHint: "يمكن للوكلاء تغيير رابط الوسائط عند الإرسال",
+    linkSuffix: "لاحقة الرابط لزر",
+    linkSuffixPlaceholder: "مثال: bags/leather-tote",
+    linkSuffixHint: "الرابط النهائي:",
+    variable: "المتغير:",
+    variablePlaceholder: "أدخل القيمة أو اختر حقل من جهات الاتصال",
   },
   en: {
     title: "New Broadcast Campaign",
@@ -49,6 +61,10 @@ const t = {
     selectList: "Select a list",
     selectChannel: "Select WhatsApp number",
     selectTemplate: "Select message template",
+    selectTemplateSource: "Select template source",
+    metaTemplates: "Meta Templates",
+    broadcastTemplates: "Broadcast Templates",
+    broadcastTemplatesDesc: "(created in WaDesk)",
     campaignName: "Campaign name",
     campaignNamePlaceholder: "e.g. Ramadan Offer 2026",
     contacts: "contacts",
@@ -63,10 +79,18 @@ const t = {
     audience: "Audience",
     message: "Template",
     channel: "Sending from",
-    warning: "\u26A0\uFE0F This template is not yet approved by Meta — it may not send successfully.",
+    warning: "⚠️ This template is not yet approved by Meta — it may not send successfully.",
     success: "Campaign sent successfully!",
     nameRequired: "Campaign name is required",
     cancel: "Cancel",
+    mediaUrl: "Media URL",
+    mediaUrlPlaceholder: "https://cdn.example.com/product.jpg",
+    mediaUrlHint: "Agents can change the media URL when sending",
+    linkSuffix: "Link suffix for",
+    linkSuffixPlaceholder: "e.g. bags/leather-tote",
+    linkSuffixHint: "Final URL:",
+    variable: "Variable:",
+    variablePlaceholder: "Enter value or select contact field",
   },
 };
 
@@ -78,6 +102,8 @@ type Template = {
   components: TemplateComponent[];
 };
 
+type BroadcastTemplate = Doc<"broadcastTemplates">;
+
 function TemplateStatusBadge({ status, locale }: { status: string; locale: "ar" | "en" }) {
   const labels: Record<string, { en: string; ar: string; cls: string }> = {
     APPROVED: { en: "Approved", ar: "معتمد", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -85,6 +111,11 @@ function TemplateStatusBadge({ status, locale }: { status: string; locale: "ar" 
     REJECTED: { en: "Rejected", ar: "مرفوض", cls: "bg-red-100 text-red-700 border-red-200" },
     PAUSED: { en: "Paused", ar: "موقوف", cls: "bg-gray-100 text-gray-600 border-gray-200" },
     FLAGGED: { en: "Flagged", ar: "مُبلَّغ عنه", cls: "bg-orange-100 text-orange-700 border-orange-200" },
+    approved: { en: "Approved", ar: "معتمد", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    pending: { en: "Pending", ar: "قيد المراجعة", cls: "bg-amber-100 text-amber-700 border-amber-200" },
+    rejected: { en: "Rejected", ar: "مرفوض", cls: "bg-red-100 text-red-700 border-red-200" },
+    paused: { en: "Paused", ar: "موقوف", cls: "bg-gray-100 text-gray-600 border-gray-200" },
+    draft: { en: "Draft", ar: "مسودة", cls: "bg-gray-100 text-gray-600 border-gray-200" },
   };
   const cfg = labels[status] ?? { en: status, ar: status, cls: "bg-gray-100 text-gray-600 border-gray-200" };
   return (
@@ -108,9 +139,23 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
   const [nameError, setNameError] = useState(false);
   const [selectedListId, setSelectedListId] = useState<Id<"contactLists"> | undefined>(initialListId);
   const [selectedChannelId, setSelectedChannelId] = useState<Id<"channels"> | undefined>();
+
+  // Template source: "meta" or "broadcast"
+  const [templateSource, setTemplateSource] = useState<"meta" | "broadcast">("meta");
+
+  // Meta templates state
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+
+  // Broadcast templates state
+  const [broadcastTemplates, setBroadcastTemplates] = useState<BroadcastTemplate[]>([]);
+  const [loadingBroadcastTemplates, setLoadingBroadcastTemplates] = useState(false);
+  const [selectedBroadcastTemplate, setSelectedBroadcastTemplate] = useState<BroadcastTemplate | null>(null);
+  const [overrideMediaUrl, setOverrideMediaUrl] = useState("");
+  const [dynamicSuffixes, setDynamicSuffixes] = useState<Record<string, string>>({});
+  const [variables, setVariables] = useState<Record<string, string>>({});
+
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -121,11 +166,14 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
     selectedListId ? { listId: selectedListId } : "skip",
   );
 
+  // Query broadcast templates
+  const queryBroadcastTemplates = useQuery(api.broadcastTemplates.list, {});
+
   const createBroadcast = useMutation(api.broadcasts.create);
   const sendBroadcast = useAction(api.broadcasts.send);
   const syncTemplatesAction = useAction(api.metaTemplates.syncFromMeta);
 
-  async function loadTemplates(channelId: Id<"channels">) {
+  async function loadMetaTemplates(channelId: Id<"channels">) {
     setLoadingTemplates(true);
     try {
       const result = await syncTemplatesAction({ channelId });
@@ -137,25 +185,68 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
     }
   }
 
+  function loadBroadcastTemplatesForChannel(channelId: Id<"channels">) {
+    if (!queryBroadcastTemplates) return;
+
+    // Filter broadcast templates by channel and approval status
+    const filtered = queryBroadcastTemplates.filter(
+      (t: BroadcastTemplate) => t.channelId === channelId && t.metaStatus === "approved"
+    );
+    setBroadcastTemplates(filtered);
+  }
+
   async function handleChannelSelect(channelId: Id<"channels">) {
     setSelectedChannelId(channelId);
     setSelectedTemplate(null);
+    setSelectedBroadcastTemplate(null);
+    setOverrideMediaUrl("");
+    setDynamicSuffixes({});
+    setVariables({});
     setTemplates([]);
-    await loadTemplates(channelId);
+    setBroadcastTemplates([]);
+
+    // Load templates based on current source
+    if (templateSource === "meta") {
+      await loadMetaTemplates(channelId);
+    } else {
+      loadBroadcastTemplatesForChannel(channelId);
+    }
+  }
+
+  function handleTemplateSourceChange(source: "meta" | "broadcast") {
+    setTemplateSource(source);
+    setSelectedTemplate(null);
+    setSelectedBroadcastTemplate(null);
+    setOverrideMediaUrl("");
+    setDynamicSuffixes({});
+    setVariables({});
+    setTemplates([]);
+    setBroadcastTemplates([]);
+
+    if (selectedChannelId) {
+      if (source === "meta") {
+        loadMetaTemplates(selectedChannelId);
+      } else {
+        loadBroadcastTemplatesForChannel(selectedChannelId);
+      }
+    }
   }
 
   async function handleSend() {
     if (!name.trim()) { setNameError(true); return; }
-    if (!selectedListId || !selectedChannelId || !selectedTemplate) return;
+    if (!selectedListId || !selectedChannelId || (!selectedTemplate && !selectedBroadcastTemplate)) return;
 
     setSending(true);
     try {
+      const activeTemplate = selectedTemplate || selectedBroadcastTemplate;
+      if (!activeTemplate) return;
+
       const broadcastId = await createBroadcast({
         name: name.trim(),
         listId: selectedListId,
         channelId: selectedChannelId,
-        templateName: selectedTemplate.name,
-        templateLanguage: selectedTemplate.language,
+        templateName: activeTemplate.name,
+        templateLanguage: activeTemplate.language,
       });
       await sendBroadcast({ broadcastId });
       setDone(true);
@@ -296,70 +387,214 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
 
           {selectedChannelId && (
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">{tx.selectTemplate}</label>
-                <button
-                  type="button"
-                  onClick={() => loadTemplates(selectedChannelId)}
-                  disabled={loadingTemplates}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <RefreshCwIcon className={`size-3 ${loadingTemplates ? "animate-spin" : ""}`} />
-                  {locale === "ar" ? "تحديث" : "Refresh"}
-                </button>
+              {/* Template Source Picker */}
+              <div>
+                <label className="text-sm font-medium mb-2 block">{tx.selectTemplateSource}</label>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateSourceChange("meta")}
+                    className={`text-start p-3 rounded-lg border transition-colors ${
+                      templateSource === "meta"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="text-sm font-medium">{tx.metaTemplates}</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTemplateSourceChange("broadcast")}
+                    className={`text-start p-3 rounded-lg border transition-colors ${
+                      templateSource === "broadcast"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">{tx.broadcastTemplates}</span>
+                      <span className="text-xs text-muted-foreground">{tx.broadcastTemplatesDesc}</span>
+                    </div>
+                  </button>
+                </div>
               </div>
 
-              {loadingTemplates ? (
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-14 w-full" />
-                  <Skeleton className="h-14 w-full" />
-                </div>
-              ) : templates.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{tx.noTemplates}</p>
-              ) : (
-                <div className="flex gap-4">
-                  {/* Template list */}
-                  <div className="flex flex-col gap-2 flex-1 min-w-0">
-                    {templates.map((tpl) => {
-                      const isSelected = selectedTemplate?.name === tpl.name && selectedTemplate?.language === tpl.language;
-                      return (
-                        <button
-                          key={`${tpl.name}-${tpl.language}`}
-                          type="button"
-                          onClick={() => setSelectedTemplate(tpl)}
-                          className={`text-start p-3 rounded-lg border transition-colors ${
-                            isSelected
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-medium truncate">{tpl.name}</span>
-                            <TemplateStatusBadge status={tpl.status} locale={locale} />
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {tpl.language}{tpl.category ? ` • ${tpl.category}` : ""}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+              {/* Template Selection */}
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">{tx.selectTemplate}</label>
+                {templateSource === "meta" && (
+                  <button
+                    type="button"
+                    onClick={() => loadMetaTemplates(selectedChannelId)}
+                    disabled={loadingTemplates}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <RefreshCwIcon className={`size-3 ${loadingTemplates ? "animate-spin" : ""}`} />
+                    {locale === "ar" ? "تحديث" : "Refresh"}
+                  </button>
+                )}
+              </div>
 
-                  {/* Preview panel */}
-                  {selectedTemplate && (
-                    <div className="shrink-0">
-                      <WhatsAppTemplatePreview
-                        name={selectedTemplate.name}
-                        components={selectedTemplate.components}
-                      />
+              {templateSource === "meta" ? (
+                <>
+                  {loadingTemplates ? (
+                    <div className="flex flex-col gap-2">
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                    </div>
+                  ) : templates.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{tx.noTemplates}</p>
+                  ) : (
+                    <div className="flex gap-4">
+                      {/* Meta Template list */}
+                      <div className="flex flex-col gap-2 flex-1 min-w-0">
+                        {templates.map((tpl) => {
+                          const isSelected = selectedTemplate?.name === tpl.name && selectedTemplate?.language === tpl.language;
+                          return (
+                            <button
+                              key={`${tpl.name}-${tpl.language}`}
+                              type="button"
+                              onClick={() => setSelectedTemplate(tpl)}
+                              className={`text-start p-3 rounded-lg border transition-colors ${
+                                isSelected
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-sm font-medium truncate">{tpl.name}</span>
+                                <TemplateStatusBadge status={tpl.status} locale={locale} />
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                {tpl.language}{tpl.category ? ` • ${tpl.category}` : ""}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Preview panel */}
+                      {selectedTemplate && (
+                        <div className="shrink-0">
+                          <WhatsAppTemplatePreview
+                            name={selectedTemplate.name}
+                            components={selectedTemplate.components}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+                </>
+              ) : (
+                <>
+                  {broadcastTemplates.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{tx.noTemplates}</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {broadcastTemplates.map((tpl) => {
+                        const isSelected = selectedBroadcastTemplate?._id === tpl._id;
+                        return (
+                          <button
+                            key={tpl._id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedBroadcastTemplate(tpl);
+                              // Reset overrides when template changes
+                              setOverrideMediaUrl(tpl.headerMediaUrl || "");
+                              setDynamicSuffixes({});
+                              setVariables({});
+                            }}
+                            className={`text-start p-3 rounded-lg border transition-colors ${
+                              isSelected
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-medium truncate">{tpl.title}</span>
+                              <TemplateStatusBadge status={tpl.metaStatus} locale={locale} />
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {tpl.language}{tpl.category ? ` • ${tpl.category}` : ""}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Broadcast Template Overrides */}
+                  {selectedBroadcastTemplate && (
+                    <div className="mt-4 pt-4 border-t space-y-4">
+                      {/* Media Override - only for IMAGE, VIDEO, DOCUMENT */}
+                      {["IMAGE", "VIDEO", "DOCUMENT"].includes(selectedBroadcastTemplate.headerType) && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">
+                            {selectedBroadcastTemplate.headerType === "IMAGE" && "Product Image URL"}
+                            {selectedBroadcastTemplate.headerType === "VIDEO" && "Video URL"}
+                            {selectedBroadcastTemplate.headerType === "DOCUMENT" && "Document URL"}
+                          </label>
+                          <Input
+                            type="url"
+                            value={overrideMediaUrl}
+                            onChange={(e) => setOverrideMediaUrl(e.target.value)}
+                            placeholder={tx.mediaUrlPlaceholder}
+                            dir="ltr"
+                          />
+                          <p className="text-xs text-muted-foreground">{tx.mediaUrlHint}</p>
+                        </div>
+                      )}
+
+                      {/* Dynamic URL Suffixes */}
+                      {selectedBroadcastTemplate.buttons?.filter((b) => b.isDynamic).map((button) => (
+                        <div key={button.text} className="space-y-2">
+                          <label className="text-sm font-medium">
+                            {tx.linkSuffix} "{button.text}"
+                          </label>
+                          <Input
+                            value={dynamicSuffixes[button.text] || ""}
+                            onChange={(e) =>
+                              setDynamicSuffixes({
+                                ...dynamicSuffixes,
+                                [button.text]: e.target.value,
+                              })
+                            }
+                            placeholder={tx.linkSuffixPlaceholder}
+                            dir="auto"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            {tx.linkSuffixHint} {button.value}{dynamicSuffixes[button.text] || ""}
+                          </p>
+                        </div>
+                      ))}
+
+                      {/* Variable Fill-in Fields */}
+                      {selectedBroadcastTemplate.variables.map((varName) => (
+                        <div key={varName} className="space-y-2">
+                          <label className="text-sm font-medium">
+                            {tx.variable} {varName}
+                          </label>
+                          <Input
+                            value={variables[varName] || ""}
+                            onChange={(e) =>
+                              setVariables({
+                                ...variables,
+                                [varName]: e.target.value,
+                              })
+                            }
+                            placeholder={tx.variablePlaceholder}
+                            dir="auto"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
 
-          {selectedTemplate && selectedTemplate.status !== "APPROVED" && (
+          {templateSource === "meta" && selectedTemplate && selectedTemplate.status !== "APPROVED" && (
             <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
               {tx.warning}
             </div>
@@ -372,7 +607,7 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
             </div>
             <Button
               onClick={() => setStep(3)}
-              disabled={!selectedChannelId || !selectedTemplate}
+              disabled={!selectedChannelId || (!selectedTemplate && !selectedBroadcastTemplate)}
             >
               {tx.next}
             </Button>
@@ -389,24 +624,24 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{tx.audience}</span>
                   <span className="font-medium">
-                    {lists?.find((l) => l._id === selectedListId)?.name ?? "\u2014"}{" "}
-                    ({selectedListStats?.total ?? "\u2014"} {tx.contacts})
+                    {lists?.find((l) => l._id === selectedListId)?.name ?? "—"}{" "}
+                    ({selectedListStats?.total ?? "—"} {tx.contacts})
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{tx.message}</span>
-                  <span className="font-medium">{selectedTemplate?.name ?? "\u2014"}</span>
+                  <span className="font-medium">{(selectedTemplate || selectedBroadcastTemplate)?.name ?? "—"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{tx.channel}</span>
                   <span className="font-medium">
-                    {channels?.find((c) => c._id === selectedChannelId)?.displayName ?? "\u2014"}
+                    {channels?.find((c) => c._id === selectedChannelId)?.displayName ?? "—"}
                   </span>
                 </div>
               </div>
             </div>
 
-            {selectedTemplate && (
+            {(selectedTemplate || selectedBroadcastTemplate) && selectedTemplate && (
               <div className="shrink-0">
                 <WhatsAppTemplatePreview
                   name={selectedTemplate.name}
