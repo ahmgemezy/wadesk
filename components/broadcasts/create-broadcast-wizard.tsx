@@ -8,7 +8,10 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckIcon, MegaphoneIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CheckIcon, MegaphoneIcon, RefreshCwIcon } from "lucide-react";
+import { WhatsAppTemplatePreview } from "./whatsapp-template-preview";
+import type { TemplateComponent } from "./whatsapp-template-preview";
 
 const t = {
   ar: {
@@ -69,8 +72,25 @@ type Template = {
   name: string;
   language: string;
   status: string;
-  components: unknown[];
+  category?: string;
+  components: TemplateComponent[];
 };
+
+function TemplateStatusBadge({ status, locale }: { status: string; locale: "ar" | "en" }) {
+  const labels: Record<string, { en: string; ar: string; cls: string }> = {
+    APPROVED: { en: "Approved", ar: "معتمد", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    PENDING: { en: "Pending", ar: "قيد المراجعة", cls: "bg-amber-100 text-amber-700 border-amber-200" },
+    REJECTED: { en: "Rejected", ar: "مرفوض", cls: "bg-red-100 text-red-700 border-red-200" },
+    PAUSED: { en: "Paused", ar: "موقوف", cls: "bg-gray-100 text-gray-600 border-gray-200" },
+    FLAGGED: { en: "Flagged", ar: "مُبلَّغ عنه", cls: "bg-orange-100 text-orange-700 border-orange-200" },
+  };
+  const cfg = labels[status] ?? { en: status, ar: status, cls: "bg-gray-100 text-gray-600 border-gray-200" };
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border shrink-0 ${cfg.cls}`}>
+      {locale === "ar" ? cfg.ar : cfg.en}
+    </span>
+  );
+}
 
 type Props = {
   locale: "ar" | "en";
@@ -101,21 +121,25 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
 
   const createBroadcast = useMutation(api.broadcasts.create);
   const sendBroadcast = useAction(api.broadcasts.send);
-  const fetchTemplatesAction = useAction(api.broadcasts.fetchTemplates);
+  const syncTemplatesAction = useAction(api.metaTemplates.syncFromMeta);
 
-  async function handleChannelSelect(channelId: Id<"channels">) {
-    setSelectedChannelId(channelId);
-    setSelectedTemplate(null);
-    setTemplates([]);
+  async function loadTemplates(channelId: Id<"channels">) {
     setLoadingTemplates(true);
     try {
-      const result = await fetchTemplatesAction({ channelId });
+      const result = await syncTemplatesAction({ channelId });
       setTemplates(result as Template[]);
     } catch {
       setTemplates([]);
     } finally {
       setLoadingTemplates(false);
     }
+  }
+
+  async function handleChannelSelect(channelId: Id<"channels">) {
+    setSelectedChannelId(channelId);
+    setSelectedTemplate(null);
+    setTemplates([]);
+    await loadTemplates(channelId);
   }
 
   async function handleSend() {
@@ -266,31 +290,69 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
           </div>
 
           {selectedChannelId && (
-            <div>
-              <label className="text-sm font-medium mb-2 block">{tx.selectTemplate}</label>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">{tx.selectTemplate}</label>
+                <button
+                  type="button"
+                  onClick={() => loadTemplates(selectedChannelId)}
+                  disabled={loadingTemplates}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <RefreshCwIcon className={`size-3 ${loadingTemplates ? "animate-spin" : ""}`} />
+                  {locale === "ar" ? "تحديث" : "Refresh"}
+                </button>
+              </div>
+
               {loadingTemplates ? (
-                <p className="text-sm text-muted-foreground">{tx.loadingTemplates}</p>
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                </div>
               ) : templates.length === 0 ? (
                 <p className="text-sm text-muted-foreground">{tx.noTemplates}</p>
               ) : (
-                <div className="flex flex-col gap-2">
-                  {templates.map((tpl) => (
-                    <button
-                      key={`${tpl.name}-${tpl.language}`}
-                      type="button"
-                      onClick={() => setSelectedTemplate(tpl)}
-                      className={`text-start p-3 rounded-lg border transition-colors ${
-                        selectedTemplate?.name === tpl.name
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="text-sm font-medium">{tpl.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {tpl.language} • {tx.approved}
-                      </div>
-                    </button>
-                  ))}
+                <div className="flex gap-4">
+                  {/* Template list */}
+                  <div className="flex flex-col gap-2 flex-1 min-w-0">
+                    {templates.map((tpl) => {
+                      const isApproved = tpl.status === "APPROVED";
+                      const isSelected = selectedTemplate?.name === tpl.name && selectedTemplate?.language === tpl.language;
+                      return (
+                        <button
+                          key={`${tpl.name}-${tpl.language}`}
+                          type="button"
+                          disabled={!isApproved}
+                          onClick={() => setSelectedTemplate(tpl)}
+                          className={`text-start p-3 rounded-lg border transition-colors ${
+                            isSelected
+                              ? "border-primary bg-primary/5"
+                              : isApproved
+                              ? "border-border hover:border-primary/50"
+                              : "border-border opacity-60 cursor-not-allowed"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-medium truncate">{tpl.name}</span>
+                            <TemplateStatusBadge status={tpl.status} locale={locale} />
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {tpl.language}{tpl.category ? ` • ${tpl.category}` : ""}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Preview panel */}
+                  {selectedTemplate && (
+                    <div className="shrink-0">
+                      <WhatsAppTemplatePreview
+                        name={selectedTemplate.name}
+                        components={selectedTemplate.components}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -314,25 +376,38 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
 
       {step === 3 && (
         <div className="flex flex-col gap-4">
-          <div className="bg-card border rounded-xl p-5 flex flex-col gap-3">
-            <h2 className="text-sm font-semibold">{tx.summary}</h2>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{tx.audience}</span>
-              <span className="font-medium">
-                {lists?.find((l) => l._id === selectedListId)?.name ?? "\u2014"}{" "}
-                ({selectedListStats?.total ?? "\u2014"} {tx.contacts})
-              </span>
+          <div className="flex gap-6 items-start">
+            <div className="flex-1 flex flex-col gap-3">
+              <div className="bg-card border rounded-xl p-5 flex flex-col gap-3">
+                <h2 className="text-sm font-semibold">{tx.summary}</h2>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{tx.audience}</span>
+                  <span className="font-medium">
+                    {lists?.find((l) => l._id === selectedListId)?.name ?? "\u2014"}{" "}
+                    ({selectedListStats?.total ?? "\u2014"} {tx.contacts})
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{tx.message}</span>
+                  <span className="font-medium">{selectedTemplate?.name ?? "\u2014"}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{tx.channel}</span>
+                  <span className="font-medium">
+                    {channels?.find((c) => c._id === selectedChannelId)?.displayName ?? "\u2014"}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{tx.message}</span>
-              <span className="font-medium">{selectedTemplate?.name ?? "\u2014"}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{tx.channel}</span>
-              <span className="font-medium">
-                {channels?.find((c) => c._id === selectedChannelId)?.displayName ?? "\u2014"}
-              </span>
-            </div>
+
+            {selectedTemplate && (
+              <div className="shrink-0">
+                <WhatsAppTemplatePreview
+                  name={selectedTemplate.name}
+                  components={selectedTemplate.components}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex justify-between mt-2">

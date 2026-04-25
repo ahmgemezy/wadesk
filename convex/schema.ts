@@ -320,7 +320,12 @@ export default defineSchema({
   notifications: defineTable({
     tenantId: v.string(),
     userId: v.string(),
-    type: v.union(v.literal("followup_due"), v.literal("sla_breach")),
+    type: v.union(
+      v.literal("followup_due"),
+      v.literal("sla_breach"),
+      v.literal("template_approved"),
+      v.literal("template_rejected"),
+    ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
     message: v.string(),
@@ -328,6 +333,21 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_user", ["tenantId", "userId", "read"]),
+
+  metaTemplates: defineTable({
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+    wabaId: v.string(),
+    name: v.string(),
+    language: v.string(),
+    status: v.string(), // "APPROVED" | "PENDING" | "REJECTED" | "PAUSED"
+    category: v.optional(v.string()),
+    components: v.any(),
+    lastSyncedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_channel", ["channelId"])
+    .index("by_waba_name_lang", ["wabaId", "name", "language"]),
 
   onboardingState: defineTable({
     tenantId: v.string(),
