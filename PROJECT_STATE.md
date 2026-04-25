@@ -7,10 +7,10 @@
 
 ---
 
-**Last Updated:** 2026-04-25 UTC  
-**Current Branch:** feat/013-departments (merged broadcasts from task/015)  
+**Last Updated:** 2026-04-26 UTC  
+**Current Branch:** feat/013-departments  
 **Main Branch:** 002-agent-roles  
-**Build Status:** ✅ TypeScript: 0 errors | ✅ Template Library feature complete
+**Build Status:** ✅ TypeScript: 0 errors in wizard | ✅ Broadcast Templates wizard integration complete
 
 ---
 
@@ -492,6 +492,18 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 5 Sessions)
+
+### 2026-04-26: Broadcast Templates Wizard Integration (Task 9 Continuation)
+- ✅ Added template source picker to broadcast wizard: "Meta Templates" vs "Broadcast Templates"
+- ✅ Broadcast templates filtered to approved status only (`metaStatus === "approved"`)
+- ✅ Media URL override field (conditional on IMAGE/VIDEO/DOCUMENT header types)
+- ✅ Dynamic URL suffix fields for buttons with `isDynamic=true`
+- ✅ Variable fill-in inputs for each template variable
+- ✅ State management for overrides: `overrideMediaUrl`, `dynamicSuffixes`, `variables`
+- ✅ RTL/i18n support: Arabic + English labels, `dir="ltr"` for URLs, `dir="auto"` for text
+- ✅ TypeScript strict types: `BroadcastTemplate = Doc<"broadcastTemplates">`
+- ✅ No TypeScript errors introduced
+- **File Modified:** `components/broadcasts/create-broadcast-wizard.tsx`
 
 ### 2026-04-25: Template Library Feature
 - ✅ Pre-built template library in Settings → Templates; two tabs (My Templates / Template Library)
