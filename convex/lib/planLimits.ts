@@ -126,3 +126,27 @@ export function assertTemplateLimitNotReached(
     });
   }
 }
+
+const BROADCAST_TEMPLATE_LIMITS: Record<Plan, number> = {
+  free: 2,
+  starter: 6,
+  growth: 20,
+  business: Infinity,
+};
+
+export function assertBroadcastTemplateLimitNotReached(
+  currentCount: number,
+  plan: Plan,
+): void {
+  const limit = BROADCAST_TEMPLATE_LIMITS[plan] ?? BROADCAST_TEMPLATE_LIMITS.free;
+  if (currentCount >= limit) {
+    throw new ConvexError({
+      message: "PLAN_LIMIT_REACHED",
+      data: { plan, limit, feature: "broadcastTemplates" },
+    });
+  }
+}
+
+export function getBroadcastTemplateLimit(plan: Plan): number {
+  return BROADCAST_TEMPLATE_LIMITS[plan] ?? BROADCAST_TEMPLATE_LIMITS.free;
+}
