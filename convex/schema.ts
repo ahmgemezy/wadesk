@@ -68,12 +68,7 @@ export default defineSchema({
     country: v.optional(v.string()),
     city: v.optional(v.string()),
     spent: v.optional(v.number()),
-    spentCurrency: v.optional(v.union(
-      v.literal("EGP"),
-      v.literal("SAR"),
-      v.literal("AED"),
-      v.literal("USD"),
-    )),
+    spentCurrency: v.optional(v.string()),
     category: v.optional(v.string()),
     createdAt: v.number(),
     stage: v.optional(v.union(
@@ -272,12 +267,7 @@ export default defineSchema({
     note: v.optional(v.string()),
     whatsappMessage: v.string(),
     expectedRevenue: v.optional(v.number()),
-    currency: v.optional(v.union(
-      v.literal("EGP"),
-      v.literal("SAR"),
-      v.literal("AED"),
-      v.literal("USD"),
-    )),
+    currency: v.optional(v.string()),
     status: v.union(
       v.literal("pending"),
       v.literal("sent"),
@@ -473,6 +463,62 @@ export default defineSchema({
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_category", ["tenantId", "category"]),
+
+  broadcastTemplates: defineTable({
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+
+    // Meta identity
+    name: v.string(),
+    title: v.string(),
+    language: v.string(),
+    category: v.union(v.literal("MARKETING"), v.literal("UTILITY")),
+
+    // Header
+    headerType: v.union(
+      v.literal("NONE"),
+      v.literal("TEXT"),
+      v.literal("IMAGE"),
+      v.literal("VIDEO"),
+      v.literal("DOCUMENT"),
+    ),
+    headerText: v.optional(v.string()),
+    headerMediaUrl: v.optional(v.string()),
+
+    // Body
+    body: v.string(),
+    variables: v.array(v.string()),
+
+    // Footer
+    footer: v.optional(v.string()),
+
+    // Buttons
+    buttons: v.optional(v.array(v.object({
+      type: v.union(v.literal("URL"), v.literal("PHONE_NUMBER"), v.literal("QUICK_REPLY")),
+      text: v.string(),
+      value: v.string(),
+      isDynamic: v.optional(v.boolean()),
+    }))),
+
+    // Meta approval lifecycle
+    metaStatus: v.union(
+      v.literal("draft"),
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("paused"),
+    ),
+    metaTemplateId: v.optional(v.string()),
+    metaRejectionReason: v.optional(v.string()),
+    metaSubmittedAt: v.optional(v.number()),
+
+    createdBy: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_channel", ["channelId"])
+    .index("by_tenant_status", ["tenantId", "metaStatus"]),
 
   departments: defineTable({
     tenantId: v.string(),
