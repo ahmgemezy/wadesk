@@ -348,7 +348,7 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN=   # Same as META_WEBHOOK_VERIFY_TOKEN — set in 
 WHATSAPP_WEBHOOK_SECRET=         # Random secret shared between Next.js route and Convex action
 WHATSAPP_APP_SECRET=             # Meta App Secret (Meta App Dashboard → Settings → Basic)
 WHATSAPP_API_TOKEN=              # Permanent System User token for sending messages (task 013)
-WHATSAPP_API_VERSION=v19.0       # Meta API version
+WHATSAPP_API_VERSION=v25.0       # Meta API version — always use v25.0 (latest)
 
 # Polar.sh
 POLAR_ACCESS_TOKEN=
@@ -800,7 +800,7 @@ Agents can edit their WhatsApp Business profile from within WaDesk via the Meta 
 
 ### Meta API Details
 
-- Endpoint: `GET/POST https://graph.facebook.com/v19.0/{phone-number-id}/whatsapp_business_profile`
+- Endpoint: `GET/POST https://graph.facebook.com/v25.0/{phone-number-id}/whatsapp_business_profile`
 - Fields to request: `about, address, description, email, profile_picture_url, websites, vertical`
 - All API calls go through Convex actions (never client-side) using stored encrypted access token
 - Use `getChannelInternal` helper to retrieve decrypted token
@@ -881,13 +881,11 @@ _Last updated: manually — update this file whenever a major architectural or p
 - TypeScript (strict, no `any`) — enforced project-wide + Next.js 15 (App Router), Convex (backend + realtime), Clerk (auth + multi-tenancy), shadcn/ui, Tailwind CSS v4
 
 <!-- convex-ai-start -->
-
 This project uses [Convex](https://convex.dev) as its backend.
 
 When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
 
 Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
-
 <!-- convex-ai-end -->
 
 # Project Rules & Work Protocol

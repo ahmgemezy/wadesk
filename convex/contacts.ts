@@ -192,10 +192,12 @@ export const create = mutation({
     const role = await getCallerRole(ctx);
     assertAdminOrSupervisor(role);
 
+    const phone = args.phone.startsWith("+") ? args.phone : `+${args.phone}`;
+
     const existing = await ctx.db
       .query("contacts")
       .withIndex("by_tenant_phone", (q) =>
-        q.eq("tenantId", tenantId).eq("phone", args.phone),
+        q.eq("tenantId", tenantId).eq("phone", phone),
       )
       .first();
 
@@ -203,12 +205,12 @@ export const create = mutation({
       return { error: "duplicate" as const, existingId: existing._id };
     }
 
-    const geoCountry = args.country ?? getCountryFromPhone(args.phone)?.countryIso ?? undefined;
+    const geoCountry = args.country ?? getCountryFromPhone(phone)?.countryIso ?? undefined;
 
     return ctx.db.insert("contacts", {
       tenantId,
-      phone: args.phone,
-      displayName: args.customName ?? args.phone,
+      phone,
+      displayName: args.customName ?? phone,
       customName: args.customName,
       tags: args.tags ?? [],
       notes: args.notes,
@@ -234,10 +236,13 @@ export const upsertByPhone = internalMutation({
     incrementConversations: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    // Normalize to E.164: Meta often sends numbers without the leading "+"
+    const phone = args.phone.startsWith("+") ? args.phone : `+${args.phone}`;
+
     const existing = await ctx.db
       .query("contacts")
       .withIndex("by_tenant_phone", (q) =>
-        q.eq("tenantId", args.tenantId).eq("phone", args.phone),
+        q.eq("tenantId", args.tenantId).eq("phone", phone),
       )
       .first();
 
@@ -254,12 +259,12 @@ export const upsertByPhone = internalMutation({
       return existing._id;
     }
 
-    const autoCountry = getCountryFromPhone(args.phone)?.countryIso ?? undefined;
+    const autoCountry = getCountryFromPhone(phone)?.countryIso ?? undefined;
 
     return ctx.db.insert("contacts", {
       tenantId: args.tenantId,
-      phone: args.phone,
-      displayName: args.displayName ?? args.phone,
+      phone,
+      displayName: args.displayName ?? phone,
       tags: [],
       source: "auto",
       isArchived: false,

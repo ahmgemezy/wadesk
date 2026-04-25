@@ -119,10 +119,11 @@ export const checkAndRecordResponse = internalMutation({
 
     const score = parseInt(trimmed, 10);
 
+    const normalizedPhone = args.senderPhone.startsWith("+") ? args.senderPhone : `+${args.senderPhone}`;
     const contact = await ctx.db
       .query("contacts")
       .withIndex("by_tenant_phone", (q) =>
-        q.eq("tenantId", args.tenantId).eq("phone", args.senderPhone),
+        q.eq("tenantId", args.tenantId).eq("phone", normalizedPhone),
       )
       .first();
     if (!contact) return false;

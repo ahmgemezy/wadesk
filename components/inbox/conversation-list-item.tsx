@@ -83,9 +83,11 @@ export function ConversationListItem({
     setDeleting(true);
     try {
       await removeConversation({ conversationId: conversation._id as Id<"conversations"> });
+      setConfirmOpen(false);
       toast.success(t("Conversation deleted", "تم حذف المحادثة"));
       if (isActive) router.push("/inbox");
-    } catch {
+    } catch (err) {
+      console.error("[delete conversation]", err);
       toast.error(t("Failed to delete conversation", "فشل حذف المحادثة"));
       setDeleting(false);
     }

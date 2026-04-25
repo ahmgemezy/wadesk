@@ -30,13 +30,13 @@ const t = {
     back: "السابق",
     send: "إرسال الحملة",
     sending: "جاري الإرسال...",
-    noTemplates: "لا توجد قوالب معتمدة لهذا الرقم",
+    noTemplates: "لا توجد قوالب لهذا الرقم",
     loadingTemplates: "جاري تحميل القوالب...",
     summary: "ملخص الحملة",
     audience: "الجمهور",
     message: "القالب",
     channel: "رقم الإرسال",
-    warning: "\u26A0\uFE0F تُرسل الحملات عبر قوالب WhatsApp المعتمدة من Meta فقط.",
+    warning: "\u26A0\uFE0F هذا القالب غير معتمد من Meta بعد — قد لا يُرسل بنجاح.",
     success: "تم إرسال الحملة بنجاح!",
     nameRequired: "اسم الحملة مطلوب",
   },
@@ -56,13 +56,13 @@ const t = {
     back: "Back",
     send: "Send Campaign",
     sending: "Sending...",
-    noTemplates: "No approved templates for this number",
+    noTemplates: "No templates found for this number",
     loadingTemplates: "Loading templates...",
     summary: "Campaign Summary",
     audience: "Audience",
     message: "Template",
     channel: "Sending from",
-    warning: "\u26A0\uFE0F Broadcasts use Meta-approved WhatsApp templates only.",
+    warning: "\u26A0\uFE0F This template is not yet approved by Meta — it may not send successfully.",
     success: "Campaign sent successfully!",
     nameRequired: "Campaign name is required",
   },
@@ -316,20 +316,16 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
                   {/* Template list */}
                   <div className="flex flex-col gap-2 flex-1 min-w-0">
                     {templates.map((tpl) => {
-                      const isApproved = tpl.status === "APPROVED";
                       const isSelected = selectedTemplate?.name === tpl.name && selectedTemplate?.language === tpl.language;
                       return (
                         <button
                           key={`${tpl.name}-${tpl.language}`}
                           type="button"
-                          disabled={!isApproved}
                           onClick={() => setSelectedTemplate(tpl)}
                           className={`text-start p-3 rounded-lg border transition-colors ${
                             isSelected
                               ? "border-primary bg-primary/5"
-                              : isApproved
-                              ? "border-border hover:border-primary/50"
-                              : "border-border opacity-60 cursor-not-allowed"
+                              : "border-border hover:border-primary/50"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -358,9 +354,11 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
             </div>
           )}
 
-          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-            {tx.warning}
-          </div>
+          {selectedTemplate && selectedTemplate.status !== "APPROVED" && (
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              {tx.warning}
+            </div>
+          )}
 
           <div className="flex justify-between mt-2">
             <Button variant="outline" onClick={() => setStep(1)}>{tx.back}</Button>

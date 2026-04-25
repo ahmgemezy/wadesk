@@ -37,7 +37,7 @@ export default async function RootLayout({
   return (
     <ClerkProvider>
       <html lang={locale} dir={dir} suppressHydrationWarning>
-        <body className={`${cairo.variable} font-cairo antialiased`}>
+        <body className={`${cairo.variable} font-cairo antialiased`} suppressHydrationWarning>
           <ConvexClientProvider>
             <LocaleProvider locale={locale}>
               <ThemeProvider>{children}</ThemeProvider>

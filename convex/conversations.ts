@@ -293,10 +293,16 @@ export const remove = mutation({
     // Delete the conversation metrics record if present
     const metrics = await ctx.db
       .query("conversationMetrics")
-      .withIndex("by_tenant_created", (q) => q.eq("tenantId", tenantId))
-      .filter((q) => q.eq(q.field("conversationId"), args.conversationId))
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .first();
     if (metrics) await ctx.db.delete(metrics._id);
+
+    // Delete automation rule fire logs for this conversation
+    const fireLogs = await ctx.db
+      .query("ruleFireLog")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .collect();
+    for (const log of fireLogs) await ctx.db.delete(log._id);
 
     await ctx.db.delete(args.conversationId);
   },
