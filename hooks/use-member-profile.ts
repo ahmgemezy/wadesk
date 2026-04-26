@@ -28,6 +28,9 @@ type MemberProfile = {
   imageUrl: string | null;
   role: string;
   joinedAt: number | null;
+  phone: string | null;
+  jobTitle: string | null;
+  bio: string | null;
   channels: { id: string; name: string }[];
   departments: { id: string; name: string }[];
 };
