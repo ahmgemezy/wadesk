@@ -618,6 +618,9 @@ export default defineSchema({
       targetMemberId: v.optional(v.string()),
       targetRole: v.optional(v.string()),
       changedFields: v.optional(v.object({
+        email: v.optional(v.boolean()),
+        phone: v.optional(v.boolean()),
+        jobTitle: v.optional(v.boolean()),
         channel: v.optional(v.object({ added: v.array(v.string()), removed: v.array(v.string()) })),
         department: v.optional(v.object({ added: v.array(v.string()), removed: v.array(v.string()) })),
       })),
