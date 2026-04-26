@@ -118,12 +118,7 @@ export const update = mutation({
     country: v.optional(v.string()),
     city: v.optional(v.string()),
     spent: v.optional(v.number()),
-    spentCurrency: v.optional(v.union(
-      v.literal("EGP"),
-      v.literal("SAR"),
-      v.literal("AED"),
-      v.literal("USD"),
-    )),
+    spentCurrency: v.optional(v.string()),
     category: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

@@ -314,7 +314,7 @@ export const getContactActivity = query({
 
 export const getContactsByRevenueCurrency = query({
   args: {
-    currency: v.union(v.literal("EGP"), v.literal("SAR"), v.literal("AED"), v.literal("USD")),
+    currency: v.string(),
     startTs: v.number(),
     endTs: v.number(),
   },
@@ -391,7 +391,7 @@ export const getRevenueByCurrency = query({
       }
     }
 
-    const breakdown = (["EGP", "SAR", "AED", "USD"] as const)
+    const breakdown = Object.keys(totals)
       .map((currency) => ({ currency, amount: totals[currency] ?? 0 }))
       .filter((entry) => entry.amount > 0);
 

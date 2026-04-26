@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "convex/react";
 import { useOrganization } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
@@ -23,8 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-type Currency = "EGP" | "SAR" | "AED" | "USD";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { CURRENCIES } from "@/lib/currencies";
 
 interface Props {
   open: boolean;
@@ -39,10 +39,20 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
   const { memberships } = useOrganization({ memberships: { infinite: true } });
   const createFollowUp = useMutation(api.followUps.create);
 
+  const currencyOptions = useMemo(
+    () =>
+      CURRENCIES.map((c) => ({
+        value: c.code,
+        label: `${c.code} — ${locale === "ar" ? c.nameAr : c.nameEn}`,
+        searchLabel: `${c.code} ${c.nameAr} ${c.nameEn} ${c.symbol}`,
+      })),
+    [locale]
+  );
+
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [revenue, setRevenue] = useState("");
-  const [currency, setCurrency] = useState<Currency>("EGP");
+  const [currency, setCurrency] = useState("EGP");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>("__self__");
@@ -132,17 +142,13 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium">{isRtl ? "العملة" : "Currency"}</label>
-              <Select value={currency} onValueChange={(v) => { if (v) setCurrency(v as Currency); }}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EGP">EGP</SelectItem>
-                  <SelectItem value="SAR">SAR</SelectItem>
-                  <SelectItem value="AED">AED</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                options={currencyOptions}
+                value={currency}
+                onValueChange={setCurrency}
+                placeholder="EGP"
+                searchPlaceholder={isRtl ? "ابحث عن العملة..." : "Search currency..."}
+              />
             </div>
           </div>
 

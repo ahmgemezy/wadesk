@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -22,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { CURRENCIES } from "@/lib/currencies";
 import {
   Sheet,
   SheetContent,
@@ -184,7 +186,7 @@ export function ContactDetailSheet({
   const [cityOther, setCityOther] = useState("");
   const [category, setCategory] = useState("");
   const [spent, setSpent] = useState("");
-  const [spentCurrency, setSpentCurrency] = useState<"EGP" | "SAR" | "AED" | "USD">("USD");
+  const [spentCurrency, setSpentCurrency] = useState("USD");
   const [stage, setStage] = useState<string>("lead");
   const [newFieldKey, setNewFieldKey] = useState("");
   const [newFieldValue, setNewFieldValue] = useState("");
@@ -194,6 +196,16 @@ export function ContactDetailSheet({
   const [startingConversation, setStartingConversation] = useState(false);
 
   const contact = data?.contact ?? null;
+
+  const currencyOptions = useMemo(
+    () =>
+      CURRENCIES.map((c) => ({
+        value: c.code,
+        label: `${c.code} — ${locale === "ar" ? c.nameAr : c.nameEn}`,
+        searchLabel: `${c.code} ${c.nameAr} ${c.nameEn} ${c.symbol}`,
+      })),
+    [locale]
+  );
 
   function startEditing() {
     if (!contact) return;
@@ -212,7 +224,7 @@ export function ContactDetailSheet({
     }
     setCategory(contact.category ?? "");
     setSpent(contact.spent != null ? String(contact.spent) : "");
-    setSpentCurrency((contact.spentCurrency as "EGP" | "SAR" | "AED" | "USD") ?? "USD");
+    setSpentCurrency(contact.spentCurrency ?? "USD");
     setStage(contact.stage ?? "lead");
     setEditing(true);
   }
@@ -494,17 +506,13 @@ export function ContactDetailSheet({
                     <Field label={l.spent} icon={<DollarSignIcon className="size-3.5" />}>
                       {editing ? (
                         <div className="flex flex-col gap-1.5" dir="ltr">
-                          <Select value={spentCurrency} onValueChange={(v) => setSpentCurrency(v as "EGP" | "SAR" | "AED" | "USD")}>
-                            <SelectTrigger className="h-8 text-sm w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="USD">USD</SelectItem>
-                              <SelectItem value="EGP">EGP</SelectItem>
-                              <SelectItem value="SAR">SAR</SelectItem>
-                              <SelectItem value="AED">AED</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <SearchableSelect
+                            options={currencyOptions}
+                            value={spentCurrency}
+                            onValueChange={setSpentCurrency}
+                            placeholder="USD"
+                            searchPlaceholder={locale === "ar" ? "ابحث عن العملة..." : "Search currency..."}
+                          />
                           <Input value={spent} onChange={(e) => setSpent(e.target.value)} placeholder="0" type="number" className="h-8 text-sm w-full" dir="ltr" />
                         </div>
                       ) : (

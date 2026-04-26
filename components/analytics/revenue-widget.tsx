@@ -16,14 +16,9 @@ import type { DateRange } from "./date-range-picker";
 import { motion } from "framer-motion";
 import { ChevronLeftIcon, ChevronRightIcon, UserIcon } from "lucide-react";
 
-type Currency = "EGP" | "SAR" | "AED" | "USD";
+import { getCurrencyByCode } from "@/lib/currencies";
 
-const CURRENCY_META: Record<Currency, { symbol: string; nameAr: string; nameEn: string }> = {
-  EGP: { symbol: "ج.م", nameAr: "جنيه مصري", nameEn: "Egyptian Pound" },
-  SAR: { symbol: "ر.س", nameAr: "ريال سعودي", nameEn: "Saudi Riyal" },
-  AED: { symbol: "د.إ", nameAr: "درهم إماراتي", nameEn: "UAE Dirham" },
-  USD: { symbol: "$", nameAr: "دولار أمريكي", nameEn: "US Dollar" },
-};
+type Currency = string;
 
 const STAGE_LABELS: Record<string, { ar: string; en: string; color: string }> = {
   lead:     { ar: "عميل محتمل", en: "Lead",     color: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
@@ -53,7 +48,7 @@ function RevenueDrillDown({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const meta = currency ? CURRENCY_META[currency] : null;
+  const meta = currency ? getCurrencyByCode(currency) : null;
 
   const contacts = useQuery(
     api.analytics.getContactsByRevenueCurrency,
@@ -178,7 +173,8 @@ export function RevenueWidget({ dateRange, locale = "ar" }: RevenueWidgetProps) 
               variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
             >
               {data.breakdown.map(({ currency, amount }) => {
-                const meta = CURRENCY_META[currency as Currency] ?? {
+                const meta = getCurrencyByCode(currency) ?? {
+                  code: currency,
                   symbol: currency,
                   nameAr: currency,
                   nameEn: currency,
@@ -187,7 +183,7 @@ export function RevenueWidget({ dateRange, locale = "ar" }: RevenueWidgetProps) 
                   <motion.button
                     key={currency}
                     variants={{ hidden: { opacity: 0, x: 10 }, show: { opacity: 1, x: 0 } }}
-                    onClick={() => setSelectedCurrency(currency as Currency)}
+                    onClick={() => setSelectedCurrency(currency)}
                     className="w-full flex items-center justify-between rounded-lg bg-muted/40 px-4 py-3 border border-border/40 hover:bg-muted/70 hover:border-primary/30 transition-colors group cursor-pointer text-start"
                   >
                     <div className="flex flex-col">

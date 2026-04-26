@@ -1,0 +1,88 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - button [ref=e139]:
+        - generic [ref=e8]: E
+      - separator [ref=e9]
+      - list [ref=e13]:
+        - listitem [ref=e14]:
+          - link [ref=e140] [cursor=pointer]:
+            - /url: /inbox
+            - img [ref=e16]
+            - generic [ref=e83]: الصندوق
+        - listitem [ref=e19]:
+          - link [ref=e141] [cursor=pointer]:
+            - /url: /contacts
+            - img [ref=e21]
+        - listitem [ref=e25]:
+          - link [ref=e142] [cursor=pointer]:
+            - /url: /lists
+            - img [ref=e27]
+        - listitem [ref=e28]:
+          - link [ref=e143] [cursor=pointer]:
+            - /url: /broadcasts
+            - img [ref=e30]
+        - listitem [ref=e33]:
+          - link [ref=e144] [cursor=pointer]:
+            - /url: /my-stats
+            - img [ref=e35]
+        - listitem [ref=e38]:
+          - link [ref=e145] [cursor=pointer]:
+            - /url: /analytics
+            - img [ref=e40]
+        - listitem [ref=e42]:
+          - link [ref=e146] [cursor=pointer]:
+            - /url: /automations
+            - img [ref=e44]
+        - listitem [ref=e47]:
+          - button [expanded] [ref=e147]:
+            - img [ref=e49]
+            - generic [ref=e52]: الإعدادات
+            - img [ref=e53]
+      - generic [ref=e55]:
+        - separator [ref=e56]
+        - generic [ref=e84]:
+          - img [ref=e148]
+          - button [ref=e86]:
+            - img [ref=e87]
+    - main [ref=e57]:
+      - generic [ref=e58]:
+        - button [ref=e149]:
+          - img
+          - generic [ref=e60]: Toggle Sidebar
+        - separator [ref=e61]
+        - generic [ref=e62]:
+          - button [ref=e150]:
+            - img [ref=e64]
+          - button [ref=e151]:
+            - img [ref=e67]
+      - generic [ref=e70]:
+        - navigation [ref=e152]:
+          - link [ref=e153] [cursor=pointer]:
+            - /url: /settings
+            - text: الإعدادات
+          - generic [ref=e93]:
+            - generic [ref=e94]: ‹
+            - generic [ref=e95]: templates
+        - generic [ref=e96]:
+          - heading [level=1] [ref=e154]: قوالب الرسائل
+          - generic [ref=e98]:
+            - tablist [ref=e99]:
+              - tab [ref=e155]: قوالبي
+              - tab [ref=e156]: 📚 مكتبة القوالب
+              - tab [selected] [ref=e157]: قوالب البث
+            - tabpanel [ref=e158]:
+              - generic [ref=e135]:
+                - heading [level=3] [ref=e159]: لا توجد قوالب بث حتى الآن
+                - paragraph [ref=e137]: أنشئ قالب البث الأول لديك لإرسال حملات WhatsApp دون مغادرة WaDesk.
+                - button [ref=e160]:
+                  - img
+                  - text: أنشئ قالبك الأول
+  - button "Open Next.js Dev Tools" [ref=e78] [cursor=pointer]:
+    - img [ref=e79]
+  - alert [ref=e82]
+  - dialog "إنشاء قالب البث" [ref=e164]:
+    - heading "إنشاء قالب البث" [level=2] [ref=e166]
+    - button "Close" [active] [ref=e167]:
+      - img
+      - generic [ref=e168]: Close

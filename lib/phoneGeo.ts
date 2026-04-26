@@ -1,27 +1,10 @@
 import { parsePhoneNumber, ParseError } from "libphonenumber-js";
+import { COUNTRIES } from "@/lib/countries";
 
-const COUNTRY_NAMES: Record<string, { ar: string; en: string }> = {
-  EG: { ar: "مصر", en: "Egypt" },
-  SA: { ar: "السعودية", en: "Saudi Arabia" },
-  AE: { ar: "الإمارات", en: "UAE" },
-  KW: { ar: "الكويت", en: "Kuwait" },
-  QA: { ar: "قطر", en: "Qatar" },
-  BH: { ar: "البحرين", en: "Bahrain" },
-  OM: { ar: "عُمان", en: "Oman" },
-  JO: { ar: "الأردن", en: "Jordan" },
-  LB: { ar: "لبنان", en: "Lebanon" },
-  MA: { ar: "المغرب", en: "Morocco" },
-  DZ: { ar: "الجزائر", en: "Algeria" },
-  TN: { ar: "تونس", en: "Tunisia" },
-  IQ: { ar: "العراق", en: "Iraq" },
-  LY: { ar: "ليبيا", en: "Libya" },
-  SD: { ar: "السودان", en: "Sudan" },
-  TR: { ar: "تركيا", en: "Turkey" },
-  US: { ar: "الولايات المتحدة", en: "United States" },
-  GB: { ar: "المملكة المتحدة", en: "United Kingdom" },
-  DE: { ar: "ألمانيا", en: "Germany" },
-  FR: { ar: "فرنسا", en: "France" },
-};
+const COUNTRY_NAMES: Record<string, { ar: string; en: string }> = {};
+for (const c of COUNTRIES) {
+  COUNTRY_NAMES[c.iso] = { ar: c.nameAr, en: c.nameEn };
+}
 
 export type GeoResult = {
   countryIso: string;

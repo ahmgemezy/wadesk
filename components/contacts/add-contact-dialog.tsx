@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -16,6 +16,8 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { COUNTRIES } from "@/lib/countries";
 import { AlertCircleIcon } from "lucide-react";
 
 interface AddContactDialogProps {
@@ -81,6 +83,16 @@ export function AddContactDialog({
   const [category, setCategory] = useState("");
   const [saving, setSaving] = useState(false);
   const [duplicateError, setDuplicateError] = useState<Id<"contacts"> | null>(null);
+
+  const countryOptions = useMemo(
+    () =>
+      COUNTRIES.map((c) => ({
+        value: c.iso,
+        label: `${locale === "ar" ? c.nameAr : c.nameEn} (${c.callingCode})`,
+        searchLabel: `${c.iso} ${c.nameAr} ${c.nameEn} ${c.callingCode}`,
+      })),
+    [locale]
+  );
 
   const l = labels[locale];
 
@@ -175,11 +187,12 @@ export function AddContactDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">{l.country}</label>
-              <Input
+              <SearchableSelect
+                options={countryOptions}
                 value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                placeholder={l.country}
-                disabled={saving}
+                onValueChange={setCountry}
+                placeholder={locale === "ar" ? "اختر الدولة..." : "Select country..."}
+                searchPlaceholder={locale === "ar" ? "ابحث عن الدولة..." : "Search country..."}
               />
             </div>
             <div className="space-y-1">

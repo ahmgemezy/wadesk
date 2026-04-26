@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - button "E" [ref=e7]:
+        - generic [ref=e8]: E
+      - separator [ref=e9]
+      - list [ref=e13]:
+        - listitem [ref=e14]:
+          - link "الصندوق" [ref=e15] [cursor=pointer]:
+            - /url: /inbox
+            - img [ref=e16]
+            - generic: الصندوق
+        - listitem [ref=e19]:
+          - link "جهات الاتصال" [ref=e20] [cursor=pointer]:
+            - /url: /contacts
+            - img [ref=e21]
+            - generic: جهات الاتصال
+        - listitem [ref=e25]:
+          - link "القوائم" [ref=e26] [cursor=pointer]:
+            - /url: /lists
+            - img [ref=e27]
+            - generic: القوائم
+        - listitem [ref=e28]:
+          - link "الحملات" [ref=e29] [cursor=pointer]:
+            - /url: /broadcasts
+            - img [ref=e30]
+            - generic: الحملات
+        - listitem [ref=e33]:
+          - link "إحصائياتي" [ref=e34] [cursor=pointer]:
+            - /url: /my-stats
+            - img [ref=e35]
+            - generic: إحصائياتي
+        - listitem [ref=e38]:
+          - link "التحليلات" [ref=e39] [cursor=pointer]:
+            - /url: /analytics
+            - img [ref=e40]
+            - generic: التحليلات
+        - listitem [ref=e42]:
+          - link "قواعد تلقائية" [ref=e43] [cursor=pointer]:
+            - /url: /automations
+            - img [ref=e44]
+            - generic: قواعد تلقائية
+        - listitem [ref=e47]:
+          - button "الإعدادات" [expanded] [ref=e48]:
+            - img [ref=e49]
+            - generic [ref=e52]: الإعدادات
+            - img [ref=e53]
+      - separator [ref=e56]
+    - main [ref=e57]:
+      - generic [ref=e58]:
+        - button "Toggle Sidebar" [ref=e59]:
+          - img
+          - generic [ref=e60]: Toggle Sidebar
+        - separator [ref=e61]
+        - generic [ref=e62]:
+          - button "Switch to dark mode" [ref=e63]:
+            - img [ref=e64]
+          - button "الإشعارات" [ref=e66]:
+            - img [ref=e67]
+  - button "Open Next.js Dev Tools" [ref=e78] [cursor=pointer]:
+    - img [ref=e79]
+  - alert [ref=e82]

@@ -51,12 +51,7 @@ export const create = mutation({
     note: v.optional(v.string()),
     whatsappMessage: v.string(),
     expectedRevenue: v.optional(v.number()),
-    currency: v.optional(v.union(
-      v.literal("EGP"),
-      v.literal("SAR"),
-      v.literal("AED"),
-      v.literal("USD"),
-    )),
+    currency: v.optional(v.string()),
     assignedTo: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

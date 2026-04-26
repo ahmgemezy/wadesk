@@ -1,20 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
-import { useT } from "@/lib/i18n/context";
+import { useT, useLocale } from "@/lib/i18n/context";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { TIMEZONES, getTimezoneLabel, type TimezoneEntry } from "@/lib/timezones";
 import type { DayKey, BusinessHoursSchedule, DaySchedule } from "@/lib/automationHelpers";
 import { Clock } from "lucide-react";
 
@@ -28,22 +23,14 @@ const DAYS: { key: DayKey; ar: string }[] = [
   { key: "fri", ar: "الجمعة" },
 ];
 
-const MENA_TIMEZONES = [
-  { value: "Asia/Riyadh", label: "الرياض (AST)" },
-  { value: "Asia/Dubai", label: "دبي (GST)" },
-  { value: "Asia/Kuwait", label: "الكويت (AST)" },
-  { value: "Asia/Baghdad", label: "بغداد (AST)" },
-  { value: "Africa/Cairo", label: "القاهرة (EET)" },
-  { value: "Asia/Amman", label: "عمّان (EET)" },
-  { value: "Asia/Beirut", label: "بيروت (EET)" },
-  { value: "Asia/Damascus", label: "دمشق (EET)" },
-  { value: "Asia/Qatar", label: "قطر (AST)" },
-  { value: "Asia/Muscat", label: "مسقط (GST)" },
-  { value: "Asia/Jerusalem", label: "القدس (IST)" },
-  { value: "Africa/Casablanca", label: "الدار البيضاء (WET)" },
-  { value: "Africa/Tunis", label: "تونس (CET)" },
-  { value: "Africa/Algiers", label: "الجزائر (CET)" },
-];
+const _tzLabelsCache: Map<string, { ar: string; en: string }> = new Map();
+function getTzLabels(tz: TimezoneEntry) {
+  const cached = _tzLabelsCache.get(tz.value);
+  if (cached) return cached;
+  const labels = { ar: getTimezoneLabel(tz, "ar"), en: getTimezoneLabel(tz, "en") };
+  _tzLabelsCache.set(tz.value, labels);
+  return labels;
+}
 
 const DEFAULT_SCHEDULE: BusinessHoursSchedule = {
   sat: { enabled: true, open: "09:00", close: "17:00" },
@@ -61,8 +48,22 @@ interface BusinessHoursFormProps {
 
 export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
   const t = useT();
+  const locale = useLocale();
   const businessHours = useQuery(api.automations.getBusinessHours);
   const saveBusinessHours = useMutation(api.automations.saveBusinessHours);
+
+  const timezoneOptions = useMemo(
+    () =>
+      TIMEZONES.map((tz) => {
+        const labels = getTzLabels(tz);
+        return {
+          value: tz.value,
+          label: locale === "ar" ? labels.ar : labels.en,
+          searchLabel: `${tz.value} ${tz.labelAr} ${tz.labelEn}`,
+        };
+      }),
+    [locale]
+  );
 
   const [schedule, setSchedule] = useState<BusinessHoursSchedule>(DEFAULT_SCHEDULE);
   const [timezone, setTimezone] = useState("Asia/Riyadh");
@@ -145,18 +146,13 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
           <label className="text-sm font-medium font-cairo">
             {t("Timezone", "المنطقة الزمنية")}
           </label>
-          <Select value={timezone} onValueChange={(v) => { if (v !== null) setTimezone(v); }}>
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {MENA_TIMEZONES.map((tz) => (
-                <SelectItem key={tz.value} value={tz.value}>
-                  <span className="font-cairo">{tz.label}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            options={timezoneOptions}
+            value={timezone}
+            onValueChange={setTimezone}
+            placeholder={t("Select timezone...", "اختر المنطقة الزمنية...")}
+            searchPlaceholder={t("Search timezone...", "ابحث عن المنطقة الزمنية...")}
+          />
         </div>
 
         <div className="space-y-2">
