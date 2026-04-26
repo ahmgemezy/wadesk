@@ -91,6 +91,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "🎉 خصم {{discount}}% على جميع المنتجات! العرض ساري لمدة {{hours}} ساعة فقط. سارع بالطلب الآن!",
     metaCategory: "MARKETING",
+    industries: ["ecommerce", "food", "beauty"],
   },
   {
     id: "promo-flash-sale-en",
@@ -100,6 +101,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "🎉 {{discount}}% OFF everything! Offer valid for {{hours}} hours only. Order now!",
     metaCategory: "MARKETING",
+    industries: ["ecommerce", "food", "beauty"],
   },
   {
     id: "promo-seasonal-ar",
@@ -109,6 +111,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "مرحباً {{name}}! بمناسبة {{occasion}}، نقدم لك خصم {{discount}}% باستخدام كود {{code}}. استمتع بالتسوق! 🛍️",
     metaCategory: "MARKETING",
+    industries: ["ecommerce", "food", "beauty", "travel"],
   },
   {
     id: "promo-seasonal-en",
@@ -118,6 +121,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "Hi {{name}}! To celebrate {{occasion}}, enjoy {{discount}}% off with code {{code}}. Happy shopping! 🛍️",
     metaCategory: "MARKETING",
+    industries: ["ecommerce", "food", "beauty", "travel"],
   },
   {
     id: "promo-new-arrival-ar",
@@ -127,6 +131,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "وصل الجديد! 🛍️ تشكيلة {{product}} متاحة الآن. تسوّق قبل نفاد الكمية.",
     metaCategory: "MARKETING",
+    industries: ["ecommerce"],
   },
   {
     id: "promo-new-arrival-en",
@@ -136,6 +141,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "New arrivals are here! 🛍️ The {{product}} collection is now available. Shop before it sells out.",
     metaCategory: "MARKETING",
+    industries: ["ecommerce"],
   },
 
   // ── META: ORDERS ──────────────────────────────────────────────────────────
@@ -147,6 +153,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "✅ تم تأكيد طلبك رقم {{order_id}}. سنبدأ التجهيز فوراً وسنخطرك عند الشحن.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "food"],
   },
   {
     id: "order-confirmed-en",
@@ -156,6 +163,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "✅ Order #{{order_id}} confirmed! We'll start processing right away and notify you when shipped.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "food"],
   },
   {
     id: "order-shipped-ar",
@@ -165,6 +173,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "📦 طلبك رقم {{order_id}} اتشحن! رقم التتبع: {{tracking_number}}. هيوصلك خلال {{days}} أيام.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce"],
   },
   {
     id: "order-shipped-en",
@@ -174,6 +183,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "📦 Order #{{order_id}} is on its way! Tracking: {{tracking_number}}. Expected in {{days}} days.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce"],
   },
   {
     id: "order-delivered-ar",
@@ -183,6 +193,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "🎉 طلبك رقم {{order_id}} اتوصّل! نتمنى تكون راضي. لو في أي مشكلة تواصل معنا.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "food"],
   },
   {
     id: "order-delivered-en",
@@ -192,6 +203,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "🎉 Order #{{order_id}} has been delivered! Hope you love it. Reach out if anything needs attention.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "food"],
   },
 
   // ── META: APPOINTMENTS ────────────────────────────────────────────────────
@@ -203,6 +215,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "✅ تم تأكيد موعدك يوم {{date}} الساعة {{time}} في {{location}}. نراك قريباً!",
     metaCategory: "UTILITY",
+    industries: ["health", "beauty", "auto", "education"],
   },
   {
     id: "appt-confirmed-en",
@@ -212,6 +225,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "✅ Appointment confirmed for {{date}} at {{time}} at {{location}}. See you soon!",
     metaCategory: "UTILITY",
+    industries: ["health", "beauty", "auto", "education"],
   },
   {
     id: "appt-reminder-ar",
@@ -221,6 +235,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "⏰ تذكير: موعدك يوم {{date}} الساعة {{time}}. لو محتاج تعيد جدولة تواصل معنا مسبقاً.",
     metaCategory: "UTILITY",
+    industries: ["health", "beauty", "auto", "education"],
   },
   {
     id: "appt-reminder-en",
@@ -230,6 +245,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "⏰ Reminder: Your appointment is on {{date}} at {{time}}. Need to reschedule? Contact us in advance.",
     metaCategory: "UTILITY",
+    industries: ["health", "beauty", "auto", "education"],
   },
   {
     id: "appt-cancelled-ar",
@@ -239,6 +255,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "❌ تم إلغاء موعدك يوم {{date}}. تواصل معنا لحجز موعد جديد في أي وقت.",
     metaCategory: "UTILITY",
+    industries: ["health", "beauty", "auto", "education"],
   },
   {
     id: "appt-cancelled-en",
@@ -248,6 +265,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "❌ Your appointment on {{date}} has been cancelled. Contact us anytime to book a new one.",
     metaCategory: "UTILITY",
+    industries: ["health", "beauty", "auto", "education"],
   },
 
   // ── META: PAYMENTS ────────────────────────────────────────────────────────
@@ -259,6 +277,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "✅ استلمنا دفعتك بقيمة {{amount}} بتاريخ {{date}}. شكراً لثقتك بنا!",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "realestate", "finance", "health"],
   },
   {
     id: "payment-received-en",
@@ -268,6 +287,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "✅ Payment of {{amount}} received on {{date}}. Thank you for your trust!",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "realestate", "finance", "health"],
   },
   {
     id: "payment-due-ar",
@@ -277,6 +297,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "📋 تذكير: الفاتورة رقم {{invoice_id}} بقيمة {{amount}} مستحقة بتاريخ {{due_date}}.",
     metaCategory: "UTILITY",
+    industries: ["realestate", "finance", "health", "ecommerce"],
   },
   {
     id: "payment-due-en",
@@ -286,6 +307,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "📋 Reminder: Invoice #{{invoice_id}} for {{amount}} is due on {{due_date}}.",
     metaCategory: "UTILITY",
+    industries: ["realestate", "finance", "health", "ecommerce"],
   },
   {
     id: "payment-failed-ar",
@@ -295,6 +317,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "⚠️ للأسف فشلت عملية الدفع رقم {{payment_id}}. تواصل معنا لحل المشكلة في أقرب وقت.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "finance"],
   },
   {
     id: "payment-failed-en",
@@ -304,6 +327,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "⚠️ Payment #{{payment_id}} failed. Please contact us to resolve this as soon as possible.",
     metaCategory: "UTILITY",
+    industries: ["ecommerce", "finance"],
   },
 
   // ── META: WELCOME ─────────────────────────────────────────────────────────
@@ -315,6 +339,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "أهلاً وسهلاً {{name}}! 🎉 يسعدنا انضمامك لعائلة {{business}}. فريقنا جاهز لمساعدتك في أي وقت.",
     metaCategory: "MARKETING",
+    industries: ["general"],
   },
   {
     id: "welcome-new-en",
@@ -324,6 +349,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "Welcome {{name}}! 🎉 We're thrilled to have you join {{business}}. Our team is ready to help anytime.",
     metaCategory: "MARKETING",
+    industries: ["general"],
   },
   {
     id: "welcome-account-ar",
@@ -333,6 +359,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "تم إنشاء حسابك في {{business}} بنجاح! يمكنك الآن الاستمتاع بجميع خدماتنا.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
   {
     id: "welcome-account-en",
@@ -342,6 +369,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "Your {{business}} account has been successfully created! You can now enjoy all our services.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
 
   // ── META: FEEDBACK ────────────────────────────────────────────────────────
@@ -353,6 +381,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "شكراً لتواصلك مع {{business}} 😊 كيف كانت تجربتك معنا؟ ردّك مهم جداً لتطوير خدمتنا.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
   {
     id: "feedback-csat-en",
@@ -362,6 +391,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "Thanks for contacting {{business}} 😊 How was your experience? Your feedback helps us improve.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
   {
     id: "feedback-review-ar",
@@ -371,6 +401,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "عميلنا العزيز {{name}}، نتمنى تكون راضياً عن خدمتنا. شاركنا رأيك لنتحسن أكثر! 🌟",
     metaCategory: "MARKETING",
+    industries: ["general"],
   },
   {
     id: "feedback-review-en",
@@ -380,6 +411,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "Dear {{name}}, we hope you're satisfied with our service. Share your feedback to help us improve! 🌟",
     metaCategory: "MARKETING",
+    industries: ["general"],
   },
 
   // ── META: ALERTS ──────────────────────────────────────────────────────────
@@ -391,6 +423,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "⚠️ تم تسجيل دخول لحسابك في {{business}} من جهاز جديد بتاريخ {{date}}. لو مش أنت، تواصل معنا فوراً.",
     metaCategory: "UTILITY",
+    industries: ["general", "finance"],
   },
   {
     id: "alert-account-en",
@@ -400,6 +433,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "⚠️ Your {{business}} account was accessed from a new device on {{date}}. If this wasn't you, contact us immediately.",
     metaCategory: "UTILITY",
+    industries: ["general", "finance"],
   },
   {
     id: "alert-service-ar",
@@ -409,6 +443,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "📢 إشعار مهم من {{business}}: {{message}}. لأي استفسار تواصل معنا.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
   {
     id: "alert-service-en",
@@ -418,6 +453,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "📢 Important update from {{business}}: {{message}}. Contact us for any questions.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
 
   // ── META: RE-ENGAGEMENT ───────────────────────────────────────────────────
@@ -429,6 +465,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "مش شايفينك من زمان {{name}} 😢 عندنا عروض جديدة تناسبك. تواصل معنا وهنساعدك!",
     metaCategory: "MARKETING",
+    industries: ["ecommerce", "food", "beauty"],
   },
   {
     id: "reengagement-winback-en",
@@ -438,6 +475,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "We miss you {{name}} 😢 We have new offers just for you. Reach out and let us help!",
     metaCategory: "MARKETING",
+    industries: ["ecommerce", "food", "beauty"],
   },
   {
     id: "reengagement-followup-ar",
@@ -447,6 +485,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "هل كل شيء تمام؟ آخر تواصل كان منذ {{days}} أيام. فريقنا جاهز لو محتاج أي مساعدة.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
   {
     id: "reengagement-followup-en",
@@ -456,6 +495,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "Is everything okay? It's been {{days}} days since we last spoke. Our team is here if you need anything.",
     metaCategory: "UTILITY",
+    industries: ["general"],
   },
 
   // ── QUICK-REPLY: GREETINGS ────────────────────────────────────────────────
@@ -466,6 +506,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "greetings",
     language: "ar",
     body: "أهلاً {{name}}! كيف أقدر أساعدك اليوم؟ 😊",
+    industries: ["general"],
   },
   {
     id: "qr-greeting-opening-en",
@@ -474,6 +515,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "greetings",
     language: "en",
     body: "Hi {{name}}! How can I help you today? 😊",
+    industries: ["general"],
   },
   {
     id: "qr-greeting-formal-ar",
@@ -482,6 +524,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "greetings",
     language: "ar",
     body: "السلام عليكم ورحمة الله، أهلاً بك في {{business}}. كيف يمكنني خدمتك؟",
+    industries: ["general"],
   },
   {
     id: "qr-greeting-formal-en",
@@ -490,6 +533,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "greetings",
     language: "en",
     body: "Hello and welcome to {{business}}. How may I assist you today?",
+    industries: ["general"],
   },
   {
     id: "qr-greeting-returning-ar",
@@ -498,6 +542,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "greetings",
     language: "ar",
     body: "أهلاً {{name}}! سعيدين بعودتك. كيف نقدر نساعدك؟",
+    industries: ["general"],
   },
   {
     id: "qr-greeting-returning-en",
@@ -506,6 +551,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "greetings",
     language: "en",
     body: "Welcome back {{name}}! Great to hear from you again. How can we help?",
+    industries: ["general"],
   },
 
   // ── QUICK-REPLY: COMPLAINTS ───────────────────────────────────────────────
@@ -516,6 +562,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "complaints",
     language: "ar",
     body: "نعتذر جداً عن الإزعاج {{name}}. هنحل المشكلة دي فوراً ونضمن مش تتكرر.",
+    industries: ["general"],
   },
   {
     id: "qr-complaint-apology-en",
@@ -524,6 +571,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "complaints",
     language: "en",
     body: "We sincerely apologize for the inconvenience {{name}}. We'll resolve this right away and ensure it doesn't happen again.",
+    industries: ["general"],
   },
   {
     id: "qr-complaint-escalation-ar",
@@ -532,6 +580,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "complaints",
     language: "ar",
     body: "فهمت المشكلة {{name}}. هرفع الموضوع للقسم المختص وهيتواصل معك خلال {{hours}} ساعات.",
+    industries: ["general"],
   },
   {
     id: "qr-complaint-escalation-en",
@@ -540,6 +589,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "complaints",
     language: "en",
     body: "I understand your concern {{name}}. I'm escalating this to the relevant team and they'll contact you within {{hours}} hours.",
+    industries: ["general"],
   },
 
   // ── QUICK-REPLY: SUPPORT ──────────────────────────────────────────────────
@@ -550,6 +600,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "support",
     language: "ar",
     body: "جرب الخطوات دي لحل المشكلة:\n1️⃣ أعد تشغيل التطبيق\n2️⃣ امسح الكاش\n3️⃣ حدّث للإصدار الأخير\n\nلو المشكلة استمرت، رجع لنا.",
+    industries: ["general"],
   },
   {
     id: "qr-support-troubleshoot-en",
@@ -558,6 +609,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "support",
     language: "en",
     body: "Try these steps to resolve the issue:\n1️⃣ Restart the app\n2️⃣ Clear the cache\n3️⃣ Update to the latest version\n\nLet us know if the issue persists.",
+    industries: ["general"],
   },
   {
     id: "qr-support-ticket-ar",
@@ -566,6 +618,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "support",
     language: "ar",
     body: "تم فتح تذكرة دعم رقم {{ticket_id}} لمشكلتك. هيتواصل معك أحد من فريقنا خلال {{hours}} ساعات.",
+    industries: ["general"],
   },
   {
     id: "qr-support-ticket-en",
@@ -574,6 +627,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "support",
     language: "en",
     body: "Support ticket #{{ticket_id}} has been created. A team member will contact you within {{hours}} hours.",
+    industries: ["general"],
   },
 
   // ── QUICK-REPLY: CLOSING ──────────────────────────────────────────────────
@@ -584,6 +638,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "closing",
     language: "ar",
     body: "تم حل مشكلتك بنجاح! 🎉 لو عندك أي استفسار تاني أنا هنا.",
+    industries: ["general"],
   },
   {
     id: "qr-closing-resolved-en",
@@ -592,6 +647,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "closing",
     language: "en",
     body: "Your issue has been resolved! 🎉 If you have any other questions, I'm here to help.",
+    industries: ["general"],
   },
   {
     id: "qr-closing-thankyou-ar",
@@ -600,6 +656,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "closing",
     language: "ar",
     body: "شكراً على تواصلك معنا {{name}}! يسعدنا دائماً خدمتك. وداعاً! 👋",
+    industries: ["general"],
   },
   {
     id: "qr-closing-thankyou-en",
@@ -608,6 +665,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "closing",
     language: "en",
     body: "Thank you for contacting us {{name}}! It's always a pleasure serving you. Goodbye! 👋",
+    industries: ["general"],
   },
 
   // ── QUICK-REPLY: HANDOFF ──────────────────────────────────────────────────
@@ -618,6 +676,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "handoff",
     language: "ar",
     body: "هحولك لـ {{agent_name}} اللي هيكمل معك. لحظة من فضلك... 🔀",
+    industries: ["general"],
   },
   {
     id: "qr-handoff-agent-en",
@@ -626,6 +685,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "handoff",
     language: "en",
     body: "I'm transferring you to {{agent_name}} who will continue assisting you. One moment please... 🔀",
+    industries: ["general"],
   },
   {
     id: "qr-handoff-dept-ar",
@@ -634,6 +694,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "handoff",
     language: "ar",
     body: "بناءً على استفسارك، هحولك لقسم {{department}}. هيتواصل معك متخصص قريباً.",
+    industries: ["general"],
   },
   {
     id: "qr-handoff-dept-en",
@@ -642,6 +703,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "handoff",
     language: "en",
     body: "Based on your inquiry, I'm transferring you to the {{department}} department. A specialist will be with you shortly.",
+    industries: ["general"],
   },
 
   // ── QUICK-REPLY: OUT OF HOURS ─────────────────────────────────────────────
@@ -652,6 +714,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "out_of_hours",
     language: "ar",
     body: "شكراً لتواصلك! ساعات عملنا من {{start_time}} لـ {{end_time}}. هيرد عليك أحد من فريقنا في أقرب وقت.",
+    industries: ["general"],
   },
   {
     id: "qr-ooh-standard-en",
@@ -660,6 +723,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "out_of_hours",
     language: "en",
     body: "Thanks for reaching out! Our hours are {{start_time}} to {{end_time}}. A team member will get back to you as soon as possible.",
+    industries: ["general"],
   },
   {
     id: "qr-ooh-holiday-ar",
@@ -668,6 +732,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "out_of_hours",
     language: "ar",
     body: "نحن في إجازة {{holiday_name}} ونعود {{return_date}}. شكراً لتفهمك! 🎉",
+    industries: ["general"],
   },
   {
     id: "qr-ooh-holiday-en",
@@ -676,6 +741,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     category: "out_of_hours",
     language: "en",
     body: "We're on {{holiday_name}} holiday and will return on {{return_date}}. Thank you for your understanding! 🎉",
+    industries: ["general"],
   },
 ];
 
