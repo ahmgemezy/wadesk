@@ -51,6 +51,11 @@ export default function ConversationPage() {
     conversationId: conversationId as Id<"conversations">,
   });
 
+  const contact = useQuery(
+    api.contacts.getById,
+    conversation?.contactId ? { contactId: conversation.contactId as Id<"contacts"> } : "skip",
+  );
+
   async function handleDelete() {
     setDeleting(true);
     try {
@@ -79,6 +84,10 @@ export default function ConversationPage() {
         onSelect={(content) => {
           setQuickReplyContent(content);
           setQuickReplyOpen(false);
+        }}
+        contactContext={{
+          ...(contact?.contact?.displayName ? { name: contact.contact.displayName } : {}),
+          ...(contact?.contact?.phone ? { phone: contact.contact.phone } : {}),
         }}
       />
       <div className="flex flex-col h-full">

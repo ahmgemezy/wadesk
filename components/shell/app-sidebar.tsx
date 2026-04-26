@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import {
@@ -35,6 +35,7 @@ interface NavGroupItemProps {
 
 function NavGroupItem({ item, pathname, locale }: NavGroupItemProps) {
   const [open, setOpen] = useState(() => pathname.startsWith(item.href));
+  const router = useRouter();
   const Icon = resolveIcon(item.icon);
   const isActive = pathname.startsWith(item.href);
   const label = locale === "ar" ? item.labelAr : item.labelEn;
@@ -43,7 +44,7 @@ function NavGroupItem({ item, pathname, locale }: NavGroupItemProps) {
     <Collapsible open={open} onOpenChange={setOpen}>
       <SidebarMenuItem>
         <CollapsibleTrigger render={
-          <SidebarMenuButton isActive={isActive} tooltip={label} />
+          <SidebarMenuButton isActive={isActive} tooltip={label} onClick={() => router.push(item.href)} />
         }>
           <Icon />
           <span>{label}</span>

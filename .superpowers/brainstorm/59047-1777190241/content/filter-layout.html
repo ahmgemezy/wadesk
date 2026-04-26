@@ -1,0 +1,40 @@
+<h2>How should the new filter dimensions be organized?</h2>
+<p class="subtitle">Today the library has: Type (Meta / Quick-Reply) → Category chips. We're adding two new axes: <strong>Purpose</strong> (Marketing / Utility) and <strong>Industry</strong> (E-commerce, Clinics, etc.). The question is how to surface them.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Three Filter Rows (Stacked)</h3>
+      <p>Row 1: <strong>Purpose</strong> — All · Marketing · Utility · Authentication<br>
+         Row 2: <strong>Industry</strong> — All · E-commerce · Clinics · Real Estate · Restaurants · …<br>
+         Row 3: <strong>Category</strong> — existing chips (Promotions, Orders, etc.)<br><br>
+         <em>Simple, explicit, easy to scan. Starts to feel long with 3 rows of chips.</em></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Sidebar Filters Panel</h3>
+      <p>A collapsible left-side panel with filter groups:<br>
+         ▸ <strong>Purpose</strong> checkboxes<br>
+         ▸ <strong>Industry</strong> checkboxes<br>
+         ▸ <strong>Category</strong> checkboxes<br>
+         ▸ <strong>Language</strong> toggle<br><br>
+         <em>Maximum power for filtering. More complex to build. Great for power users — might feel heavy for a quick-reply picker.</em></p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Top Tabs = Industry · Chips = Purpose + Category</h3>
+      <p>Industry becomes the <strong>primary tab bar</strong> (All · E-commerce · Clinics · Restaurants · …)<br>
+         Below that: Purpose chips (Marketing · Utility) + Category chips<br><br>
+         <em>Industry is the hero UX — users pick their vertical first, then refine. Strong differentiation story. Category chips get shorter because industry pre-filters.</em></p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:24px">My recommendation is <strong>C</strong> — industry-first tabs make it feel like a curated library for each business type, which is a strong USP differentiator. But pick what feels right for your users.</p>

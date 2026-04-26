@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Template Library — Full Design Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 24px; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #8e8e93; margin-bottom: 20px; }
+
+  /* Search */
+  .search-bar { display: flex; align-items: center; gap: 8px; background: #1c1c1e; border: 1px solid #3a3a3c; border-radius: 8px; padding: 8px 12px; margin-bottom: 16px; }
+  .search-bar input { background: none; border: none; outline: none; color: #e5e5e5; font-size: 13px; width: 100%; }
+  .search-bar span { color: #636366; font-size: 14px; }
+
+  /* Industry tabs */
+  .industry-tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; margin-bottom: 14px; scrollbar-width: none; border-bottom: 1px solid #2a2a2c; }
+  .industry-tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 8px 14px; font-size: 12px; font-weight: 500; border-radius: 6px 6px 0 0; cursor: pointer; white-space: nowrap; color: #8e8e93; border-bottom: 2px solid transparent; transition: all .15s; }
+  .tab.active { color: #e5e5e5; border-bottom-color: #25d366; background: #1c1c1e; }
+  .tab:hover:not(.active) { color: #c7c7cc; }
+
+  /* Purpose chips */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chip { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 500; cursor: pointer; border: 1px solid #3a3a3c; color: #8e8e93; transition: all .15s; }
+  .chip.active { background: rgba(37,211,102,.12); border-color: #25d366; color: #25d366; }
+  .chip.purpose-active-marketing { background: rgba(168,85,247,.15); border-color: #c084fc; color: #c084fc; }
+  .chip.purpose-active-utility { background: rgba(59,130,246,.15); border-color: #60a5fa; color: #60a5fa; }
+  .chip-divider { width: 1px; background: #3a3a3c; margin: 0 4px; align-self: stretch; }
+
+  /* Count */
+  .count { font-size: 11px; color: #636366; margin-bottom: 12px; }
+
+  /* Grid */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  /* Card */
+  .card { background: #1c1c1e; border: 1px solid #3a3a3c; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .card:hover { background: #252528; border-color: rgba(37,211,102,.3); }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+  .card-title { font-size: 13px; font-weight: 600; }
+  .badge-lang { font-size: 10px; padding: 2px 7px; border-radius: 999px; border: 1px solid #3a3a3c; color: #8e8e93; white-space: nowrap; }
+  .card-body { font-size: 11px; color: #636366; line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .card-footer { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; padding-top: 4px; border-top: 1px solid #2a2a2c; }
+  .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 500; }
+  .badge-marketing { background: rgba(168,85,247,.12); color: #c084fc; }
+  .badge-utility   { background: rgba(59,130,246,.12);  color: #60a5fa; }
+  .badge-broadcast { background: rgba(249,115,22,.10);  color: #f97316; }
+  .badge-quickreply{ background: rgba(16,185,129,.10);  color: #34d399; }
+  .badge-cat  { border: 1px solid #3a3a3c; color: #8e8e93; }
+  .badge-ind  { border: 1px solid #3a3a3c; color: #a3a3a3; }
+</style>
+</head>
+<body>
+
+<h1>📋 Message Templates</h1>
+<p class="subtitle">Full redesign mockup — Template Library tab</p>
+
+<!-- Search -->
+<div class="search-bar">
+  <span>🔍</span>
+  <input placeholder="Search templates…" disabled>
+</div>
+
+<!-- Industry tabs -->
+<div class="industry-tabs">
+  <div class="tab active">🌐 All</div>
+  <div class="tab">🛍️ E-commerce</div>
+  <div class="tab">🍽️ Food</div>
+  <div class="tab">🏥 Healthcare</div>
+  <div class="tab">🏠 Real Estate</div>
+  <div class="tab">🎓 Education</div>
+  <div class="tab">💅 Beauty</div>
+  <div class="tab">🚗 Auto</div>
+  <div class="tab">💰 Finance</div>
+  <div class="tab">✈️ Travel</div>
+  <div class="tab">⚙️ General</div>
+</div>
+
+<!-- Purpose chips + Category chips -->
+<div class="chip-row">
+  <div class="chip active">All purposes</div>
+  <div class="chip purpose-active-marketing">🎯 Marketing</div>
+  <div class="chip">🔧 Utility</div>
+  <div class="chip">🔐 Authentication</div>
+  <div style="width:1px;background:#3a3a3c;margin:0 2px"></div>
+  <div class="chip active">All categories</div>
+  <div class="chip">📢 Promotions</div>
+  <div class="chip">📦 Order Updates</div>
+  <div class="chip">📅 Appointments</div>
+  <div class="chip">💳 Payments</div>
+  <div class="chip">👋 Welcome</div>
+  <div class="chip">⭐ Feedback</div>
+  <div class="chip">🔔 Alerts</div>
+</div>
+
+<p class="count">66 templates</p>
+
+<!-- Grid -->
+<div class="grid">
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Flash Sale</span>
+      <span class="badge-lang">AR</span>
+    </div>
+    <p class="card-body" dir="rtl">🎉 خصم {{discount}}% على جميع المنتجات! العرض ساري لمدة {{hours}} ساعة فقط. سارع بالطلب الآن!</p>
+    <div class="card-footer">
+      <span class="badge badge-marketing">🎯 Marketing Broadcast</span>
+      <span class="badge badge-cat">📢 Promotions</span>
+      <span class="badge badge-ind">🛍️ E-commerce</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Flash Sale</span>
+      <span class="badge-lang">EN</span>
+    </div>
+    <p class="card-body">🎉 {{discount}}% OFF everything! Offer valid for {{hours}} hours only. Order now!</p>
+    <div class="card-footer">
+      <span class="badge badge-marketing">🎯 Marketing Broadcast</span>
+      <span class="badge badge-cat">📢 Promotions</span>
+      <span class="badge badge-ind">🛍️ E-commerce</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Order Confirmed</span>
+      <span class="badge-lang">AR</span>
+    </div>
+    <p class="card-body" dir="rtl">✅ تم تأكيد طلبك رقم {{order_id}}. سنبدأ التجهيز فوراً وسنخطرك عند الشحن.</p>
+    <div class="card-footer">
+      <span class="badge badge-utility">🔧 Utility Broadcast</span>
+      <span class="badge badge-cat">📦 Orders</span>
+      <span class="badge badge-ind">🛍️ E-commerce</span>
+      <span class="badge badge-ind">🍽️ Food</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Appointment Confirmed</span>
+      <span class="badge-lang">AR</span>
+    </div>
+    <p class="card-body" dir="rtl">✅ تم تأكيد موعدك يوم {{date}} الساعة {{time}} في {{location}}. نراك قريباً!</p>
+    <div class="card-footer">
+      <span class="badge badge-utility">🔧 Utility Broadcast</span>
+      <span class="badge badge-cat">📅 Appointments</span>
+      <span class="badge badge-ind">🏥 Healthcare</span>
+      <span class="badge badge-ind">💅 Beauty</span>
+      <span class="badge badge-ind">🚗 Auto</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Opening Greeting</span>
+      <span class="badge-lang">AR</span>
+    </div>
+    <p class="card-body" dir="rtl">أهلاً {{name}}! كيف أقدر أساعدك اليوم؟ 😊</p>
+    <div class="card-footer">
+      <span class="badge badge-quickreply">💬 Quick-Reply</span>
+      <span class="badge badge-cat">🤝 Greetings</span>
+      <span class="badge badge-ind">⚙️ General</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Win-Back</span>
+      <span class="badge-lang">EN</span>
+    </div>
+    <p class="card-body">We miss you {{name}} 😢 We have new offers just for you. Reach out and let us help!</p>
+    <div class="card-footer">
+      <span class="badge badge-marketing">🎯 Marketing Broadcast</span>
+      <span class="badge badge-cat">🔄 Re-engagement</span>
+      <span class="badge badge-ind">🛍️ E-commerce</span>
+      <span class="badge badge-ind">🍽️ Food</span>
+    </div>
+  </div>
+
+</div>
+
+<p style="font-size:11px;color:#4a4a4e;margin-top:20px;text-align:center">Mockup — actual template count will vary after industry tagging</p>
+
+</body>
+</html>

@@ -73,6 +73,10 @@ export default function InboxPage() {
           setQuickReplyContent(content);
           setQuickReplyOpen(false);
         }}
+        contactContext={{
+          ...(contactName ? { name: contactName } : {}),
+          ...(contactPhone ? { phone: contactPhone } : {}),
+        }}
       />
 
       <div className="flex h-full overflow-hidden">

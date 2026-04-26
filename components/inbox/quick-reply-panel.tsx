@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/context";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -12,6 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { extractVariables, renderTemplate } from "@/lib/templateHelpers";
 
 type ReplyItem = {
   _id: string;
@@ -24,15 +26,20 @@ interface QuickReplyPanelProps {
   open: boolean;
   onClose: () => void;
   onSelect: (body: string) => void;
+  contactContext?: Record<string, string>;
 }
 
 export function QuickReplyPanel({
   open,
   onClose,
   onSelect,
+  contactContext = {},
 }: QuickReplyPanelProps) {
   const t = useT();
   const [search, setSearch] = useState("");
+  const [fillItem, setFillItem] = useState<{ content: string; variables: string[] } | null>(null);
+  const [fillValues, setFillValues] = useState<Record<string, string>>({});
+  const [fillErrors, setFillErrors] = useState<string[]>([]);
 
   const quickReplies = useQuery(api.quickReplies.list, open ? {} : "skip");
   const messageTemplates = useQuery(api.messageTemplates.list, open ? {} : "skip");
@@ -84,6 +91,46 @@ export function QuickReplyPanel({
             onChange={(e) => setSearch(e.target.value)}
             dir="auto"
           />
+          {fillItem ? (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{t("Fill in variables", "املأ المتغيرات")}</p>
+              {fillItem.variables.map((variable) => (
+                <div key={variable} className="space-y-1">
+                  <label className="text-xs text-muted-foreground">{`{{${variable}}}`}</label>
+                  <Input
+                    value={fillValues[variable] ?? ""}
+                    onChange={(e) => {
+                      setFillErrors((prev) => prev.filter((v) => v !== variable));
+                      setFillValues((prev) => ({ ...prev, [variable]: e.target.value }));
+                    }}
+                    dir="auto"
+                    className={fillErrors.includes(variable) ? "border-destructive" : ""}
+                  />
+                  {fillErrors.includes(variable) && (
+                    <p className="text-xs text-destructive">{t("Required", "مطلوب")}</p>
+                  )}
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    const empty = fillItem.variables.filter((v) => !fillValues[v]?.trim());
+                    if (empty.length > 0) { setFillErrors(empty); return; }
+                    onSelect(renderTemplate(fillItem.content, fillValues));
+                    setFillItem(null);
+                    onClose();
+                  }}
+                >
+                  {t("Send", "إرسال")}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setFillItem(null)}>
+                  {t("Back", "رجوع")}
+                </Button>
+              </div>
+            </div>
+          ) : (
           <ScrollArea className="h-[calc(100vh-200px)]">
             {grouped &&
               Object.entries(grouped).map(([category, replies]) => (
@@ -96,8 +143,25 @@ export function QuickReplyPanel({
                       <button
                         key={qr._id}
                         onClick={() => {
-                          onSelect(qr.content);
-                          onClose();
+                          const vars = extractVariables(qr.content);
+                          if (vars.length > 0) {
+                            const prefilledValues: Record<string, string> = {};
+                            for (const v of vars) {
+                              if (contactContext[v]) prefilledValues[v] = contactContext[v];
+                            }
+                            const unknownVars = vars.filter((v) => !contactContext[v]);
+                            if (unknownVars.length === 0) {
+                              onSelect(renderTemplate(qr.content, prefilledValues));
+                              onClose();
+                            } else {
+                              setFillItem({ content: qr.content, variables: unknownVars });
+                              setFillValues(prefilledValues);
+                              setFillErrors([]);
+                            }
+                          } else {
+                            onSelect(qr.content);
+                            onClose();
+                          }
                         }}
                         className="w-full text-start p-2 rounded-md hover:bg-accent transition-colors"
                       >
@@ -111,6 +175,7 @@ export function QuickReplyPanel({
                 </div>
               ))}
           </ScrollArea>
+          )}
         </div>
       </SheetContent>
     </Sheet>

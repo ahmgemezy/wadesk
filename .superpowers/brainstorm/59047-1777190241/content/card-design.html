@@ -1,0 +1,96 @@
+<h2>How should industry & purpose appear on the template card?</h2>
+<p class="subtitle">Today each card shows: Title · Language badge · Body preview · Type badge (Meta/Quick-Reply) · Category chip. Where should the new labels go?</p>
+
+<style>
+.card-mockup {
+  background: var(--card, #1c1c1e);
+  border: 1px solid var(--border, #3a3a3c);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 140px;
+  font-size: 13px;
+}
+.card-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.card-title { font-weight: 600; font-size: 13px; }
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 500; border: 1px solid transparent; white-space: nowrap; }
+.badge-lang { border-color: var(--border, #3a3a3c); color: var(--muted-fg, #8e8e93); }
+.badge-meta { background: rgba(249,115,22,.12); color: #f97316; }
+.badge-utility { background: rgba(59,130,246,.12); color: #60a5fa; }
+.badge-marketing { background: rgba(168,85,247,.12); color: #c084fc; }
+.badge-cat { border: 1px solid var(--border, #3a3a3c); color: var(--muted-fg, #8e8e93); }
+.badge-industry { background: rgba(16,185,129,.12); color: #34d399; }
+.card-body { font-size: 11px; color: var(--muted-fg, #8e8e93); line-height: 1.5; }
+.card-footer { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
+.divider { border: none; border-top: 1px solid var(--border, #3a3a3c); margin: 4px 0; }
+</style>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Industry + Purpose in footer badges</h3>
+      <p>Add two more badge chips at the bottom. Clean but cards get busier.</p>
+      <div class="card-mockup" style="margin-top:10px">
+        <div class="card-title-row">
+          <span class="card-title">Flash Sale</span>
+          <span class="badge badge-lang">AR</span>
+        </div>
+        <p class="card-body">🎉 خصم {{discount}}% على جميع المنتجات! العرض ساري لمدة {{hours}} ساعة فقط...</p>
+        <hr class="divider">
+        <div class="card-footer">
+          <span class="badge badge-meta">📢 Meta</span>
+          <span class="badge badge-marketing">🎯 Marketing</span>
+          <span class="badge badge-cat">📢 Promotions</span>
+          <span class="badge badge-industry">🛍️ E-commerce</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Purpose replaces Meta/QR label · Industry in footer</h3>
+      <p>Merge type + purpose into one badge (e.g. "📢 Marketing Broadcast"). Industry tag at the bottom. Cleaner — same badge count as today.</p>
+      <div class="card-mockup" style="margin-top:10px">
+        <div class="card-title-row">
+          <span class="card-title">Flash Sale</span>
+          <span class="badge badge-lang">AR</span>
+        </div>
+        <p class="card-body">🎉 خصم {{discount}}% على جميع المنتجات! العرض ساري لمدة {{hours}} ساعة فقط...</p>
+        <hr class="divider">
+        <div class="card-footer">
+          <span class="badge badge-marketing">📢 Marketing Broadcast</span>
+          <span class="badge badge-cat">📢 Promotions</span>
+          <span class="badge badge-industry">🛍️ E-commerce</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Industry color-coded top stripe · Purpose badge only</h3>
+      <p>A thin colored top border per industry makes cards visually scannable at a glance. Footer stays compact: Type + Purpose only.</p>
+      <div class="card-mockup" style="margin-top:10px; border-top: 3px solid #34d399;">
+        <div class="card-title-row">
+          <span class="card-title">Flash Sale</span>
+          <span class="badge badge-lang">AR</span>
+        </div>
+        <p class="card-body" style="font-size:10px; color:#6b7280;">🛍️ E-commerce</p>
+        <p class="card-body">🎉 خصم {{discount}}% على جميع المنتجات! العرض ساري لمدة {{hours}} ساعة فقط...</p>
+        <hr class="divider">
+        <div class="card-footer">
+          <span class="badge badge-marketing">🎯 Marketing</span>
+          <span class="badge badge-cat">📢 Promotions</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:24px">My recommendation: <strong>B</strong> — same visual weight as today, adds the key new info without crowding the card.</p>
