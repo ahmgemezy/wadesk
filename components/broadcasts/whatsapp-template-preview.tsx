@@ -20,8 +20,8 @@ type Props = {
 };
 
 function renderBody(text: string) {
-  // Bold: *text*, Italic: _text_, Strikethrough: ~text~, Mono: ```text```
-  const parts = text.split(/(\*[^*]+\*|_[^_]+_|~[^~]+~|```[^`]+```)/g);
+  // Bold: *text*, Italic: _text_, Strikethrough: ~text~, Mono: ```text```, Variables: {{var}}
+  const parts = text.split(/(\*[^*]+\*|_[^_]+_|~[^~]+~|```[^`]+```|\{\{[^}]+\}\})/g);
   return parts.map((part, i) => {
     if (part.startsWith("*") && part.endsWith("*"))
       return <strong key={i}>{part.slice(1, -1)}</strong>;
@@ -31,6 +31,8 @@ function renderBody(text: string) {
       return <s key={i}>{part.slice(1, -1)}</s>;
     if (part.startsWith("```") && part.endsWith("```"))
       return <code key={i} className="font-mono text-xs">{part.slice(3, -3)}</code>;
+    if (part.startsWith("{{") && part.endsWith("}}"))
+      return <strong key={i}>{part}</strong>;
     return <span key={i}>{part}</span>;
   });
 }

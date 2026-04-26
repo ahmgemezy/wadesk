@@ -294,11 +294,13 @@ function buildMetaComponents(tpl: {
     }
   }
 
-  // Body — map named {{variable}} to positional {{1}}, {{2}} …
+  // Body — map named {{variable}} to positional *{{1}}*, *{{2}}* … (bold in WhatsApp)
   let metaBody = tpl.body;
+  metaBody = metaBody.replace(/\*\{\{(\w+)\}\}\*/g, "{{$1}}");
   const varExamples: string[] = [];
   tpl.variables.forEach((varName, idx) => {
-    metaBody = metaBody.replaceAll(`{{${varName}}}`, `{{${idx + 1}}}`);
+    const pattern = new RegExp(`\\{\\{${varName}\\}\\}`, "gi");
+    metaBody = metaBody.replace(pattern, `*{{${idx + 1}}}*`);
     varExamples.push(`example_${varName}`);
   });
   const bodyComp: Record<string, unknown> = { type: "BODY", text: metaBody };
@@ -364,18 +366,27 @@ export const submit = action({
 
     const components = buildMetaComponents(tpl);
 
+    const payload: Record<string, unknown> = {
+      name: tpl.name,
+      language: tpl.language,
+      category: tpl.category,
+      components,
+    };
+    if (tpl.category === "MARKETING") {
+      payload.degrees_of_freedom_spec = {
+        creative_features_spec: {
+          text_formatting_optimization: { enroll_status: "OPT_IN" },
+        },
+      };
+    }
+
     const res = await fetch(`${META_BASE}/${channel.wabaId}/message_templates`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        name: tpl.name,
-        language: tpl.language,
-        category: tpl.category,
-        components,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json() as { id?: string; error?: { message: string } };

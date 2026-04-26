@@ -238,12 +238,19 @@ export const submitToMeta = action({
 
     const numberedBody = convertToNumberedVars(args.body);
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       name: args.name,
       language: args.language,
       category: args.metaCategory,
       components: [{ type: "BODY", text: numberedBody }],
     };
+    if (args.metaCategory === "MARKETING") {
+      payload.degrees_of_freedom_spec = {
+        creative_features_spec: {
+          text_formatting_optimization: { enroll_status: "OPT_IN" },
+        },
+      };
+    }
 
     const res = await fetch(
       `${META_BASE}/${channel.wabaId}/message_templates`,
@@ -288,9 +295,10 @@ export const submitToMeta = action({
 function convertToNumberedVars(body: string): string {
   let counter = 0;
   const seen = new Map<string, number>();
-  return body.replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
+  const stripped = body.replace(/\*\{\{(\w+)\}\}\*/g, "{{$1}}");
+  return stripped.replace(/\{\{(\w+)\}\}/g, (_, name: string) => {
     const lower = name.toLowerCase();
     if (!seen.has(lower)) seen.set(lower, ++counter);
-    return `{{${seen.get(lower)}}}`;
+    return `*{{${seen.get(lower)}}}*`;
   });
 }
