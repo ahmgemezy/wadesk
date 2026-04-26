@@ -94,7 +94,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
       setBody(template.body);
       setFooter(template.footer ?? "");
       setShowFooter(!!template.footer);
-      setButtons(template.buttons ?? []);
+      setButtons((template.buttons ?? []).map(b => ({ ...b, isDynamic: b.isDynamic ?? false })));
     } else {
       setChannelId("");
       setTitle(""); setName(""); setLanguage("ar"); setCategory("MARKETING");

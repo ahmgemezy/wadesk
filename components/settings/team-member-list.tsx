@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { InviteModal } from "./invite-modal";
+import { MemberProfileModal } from "@/components/team/member-profile-modal";
 import { useT } from "@/lib/i18n/context";
 import { MoreHorizontal, Plus, UserPlus, Shield, HeadphonesIcon, Crown } from "lucide-react";
 
@@ -76,6 +77,7 @@ export function TeamMemberList() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [profileMemberId, setProfileMemberId] = useState<string | null>(null);
 
   const fetchMembers = useCallback(async () => {
     try {
@@ -129,7 +131,8 @@ export function TeamMemberList() {
         {members.map((member) => (
           <div
             key={member.userId}
-            className="border rounded-lg p-3 flex items-center gap-3"
+            className="border rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setProfileMemberId(member.userId)}
           >
             {member.imageUrl ? (
               <img
@@ -163,7 +166,10 @@ export function TeamMemberList() {
 
             {isAdmin && member.userId !== currentUserId && (
               <DropdownMenu>
-                <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                <DropdownMenuTrigger
+                  render={<Button variant="ghost" size="icon-sm" />}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                >
                   <MoreHorizontal className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -203,7 +209,10 @@ export function TeamMemberList() {
             )}
             {isSupervisor && member.role === "org:agent" && member.userId !== currentUserId && (
               <DropdownMenu>
-                <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" />}>
+                <DropdownMenuTrigger
+                  render={<Button variant="ghost" size="icon-sm" />}
+                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                >
                   <MoreHorizontal className="size-4" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -230,6 +239,13 @@ export function TeamMemberList() {
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
         onInvited={fetchMembers}
+      />
+
+      <MemberProfileModal
+        memberId={profileMemberId ?? ""}
+        open={!!profileMemberId}
+        onClose={() => setProfileMemberId(null)}
+        onUpdated={fetchMembers}
       />
     </div>
   );

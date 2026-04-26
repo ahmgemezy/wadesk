@@ -184,11 +184,6 @@ export default function ChannelsListPage() {
                         {channel.displayPhone}
                       </div>
                     )}
-                    <div className="text-xs text-muted-foreground font-cairo">
-                      {channel.assignmentMode === "first_reply" && t("First reply wins", "أول رد يأخذ المحادثة")}
-                      {channel.assignmentMode === "manual" && t("Manual assignment", "توزيع يدوي")}
-                      {channel.assignmentMode === "round_robin" && t("Round robin", "توزيع دوري")}
-                    </div>
                   </Link>
 
                   <div className="flex items-center gap-2 shrink-0">

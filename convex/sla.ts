@@ -7,7 +7,8 @@
 // channel supervisors.
 //
 // Breach is cleared automatically when an agent sends a reply
-// (handled in messages.ts sendReply and inbox.ts sendMessage).
+// (handled in messages.ts sendReply, sendQuotedReply, sendLocationReply, insertMediaMessage
+// and inbox.ts sendMessage).
 
 import { v, ConvexError } from "convex/values";
 import { mutation, internalMutation } from "./_generated/server";

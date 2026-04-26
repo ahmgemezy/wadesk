@@ -44,6 +44,9 @@ export default defineSchema({
     disconnectedAt: v.optional(v.number()),
     slaThresholdMinutes: v.optional(v.number()),
     slaEnabled: v.optional(v.boolean()),
+    pendingDisplayName: v.optional(v.string()),
+    displayNameStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
+    displayNameSubmittedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
@@ -173,6 +176,9 @@ export default defineSchema({
     createdAt: v.number(),
     lastInboundAt: v.optional(v.number()),
     slaBreachedAt: v.optional(v.number()),
+    mergedInto: v.optional(v.id("conversations")),
+    mergedAt: v.optional(v.number()),
+    totalMergedCount: v.optional(v.number()),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_status", ["tenantId", "status"])
@@ -180,7 +186,11 @@ export default defineSchema({
     .index("by_tenant_channel", ["tenantId", "channelId"])
     .index("by_last_message", ["tenantId", "lastMessageAt"])
     .index("by_contact", ["contactId"])
-    .index("by_tenant_department", ["tenantId", "departmentId"]),
+    .index("by_tenant_department", ["tenantId", "departmentId"])
+    .searchIndex("search_preview", {
+      searchField: "lastMessagePreview",
+      filterFields: ["tenantId"],
+    }),
 
   messages: defineTable({
     conversationId: v.id("conversations"),
@@ -204,12 +214,14 @@ export default defineSchema({
     metaMessageId: v.optional(v.string()),
     failureReason: v.optional(v.string()),
     status: v.union(
+      v.literal("scheduled"),
       v.literal("sending"),
       v.literal("sent"),
       v.literal("delivered"),
       v.literal("read"),
       v.literal("failed"),
     ),
+    scheduledAt: v.optional(v.number()),
     timestamp: v.number(),
     createdAt: v.number(),
     quotedMessageId: v.optional(v.id("messages")),
@@ -221,7 +233,11 @@ export default defineSchema({
   })
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_tenant", ["tenantId"])
-    .index("by_meta_message_id", ["metaMessageId"]),
+    .index("by_meta_message_id", ["metaMessageId"])
+    .searchIndex("search_content", {
+      searchField: "content",
+      filterFields: ["tenantId"],
+    }),
 
   quickReplies: defineTable({
     tenantId: v.string(),
@@ -574,4 +590,54 @@ export default defineSchema({
   })
     .index("by_waba_id", ["wabaId"])
     .index("by_tenant", ["tenantId"]),
+
+  rateLimits: defineTable({
+    key: v.string(),
+    count: v.number(),
+    windowStart: v.number(),
+  })
+    .index("by_key", ["key"]),
+
+  presence: defineTable({
+    userId: v.string(),
+    tenantId: v.string(),
+    status: v.union(v.literal("online"), v.literal("away"), v.literal("offline")),
+    lastSeenAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_tenant_user", ["tenantId", "userId"]),
+
+  memberActionLog: defineTable({
+    tenantId: v.string(),
+    memberId: v.string(),
+    action: v.string(),
+    details: v.object({
+      conversationId: v.optional(v.string()),
+      contactPhone: v.optional(v.string()),
+      targetMemberId: v.optional(v.string()),
+      targetRole: v.optional(v.string()),
+      changedFields: v.optional(v.object({
+        channel: v.optional(v.object({ added: v.array(v.string()), removed: v.array(v.string()) })),
+        department: v.optional(v.object({ added: v.array(v.string()), removed: v.array(v.string()) })),
+      })),
+      metadata: v.optional(v.any()),
+    }),
+    timestamp: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_member", ["tenantId", "memberId"])
+    .index("by_tenant_timestamp", ["tenantId", "timestamp"]),
+
+  notificationPreferences: defineTable({
+    userId: v.string(),
+    tenantId: v.string(),
+    emailEnabled: v.boolean(),
+    emailSlabreach: v.boolean(),
+    emailFollowup: v.boolean(),
+    emailNewAssignment: v.boolean(),
+    emailCsatAlert: v.boolean(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_tenant_user", ["tenantId", "userId"]),
 });

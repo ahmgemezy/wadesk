@@ -1,6 +1,6 @@
 "use node";
 
-import { action } from "./_generated/server";
+import { action, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { clerkClient } from "@clerk/nextjs/server";

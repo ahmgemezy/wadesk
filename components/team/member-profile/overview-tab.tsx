@@ -1,0 +1,160 @@
+"use client";
+
+import { useT } from "@/lib/i18n/context";
+import { Badge } from "@/components/ui/badge";
+import { Hash, Building2, Clock, Star, MessageSquare, CheckCircle2, BarChart3 } from "lucide-react";
+
+type Profile = {
+  name: string | null;
+  email: string | null;
+  imageUrl: string | null;
+  role: string;
+  joinedAt: number | null;
+  channels: { id: string; name: string }[];
+  departments: { id: string; name: string }[];
+};
+
+type AnalyticsSummary = {
+  totalConversations: number;
+  resolvedCount: number;
+  avgFirstResponseTimeSeconds: number | null;
+  avgCsatScore: number | null;
+};
+
+type OverviewTabProps = {
+  profile: Profile;
+  analytics: { summary: AnalyticsSummary } | undefined;
+  onViewAnalytics: () => void;
+};
+
+export function OverviewTab({ profile, analytics, onViewAnalytics }: OverviewTabProps) {
+  const t = useT();
+
+  if (!analytics) return <OverviewSkeleton />;
+
+  const s = analytics.summary;
+  const responseTime = s.avgFirstResponseTimeSeconds != null
+    ? (s.avgFirstResponseTimeSeconds / 60).toFixed(1)
+    : "—";
+  const csat = s.avgCsatScore != null ? s.avgCsatScore.toFixed(1) : "—";
+  const resolutionRate =
+    s.totalConversations > 0
+      ? ((s.resolvedCount / s.totalConversations) * 100).toFixed(1)
+      : "0.0";
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 gap-6">
+        <section>
+          <h3 className="mb-2 text-xs font-medium text-muted-foreground">
+            {t("Channels Assigned", "القنوات المخصصة")}
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            {profile.channels.length > 0
+              ? profile.channels.map((ch) => (
+                  <Badge key={ch.id} variant="outline" className="gap-1">
+                    <Hash className="size-3" />
+                    {ch.name}
+                  </Badge>
+                ))
+              : <span className="text-sm text-muted-foreground">{t("None", "لا يوجد")}</span>}
+          </div>
+        </section>
+
+        <section>
+          <h3 className="mb-2 text-xs font-medium text-muted-foreground">
+            {t("Departments", "الأقسام")}
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            {profile.departments.length > 0
+              ? profile.departments.map((dept) => (
+                  <Badge key={dept.id} variant="secondary" className="gap-1">
+                    <Building2 className="size-3" />
+                    {dept.name}
+                  </Badge>
+                ))
+              : <span className="text-sm text-muted-foreground">{t("None", "لا يوجد")}</span>}
+          </div>
+        </section>
+      </div>
+
+      <section>
+        <h3 className="mb-3 text-xs font-medium text-muted-foreground">
+          {t("Quick Performance Snapshot", "نظرة سريعة على الأداء")}
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            label={t("Response Time", "وقت الاستجابة")}
+            value={`${responseTime} ${t("min", "د")}`}
+            icon={<Clock className="size-4 text-muted-foreground" />}
+          />
+          <StatCard
+            label={t("CSAT Score", "درجة رضا العملاء")}
+            value={`${csat} / 5`}
+            icon={<Star className="size-4 text-muted-foreground" />}
+          />
+          <StatCard
+            label={t("Conversations Handled", "المحادثات المُعالجة")}
+            value={String(s.totalConversations)}
+            icon={<MessageSquare className="size-4 text-muted-foreground" />}
+          />
+          <StatCard
+            label={t("Resolution Rate", "نسبة الحل")}
+            value={`${resolutionRate}%`}
+            icon={<CheckCircle2 className="size-4 text-muted-foreground" />}
+          />
+        </div>
+      </section>
+
+      <button
+        onClick={onViewAnalytics}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <BarChart3 className="size-3.5" />
+        {t("View full analytics", "عرض التحليلات الكاملة")}
+      </button>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border bg-green-50 p-3 dark:bg-green-950/20">
+      <div className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <p className="text-lg font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function OverviewSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <div className="mb-2 h-3 w-24 rounded bg-muted" />
+          <div className="flex gap-1.5">
+            <div className="h-5 w-16 rounded-full bg-muted" />
+            <div className="h-5 w-20 rounded-full bg-muted" />
+          </div>
+        </div>
+        <div>
+          <div className="mb-2 h-3 w-20 rounded bg-muted" />
+          <div className="flex gap-1.5">
+            <div className="h-5 w-14 rounded-full bg-muted" />
+          </div>
+        </div>
+      </div>
+      <div>
+        <div className="mb-3 h-3 w-40 rounded bg-muted" />
+        <div className="grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-[72px] rounded-lg bg-muted" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

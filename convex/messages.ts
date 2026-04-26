@@ -3,6 +3,7 @@ import { query, mutation, internalMutation, internalQuery, action } from "./_gen
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { getCallerIdentity } from "./lib/auth";
+import { enforceRateLimit, makeUserMutationKey } from "./lib/rateLimit";
 
 export const listForConversation = query({
   args: { conversationId: v.id("conversations") },
@@ -39,6 +40,11 @@ export const sendReply = mutation({
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+
+    await enforceRateLimit(ctx, makeUserMutationKey(callerId, "sendReply"), {
+      windowMs: 60_000,
+      maxRequests: 60,
+    });
 
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) {
@@ -329,6 +335,7 @@ export const sendLocationReply = mutation({
     await ctx.db.patch(args.conversationId, {
       lastMessageAt: now,
       lastMessagePreview: `📍 ${args.name ?? "Location"}`,
+      ...(conversation.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
     });
 
     const channel = await ctx.db.get(conversation.channelId);
@@ -478,9 +485,11 @@ export const insertMediaMessage = internalMutation({
       timestamp: args.now,
       createdAt: args.now,
     });
+    const conv = await ctx.db.get(args.conversationId);
     await ctx.db.patch(args.conversationId, {
       lastMessageAt: args.now,
       lastMessagePreview: preview,
+      ...(conv?.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
     });
     return messageId;
   },
@@ -619,6 +628,7 @@ export const sendQuotedReply = mutation({
     await ctx.db.patch(args.conversationId, {
       lastMessageAt: now,
       lastMessagePreview: args.content.slice(0, 100),
+      ...(conversation.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
     });
 
     await ctx.scheduler.runAfter(

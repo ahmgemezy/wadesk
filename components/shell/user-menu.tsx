@@ -3,6 +3,7 @@
 import { SignOutButton, OrganizationSwitcher, useAuth } from "@clerk/nextjs";
 import { LogOut } from "lucide-react";
 import { RoleBadge } from "./role-badge";
+import { PresenceIndicator } from "@/components/ui/presence-indicator";
 import type { ResolvedUser } from "@/lib/shell/types";
 import { resolveRole } from "@/lib/shell/role-utils";
 
@@ -12,7 +13,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user, locale }: UserMenuProps) {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId: currentUserId } = useAuth();
   const role = resolveRole(user.role);
 
   if (!isSignedIn) return null;
@@ -31,6 +32,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
         <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium truncate">{user.name}</span>
+            {currentUserId && <PresenceIndicator userId={currentUserId} />}
             <RoleBadge role={role} locale={locale} />
           </div>
           <span className="text-xs text-muted-foreground truncate">

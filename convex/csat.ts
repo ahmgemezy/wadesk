@@ -44,18 +44,6 @@ export const sendCsatMessage = internalAction({
     const accessToken = process.env.META_SYSTEM_USER_TOKEN;
     if (!accessToken) return;
 
-    // TODO: Replace free-form text with a pre-approved WhatsApp template message
-    // (e.g. template named "csat_request") to comply with the 24-hour messaging window.
-    const message =
-      `شكراً على تواصلك مع ${channel.displayName} 😊\n\n` +
-      `كيف كانت تجربتك معنا؟\n\n` +
-      `1 - سيء جداً\n` +
-      `2 - سيء\n` +
-      `3 - مقبول\n` +
-      `4 - جيد\n` +
-      `5 - ممتاز\n\n` +
-      `أرسل الرقم المناسب`;
-
     try {
       const res = await fetch(`${META_API_BASE}/${channel.phoneNumberId}/messages`, {
         method: "POST",
@@ -66,8 +54,19 @@ export const sendCsatMessage = internalAction({
         body: JSON.stringify({
           messaging_product: "whatsapp",
           to: contact.phone,
-          type: "text",
-          text: { body: message },
+          type: "template",
+          template: {
+            name: "csat_rating",
+            language: { code: "ar" },
+            components: [
+              {
+                type: "body",
+                parameters: [
+                  { type: "text", text: channel.displayName ?? "" },
+                ],
+              },
+            ],
+          },
         }),
       });
 

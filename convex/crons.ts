@@ -27,4 +27,10 @@ crons.interval(
   internal.broadcastTemplates.syncAllPendingInternal,
 );
 
+crons.interval(
+  "process-scheduled-messages",
+  { minutes: 1 },
+  internal.messageScheduling.processScheduledMessages,
+);
+
 export default crons;

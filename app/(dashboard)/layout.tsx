@@ -15,6 +15,8 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
 import { PaddleProvider } from "@/components/paddle-provider";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
+import { TeamPresenceDropdown } from "@/components/ui/team-presence-dropdown";
+import { PresenceInitializer } from "@/components/shell/presence-initializer";
 
 export const dynamic = "force-dynamic";
 
@@ -87,12 +89,14 @@ export default async function DashboardLayout({
           <SidebarTrigger className="-ms-1 text-muted-foreground hover:text-foreground" />
           <Separator orientation="vertical" className="h-4 opacity-50" />
           <div className="ms-auto flex items-center gap-1">
+            <TeamPresenceDropdown />
             <ThemeToggle />
             <ClientNotificationBell locale={locale} />
           </div>
         </header>
         <div className="flex-1 overflow-y-auto min-h-0 pb-16 md:pb-0">
           <ConvexAuthGuard>
+            <PresenceInitializer />
             {children}
             <PaddleProvider />
           </ConvexAuthGuard>

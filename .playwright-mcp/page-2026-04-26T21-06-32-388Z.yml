@@ -1,0 +1,48 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e251] [cursor=pointer]:
+    - img [ref=e252]
+  - alert [ref=e245]: WaDesk - Sign In
+  - generic [ref=e257]:
+    - generic [ref=e258]:
+      - generic [ref=e260]:
+        - heading "Sign in to wadesk" [level=1] [ref=e261]
+        - paragraph [ref=e262]: Welcome back! Please sign in to continue
+      - generic [ref=e263]:
+        - button "Last used Sign in with Google Continue with Google" [ref=e266] [cursor=pointer]:
+          - generic: Last used
+          - generic [ref=e267]:
+            - generic "Sign in with Google" [ref=e269]
+            - generic [ref=e270]: Continue with Google
+        - paragraph [ref=e273]: or
+        - generic [ref=e275]:
+          - generic [ref=e276]:
+            - generic [ref=e279]:
+              - generic [ref=e281]: Email address
+              - textbox "Email address" [ref=e282]:
+                - /placeholder: Enter your email address
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic: Password
+                  - generic:
+                    - textbox "Password":
+                      - /placeholder: Enter your password
+                    - button "Show password":
+                      - img
+          - button "Continue" [ref=e285] [cursor=pointer]:
+            - generic [ref=e286]:
+              - text: Continue
+              - img [ref=e287]
+    - generic [ref=e289]:
+      - generic [ref=e290]:
+        - generic [ref=e291]: Don’t have an account?
+        - link "Sign up" [ref=e292] [cursor=pointer]:
+          - /url: https://communal-octopus-5.accounts.dev/sign-up?__clerk_db_jwt=dvb_3CZGmvtalzSFNbuOjGlyNWtfBQg
+      - generic [ref=e294]:
+        - generic [ref=e296]:
+          - paragraph [ref=e297]: Secured by
+          - link "Clerk logo" [ref=e298] [cursor=pointer]:
+            - /url: https://go.clerk.com/components
+            - img [ref=e299]
+        - paragraph [ref=e304]: Development mode

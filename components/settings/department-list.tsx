@@ -154,6 +154,12 @@ export function DepartmentList({ channelId }: Props) {
                 {dept.description && (
                   <p className="text-xs text-muted-foreground truncate mt-0.5">{dept.description}</p>
                 )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {dept.assignmentMode === "first_reply" && t("First reply wins", "أول رد يأخذ المحادثة")}
+                  {dept.assignmentMode === "manual" && t("Manual assignment", "توزيع يدوي")}
+                  {dept.assignmentMode === "round_robin" && t("Round robin", "توزيع دوري")}
+                  {!dept.assignmentMode && t("First reply wins", "أول رد يأخذ المحادثة")}
+                </p>
               </div>
 
               <div className="flex items-center gap-1 shrink-0">

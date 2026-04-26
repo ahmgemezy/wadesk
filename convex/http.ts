@@ -60,6 +60,19 @@ type ContentType =
 
 // ── Content parsing ──────────────────────────────────────────────────────────
 
+function extractCsatScore(msg: MetaMessage): string | null {
+  if (msg.type === "interactive" && msg.interactive) {
+    if (msg.interactive.type === "button_reply" && msg.interactive.button_reply) {
+      const id = msg.interactive.button_reply.id;
+      if (/^[1-5]$/.test(id)) return id;
+      const title = msg.interactive.button_reply.title;
+      const match = title.match(/^([1-5])/);
+      if (match) return match[1];
+    }
+  }
+  return null;
+}
+
 function parseMessageContent(msg: MetaMessage): {
   content: string;
   contentType: ContentType;
@@ -233,20 +246,21 @@ export const metaWebhook = httpAction(async (ctx, request) => {
             });
 
             // ── Check if this is a CSAT response (single digit 1–5) ──────────
-            if (/^[1-5]$/.test(content.trim()) && contentType === "text") {
+            const csatContent = extractCsatScore(msg) ?? (contentType === "text" && /^[1-5]$/.test(content.trim()) ? content.trim() : null);
+            if (csatContent) {
               const isCsat: boolean = await ctx.runMutation(internal.csat.checkAndRecordResponse, {
                 tenantId: channel.tenantId,
                 senderPhone: msg.from,
-                content: content.trim(),
+                content: csatContent,
                 channelId: channel._id,
               });
               if (isCsat) {
                 log("csat_response_recorded", {
                   orgId: channel.tenantId,
                   senderPhone: msg.from,
-                  score: content.trim(),
+                  score: csatContent,
                 });
-                continue; // skip creating a new conversation message
+                continue;
               }
             }
 
