@@ -242,6 +242,10 @@ export function TemplatesSettings() {
               setBroadcastEditingId(null);
               setBroadcastBuilderOpen(true);
             }}
+            onEditTemplate={(templateId) => {
+              setBroadcastEditingId(templateId);
+              setBroadcastBuilderOpen(true);
+            }}
           />
         </TabsContent>
       </Tabs>

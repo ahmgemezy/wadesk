@@ -43,16 +43,40 @@ export const list = query({
   },
 });
 
+export const getById = query({
+  args: { id: v.id("broadcastTemplates") },
+  handler: async (ctx, { id }) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const template = await ctx.db.get(id);
+    if (!template || template.tenantId !== tenantId) {
+      throw new ConvexError("Template not found");
+    }
+    return template;
+  },
+});
+
 export const getLimitInfo = query({
   args: {},
-  handler: async (ctx) => {
+  handler: async (ctx): Promise<{
+    limit: number;
+    used: number;
+    remaining: number;
+    plan: Plan;
+  }> => {
     const { tenantId } = await getCallerIdentity(ctx);
     const plan: Plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
     const all = await ctx.db
       .query("broadcastTemplates")
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .collect();
-    return { count: all.length, limit: getBroadcastTemplateLimit(plan), plan };
+    const used = all.length;
+    const limit = getBroadcastTemplateLimit(plan);
+    return {
+      limit,
+      used,
+      remaining: Math.max(0, limit - used),
+      plan
+    };
   },
 });
 
