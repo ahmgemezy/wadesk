@@ -43,14 +43,14 @@ export function TeamPresenceDropdown() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (orgId) {
+    if (orgId && menuOpen) {
       setLoading(true);
       listMembers({})
         .then(setMembers)
         .catch(() => setMembers([]))
         .finally(() => setLoading(false));
     }
-  }, [orgId, listMembers]);
+  }, [orgId, listMembers, menuOpen]);
 
   const onlineUsers = useQuery(api.presence.listOnline, { tenantId: orgId ?? undefined }) ?? [];
 
