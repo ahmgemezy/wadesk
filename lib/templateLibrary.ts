@@ -215,7 +215,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "✅ تم تأكيد موعدك يوم {{date}} الساعة {{time}} في {{location}}. نراك قريباً!",
     metaCategory: "UTILITY",
-    industries: ["health", "beauty", "auto", "education"],
+    industries: ["health", "beauty", "auto", "education", "finance"],
   },
   {
     id: "appt-confirmed-en",
@@ -225,7 +225,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "✅ Appointment confirmed for {{date}} at {{time}} at {{location}}. See you soon!",
     metaCategory: "UTILITY",
-    industries: ["health", "beauty", "auto", "education"],
+    industries: ["health", "beauty", "auto", "education", "finance"],
   },
   {
     id: "appt-reminder-ar",
@@ -235,7 +235,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "⏰ تذكير: موعدك يوم {{date}} الساعة {{time}}. لو محتاج تعيد جدولة تواصل معنا مسبقاً.",
     metaCategory: "UTILITY",
-    industries: ["health", "beauty", "auto", "education"],
+    industries: ["health", "beauty", "auto", "education", "finance"],
   },
   {
     id: "appt-reminder-en",
@@ -245,7 +245,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "⏰ Reminder: Your appointment is on {{date}} at {{time}}. Need to reschedule? Contact us in advance.",
     metaCategory: "UTILITY",
-    industries: ["health", "beauty", "auto", "education"],
+    industries: ["health", "beauty", "auto", "education", "finance"],
   },
   {
     id: "appt-cancelled-ar",
@@ -255,7 +255,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "❌ تم إلغاء موعدك يوم {{date}}. تواصل معنا لحجز موعد جديد في أي وقت.",
     metaCategory: "UTILITY",
-    industries: ["health", "beauty", "auto", "education"],
+    industries: ["health", "beauty", "auto", "education", "finance"],
   },
   {
     id: "appt-cancelled-en",
@@ -265,7 +265,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "❌ Your appointment on {{date}} has been cancelled. Contact us anytime to book a new one.",
     metaCategory: "UTILITY",
-    industries: ["health", "beauty", "auto", "education"],
+    industries: ["health", "beauty", "auto", "education", "finance"],
   },
 
   // ── META: PAYMENTS ────────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "✅ استلمنا دفعتك بقيمة {{amount}} بتاريخ {{date}}. شكراً لثقتك بنا!",
     metaCategory: "UTILITY",
-    industries: ["ecommerce", "realestate", "finance", "health"],
+    industries: ["ecommerce", "realestate", "finance"],
   },
   {
     id: "payment-received-en",
@@ -287,7 +287,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "✅ Payment of {{amount}} received on {{date}}. Thank you for your trust!",
     metaCategory: "UTILITY",
-    industries: ["ecommerce", "realestate", "finance", "health"],
+    industries: ["ecommerce", "realestate", "finance"],
   },
   {
     id: "payment-due-ar",
@@ -297,7 +297,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "📋 تذكير: الفاتورة رقم {{invoice_id}} بقيمة {{amount}} مستحقة بتاريخ {{due_date}}.",
     metaCategory: "UTILITY",
-    industries: ["realestate", "finance", "health", "ecommerce"],
+    industries: ["ecommerce", "realestate", "finance"],
   },
   {
     id: "payment-due-en",
@@ -307,7 +307,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "📋 Reminder: Invoice #{{invoice_id}} for {{amount}} is due on {{due_date}}.",
     metaCategory: "UTILITY",
-    industries: ["realestate", "finance", "health", "ecommerce"],
+    industries: ["ecommerce", "realestate", "finance"],
   },
   {
     id: "payment-failed-ar",
@@ -317,7 +317,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "ar",
     body: "⚠️ للأسف فشلت عملية الدفع رقم {{payment_id}}. تواصل معنا لحل المشكلة في أقرب وقت.",
     metaCategory: "UTILITY",
-    industries: ["ecommerce", "finance"],
+    industries: ["ecommerce", "realestate", "finance"],
   },
   {
     id: "payment-failed-en",
@@ -327,7 +327,7 @@ const RAW: Omit<LibraryTemplate, "variables">[] = [
     language: "en",
     body: "⚠️ Payment #{{payment_id}} failed. Please contact us to resolve this as soon as possible.",
     metaCategory: "UTILITY",
-    industries: ["ecommerce", "finance"],
+    industries: ["ecommerce", "realestate", "finance"],
   },
 
   // ── META: WELCOME ─────────────────────────────────────────────────────────
