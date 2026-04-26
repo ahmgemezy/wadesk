@@ -11,8 +11,10 @@ import {
   LIBRARY_TEMPLATES,
   LIBRARY_CATEGORIES,
   CATEGORY_LABELS,
+  INDUSTRY_LABELS,
   type LibraryTemplate,
-  type LibraryTemplateType,
+  type Industry,
+  type MetaCategory,
 } from "@/lib/templateLibrary";
 import { useT } from "@/lib/i18n/context";
 import { SearchIcon } from "lucide-react";
@@ -21,7 +23,22 @@ interface Props {
   onUseQuickReply: (template: LibraryTemplate) => void;
 }
 
-type TypeFilter = "all" | LibraryTemplateType;
+const ALL_CATEGORIES = [
+  ...LIBRARY_CATEGORIES.meta,
+  ...LIBRARY_CATEGORIES.quick_reply,
+];
+
+const INDUSTRY_ORDER: Industry[] = [
+  "ecommerce", "food", "health", "realestate",
+  "education", "beauty", "auto", "finance", "travel", "general",
+];
+
+const PURPOSE_FILTERS: { value: "all" | MetaCategory; labelEn: string; labelAr: string }[] = [
+  { value: "all",            labelEn: "All purposes",        labelAr: "كل الأغراض" },
+  { value: "MARKETING",      labelEn: "🎯 Marketing",         labelAr: "🎯 تسويقي" },
+  { value: "UTILITY",        labelEn: "🔧 Utility",           labelAr: "🔧 خدمي" },
+  { value: "AUTHENTICATION", labelEn: "🔐 Authentication",    labelAr: "🔐 مصادقة" },
+];
 
 export function TemplateLibraryTab({ onUseQuickReply }: Props) {
   const t = useT();
@@ -29,7 +46,8 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
   const isFree = plan === "free";
 
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [industryFilter, setIndustryFilter] = useState<"all" | Industry>("all");
+  const [purposeFilter, setPurposeFilter] = useState<"all" | MetaCategory>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const [previewTemplate, setPreviewTemplate] = useState<LibraryTemplate | null>(null);
@@ -38,32 +56,30 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
   const [metaFormTemplate, setMetaFormTemplate] = useState<LibraryTemplate | null>(null);
   const [metaFormOpen, setMetaFormOpen] = useState(false);
 
-  const activeCategories = useMemo<string[]>(() => {
-    if (typeFilter === "all") {
-      return [
-        ...LIBRARY_CATEGORIES.meta,
-        ...LIBRARY_CATEGORIES.quick_reply,
-      ];
-    }
-    return LIBRARY_CATEGORIES[typeFilter];
-  }, [typeFilter]);
-
-  function handleTypeFilter(next: TypeFilter) {
-    setTypeFilter(next);
+  function handleIndustryFilter(next: "all" | Industry) {
+    setIndustryFilter(next);
+    setPurposeFilter("all");
     setCategoryFilter("all");
   }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return LIBRARY_TEMPLATES.filter((tpl) => {
-      if (typeFilter !== "all" && tpl.type !== typeFilter) return false;
+      // "general" tagged templates appear under any specific industry tab
+      if (
+        industryFilter !== "all" &&
+        !tpl.industries.includes(industryFilter) &&
+        !tpl.industries.includes("general")
+      ) return false;
+      // purpose filter: quick_reply has no metaCategory → excluded when purpose is active
+      if (purposeFilter !== "all" && tpl.metaCategory !== purposeFilter) return false;
       if (categoryFilter !== "all" && tpl.category !== categoryFilter) return false;
       if (q && !tpl.title.toLowerCase().includes(q) && !tpl.body.toLowerCase().includes(q)) {
         return false;
       }
       return true;
     });
-  }, [search, typeFilter, categoryFilter]);
+  }, [search, industryFilter, purposeFilter, categoryFilter]);
 
   function handleCardClick(template: LibraryTemplate) {
     setPreviewTemplate(template);
@@ -81,12 +97,6 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
     setMetaFormOpen(true);
   }
 
-  const TYPE_FILTERS: { value: TypeFilter; label: string; labelAr: string }[] = [
-    { value: "all",        label: "All",                  labelAr: "الكل" },
-    { value: "meta",       label: "📢 Meta (Broadcast)",  labelAr: "📢 ميتا (حملات)" },
-    { value: "quick_reply",label: "💬 Quick-Reply",        labelAr: "💬 رد سريع" },
-  ];
-
   return (
     <div className="space-y-4">
       {isFree && (
@@ -98,6 +108,7 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
         </div>
       )}
 
+      {/* Search */}
       <div className="relative">
         <SearchIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         <Input
@@ -109,23 +120,57 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
         />
       </div>
 
+      {/* Industry tab bar */}
+      <div className="flex gap-1 overflow-x-auto pb-1 border-b border-border scrollbar-none" dir="ltr">
+        <button
+          type="button"
+          onClick={() => handleIndustryFilter("all")}
+          className={`shrink-0 px-3 py-2 text-xs font-medium rounded-t transition-colors border-b-2 -mb-px ${
+            industryFilter === "all"
+              ? "border-primary text-foreground bg-muted/50"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          🌐 {t("All", "الكل")}
+        </button>
+        {INDUSTRY_ORDER.map((ind) => {
+          const meta = INDUSTRY_LABELS[ind];
+          return (
+            <button
+              key={ind}
+              type="button"
+              onClick={() => handleIndustryFilter(ind)}
+              className={`shrink-0 px-3 py-2 text-xs font-medium rounded-t transition-colors border-b-2 -mb-px ${
+                industryFilter === ind
+                  ? "border-primary text-foreground bg-muted/50"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {meta.icon} {t(meta.en, meta.ar)}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Purpose chips */}
       <div className="flex flex-wrap gap-2">
-        {TYPE_FILTERS.map((f) => (
+        {PURPOSE_FILTERS.map((f) => (
           <button
             key={f.value}
             type="button"
-            onClick={() => handleTypeFilter(f.value)}
+            onClick={() => setPurposeFilter(f.value)}
             className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-              typeFilter === f.value
+              purposeFilter === f.value
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-muted/70"
             }`}
           >
-            {t(f.label, f.labelAr)}
+            {t(f.labelEn, f.labelAr)}
           </button>
         ))}
       </div>
 
+      {/* Category chips */}
       <div className="flex flex-wrap gap-1.5">
         <button
           type="button"
@@ -138,7 +183,7 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
         >
           {t("All categories", "كل الفئات")}
         </button>
-        {activeCategories.map((cat) => {
+        {ALL_CATEGORIES.map((cat) => {
           const meta = CATEGORY_LABELS[cat];
           if (!meta) return null;
           return (
@@ -159,7 +204,12 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {filtered.length} {filtered.length === 1 ? t("template", "قالب") : filtered.length === 2 ? t("templates", "قالبان") : t("templates", "قوالب")}
+        {filtered.length}{" "}
+        {filtered.length === 1
+          ? t("template", "قالب")
+          : filtered.length === 2
+            ? t("templates", "قالبان")
+            : t("templates", "قوالب")}
       </p>
 
       {filtered.length === 0 ? (
