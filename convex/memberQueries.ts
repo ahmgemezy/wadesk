@@ -278,9 +278,9 @@ export const getAvailableChannels = query({
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .take(100);
 
-    return channels.map((ch) => ({
+    return channels.map((ch: any) => ({
       id: ch._id,
-      name: (ch as { displayName: string }).displayName || (ch as { name: string }).name || "Unknown",
+      name: ch.displayName || ch.name || "Unknown",
     }));
   },
 });
@@ -300,9 +300,63 @@ export const getAvailableDepartments = query({
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .take(100);
 
-    return departments.map((dept) => ({
+    return departments.map((dept: any) => ({
       id: dept._id,
-      name: (dept as { name: string }).name || "Unknown",
+      name: dept.name || "Unknown",
     }));
+  },
+});
+
+export const addMemberToChannels = internalMutation({
+  args: {
+    tenantId: v.string(),
+    userId: v.string(),
+    channelIds: v.array(v.string()),
+    userName: v.optional(v.string()),
+    userEmail: v.optional(v.string()),
+    userImageUrl: v.optional(v.string()),
+    role: v.union(v.literal("org:supervisor"), v.literal("org:agent")),
+    addedBy: v.string(),
+  },
+  handler: async (ctx, args) => {
+    for (const channelId of args.channelIds) {
+      await ctx.db.insert("channelMembers", {
+        tenantId: args.tenantId,
+        channelId: channelId as any,
+        userId: args.userId,
+        userName: args.userName || "",
+        userEmail: args.userEmail || "",
+        userImageUrl: args.userImageUrl,
+        role: args.role,
+        addedBy: args.addedBy,
+        createdAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const addMemberToDepartments = internalMutation({
+  args: {
+    tenantId: v.string(),
+    userId: v.string(),
+    departmentIds: v.array(v.string()),
+    userName: v.optional(v.string()),
+    userEmail: v.optional(v.string()),
+    role: v.union(v.literal("org:supervisor"), v.literal("org:agent")),
+    addedBy: v.string(),
+  },
+  handler: async (ctx, args) => {
+    for (const departmentId of args.departmentIds) {
+      await ctx.db.insert("departmentMembers", {
+        tenantId: args.tenantId,
+        departmentId: departmentId as any,
+        userId: args.userId,
+        userName: args.userName || "",
+        userEmail: args.userEmail || "",
+        role: args.role,
+        addedBy: args.addedBy,
+        createdAt: Date.now(),
+      });
+    }
   },
 });

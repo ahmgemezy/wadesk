@@ -165,6 +165,18 @@ export const updateMemberChannels = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("UNAUTHORIZED");
     const tenantId = identity.orgId as string;
+    const callerId = identity.subject;
+
+    const client = await clerkClient();
+    const memberships = await client.organizations.getOrganizationMembershipList({
+      organizationId: tenantId,
+      limit: 100,
+    });
+
+    const member = memberships.data.find((m) => m.publicUserData?.userId === args.memberId);
+    if (!member) {
+      throw new ConvexError("MEMBER_NOT_FOUND");
+    }
 
     const oldChannels = await ctx.runQuery(internal.memberQueries.getMemberChannelAssignments, {
       memberId: args.memberId,
@@ -176,13 +188,19 @@ export const updateMemberChannels = action({
       userId: args.memberId,
     });
 
-    for (const channelId of args.channelIds) {
-      await ctx.db.insert("channelMembers", {
-        tenantId,
-        channelId: channelId as any,
-        userId: args.memberId,
-      });
-    }
+    const memberRole = (member.role === "admin" ? "org:admin" : member.role) as OrgRole;
+    const nonAdminRole = memberRole === "org:admin" ? "org:supervisor" : (memberRole as "org:supervisor" | "org:agent");
+
+    await ctx.runMutation(internal.memberQueries.addMemberToChannels, {
+      tenantId,
+      userId: args.memberId,
+      channelIds: args.channelIds,
+      userName: member.publicUserData?.firstName || member.publicUserData?.identifier || "Unknown",
+      userEmail: member.publicUserData?.identifier || "",
+      userImageUrl: member.publicUserData?.imageUrl,
+      role: nonAdminRole,
+      addedBy: callerId,
+    });
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
       tenantId,
@@ -214,6 +232,18 @@ export const updateMemberDepartments = action({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("UNAUTHORIZED");
     const tenantId = identity.orgId as string;
+    const callerId = identity.subject;
+
+    const client = await clerkClient();
+    const memberships = await client.organizations.getOrganizationMembershipList({
+      organizationId: tenantId,
+      limit: 100,
+    });
+
+    const member = memberships.data.find((m) => m.publicUserData?.userId === args.memberId);
+    if (!member) {
+      throw new ConvexError("MEMBER_NOT_FOUND");
+    }
 
     const oldDepartments = await ctx.runQuery(internal.memberQueries.getMemberDeptAssignments, {
       memberId: args.memberId,
@@ -225,13 +255,18 @@ export const updateMemberDepartments = action({
       userId: args.memberId,
     });
 
-    for (const departmentId of args.departmentIds) {
-      await ctx.db.insert("departmentMembers", {
-        tenantId,
-        departmentId: departmentId as any,
-        userId: args.memberId,
-      });
-    }
+    const memberRole = (member.role === "admin" ? "org:admin" : member.role) as OrgRole;
+    const nonAdminRole = memberRole === "org:admin" ? "org:supervisor" : (memberRole as "org:supervisor" | "org:agent");
+
+    await ctx.runMutation(internal.memberQueries.addMemberToDepartments, {
+      tenantId,
+      userId: args.memberId,
+      departmentIds: args.departmentIds,
+      userName: member.publicUserData?.firstName || member.publicUserData?.identifier || "Unknown",
+      userEmail: member.publicUserData?.identifier || "",
+      role: nonAdminRole,
+      addedBy: callerId,
+    });
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
       tenantId,
