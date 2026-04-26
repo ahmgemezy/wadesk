@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import type { LibraryTemplate } from "@/lib/templateLibrary";
-import { CATEGORY_LABELS } from "@/lib/templateLibrary";
+import { CATEGORY_LABELS, INDUSTRY_LABELS } from "@/lib/templateLibrary";
 import { useT } from "@/lib/i18n/context";
 
 interface Props {
@@ -10,9 +10,42 @@ interface Props {
   onClick: (template: LibraryTemplate) => void;
 }
 
+function PurposeBadge({ template, t }: { template: LibraryTemplate; t: (en: string, ar: string) => string }) {
+  if (template.type === "quick_reply") {
+    return (
+      <Badge variant="secondary" className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 border-0">
+        💬 {t("Quick-Reply", "رد سريع")}
+      </Badge>
+    );
+  }
+  if (template.metaCategory === "MARKETING") {
+    return (
+      <Badge variant="secondary" className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border-0">
+        🎯 {t("Marketing Broadcast", "حملة تسويقية")}
+      </Badge>
+    );
+  }
+  if (template.metaCategory === "AUTHENTICATION") {
+    return (
+      <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0">
+        🔐 {t("Auth Broadcast", "حملة مصادقة")}
+      </Badge>
+    );
+  }
+  // UTILITY (default for meta)
+  return (
+    <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0">
+      🔧 {t("Utility Broadcast", "حملة خدمية")}
+    </Badge>
+  );
+}
+
 export function LibraryTemplateCard({ template, onClick }: Props) {
   const t = useT();
   const catMeta = CATEGORY_LABELS[template.category];
+
+  const displayIndustries = template.industries.slice(0, 2);
+  const extraCount = template.industries.length - 2;
 
   return (
     <button
@@ -36,19 +69,24 @@ export function LibraryTemplateCard({ template, onClick }: Props) {
         {template.body}
       </p>
 
-      <div className="flex flex-wrap gap-1.5 mt-auto">
-        {template.type === "meta" ? (
-          <Badge variant="secondary" className="text-[10px] bg-orange-500/10 text-orange-600 dark:text-orange-400 border-0">
-            📢 {t("Meta", "ميتا")}
-          </Badge>
-        ) : (
-          <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0">
-            💬 {t("Quick-Reply", "رد سريع")}
-          </Badge>
-        )}
+      <div className="flex flex-wrap gap-1.5 mt-auto pt-1 border-t border-border/50">
+        <PurposeBadge template={template} t={t} />
         {catMeta && (
           <Badge variant="outline" className="text-[10px]">
             {catMeta.icon} {t(catMeta.en, catMeta.ar)}
+          </Badge>
+        )}
+        {displayIndustries.map((ind) => {
+          const indMeta = INDUSTRY_LABELS[ind];
+          return (
+            <Badge key={ind} variant="outline" className="text-[10px] text-muted-foreground">
+              {indMeta.icon} {t(indMeta.en, indMeta.ar)}
+            </Badge>
+          );
+        })}
+        {extraCount > 0 && (
+          <Badge variant="outline" className="text-[10px] text-muted-foreground">
+            +{extraCount}
           </Badge>
         )}
       </div>
