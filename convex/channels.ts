@@ -93,8 +93,20 @@ export const setStatus = internalMutation({
   handler: async (ctx, args) => {
     const patch: Record<string, unknown> = { status: args.status };
     if (args.status === "active") patch.connectedAt = Date.now();
-    if (args.status === "disconnected") patch.disconnectedAt = Date.now();
+    if (args.status === "disconnected" || args.status === "reconnect_required") {
+      patch.disconnectedAt = Date.now();
+    }
     await ctx.db.patch(args.channelId, patch);
+
+    if (args.status === "disconnected" || args.status === "reconnect_required") {
+      const ch = await ctx.db.get(args.channelId);
+      if (ch) {
+        await ctx.scheduler.runAfter(0, internal.conversations.internalCloseAllForChannel, {
+          channelId: args.channelId,
+          tenantId: ch.tenantId,
+        });
+      }
+    }
   },
 });
 
@@ -159,6 +171,11 @@ export const disconnect = mutation({
       status: "disconnected",
       disconnectedAt: Date.now(),
       isActive: false,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.conversations.internalCloseAllForChannel, {
+      channelId: args.channelId,
+      tenantId,
     });
   },
 });
@@ -491,6 +508,7 @@ export const upsertChannel = internalMutation({
         displayName: args.displayName,
         connectedAt: Date.now(),
         disconnectedAt: undefined,
+        deactivationWarningsSent: undefined,
         isActive: args.status === "active",
       });
       return existing._id;

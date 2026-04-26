@@ -79,6 +79,50 @@ Thanks,
 WaDesk Team`,
     },
   },
+  channel_expiring_soon: {
+    ar: {
+      subject: "إجراء مطلوب: سيتم حذف رقم واتساب خلال {{daysLeft}} أيام",
+      body: `مرحباً،
+
+رقم واتساب "{{channelName}}" غير متصل وسيتم حذفه نهائياً خلال {{daysLeft}} أيام (في {{deleteDate}}).
+
+لمنع الحذف، أعد توصيل رقمك من الإعدادات > أرقام واتساب.
+
+شكراً،
+فريق WaDesk`,
+    },
+    en: {
+      subject: "Action Required: WhatsApp Number Deletes in {{daysLeft}} Days",
+      body: `Hello,
+
+Your WhatsApp number "{{channelName}}" has been disconnected and will be permanently deleted in {{daysLeft}} days (on {{deleteDate}}).
+
+To prevent deletion, reconnect from Settings > WhatsApp Numbers.
+
+Thanks,
+WaDesk Team`,
+    },
+  },
+  channel_deleted: {
+    ar: {
+      subject: "تم حذف رقم واتساب نهائياً",
+      body: `مرحباً،
+
+تم حذف رقم واتساب "{{channelName}}" وجميع بياناته (محادثات، رسائل، أقسام) نهائياً لأنه ظل غير متصل لمدة 30 يوماً.
+
+شكراً،
+فريق WaDesk`,
+    },
+    en: {
+      subject: "WhatsApp Number Permanently Deleted",
+      body: `Hello,
+
+Your WhatsApp number "{{channelName}}" and all its data (conversations, messages, departments) have been permanently deleted after 30 days of being disconnected.
+
+Thanks,
+WaDesk Team`,
+    },
+  },
 };
 
 export const sendEmail = internalAction({

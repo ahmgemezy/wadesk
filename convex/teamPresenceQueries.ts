@@ -1,5 +1,6 @@
 import { internalQuery } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 interface ChannelDepartments {
   channelId: string;
@@ -90,7 +91,7 @@ export const getUserChannelsAndDepartments = internalQuery({
     for (const [userId, channelMap] of userChannelDepts.entries()) {
       result[userId] = Array.from(channelMap.entries()).map(([channelId, depts]) => ({
         channelId,
-        channelName: channelIdToName.get(channelId) || "Unknown",
+        channelName: channelIdToName.get(channelId as Id<"channels">) || "Unknown",
         departmentNames: Array.from(depts).sort(),
       }));
     }

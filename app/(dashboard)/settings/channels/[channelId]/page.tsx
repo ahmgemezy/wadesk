@@ -7,10 +7,12 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { DepartmentList } from "@/components/settings/department-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Check, X, Trash2, UserCircle } from "lucide-react";
+import { Pencil, Check, X, Trash2, UserCircle, AlertTriangle, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmbeddedSignupButton } from "@/components/onboarding/embedded-signup-button";
 
 export default function ChannelSettingsPage({
   params,
@@ -31,6 +33,9 @@ export default function ChannelSettingsPage({
   const updateSlaThreshold = useMutation(api.sla.updateChannelSlaThreshold);
   const [slaMinutes, setSlaMinutes] = useState<string>("");
   const [savingSla, setSavingSla] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [reconnectError, setReconnectError] = useState<string | null>(null);
+  const [reconnectSuccess, setReconnectSuccess] = useState(false);
 
   useEffect(() => {
     if (channel) {
@@ -38,6 +43,14 @@ export default function ChannelSettingsPage({
     }
   }, [channel?.slaThresholdMinutes]);
   const router = useRouter();
+
+  const isInGracePeriod =
+    channel &&
+    (channel.status === "disconnected" || channel.status === "reconnect_required") &&
+    !!channel.disconnectedAt;
+  const graceDaysLeft = isInGracePeriod
+    ? Math.max(0, 30 - Math.floor((Date.now() - (channel?.disconnectedAt ?? 0)) / 86_400_000))
+    : null;
 
   const startEdit = () => {
     if (!channel) return;
@@ -99,6 +112,60 @@ export default function ChannelSettingsPage({
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
+      {/* Grace period warning banner */}
+      {isInGracePeriod && graceDaysLeft !== null && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-2 font-cairo">
+              <Clock className="size-4" />
+              {graceDaysLeft === 0
+                ? t("This number will be deleted today", "سيتم حذف هذا الرقم اليوم")
+                : t(
+                    `This number will be deleted in ${graceDaysLeft} days`,
+                    `سيتم حذف هذا الرقم خلال ${graceDaysLeft} أيام`
+                  )}
+            </span>
+            {reconnecting ? (
+              <EmbeddedSignupButton
+                onSuccess={() => {
+                  setReconnecting(false);
+                  setReconnectSuccess(true);
+                  toast.success(t("Channel reconnected successfully!", "تم إعادة ربط القناة بنجاح!"));
+                  setTimeout(() => {
+                    router.refresh();
+                  }, 500);
+                }}
+                onError={(err) => setReconnectError(err)}
+                label={t("Reconnect Now", "أعد الاتصال الآن")}
+              />
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => { setReconnecting(true); setReconnectError(null); }}
+              >
+                {t("Reconnect Now", "أعد الاتصال الآن")}
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {reconnectError && (
+        <Alert variant="destructive">
+          <AlertDescription className="font-cairo text-xs">{reconnectError}</AlertDescription>
+        </Alert>
+      )}
+
+      {reconnectSuccess && (
+        <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
+          <AlertDescription className="text-green-800 dark:text-green-300 font-cairo">
+            {t("Reconnected successfully!", "تم إعادة الاتصال بنجاح!")}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {editing ? (

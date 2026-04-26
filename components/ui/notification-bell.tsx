@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Bell, AlertTriangle } from "lucide-react";
+import { Bell, AlertTriangle, Clock, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   Popover,
@@ -30,6 +30,8 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
       markRead({ notificationId });
       if (type === "sla_breach") {
         router.push(`/inbox/${referenceId}`);
+      } else if (type === "channel_expiring_soon" || type === "channel_deleted") {
+        router.push("/settings/channels");
       } else {
         router.push(`/contacts`);
       }
@@ -88,6 +90,18 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
                   <span className="inline-flex items-center gap-1 text-amber-600 text-[10px] font-semibold mb-0.5">
                     <AlertTriangle className="size-3" />
                     {isRtl ? "انتهاك SLA" : "SLA Breach"}
+                  </span>
+                )}
+                {n.type === "channel_expiring_soon" && (
+                  <span className="inline-flex items-center gap-1 text-amber-600 text-[10px] font-semibold mb-0.5">
+                    <Clock className="size-3" />
+                    {isRtl ? "رقم سيُحذف" : "Channel Expiring"}
+                  </span>
+                )}
+                {n.type === "channel_deleted" && (
+                  <span className="inline-flex items-center gap-1 text-destructive text-[10px] font-semibold mb-0.5">
+                    <Trash2 className="size-3" />
+                    {isRtl ? "تم حذف الرقم" : "Channel Deleted"}
                   </span>
                 )}
                 <p className="text-sm font-medium">{n.contactName ?? "—"}</p>

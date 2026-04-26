@@ -33,4 +33,10 @@ crons.interval(
   internal.messageScheduling.processScheduledMessages,
 );
 
+crons.interval(
+  "process-channel-retention",
+  { hours: 24 },
+  internal.actions.channelRetentionAction.processChannelRetention,
+);
+
 export default crons;

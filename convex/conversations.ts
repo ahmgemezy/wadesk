@@ -337,6 +337,22 @@ export const assignInternal = internalMutation({
   },
 });
 
+export const internalCloseAllForChannel = internalMutation({
+  args: { channelId: v.id("channels"), tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const convs = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_channel", (q) =>
+        q.eq("tenantId", args.tenantId).eq("channelId", args.channelId)
+      )
+      .filter((q) => q.neq(q.field("status"), "resolved"))
+      .collect();
+    for (const conv of convs) {
+      await ctx.db.patch(conv._id, { status: "resolved" });
+    }
+  },
+});
+
 export const transferToDepartment = mutation({
   args: {
     conversationId: v.id("conversations"),

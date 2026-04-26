@@ -8,6 +8,14 @@ export const internalCreate = internalMutation({
   args: {
     tenantId: v.string(),
     userId: v.string(),
+    type: v.union(
+      v.literal("followup_due"),
+      v.literal("sla_breach"),
+      v.literal("template_approved"),
+      v.literal("template_rejected"),
+      v.literal("channel_expiring_soon"),
+      v.literal("channel_deleted"),
+    ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
     message: v.string(),
@@ -16,7 +24,7 @@ export const internalCreate = internalMutation({
     await ctx.db.insert("notifications", {
       tenantId: args.tenantId,
       userId: args.userId,
-      type: "followup_due",
+      type: args.type,
       referenceId: args.referenceId,
       contactName: args.contactName,
       message: args.message,

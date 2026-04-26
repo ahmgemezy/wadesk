@@ -473,6 +473,7 @@ export const syncStatusInternal = internalAction({
       await ctx.runMutation(internal.notifications.internalCreate, {
         tenantId: tpl.tenantId,
         userId: tpl.createdBy,
+        type: "template_approved",
         referenceId: tpl._id,
         message: `Template "${tpl.title}" was approved by Meta and is ready to use in Broadcasts.`,
       });

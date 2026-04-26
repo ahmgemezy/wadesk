@@ -137,6 +137,7 @@ export const recordFollowUpResult = internalMutation({
         await ctx.runMutation(internal.notifications.internalCreate, {
           tenantId: followUp.tenantId,
           userId: followUp.assignedTo,
+          type: "followup_due",
           referenceId: args.followUpId,
           contactName,
           message: `تم إرسال المتابعة إلى ${contactName}`,
@@ -180,6 +181,7 @@ export const recordFollowUpResult = internalMutation({
           await ctx.runMutation(internal.notifications.internalCreate, {
             tenantId: followUp.tenantId,
             userId: followUp.assignedTo,
+            type: "followup_due",
             referenceId: args.followUpId,
             contactName,
             message: `فشل إرسال المتابعة إلى ${contactName} بعد ${MAX_ATTEMPTS} محاولات`,
