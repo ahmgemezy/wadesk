@@ -272,12 +272,16 @@ export const remove = mutation({
       throw new ConvexError("NOT_FOUND");
     }
 
-    const openConversations = await ctx.db
+    const allConversations = await ctx.db
       .query("conversations")
       .withIndex("by_tenant_channel", (q) =>
         q.eq("tenantId", tenantId).eq("channelId", args.channelId)
       )
       .collect();
+
+    const openConversations = allConversations.filter(
+      (c) => c.status !== "resolved"
+    );
 
     if (openConversations.length > 0) {
       throw new ConvexError("HAS_CONVERSATIONS");
