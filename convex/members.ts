@@ -15,6 +15,9 @@ export const getMemberProfile = action({
     imageUrl: string | null;
     role: OrgRole;
     joinedAt: number | null;
+    phone: string | null;
+    jobTitle: string | null;
+    bio: string | null;
     channels: { id: string; name: string }[];
     departments: { id: string; name: string }[];
   }> => {
@@ -39,11 +42,15 @@ export const getMemberProfile = action({
       return null;
     }
 
-    const [channels, departments] = await Promise.all([
+    const [channels, departments, memberProfile] = await Promise.all([
       ctx.runQuery(internal.memberQueries.getMemberChannelAssignments, {
         memberId: args.memberId,
       }),
       ctx.runQuery(internal.memberQueries.getMemberDeptAssignments, {
+        memberId: args.memberId,
+      }),
+      ctx.runQuery(internal.memberQueries.getMemberProfile, {
+        tenantId,
         memberId: args.memberId,
       }),
     ]);
@@ -57,6 +64,9 @@ export const getMemberProfile = action({
       imageUrl: member.publicUserData?.imageUrl ?? null,
       role: (member.role === "admin" ? "org:admin" : member.role) as OrgRole,
       joinedAt: member.createdAt ?? null,
+      phone: memberProfile?.phone ?? null,
+      jobTitle: memberProfile?.jobTitle ?? null,
+      bio: memberProfile?.bio ?? null,
       channels,
       departments,
     };
@@ -314,8 +324,14 @@ export const updateMemberContact = action({
       throw new ConvexError("MEMBER_NOT_FOUND");
     }
 
+    await ctx.runMutation(internal.memberQueries.updateMemberProfile, {
+      tenantId,
+      memberId: args.memberId,
+      phone: args.phone,
+      jobTitle: args.jobTitle,
+    });
+
     const changedFields: Record<string, boolean> = {};
-    if (args.email) changedFields["email"] = true;
     if (args.phone) changedFields["phone"] = true;
     if (args.jobTitle) changedFields["jobTitle"] = true;
 

@@ -640,4 +640,15 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_tenant_user", ["tenantId", "userId"]),
+
+  memberProfiles: defineTable({
+    tenantId: v.string(),
+    userId: v.string(),
+    phone: v.optional(v.string()),
+    jobTitle: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    customFields: v.optional(v.object({})),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant_user", ["tenantId", "userId"]),
 });

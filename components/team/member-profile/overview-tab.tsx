@@ -10,6 +10,9 @@ type Profile = {
   imageUrl: string | null;
   role: string;
   joinedAt: number | null;
+  phone: string | null;
+  jobTitle: string | null;
+  bio: string | null;
   channels: { id: string; name: string }[];
   departments: { id: string; name: string }[];
 };
@@ -44,6 +47,38 @@ export function OverviewTab({ profile, analytics, onViewAnalytics }: OverviewTab
 
   return (
     <div className="space-y-6">
+      {/* Contact Information */}
+      <section className="rounded-lg border p-4">
+        <h3 className="mb-3 text-sm font-semibold">
+          {t("Contact Information", "معلومات التواصل")}
+        </h3>
+        <div className="space-y-2 text-sm">
+          {profile.email && (
+            <div>
+              <span className="text-muted-foreground">{t("Email", "البريد الإلكتروني")}: </span>
+              <span dir="ltr">{profile.email}</span>
+            </div>
+          )}
+          {profile.phone && (
+            <div>
+              <span className="text-muted-foreground">{t("Phone", "الهاتف")}: </span>
+              <span dir="ltr">{profile.phone}</span>
+            </div>
+          )}
+          {profile.jobTitle && (
+            <div>
+              <span className="text-muted-foreground">{t("Job Title", "المسمى الوظيفي")}: </span>
+              <span>{profile.jobTitle}</span>
+            </div>
+          )}
+          {!profile.email && !profile.phone && !profile.jobTitle && (
+            <span className="text-muted-foreground text-xs">
+              {t("No contact information provided", "لم يتم توفير معلومات تواصل")}
+            </span>
+          )}
+        </div>
+      </section>
+
       <div className="grid grid-cols-2 gap-6">
         <section>
           <h3 className="mb-2 text-xs font-medium text-muted-foreground">

@@ -26,6 +26,9 @@ type Profile = {
   imageUrl: string | null;
   role: string;
   joinedAt: number | null;
+  phone: string | null;
+  jobTitle: string | null;
+  bio: string | null;
   channels: { id: string; name: string }[];
   departments: { id: string; name: string }[];
 };
@@ -73,8 +76,8 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
   const [savingContact, setSavingContact] = useState(false);
   const [contactForm, setContactForm] = useState({
     email: profile.email || "",
-    phone: "",
-    jobTitle: "",
+    phone: profile.phone || "",
+    jobTitle: profile.jobTitle || "",
   });
   const [selectedChannels, setSelectedChannels] = useState<Set<string>>(
     new Set(profile.channels.map((ch) => ch.id))
@@ -246,10 +249,18 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
 
         <div className="rounded-lg border p-4">
           {!editingContact ? (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="text-sm">
                 <span className="text-muted-foreground">{t("Email", "البريد الإلكتروني")}: </span>
-                <span>{profile.email || "—"}</span>
+                <span dir="ltr">{profile.email || "—"}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">{t("Phone", "الهاتف")}: </span>
+                <span dir="ltr">{profile.phone || "—"}</span>
+              </div>
+              <div className="text-sm">
+                <span className="text-muted-foreground">{t("Job Title", "المسمى الوظيفي")}: </span>
+                <span>{profile.jobTitle || "—"}</span>
               </div>
               <Button
                 variant="outline"

@@ -213,6 +213,44 @@ export const getMemberDeptAssignments = internalQuery({
   },
 });
 
+export const updateMemberProfile = internalMutation({
+  args: {
+    tenantId: v.string(),
+    memberId: v.string(),
+    phone: v.optional(v.string()),
+    jobTitle: v.optional(v.string()),
+    bio: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("memberProfiles")
+      .withIndex("by_tenant_user", (q) =>
+        q.eq("tenantId", args.tenantId).eq("userId", args.memberId),
+      )
+      .first();
+
+    const updateData: any = {
+      updatedAt: Date.now(),
+    };
+    if (args.phone !== undefined) updateData.phone = args.phone || null;
+    if (args.jobTitle !== undefined) updateData.jobTitle = args.jobTitle || null;
+    if (args.bio !== undefined) updateData.bio = args.bio || null;
+
+    if (existing) {
+      await ctx.db.patch(existing._id, updateData);
+    } else {
+      await ctx.db.insert("memberProfiles", {
+        tenantId: args.tenantId,
+        userId: args.memberId,
+        phone: args.phone,
+        jobTitle: args.jobTitle,
+        bio: args.bio,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
 export const logMemberAction = internalMutation({
   args: {
     tenantId: v.string(),
@@ -260,6 +298,21 @@ export const removeMemberFromDepartments = internalMutation({
     for (const dm of memberships) {
       await ctx.db.delete(dm._id);
     }
+  },
+});
+
+export const getMemberProfile = internalQuery({
+  args: {
+    tenantId: v.string(),
+    memberId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("memberProfiles")
+      .withIndex("by_tenant_user", (q) =>
+        q.eq("tenantId", args.tenantId).eq("userId", args.memberId),
+      )
+      .first();
   },
 });
 
