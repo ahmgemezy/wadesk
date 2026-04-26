@@ -1,6 +1,31 @@
 export type LibraryTemplateType = "meta" | "quick_reply";
 export type MetaCategory = "MARKETING" | "UTILITY" | "AUTHENTICATION";
 
+export type Industry =
+  | "ecommerce"
+  | "food"
+  | "health"
+  | "realestate"
+  | "education"
+  | "beauty"
+  | "auto"
+  | "finance"
+  | "travel"
+  | "general";
+
+export const INDUSTRY_LABELS: Record<Industry, { en: string; ar: string; icon: string }> = {
+  ecommerce:  { en: "E-commerce & Retail",  ar: "التجارة الإلكترونية", icon: "🛍️" },
+  food:       { en: "Food & Restaurants",   ar: "المطاعم والأكل",      icon: "🍽️" },
+  health:     { en: "Healthcare & Clinics", ar: "الصحة والعيادات",     icon: "🏥" },
+  realestate: { en: "Real Estate",          ar: "العقارات",            icon: "🏠" },
+  education:  { en: "Education & Training", ar: "التعليم والتدريب",    icon: "🎓" },
+  beauty:     { en: "Beauty & Salons",      ar: "الجمال والصالونات",   icon: "💅" },
+  auto:       { en: "Auto & Services",      ar: "السيارات والخدمات",   icon: "🚗" },
+  finance:    { en: "Finance & Insurance",  ar: "المالية والتأمين",    icon: "💰" },
+  travel:     { en: "Travel & Tourism",     ar: "السفر والسياحة",      icon: "✈️" },
+  general:    { en: "General / Other",      ar: "عام",                 icon: "⚙️" },
+};
+
 export type LibraryTemplate = {
   id: string;
   title: string;
@@ -10,6 +35,7 @@ export type LibraryTemplate = {
   body: string;
   variables: string[];
   metaCategory?: MetaCategory;
+  industries: Industry[];
 };
 
 export const LIBRARY_CATEGORIES: Record<LibraryTemplateType, string[]> = {
