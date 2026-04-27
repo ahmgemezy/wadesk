@@ -1,5 +1,5 @@
 import { parsePhoneNumber, ParseError } from "libphonenumber-js";
-import { COUNTRIES } from "@/lib/countries";
+import { COUNTRIES } from "./countries";
 
 const COUNTRY_NAMES: Record<string, { ar: string; en: string }> = {};
 for (const c of COUNTRIES) {
