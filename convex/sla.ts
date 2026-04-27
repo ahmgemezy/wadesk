@@ -74,6 +74,15 @@ export const checkBreaches = internalMutation({
             read: false,
             createdAt: now,
           });
+
+          await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.slaBreachEmail, {
+            supervisorUserId: supervisor.userId,
+            contactName,
+            channelName: channel.displayName,
+            thresholdMinutes: channel.slaThresholdMinutes ?? 0,
+            conversationId: conv._id,
+            tenantId: channel.tenantId,
+          });
         }
       }
     }

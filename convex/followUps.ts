@@ -142,6 +142,12 @@ export const recordFollowUpResult = internalMutation({
           contactName,
           message: `تم إرسال المتابعة إلى ${contactName}`,
         });
+        await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.followupDueEmail, {
+          agentUserId: followUp.assignedTo,
+          contactName,
+          status: "sent",
+          tenantId: followUp.tenantId,
+        });
       }
     } else {
       const newAttemptCount = followUp.attemptCount + 1;
@@ -185,6 +191,12 @@ export const recordFollowUpResult = internalMutation({
             referenceId: args.followUpId,
             contactName,
             message: `فشل إرسال المتابعة إلى ${contactName} بعد ${MAX_ATTEMPTS} محاولات`,
+          });
+          await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.followupDueEmail, {
+            agentUserId: followUp.assignedTo,
+            contactName,
+            status: "failed",
+            tenantId: followUp.tenantId,
           });
         }
       } else {

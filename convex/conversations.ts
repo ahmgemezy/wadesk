@@ -111,12 +111,30 @@ export const assign = mutation({
       throw new ConvexError("NOT_FOUND");
     }
 
+    const previousAgentId = conversation.assignedAgentId;
+
     await ctx.db.patch(args.conversationId, {
       assignedAgentId: args.agentId,
       assignedAt: args.agentId ? Date.now() : undefined,
       assignmentType: args.agentId ? "manual" : "unassigned",
       lastMessageAt: Date.now(),
     });
+
+    if (args.agentId && args.agentId !== previousAgentId) {
+      const contact = await ctx.db.get(conversation.contactId);
+      const channel = await ctx.db.get(conversation.channelId);
+      const contactName =
+        contact?.customName ?? contact?.displayName ?? contact?.phone ?? "";
+      const channelName = channel?.displayName ?? "";
+
+      await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.newAssignmentEmail, {
+        agentUserId: args.agentId,
+        contactName,
+        channelName,
+        conversationId: args.conversationId,
+        tenantId,
+      });
+    }
   },
 });
 
@@ -328,12 +346,31 @@ export const assignInternal = internalMutation({
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== args.tenantId) return;
+
+    const previousAgentId = conversation.assignedAgentId;
+
     await ctx.db.patch(args.conversationId, {
       assignedAgentId: args.agentId,
       assignedAt: Date.now(),
       assignmentType: args.assignmentType ?? "manual",
       lastMessageAt: Date.now(),
     });
+
+    if (args.agentId !== previousAgentId) {
+      const contact = await ctx.db.get(conversation.contactId);
+      const channel = await ctx.db.get(conversation.channelId);
+      const contactName =
+        contact?.customName ?? contact?.displayName ?? contact?.phone ?? "";
+      const channelName = channel?.displayName ?? "";
+
+      await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.newAssignmentEmail, {
+        agentUserId: args.agentId,
+        contactName,
+        channelName,
+        conversationId: args.conversationId,
+        tenantId: args.tenantId,
+      });
+    }
   },
 });
 

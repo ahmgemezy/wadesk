@@ -334,6 +334,9 @@ export default defineSchema({
       v.literal("template_rejected"),
       v.literal("channel_expiring_soon"),
       v.literal("channel_deleted"),
+      v.literal("agent_welcome"),
+      v.literal("billing_payment_failed"),
+      v.literal("billing_subscription_expired"),
     ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
@@ -341,7 +344,8 @@ export default defineSchema({
     read: v.boolean(),
     createdAt: v.number(),
   })
-    .index("by_user", ["tenantId", "userId", "read"]),
+    .index("by_user", ["tenantId", "userId", "read"])
+    .index("by_user_type", ["tenantId", "userId", "type"]),
 
   metaTemplates: defineTable({
     tenantId: v.string(),

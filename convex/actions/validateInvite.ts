@@ -54,7 +54,21 @@ export const validateAndJoin = action({
     const org = await client.organizations.getOrganization({
       organizationId: tenantId,
     });
+    const orgName = org.name ?? "Organization";
 
-    return { orgId: tenantId, orgName: org.name ?? "Organization" };
+    const userEmail = identity.email ?? "";
+    const agentName =
+      identity.givenName ?? identity.name?.split(" ")[0] ?? "Agent";
+    if (userEmail) {
+      await ctx.runAction(internal.actions.notifyEmail.agentWelcomeEmail, {
+        userId,
+        email: userEmail,
+        agentName,
+        orgName,
+        tenantId,
+      });
+    }
+
+    return { orgId: tenantId, orgName };
   },
 });

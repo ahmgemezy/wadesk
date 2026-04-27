@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
 import { getCallerIdentity } from "./lib/auth";
 
 // ── Internal: create a notification ──────────────────────────────────────────
@@ -15,6 +15,9 @@ export const internalCreate = internalMutation({
       v.literal("template_rejected"),
       v.literal("channel_expiring_soon"),
       v.literal("channel_deleted"),
+      v.literal("agent_welcome"),
+      v.literal("billing_payment_failed"),
+      v.literal("billing_subscription_expired"),
     ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
@@ -87,5 +90,20 @@ export const markAllRead = mutation({
       )
       .collect();
     await Promise.all(unread.map((n) => ctx.db.patch(n._id, { read: true })));
+  },
+});
+
+export const hasWelcomeNotification = internalQuery({
+  args: { userId: v.string(), tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("notifications")
+      .withIndex("by_user_type", (q) =>
+        q.eq("tenantId", args.tenantId)
+         .eq("userId", args.userId)
+         .eq("type", "agent_welcome"),
+      )
+      .first();
+    return existing !== null;
   },
 });
