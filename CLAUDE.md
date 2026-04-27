@@ -28,7 +28,7 @@ A team inbox built on WhatsApp — multiple agents handle customer conversations
 | UI Components | shadcn/ui                                          |
 | Styling       | Tailwind CSS                                       |
 | WhatsApp API  | Meta WhatsApp Business Cloud API                   |
-| Payments      | Polar.sh                                           |
+| Payments      | Paddle                                             |
 | Hosting       | Vercel                                             |
 | Language      | TypeScript                                         |
 
@@ -85,7 +85,7 @@ These rules apply to EVERY UI component, no exceptions:
 
 ### Payments
 
-- Polar.sh as Merchant of Record (handles VAT/tax globally, supports Egypt USD payouts via Stripe Connect Express)
+- Paddle as Merchant of Record (handles VAT/tax globally, supports international payouts)
 
 ---
 
@@ -253,10 +253,10 @@ Additional 20% off all paid plans when billed annually.
 
 #### Pricing Notes for Developers
 
-- Polar.js `PricePreview()` handles automatic geo-based currency display
+- Paddle handles automatic geo-based currency display and localization
 - Plan limits enforced in Convex — check `tenant.plan` before allowing feature access
-- Annual billing implemented as ~20% discount via Polar price variants
-- Polar webhooks update `tenant.plan` in Convex on payment/subscription events
+- Annual billing implemented as ~20% discount via Paddle price variants
+- Paddle webhooks update `tenant.plan` in Convex on payment/subscription events
 
 ---
 
@@ -350,10 +350,10 @@ WHATSAPP_APP_SECRET=             # Meta App Secret (Meta App Dashboard → Setti
 WHATSAPP_API_TOKEN=              # Permanent System User token for sending messages (task 013)
 WHATSAPP_API_VERSION=v25.0       # Meta API version — always use v25.0 (latest)
 
-# Polar.sh
-POLAR_ACCESS_TOKEN=
-POLAR_WEBHOOK_SECRET=
-POLAR_ORGANIZATION_ID=
+# Paddle
+PADDLE_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_SELLER_ID=
 ```
 
 ---
@@ -364,7 +364,7 @@ POLAR_ORGANIZATION_ID=
 | ----------------------------------- | ------------------------------------------------------------------------- |
 | Convex over Supabase                | Real-time first, no SQL complexity, faster to build                       |
 | Clerk over NextAuth                 | Multi-tenant orgs built-in, saves weeks of work                           |
-| Polar.sh over Stripe                | MoR = handles MENA VAT + global tax automatically; 4% + $0.40/transaction |
+| Paddle over Stripe                  | MoR = handles MENA VAT + global tax automatically; account approval pending |
 | Shared WABA model (Embedded Signup) | Client owns their number, WaDesk can't be shut down                       |
 | Freemium over free trial only       | Lower barrier for Arab SMB market                                         |
 | Arabic-first over bilingual         | Differentiation from all global competitors                               |

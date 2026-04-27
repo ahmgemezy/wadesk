@@ -480,10 +480,10 @@ WHATSAPP_APP_SECRET=             # Meta App Secret (for signature verification)
 WHATSAPP_API_TOKEN=              # Permanent System User token for sending messages
 WHATSAPP_API_VERSION=v19.0       # Meta API version
 
-# Polar.sh
-POLAR_ACCESS_TOKEN=
-POLAR_WEBHOOK_SECRET=
-POLAR_ORGANIZATION_ID=
+# Paddle
+PADDLE_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_SELLER_ID=
 
 # Encryption (auto-generated if not provided)
 CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
