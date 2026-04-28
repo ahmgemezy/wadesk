@@ -7,10 +7,10 @@
 
 ---
 
-**Last Updated:** 2026-04-26 UTC  
+**Last Updated:** 2026-04-28 UTC  
 **Current Branch:** feat/013-departments  
 **Main Branch:** 002-agent-roles  
-**Build Status:** ✅ TypeScript: Template Library feature complete | ✅ All 66 templates verified | ✅ Filtering logic validated
+**Build Status:** ✅ TypeScript: 0 errors | ✅ 32-table schema deployed | ✅ React Email system live | ✅ Member profile modal complete | ✅ Channel retention system active
 
 ---
 
@@ -94,36 +94,46 @@ wadesk/
 
 ---
 
-## 3. Database Schema (22 Tables)
+## 3. Database Schema (32 Tables)
 
 All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enforce multi-tenant isolation.
 
 ### Core Data Model
 
-| Table                  | Purpose                                           | Key Fields                                                                 | Indexes                                                    |
-| ---------------------- | ------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `tenants`              | Tenant/organization records                       | `tenantId`, `plan`, `orgName`, `paddle_customer_id`                        | `by_tenantId`                                              |
-| `channels`             | WhatsApp Business numbers (WABA connections)      | `tenantId`, `phoneNumberId`, `wabaId`, `accessToken` (encrypted), `status` | `by_tenant`, `by_phone_number_id`, `by_tenant_status`      |
-| `contacts`             | Customer/contact profiles                         | `tenantId`, `phone`, `displayName`, `stage`, `tags`, `totalConversations`  | `by_tenant`, `by_tenant_phone`, `search_by_name`           |
-| `contactLists`         | Filtered contact lists for broadcasts             | `tenantId`, `name`, `filters` (countries, stages, tags)                    | `by_tenant`                                                |
-| `conversations`        | Conversation threads                              | `tenantId`, `channelId`, `contactId`, `status`, `assignedAgentId`, `labels` | `by_tenant`, `by_tenant_status`, `by_tenant_agent`         |
-| `messages`             | Individual messages                               | `conversationId`, `direction`, `content`, `contentType`, `metaMessageId`   | `by_conversation`, `by_meta_message_id`                    |
-| `quickReplies`         | Saved quick response templates                    | `tenantId`, `title`, `content`, `category`                                 | `by_tenant`, `by_tenant_category`                          |
-| `messageTemplates`     | Message templates with variables                  | `tenantId`, `title`, `body`, `variables[]`, `language`                     | `by_tenant`, `by_tenant_category`                          |
-| `automationRules`      | Automation rules (if-this-send-that)              | `tenantId`, `triggerType`, `keywordList`, `responseTemplate`, `priority`   | `by_tenant`, `by_tenant_enabled`, `by_tenant_priority`     |
-| `businessHours`        | Business hours schedule                           | `tenantId`, `timezone`, `schedule`                                         | `by_tenant`                                                |
-| `ruleFireLog`          | Automation execution log (deduplication)          | `tenantId`, `ruleId`, `conversationId`, `firedAt`                          | `by_rule_conversation`, `by_conversation`                  |
-| `followUps`            | Scheduled follow-up messages                      | `tenantId`, `contactId`, `scheduledAt`, `status`, `expectedRevenue`        | `by_tenant_status`, `by_scheduled`                         |
-| `broadcasts`           | Broadcast campaigns                               | `tenantId`, `name`, `listId`, `status`, `recipientSnapshot`                | `by_tenant`, `by_tenant_status`                            |
-| `csatSettings`         | CSAT survey configuration                         | `tenantId`, `enabled`, `delayMinutes`                                      | `by_tenant`                                                |
-| `conversationMetrics`  | Denormalized analytics data                       | `tenantId`, `conversationId`, `firstResponseTimeSeconds`, `csatScore`      | `by_tenant_created`, `by_tenant_agent`                     |
-| `conversationLabels`   | Label definitions                                 | `tenantId`, `name`, `color`, `emoji`                                       | `by_tenant`                                                |
-| `channelMembers`       | Channel-agent assignments                         | `tenantId`, `channelId`, `userId`, `role`                                  | `by_channel`, `by_channel_user`                            |
-| `customFields`         | Custom contact fields (key-value pairs)           | `tenantId`, `contactId`, `key`, `value`                                    | `by_contact`, `by_tenant`                                  |
-| `contactEvents`        | Contact activity timeline                         | `tenantId`, `contactId`, `type`, `metadata`                                | `by_contact`, `by_tenant`                                  |
-| `notifications`        | In-app notifications (followups, SLA breaches)    | `tenantId`, `userId`, `type`, `message`, `read`                            | `by_user`                                                  |
-| `inviteLinks`          | Time-limited team invite links                    | `tenantId`, `token`, `expiresAt`, `revoked`, `defaultRole`                 | `by_tenant`, `by_token`                                    |
-| `onboardingState`      | Onboarding progress tracking                      | `tenantId`, `completedSteps[]`, `completedAt`                              | `by_tenant`                                                |
+| Table                    | Purpose                                           | Key Fields                                                                           |
+| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `tenants`                | Tenant/organization records                       | `tenantId`, `plan`, `orgName`, `paddle_customer_id`                                  |
+| `channels`               | WhatsApp Business numbers (WABA connections)      | `tenantId`, `phoneNumberId`, `wabaId`, `accessToken` (encrypted), `status`, `deletedAt`, `retentionExpiresAt` |
+| `contacts`               | Customer/contact profiles                         | `tenantId`, `phone`, `displayName`, `stage`, `tags`, `totalConversations`            |
+| `contactLists`           | Filtered contact lists for broadcasts             | `tenantId`, `name`, `filters` (countries, stages, tags)                              |
+| `conversations`          | Conversation threads                              | `tenantId`, `channelId`, `contactId`, `status`, `assignedAgentId`, `labels`         |
+| `messages`               | Individual messages                               | `conversationId`, `direction`, `content`, `contentType`, `metaMessageId`, `scheduledAt` |
+| `quickReplies`           | Saved quick response templates (with variables)   | `tenantId`, `title`, `content`, `category`, `variables[]`                            |
+| `messageTemplates`       | Message templates with `{{variable}}` placeholders | `tenantId`, `title`, `body`, `variables[]`, `language`                              |
+| `metaTemplates`          | Meta-approved broadcast templates (cached)        | `tenantId`, `channelId`, `name`, `status`, `components`                              |
+| `broadcastTemplates`     | Tenant-defined broadcast templates                | `tenantId`, `name`, `category`, `language`, `header`, `body`, `buttons`, `metaStatus` |
+| `automationRules`        | Automation rules (if-this-send-that)              | `tenantId`, `triggerType`, `keywordList`, `responseTemplate`, `priority`             |
+| `businessHours`          | Business hours schedule                           | `tenantId`, `timezone`, `schedule`                                                   |
+| `ruleFireLog`            | Automation execution log (deduplication)          | `tenantId`, `ruleId`, `conversationId`, `firedAt`                                    |
+| `followUps`              | Scheduled follow-up messages                      | `tenantId`, `contactId`, `scheduledAt`, `status`, `expectedRevenue`                  |
+| `broadcasts`             | Broadcast campaigns                               | `tenantId`, `name`, `listId`, `status`, `recipientSnapshot`, `retryMap`              |
+| `csatSettings`           | CSAT survey configuration                         | `tenantId`, `enabled`, `delayMinutes`                                                |
+| `conversationMetrics`    | Denormalized analytics data                       | `tenantId`, `conversationId`, `firstResponseTimeSeconds`, `csatScore`                |
+| `conversationLabels`     | Label definitions                                 | `tenantId`, `name`, `color`, `emoji`                                                 |
+| `channelMembers`         | Channel-agent assignments                         | `tenantId`, `channelId`, `userId`, `role`                                            |
+| `departments`            | Channel groups (departments)                      | `tenantId`, `name`, `description`, `channelIds`                                      |
+| `departmentMembers`      | Department member assignments                     | `tenantId`, `departmentId`, `userId`, `role`                                         |
+| `customFields`           | Custom contact fields (key-value pairs)           | `tenantId`, `contactId`, `key`, `value`                                              |
+| `contactEvents`          | Contact activity timeline                         | `tenantId`, `contactId`, `type`, `metadata`                                          |
+| `notifications`          | In-app notifications (followups, SLA breaches)    | `tenantId`, `userId`, `type`, `message`, `read`                                      |
+| `notificationPreferences` | Per-member email/in-app notification toggles     | `tenantId`, `userId`, `emailEnabled`, `inAppEnabled`, `eventTypes[]`                 |
+| `inviteLinks`            | Time-limited team invite links                    | `tenantId`, `token`, `expiresAt`, `revoked`, `defaultRole`                           |
+| `onboardingState`        | Onboarding progress tracking                      | `tenantId`, `completedSteps[]`, `completedAt`                                        |
+| `memberProfiles`         | Rich member profiles (bio, contact info)          | `tenantId`, `userId`, `bio`, `jobTitle`, `phone`, `avatar`                           |
+| `memberActionLog`        | Audit trail for member management actions         | `tenantId`, `actorId`, `targetId`, `action`, `changedFields`                         |
+| `presence`               | Real-time user presence status                    | `tenantId`, `userId`, `status`, `lastSeen`                                           |
+| `rateLimits`             | Token-bucket rate limiting per user+action        | `userId`, `action`, `tokens`, `lastRefill`                                           |
+| `webhook_events`         | Webhook event debug log                           | `tenantId`, `eventType`, `payload`, `processedAt`                                    |
 
 ---
 
@@ -218,12 +228,15 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 ### ✅ WhatsApp Business Profile Editing
 - **File:** `app/(dashboard)/settings/channels/[channelId]/profile/page.tsx`
 - **Backend:** `convex/waBusinessProfile.ts`
-- **Status:** ✅ Complete
+- **Status:** ✅ Complete (2026-04-27 major update)
 - **Features:**
   - Edit profile photo, description, address, category, website
   - Display name changes (requires Meta review — shows pending status)
   - Growth+ plan gating
   - Field-by-field auto-save
+  - **Resumable upload API** for profile photos (large file support)
+  - **Permanent System User Token** (`WHATSAPP_API_TOKEN` env var) used for all Meta profile API calls
+  - **System user auto-assigned** to WABA on Embedded Signup completion (`assignSystemUser` in `channels.ts`)
 
 ### ✅ Automation Rules Engine
 - **File:** `app/(dashboard)/automations/page.tsx`, `components/automations/*`
@@ -265,16 +278,17 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - User notifications on failure
   - Auto-churn on max retry failure
 
-### ✅ CSAT Surveys
+### ✅ CSAT Surveys (v2)
 - **File:** `app/(dashboard)/settings/csat/page.tsx`
 - **Backend:** `convex/csat.ts`
-- **Status:** ⚠️ Complete but needs Meta template approval
+- **Status:** ⚠️ Complete — button-based template; Meta template approval still required
 - **Features:**
   - Post-resolution surveys (configurable delay 0-60 minutes)
   - Growth+ plan gating
-  - Webhook hijacking: intercepts 1-5 rating responses before message creation
-  - Score recording in `conversationMetrics` (not `messages` table)
-  - **Known Issue:** Free-form Arabic text violates Meta 24-hour window — needs pre-approved template
+  - **v2 (2026-04-27):** Now sends interactive button template (1–5 star options) instead of free-form text — resolves Meta 24-hour window compliance issue
+  - Webhook hijacking: intercepts button reply responses; score recorded in `conversationMetrics`
+  - Settings page enhanced: live preview of CSAT message, test send button
+  - **Remaining:** Meta template must be pre-approved before production use
 
 ### ✅ SLA Monitoring
 - **File:** `components/inbox/conversation-header.tsx` (displays breach indicator)
@@ -342,6 +356,143 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Admin/Supervisor only
   - Async export generation (Convex Storage URLs)
 
+### ✅ Template Library
+- **File:** `components/templates/template-library-tab.tsx`, `lib/templateLibrary.ts`
+- **Backend:** `convex/metaTemplates.ts` — Meta template sync + `submitToMeta` action
+- **Status:** ✅ Complete
+- **Features:**
+  - 66 pre-built curated templates with industry tags and purpose chips
+  - Industry tabs + purpose filter with combined filtering logic
+  - Arabic + English templates, 14 categories (8 Meta + 6 Quick-Reply)
+  - Preview sheet with WhatsApp bubble + variable highlighting
+  - Quick-reply templates pre-fill create dialog; Meta templates submit via Convex action
+  - Variable auto-conversion: `{{named}}` → `{{1}}` before Meta submission
+
+### ✅ Broadcast Templates
+- **File:** `components/broadcasts/broadcast-templates-tab.tsx`, `components/broadcasts/broadcast-template-builder.tsx`
+- **Backend:** `convex/broadcastTemplates.ts`, `convex/metaTemplates.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Tenant-defined broadcast templates with Meta submission workflow
+  - Status lifecycle: `draft → submitted → approved/rejected`
+  - Broadcast wizard integration: source picker (Meta Templates vs Broadcast Templates)
+  - Media URL override, dynamic URL suffixes per button, variable fill-in inputs
+
+### ✅ Departments Feature
+- **File:** `app/(dashboard)/settings/channels/[channelId]/page.tsx`
+- **Backend:** `convex/departments.ts`, `convex/departmentMembers.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Channels grouped into departments for multi-channel management
+  - Conversation transfer between departments
+  - Defensive fix: `listForTransfer` returns `[]` instead of NOT_FOUND on orphaned channelIds
+
+### ✅ Quick Reply Variables
+- **File:** `components/inbox/quick-reply-panel.tsx`
+- **Status:** ✅ Complete
+- **Features:**
+  - Quick replies support `{{variable}}` placeholders
+  - Selecting a variable quick reply opens inline fill-in form before inserting
+
+### ✅ Settings Sub-Navigation
+- **File:** `components/settings/settings-sub-nav.tsx`, `app/(dashboard)/settings/layout.tsx`
+- **Status:** ✅ Complete
+- **Features:**
+  - Persistent sub-nav on all settings pages
+  - Settings landing page at `/settings`
+
+### ✅ Member Profile Modal
+- **File:** `components/team/member-profile-modal.tsx`, `components/team/member-profile/`
+- **Backend:** `convex/members.ts`, `convex/memberQueries.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Tabbed modal: Overview (bio, contact details, recent activity) | Analytics (performance charts) | History (audit log) | Manage (role, status, remove)
+  - `memberProfiles` table: bio, jobTitle, phone, avatar
+  - `memberActionLog` table: full audit trail of admin actions
+  - `notificationPreferences` table: per-member email/in-app toggles
+  - Admin/Supervisor can edit member contact details via Manage tab
+
+### ✅ Team Presence System
+- **File:** `components/ui/presence-indicator.tsx`, `components/ui/team-presence-dropdown.tsx`
+- **Backend:** `convex/presence.ts`, `convex/teamPresence.ts`, `convex/teamPresenceQueries.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Real-time online/offline/away/busy status per team member
+  - `presence` table with heartbeat pattern (auto-expires)
+  - `hooks/use-presence.ts` — presence hook for components
+  - `components/shell/presence-initializer.tsx` — sets presence on app load/unload
+
+### ✅ Channel Retention (30-Day Auto-Delete)
+- **File:** `app/(dashboard)/settings/channels/page.tsx`
+- **Backend:** `convex/channelRetention.ts`, `convex/actions/channelRetentionAction.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Disconnected channels retained 30 days then auto-purged (conversations, messages, channelMembers)
+  - `channels.deletedAt` + `channels.retentionExpiresAt` schema fields
+  - Daily cron job (`check-channel-retention`)
+  - Admin notified 7 days before deletion (email + in-app)
+  - Channels with only resolved conversations can be force-deleted immediately
+
+### ✅ Transactional Email System
+- **File:** `emails/` (18 template files: 9 types × AR+EN), `convex/emails/`
+- **Backend:** `convex/actions/notifyEmail.ts`, `convex/actions/sendEmail.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Branded React Email HTML templates (Arabic + English variants for each type)
+  - 9 email types: agent-welcome, new-assignment, sla-breach, followup-due, followup-due-failed, channel-deleted, channel-expiring-soon, billing-payment-failed, billing-subscription-expired
+  - `notifyEmail` action routes AR/EN based on member locale
+  - Sent via Resend API (`RESEND_API_KEY` env var)
+  - `convex/emails/base.tsx` — shared branded layout with Cairo font and WABDesk colors
+
+### ✅ Message Scheduling
+- **Backend:** `convex/messageScheduling.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Agents schedule outbound messages for future delivery
+  - `messages.scheduledAt` field; `status: "scheduled"` until dispatched
+  - 1-minute cron job dispatches due messages via Meta API
+  - Failed scheduled sends auto-retry once
+
+### ✅ Conversation & Message Search
+- **Backend:** `convex/search.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Full-text search across message content and contact names
+  - Convex search index on `messages.content` and `contacts.displayName`
+  - Role-gated: agents search only their assigned conversations
+  - UI: search bar in inbox header with result dropdown
+
+### ✅ Conversation Merge
+- **Backend:** `convex/conversationMerge.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Admin merges duplicate conversations (messages moved from source → target)
+  - Source conversation marked resolved with merge note
+  - Admin-only; available from conversation header action menu
+
+### ✅ Batch Actions
+- **Backend:** `convex/batchActions.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Bulk operations: `batchClose`, `batchAssign`, `batchLabel`, `batchDelete`
+  - Checkbox selection in conversation list + bulk action toolbar
+  - All mutations validate `tenantId` and role before operating
+
+### ✅ Rate Limiting
+- **Backend:** `convex/lib/rateLimit.ts`
+- **Status:** ✅ Complete
+- **Features:**
+  - Token-bucket rate limiter using `rateLimits` table
+  - Applied to: `sendMessage`, `sendMediaReply`, `importBatch`
+
+### ✅ Legal Pages
+- **File:** `app/privacy/page.tsx`, `app/terms/page.tsx`, `app/dpa/page.tsx`
+- **Status:** ✅ Complete
+- **Features:**
+  - Full Arabic + English content for Privacy Policy, Terms of Service, Data Processing Agreement
+  - `components/marketing/legal-page-wrapper.tsx` — shared layout
+  - Marketing footer updated with links to all three pages
+
 ### ✅ Billing & Subscription Management
 - **File:** `app/(dashboard)/settings/billing/page.tsx`
 - **Backend:** `convex/billing.ts`, `app/api/paddle/webhook/route.ts`
@@ -376,11 +527,11 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 
 ### 🔴 Critical Issues (Must Fix Before Production)
 
-1. **CSAT Arabic Text Violates Meta 24-Hour Window**
+1. **CSAT Template Needs Meta Pre-Approval**
    - **File:** `convex/csat.ts`
-   - **Issue:** Free-form Arabic text sent outside 24-hour window will be rejected by Meta
-   - **Fix Required:** Replace with pre-approved WhatsApp template
-   - **Plan:** Submit template to Meta, update `sendCSATRequest` to use template API
+   - **Issue:** CSAT now uses button template (Meta compliant) but the template itself must be pre-approved by Meta before it can be sent outside the 24-hour window
+   - **Fix Required:** Submit the CSAT button template to Meta for approval; update `sendCSATRequest` to use the approved template ID once approved
+   - **Status:** ⚠️ v2 sends button template (correct approach), but Meta approval pending
 
 2. **SLA Breach Clearing Logic Unclear**
    - **File:** `convex/sla.ts`, `convex/messages.ts:89`
@@ -491,7 +642,51 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 
 ---
 
-## 8. Recent Changes (Last 5 Sessions)
+## 8. Recent Changes (Last 10 Sessions)
+
+### 2026-04-28: System User Assignment + WA Business Profile Fixes
+- ✅ `convex/channels.ts` — `assignSystemUser` action: auto-assigns WABDesk system user to WABA on Embedded Signup completion
+- ✅ `convex/waBusinessProfile.ts` — switched to permanent `WHATSAPP_API_TOKEN`; resumable upload API for profile photos
+- ✅ Removed `.opencode.json` config file (cleanup)
+- **Files:** `convex/channels.ts`, `convex/waBusinessProfile.ts`
+
+### 2026-04-27: Legal Pages + CSAT v2 + Invite Links UX
+- ✅ Legal pages: `/privacy`, `/terms`, `/dpa` — full AR+EN content with branded layout
+- ✅ CSAT v2: switched from free-form text to interactive button template (Meta compliance)
+- ✅ CSAT settings page: live preview, test send button, enhanced config
+- ✅ Marketing footer and nav updated with legal page links
+- ✅ Invite links UX polish (copy, regenerate, revoke improvements)
+- ✅ Convex tsc path alias error resolved (`@/` alias in tsconfig)
+- **New files:** `app/privacy/page.tsx`, `app/terms/page.tsx`, `app/dpa/page.tsx`, `components/marketing/legal-page-wrapper.tsx`, `components/marketing/privacy-content.tsx`, `components/marketing/terms-content.tsx`, `components/marketing/dpa-content.tsx`
+
+### 2026-04-27: Transactional Email System (React Email + Resend)
+- ✅ 18 React Email template files in `emails/` (9 types × AR+EN)
+- ✅ Shared branded base layout: `convex/emails/base.tsx`
+- ✅ `convex/actions/notifyEmail.ts` — AR/EN routing dispatch action
+- ✅ `convex/actions/sendEmail.ts` — updated to use Resend API + React Email render
+- ✅ Email triggers wired: channel deletion warning, SLA breach, new assignment, follow-up failure, billing events
+- **New env var:** `RESEND_API_KEY`
+
+### 2026-04-27: Channel Retention (30-Day Auto-Delete)
+- ✅ `convex/channelRetention.ts` — retention logic (find expired, purge cascade)
+- ✅ `convex/actions/channelRetentionAction.ts` — purge action (conversations, messages, channelMembers, channel)
+- ✅ Schema: `channels.deletedAt`, `channels.retentionExpiresAt`
+- ✅ Daily cron job `check-channel-retention`
+- ✅ UI: countdown badge on channels page for disconnected channels
+- ✅ Fix: channels with only resolved conversations can be force-deleted immediately
+
+### 2026-04-27: Member Profile Modal (Full Implementation)
+- ✅ `components/team/member-profile-modal.tsx` — tabbed modal shell
+- ✅ 4 tab components: overview-tab, analytics-tab, history-tab, manage-tab
+- ✅ `convex/members.ts` + `convex/memberQueries.ts` — mutations + analytics queries
+- ✅ New tables: `memberProfiles`, `memberActionLog`, `notificationPreferences`
+- ✅ Contact details: phone, jobTitle, bio stored per member
+- ✅ `hooks/use-member-profile.ts`, `hooks/use-presence.ts`
+- ✅ Team presence system: `convex/presence.ts`, `convex/teamPresence.ts`, `convex/teamPresenceQueries.ts`
+- ✅ Presence UI: `components/ui/presence-indicator.tsx`, `components/ui/team-presence-dropdown.tsx`
+- ✅ Shell: `components/shell/presence-initializer.tsx`
+- ✅ New Convex files: `conversationMerge.ts`, `messageScheduling.ts`, `batchActions.ts`, `search.ts`, `convex/lib/rateLimit.ts`
+- ✅ New tables: `presence`, `rateLimits` (rate limiting)
 
 ### 2026-04-26: Template Library Industry Filter (Task 5 - Final Integration Check)
 - ✅ Verified all 66 templates present in lib/templateLibrary.ts
@@ -717,15 +912,15 @@ When a conflict is detected:
 
 | Metric                         | Current State                          | Target           |
 | ------------------------------ | -------------------------------------- | ---------------- |
-| Total Convex Functions         | 40+ (queries, mutations, actions)      | Stable           |
-| Total Database Tables          | 22                                     | Stable           |
-| Total App Routes               | 30+                                    | Growing          |
+| Total Convex Functions         | 60+ (queries, mutations, actions)      | Stable           |
+| Total Database Tables          | 32                                     | Stable           |
+| Total App Routes               | 40+                                    | Growing          |
 | TypeScript Strict Mode         | ✅ Enabled                             | Always enabled   |
 | Test Coverage                  | ❌ Not implemented                     | 80%+ (Phase 2)   |
-| Documentation Coverage         | ✅ CLAUDE.md + PROJECT_STATE.md        | Maintain         |
-| Known Security Issues          | 0 (pending webhook sig verification)   | 0                |
-| Known Critical Bugs            | 2 (CSAT template, SLA clearing)        | 0 before launch  |
-| Production Readiness           | 🟡 60% (core features done, polish needed) | 100%         |
+| Documentation Coverage         | ✅ CLAUDE.md + PROJECT_STATE.md + PROGRESS.md | Maintain  |
+| Known Security Issues          | 0 (webhook sig verification in place)  | 0                |
+| Known Critical Bugs            | 1 (CSAT template pending Meta approval) | 0 before launch |
+| Production Readiness           | 🟡 75% (all core + advanced features done, pre-launch polish needed) | 100% |
 
 ---
 

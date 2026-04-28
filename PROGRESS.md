@@ -1,7 +1,7 @@
 # WaDesk — Build Progress
 
 > Single source of truth for project progress. Read by Claude Chat (project manager) to stay updated.
-> **Last audited:** 2026-04-17 — Shareable Invite Link UI completed.
+> **Last audited:** 2026-04-28 — Member profile modal, team presence, channel retention, React Email system, conversation search, batch actions, rate limiting, message scheduling, template library, legal pages, CSAT v2, departments.
 > Never modify CLAUDE.md unless explicitly asked.
 
 ---
@@ -10,8 +10,8 @@
 
 **WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS for SMBs in Egypt and the Gulf.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Paddle (billing integrated)  
-**Current branch:** `feat/013-departments` (merged broadcasts sending loop from task/015)  
-**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending implemented
+**Current branch:** `feat/013-departments`  
+**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (32 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete
 
 ---
 
@@ -122,16 +122,6 @@ All tables are real, indexed, and used by live queries:
 
 ---
 
-<<<<<<< HEAD
-### Analytics
-- **Denormalized read-model:** `conversationMetrics` table updated via `ctx.scheduler.runAfter` (non-blocking)
-- `convex/analytics.ts`: `getTeamSummary`, `getAgentPerformance`, `getMyStats`, `getConversationVolume`, `getLabelDistribution`, `getStageDistribution`, `getContactActivityTimeline`
-- `convex/conversationMetrics.ts`: internal mutations for create, recordFirstResponse, recordResolution, incrementMessageCount, recordCsatScore
-- Charts: Recharts via shadcn/ui chart (VolumeChart, LabelDistributionChart, StageFunnelChart, CustomerLifecycleChart, ContactActivityTimeline)
-- Role gating: team-wide analytics = Admin/Supervisor; my-stats = all roles
-- Pages: `/analytics`, `/my-stats`
-- ⚠️ Revenue widget exists (`contact.spent`) but no UI to input or analyze revenue per conversation
-=======
 ### 007 — Marketing Site
 - **Status:** Done
 - **Branch:** `007-marketing-site` (merged into `002-agent-roles`)
@@ -415,7 +405,6 @@ All tables are real, indexed, and used by live queries:
   - `components/inbox/conversation-thread.tsx` — passes real `status` (no longer maps "sending" → "sent"); wires `onRetry` to call `sendMessage` mutation with original content
 - **Status flow:** `"sending"` (optimistic) → `"sent"` (Meta accepted) → `"delivered"` (webhook) → `"read"` (webhook)
 - **Architecture:** mutation writes DB + schedules action; action calls Meta API + patches status — never throw, always handle errors gracefully
->>>>>>> task/015-broadcasts-sending-loop
 
 ---
 
@@ -565,13 +554,175 @@ All tables are real, indexed, and used by live queries:
 
 ---
 
-### Marketing Site
+### Marketing Site + Legal Pages
 - Full landing page: hero, features, pricing, differentiators, CTA, footer
-- Pricing table with 4 tiers (Free / Starter / Growth / Business) — no checkout flow yet
+- Pricing table with 4 tiers (Free / Starter / Growth / Business)
 - Arabic/English locale switching
 - Mobile nav drawer
 - Animated inbox mockup component
 - Route: `/`
+- **Legal pages added (2026-04-26):** `/privacy`, `/terms`, `/dpa` — full Arabic+English content
+- **New components:** `privacy-content.tsx`, `terms-content.tsx`, `dpa-content.tsx`, `legal-page-wrapper.tsx`
+- Marketing footer updated with legal page links
+
+---
+
+### Template Library
+- Pre-built library of 66 curated templates accessible from Settings → Templates → "Template Library" tab
+- Industry tabs (e-commerce, healthcare, real estate, etc.) + purpose chips for combined filtering
+- Arabic + English templates across 14 categories (8 Meta + 6 Quick-Reply)
+- Preview sheet with WhatsApp bubble + variable highlighting
+- Quick-reply templates pre-fill the create dialog; Meta templates submit via Convex action to Meta Graph API
+- Variable auto-conversion: `{{named}}` → `{{1}}` in `submitToMeta` Convex action
+- **Files:** `lib/templateLibrary.ts`, `components/templates/library-template-card.tsx`, `components/templates/library-template-preview.tsx`, `components/templates/meta-submit-form.tsx`, `components/templates/template-library-tab.tsx`
+
+---
+
+### Broadcast Templates Builder
+- Dedicated broadcast template management: `components/broadcasts/broadcast-templates-tab.tsx`, `components/broadcasts/broadcast-template-builder.tsx`
+- `convex/broadcastTemplates.ts`: CRUD for tenant-specific broadcast templates synced with Meta
+- `convex/metaTemplates.ts`: Meta template sync (fetch/cache from Meta Graph API)
+- `broadcastTemplates` table: name, category, language, header (type + text/mediaUrl), body, footer, buttons, status (`draft|submitted|approved|rejected`), `metaStatus`
+- Create wizard integration: source picker ("Meta Templates" vs "Broadcast Templates"), media URL override, dynamic URL suffix per button, variable fill-in
+- Plan-gated: Starter+
+
+---
+
+### Quick Reply Variables
+- Quick replies now support `{{variable}}` placeholders (same syntax as message templates)
+- Selecting a quick reply with variables opens an inline fill-in form before inserting into composer
+- **Modified:** `components/inbox/quick-reply-panel.tsx` — variable detection + fill-in UX
+- **App route:** `/inbox/[id]` — variable fill-in state threaded from page level
+
+---
+
+### Settings Sub-Nav
+- Settings section now has a persistent sub-navigation component for all settings pages
+- **New file:** `components/settings/settings-sub-nav.tsx`
+- **New file:** `app/(dashboard)/settings/layout.tsx` — wraps all settings routes with sub-nav
+- **New file:** `app/(dashboard)/settings/page.tsx` — settings landing page redirect
+
+---
+
+### Departments Feature
+- Channels are organized into departments (groups of channels) for better multi-channel management
+- `convex/departments.ts`: listForTenant, create, update, remove, listForTransfer
+- `convex/departmentMembers.ts`: addMember, removeMember, listForDepartment
+- `departments` table: tenantId, name, description, channelIds
+- `departmentMembers` table: tenantId, departmentId, userId, role
+- Used for: conversation transfer between departments, channel grouping in UI
+- **Defensive fix:** `listForTransfer` returns empty array (not NOT_FOUND) when channels are orphaned
+
+---
+
+### Member Profile Modal
+- Rich tabbed modal for viewing/managing team members — opens from team member list
+- **Tabs:** Overview (stats, bio, contact details) | Analytics (performance charts) | History (action log) | Manage (role, status, remove)
+- **New files:**
+  - `components/team/member-profile-modal.tsx` — modal shell with tab routing
+  - `components/team/member-profile/overview-tab.tsx` — bio, contact info, recent activity
+  - `components/team/member-profile/analytics-tab.tsx` — Recharts performance charts
+  - `components/team/member-profile/history-tab.tsx` — action log timeline
+  - `components/team/member-profile/manage-tab.tsx` — role change, status, remove member
+  - `hooks/use-member-profile.ts` — data fetching hook
+- **Convex:** `convex/members.ts` (mutations), `convex/memberQueries.ts` (queries + analytics)
+- **New tables:** `memberProfiles` (bio, jobTitle, phone, avatar), `memberActionLog` (audit trail)
+- `notificationPreferences` table: per-member email/in-app notification toggles
+- Contact details stored: phone, job title, bio — Admin/Supervisor can edit via Manage tab
+
+---
+
+### Team Presence System
+- Real-time online/offline/away/busy presence indicators for team members
+- **New files:** `convex/presence.ts`, `convex/teamPresence.ts`, `convex/teamPresenceQueries.ts`
+- **New table:** `presence` — userId, tenantId, status, lastSeen
+- **New UI:** `components/ui/presence-indicator.tsx` (colored dot), `components/ui/team-presence-dropdown.tsx` (team status overview)
+- **Hooks:** `hooks/use-presence.ts`
+- Shell integration: `components/shell/presence-initializer.tsx` sets presence on load/unload
+- Presence auto-expires (heartbeat pattern via scheduled functions)
+
+---
+
+### Channel Retention (30-day Auto-Delete)
+- Disconnected channels are retained for 30 days then auto-deleted (with all associated data)
+- **New files:** `convex/channelRetention.ts`, `convex/actions/channelRetentionAction.ts`
+- **Schema:** `channels.deletedAt`, `channels.retentionExpiresAt` added
+- **Cron:** `check-channel-retention` runs daily → finds expired channels → purges conversations, messages, channelMembers, and channel record
+- UI: Channels page shows retention countdown badge for disconnected channels
+- Notification sent to admin 7 days before deletion (email + in-app)
+- **Fix (1d77419):** Channels with only resolved conversations can be deleted immediately
+
+---
+
+### Transactional Email System
+- All transactional emails use branded React Email HTML templates (Arabic + English variants)
+- **New directory:** `emails/` — 9 template pairs (AR + EN):
+  - `agent-welcome`, `new-assignment`, `sla-breach`, `followup-due`, `followup-due-failed`
+  - `channel-deleted`, `channel-expiring-soon`, `billing-payment-failed`, `billing-subscription-expired`
+- `convex/emails/` — base layout (`base.tsx`), reusable components, template wrappers
+- `convex/actions/notifyEmail.ts` — single dispatch action (picks AR or EN based on locale)
+- `convex/actions/sendEmail.ts` — updated to use React Email + Resend API
+- Email triggers: channel deletion warning, SLA breach, new assignment, follow-up failure, billing events
+- **Env var:** `RESEND_API_KEY` required
+
+---
+
+### Message Scheduling
+- Agents can schedule outbound messages for future delivery
+- **New file:** `convex/messageScheduling.ts` — `scheduleMessage` mutation + `sendScheduled` internalAction
+- Scheduled messages stored in `messages` table with `scheduledAt` field and `status: "scheduled"`
+- Convex scheduler dispatches at the correct time; failed sends are marked and retried once
+- UI integration: date-time picker in `MessageInput` toolbar (clock icon)
+
+---
+
+### Conversation & Message Search
+- Full-text search across conversation content and message body
+- **New file:** `convex/search.ts` — `searchConversations` and `searchMessages` queries
+- Uses Convex search index on `messages.content` and `contacts.displayName`
+- Scoped to caller's `tenantId`; role-gated (agents see only their assigned conversations)
+- UI: search bar in inbox header with result list dropdown
+
+---
+
+### Conversation Merge
+- Admin can merge duplicate conversations (same contact, different channels or sessions)
+- **New file:** `convex/conversationMerge.ts` — `mergeConversations` mutation
+- Merges messages from source → target conversation; marks source as resolved with merge note
+- Admin-only; available from conversation header action menu
+
+---
+
+### Batch Actions
+- Admin/Supervisor can perform bulk operations on conversations
+- **New file:** `convex/batchActions.ts` — `batchClose`, `batchAssign`, `batchLabel`, `batchDelete`
+- All batch mutations validate `tenantId` and role before operating
+- UI: checkbox selection in conversation list + bulk action toolbar
+
+---
+
+### Rate Limiting
+- Per-user mutation rate limiting to prevent abuse
+- **New file:** `convex/lib/rateLimit.ts` — token-bucket rate limiter using `rateLimits` table
+- **New table:** `rateLimits` — userId, action, tokens, lastRefill
+- Applied to: `sendMessage`, `sendMediaReply`, `importBatch`
+
+---
+
+### CSAT v2 — Major Update
+- CSAT system overhauled (2026-04-27): now uses structured button template instead of free-form text
+- Resolves the Meta 24-hour window violation (previous free-form Arabic text was non-compliant)
+- Rating now captured via interactive button response (1–5 stars as button payload)
+- `convex/csat.ts` substantially rewritten (+383 lines): better error handling, template-based send, rating capture via webhook
+- Settings page enhanced: preview of CSAT message, toggle, delay config, test send button
+
+---
+
+### WA Business Profile + System User Fix (2026-04-27)
+- **Resumable upload API** now used for profile photo uploads (large file support)
+- **Permanent System User Token:** `WHATSAPP_API_TOKEN` env var used for all Meta API calls (not per-channel token)
+- **System user assignment:** on Embedded Signup completion, WABDesk system user is auto-assigned to the WABA (`convex/channels.ts` — `assignSystemUser`)
+- `convex/waBusinessProfile.ts` updated: uses `META_SYSTEM_USER_TOKEN` for profile API calls, resumable upload flow for photo
 
 ---
 
@@ -581,6 +732,9 @@ All tables are real, indexed, and used by live queries:
 | `process-due-followups` | Every 30 min | `followUps.processDue` |
 | `check-automation-timeouts` | Every 1 min | `automations.checkNoReplyTimeouts` |
 | `check-sla-breaches` | Every 5 min | `sla.checkBreaches` |
+| `check-channel-retention` | Daily | `channelRetention.checkExpired` |
+| `process-scheduled-messages` | Every 1 min | `messageScheduling.sendScheduled` |
+| `refresh-team-presence` | Every 2 min | `teamPresence.refreshAll` |
 
 ---
 
@@ -596,22 +750,24 @@ All tables are real, indexed, and used by live queries:
 
 ---
 
-## ❌ Not Started
+## ❌ Not Started / Deferred
 
-| Feature | Notes from CLAUDE.md |
+| Feature | Notes |
 |---|---|
-| ~~**Paddle Billing Integration**~~ | ✅ Completed — Paddle.js checkout, plan switching, webhook processing all implemented (Apr 17-24) |
-| ~~**Broadcasts Sending Loop**~~ | ✅ Completed — Batched sending with retry logic implemented (merged from task/015) |
-| **Invite by WhatsApp** | CLAUDE.md §19: Admin enters agent phone → send invite via WhatsApp. Only email invite implemented. |
-| ~~**Shareable Invite Link UI**~~ | ✅ Completed — multi-link per tenant with labels, role-gated creation, copy/regenerate/revoke, expiry support, bilingual |
-| **Conversation / Message Search** | No full-text search across conversations or message content. |
-| **Batch Actions on Inbox** | No bulk tag/label/reassign/close for multiple conversations. |
-| **Agent Online/Offline Status** | Round-robin assigns regardless of status. No presence system. |
-| **Conversation Merging** | No duplicate detection or merge flow. |
-| **Rate Limiting** | No per-user rate limits on Convex mutations. |
-| **Email Notifications** | Only in-app notifications implemented. No email for SLA breach / follow-up due. |
-| **Message Scheduling** | No future-scheduled outbound messages (broadcasts are immediate only). |
-| **AI / Chatbot Integration** | Rules-based automation only. No LLM-powered auto-replies. |
+| ~~**Paddle Billing Integration**~~ | ✅ Completed |
+| ~~**Broadcasts Sending Loop**~~ | ✅ Completed |
+| ~~**Shareable Invite Link UI**~~ | ✅ Completed |
+| ~~**Conversation / Message Search**~~ | ✅ Completed — `convex/search.ts` |
+| ~~**Batch Actions on Inbox**~~ | ✅ Completed — `convex/batchActions.ts` |
+| ~~**Agent Online/Offline Status**~~ | ✅ Completed — presence system via `convex/presence.ts` |
+| ~~**Conversation Merging**~~ | ✅ Completed — `convex/conversationMerge.ts` |
+| ~~**Rate Limiting**~~ | ✅ Completed — `convex/lib/rateLimit.ts` |
+| ~~**Email Notifications**~~ | ✅ Completed — React Email + Resend, 9 template pairs |
+| ~~**Message Scheduling**~~ | ✅ Completed — `convex/messageScheduling.ts` |
+| **Invite by WhatsApp** | CLAUDE.md §19: Admin enters agent phone → send invite via WhatsApp. Low priority — email + shareable link cover most cases. |
+| **WA Display Name Pending Review Badge** | Profile edit form exists; amber "Pending Meta Review" badge not confirmed in UI component scan |
+| **Revenue Analytics UI** | `contact.spent` schema exists, no input UI or revenue-over-time query |
+| **AI / Chatbot Integration** | Rules-based automation only. No LLM-powered auto-replies. Phase 2. |
 | **WhatsApp Catalog** | CLAUDE.md §6 explicitly deferred to Phase 2. |
 | **WooCommerce / Shopify Integration** | Phase 2. |
 | **WhatsApp OTP** | Phase 2. |
@@ -627,71 +783,83 @@ All tables are real, indexed, and used by live queries:
 │   │   ├── inbox/                # Shared inbox (main feature)
 │   │   ├── contacts/             # CRM-lite contact management
 │   │   ├── lists/                # Contact list segmentation
-│   │   ├── broadcasts/           # Broadcast campaigns
+│   │   ├── broadcasts/           # Broadcast campaigns + broadcast templates
 │   │   ├── automations/          # Automation rules builder
 │   │   ├── analytics/            # Team analytics (Admin/Supervisor)
 │   │   ├── my-stats/             # Personal stats (all roles)
 │   │   └── settings/
+│   │       ├── layout.tsx         # Settings sub-nav wrapper
 │   │       ├── channels/         # Channel list + per-channel settings + WA profile
-│   │       ├── team/             # Team members, invite, roles
+│   │       ├── team/             # Team members, invite, roles, member profile modal
 │   │       ├── labels/           # Conversation label library
-│   │       ├── quick-replies/    # Quick reply CRUD
-│   │       ├── templates/        # Message templates with variables
-│   │       ├── csat/             # CSAT enable/delay settings
-│   │       ├── export/           # Data export (UI only)
-│   │       └── billing/          # Billing (stub)
+│   │       ├── quick-replies/    # Quick reply CRUD (with variable fill-in)
+│   │       ├── templates/        # Message templates + Template Library tab
+│   │       ├── csat/             # CSAT v2 settings (button template, preview, test send)
+│   │       ├── export/           # Data export
+│   │       └── billing/          # Paddle billing
 │   ├── api/webhook/whatsapp/     # Meta webhook endpoint (GET verify + POST handler)
 │   ├── onboarding/               # Onboarding wizard
 │   ├── sign-in/, sign-up/        # Clerk auth pages
 │   ├── join/[token]/             # Invite link join page
+│   ├── privacy/, terms/, dpa/    # Legal pages
 │   └── page.tsx                  # Marketing landing page
 ├── components/
-│   ├── inbox/                    # Conversation list, thread, message bubble, input
+│   ├── inbox/                    # Conversation list, thread, message bubble, input, search
 │   ├── contacts/                 # Contact list, panel, timeline, CSV import
 │   ├── analytics/                # Dashboard charts (Recharts)
 │   ├── automations/              # Rule cards, form, business hours
-│   ├── broadcasts/               # Campaign list, creation wizard
+│   ├── broadcasts/               # Campaign list, creation wizard, broadcast template builder
 │   ├── lists/                    # Contact list pages
 │   ├── onboarding/               # Wizard steps
-│   ├── settings/                 # All settings page components
-│   ├── shell/                    # Sidebar, user menu, notification bell, breadcrumb
-│   ├── marketing/                # Landing page sections
-│   └── ui/                       # shadcn/ui primitives
+│   ├── settings/                 # All settings page components + settings-sub-nav.tsx
+│   ├── shell/                    # Sidebar, user menu, notification bell, presence-initializer
+│   ├── team/                     # member-profile-modal.tsx + member-profile/ tabs
+│   ├── templates/                # Template picker, fill form, library tab, meta submit form
+│   ├── marketing/                # Landing page sections + legal page content components
+│   └── ui/                       # shadcn/ui primitives + presence-indicator, team-presence-dropdown
 ├── convex/
-│   ├── schema.ts                 # 27-table schema (all real)
-│   ├── http.ts                   # metaWebhook HTTP action (inbound message handler)
-│   ├── crons.ts                  # 3 scheduled jobs (follow-ups, automations, SLA)
+│   ├── schema.ts                 # 32-table schema (all real)
+│   ├── http.ts                   # metaWebhook HTTP action
+│   ├── crons.ts                  # 6 scheduled jobs
 │   ├── actions/
-│   │   ├── sendWhatsAppMessage.ts # All outbound Meta API calls
-│   │   ├── roundRobin.ts          # Round-robin assignment logic
-│   │   └── validateInvite.ts      # Invite token validation
+│   │   ├── sendWhatsAppMessage.ts  # All outbound Meta API calls
+│   │   ├── roundRobin.ts           # Round-robin assignment logic
+│   │   ├── validateInvite.ts       # Invite token validation
+│   │   ├── channelRetentionAction.ts # Channel purge action
+│   │   ├── notifyEmail.ts          # Email dispatch (AR/EN routing)
+│   │   ├── sendEmail.ts            # React Email + Resend send action
+│   │   ├── sendInviteWhatsApp.ts   # WhatsApp invite sending
+│   │   └── processBroadcastBatch.ts # Batched broadcast sending
 │   ├── lib/
 │   │   ├── auth.ts                # getCallerIdentity, assertAdmin, assertAdminOrSupervisor
 │   │   ├── encryption.ts          # AES-256-GCM for access tokens
-│   │   └── planLimits.ts          # Plan quota checks
-│   ├── inbox.ts, conversations.ts, messages.ts
+│   │   ├── planLimits.ts          # Plan quota checks
+│   │   └── rateLimit.ts           # Token-bucket rate limiter
+│   ├── emails/                    # React Email base layout + template components
+│   ├── inbox.ts, conversations.ts, messages.ts, messageScheduling.ts
 │   ├── contacts.ts, customFields.ts, contactEvents.ts, contactsImport.ts, contactsImportHelpers.ts
-│   ├── contactLists.ts, broadcasts.ts
-│   ├── channels.ts, channelMembers.ts
-│   ├── analytics.ts, conversationMetrics.ts
+│   ├── contactLists.ts, broadcasts.ts, broadcastTemplates.ts, metaTemplates.ts
+│   ├── channels.ts, channelMembers.ts, channelRetention.ts
+│   ├── departments.ts, departmentMembers.ts
+│   ├── analytics.ts, conversationMetrics.ts, search.ts
 │   ├── labels.ts, quickReplies.ts, messageTemplates.ts
 │   ├── csat.ts, sla.ts, notifications.ts
-│   ├── automations.ts, followUps.ts
+│   ├── automations.ts, followUps.ts, batchActions.ts, conversationMerge.ts
+│   ├── members.ts, memberQueries.ts
+│   ├── presence.ts, teamPresence.ts, teamPresenceQueries.ts
 │   ├── onboarding.ts, orgMembers.ts
-│   ├── waBusinessProfile.ts
-│   ├── export.ts                  # Export actions (contacts CSV/JSON, conversations JSON/CSV/HTML) + getExportStats query
+│   ├── waBusinessProfile.ts, export.ts
+│   ├── webhookEvents.ts, migrations.ts
 │   └── seed.ts                    # Dev-only seed data
+├── emails/                        # React Email template files (9 types × AR+EN = 18 files)
 ├── lib/
-│   ├── utils.ts                   # cn(), date helpers
-│   ├── phoneGeo.ts                # Country detection from phone number
-│   ├── automationHelpers.ts       # Rule evaluation, business hours check
-│   ├── templateHelpers.ts         # {{variable}} interpolation
-│   ├── cityData.ts                # City data for contact filters
+│   ├── utils.ts, phoneGeo.ts, automationHelpers.ts, templateHelpers.ts, cityData.ts
+│   ├── templateLibrary.ts         # 66 pre-built templates with industry tags
 │   ├── shell/                     # nav-config, role-utils, locale-action, types
 │   ├── i18n/                      # AR/EN translation context (useT, useLocale)
 │   └── marketing/                 # Pricing data, marketing i18n
 ├── hooks/
-│   └── use-mobile.ts              # Media query hook
+│   ├── use-mobile.ts, use-member-profile.ts, use-presence.ts
 ├── types/
 │   └── meta.ts                    # TypeScript types for Meta API payloads
 ├── middleware.ts                   # Clerk auth middleware
@@ -704,10 +872,8 @@ All tables are real, indexed, and used by live queries:
 
 | # | Task | What's needed | Blocker? |
 |---|---|---|---|
-| 1 | **Broadcasts — Complete Sending Loop** | In `convex/broadcasts.ts` `send` action: loop `recipientSnapshot`, call `sendWhatsAppMessage.sendMessage` per contact, update `sentCount`/`failedCount` incrementally | ⚠️ Broadcasts unusable until done |
-| 2 | **Billing / Polar.sh Integration** | Polar.sh webhook to update `tenant.plan` in Convex on payment events; pricing page checkout buttons wired to Polar | Required for monetization |
-| 3 | ~~**Shareable Invite Link UI**~~ | ✅ Done — multi-link per tenant, label/role/expiry, copy/regenerate/revoke | ✅ Complete |
-| 4 | **WA Profile — Display Name Pending Review Badge** | In `wa-business-profile.tsx`: track display name change state, show amber badge, poll Meta API for approval status | Low — partial polish |
-| 5 | **Revenue Analytics UI** | Add input in contact panel / conversation detail for `contact.spent`; add revenue-over-time query to `analytics.ts` | Nice-to-have |
-| 6 | **Invite by WhatsApp** | CLAUDE.md §19: send invite link via WhatsApp API when admin enters agent phone number | Low priority vs. email invite |
-| 7 | **Conversation Search** | Full-text search across messages (Convex search index or external) | UX improvement |
+| 1 | **WA Display Name Pending Review Badge** | `wa-business-profile.tsx`: show amber "Pending Meta Review" badge for display name changes; poll Meta API for approval — CLAUDE.md §28 requirement | Low — polish |
+| 2 | **Revenue Analytics UI** | Input field for `contact.spent` in contact panel; revenue-over-time chart in analytics dashboard | Nice-to-have |
+| 3 | **Invite by WhatsApp** | CLAUDE.md §19: send invite link via WhatsApp when admin enters agent phone number | Low priority — email + link cover most cases |
+| 4 | **CSAT Meta Template Approval** | Submit CSAT button template to Meta for pre-approval; currently unverified | Required before production CSAT use |
+| 5 | **Production Hardening** | Webhook signature verification, SLA breach clearing audit, CSAT template approval | Required before launch |
