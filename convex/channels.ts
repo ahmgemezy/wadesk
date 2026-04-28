@@ -369,6 +369,34 @@ export const completeEmbeddedSignup = action({
       }
     }
 
+    // 3b. Assign WABDesk system user to client's WABA (BSP architecture)
+    // After this, the platform system user token works for all this WABA's operations
+    const systemUserId = process.env.META_SYSTEM_USER_ID ?? "";
+    const platformToken = process.env.WHATSAPP_API_TOKEN ?? "";
+    if (systemUserId && platformToken) {
+      const assignRes = await fetch(
+        `https://graph.facebook.com/v25.0/${args.wabaId}/assigned_users`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            user: systemUserId,
+            tasks: JSON.stringify(["MANAGE", "DEVELOP", "MESSAGING"]),
+          }),
+        }
+      );
+      if (assignRes.ok) {
+        // Switch to permanent platform token — client token will eventually expire
+        accessToken = platformToken;
+      } else {
+        const err = await assignRes.json();
+        console.warn("[CHANNEL] System user assignment failed, falling back to client token", err);
+      }
+    }
+
     // 4. Encrypt token
     const encryptedToken = await encrypt(accessToken);
 
