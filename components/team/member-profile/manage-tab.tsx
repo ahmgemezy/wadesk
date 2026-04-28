@@ -88,6 +88,19 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
   );
   const [updatingDepartments, setUpdatingDepartments] = useState(false);
 
+  const filteredDepartments = (availableDepartments ?? []).filter(
+    (dept) => dept.channelId && selectedChannels.has(dept.channelId)
+  );
+
+  useEffect(() => {
+    const validDeptIds = new Set(filteredDepartments.map((d) => d.id));
+    setSelectedDepartments((prev) => {
+      const next = new Set([...prev].filter((id) => validDeptIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChannels, availableDepartments]);
+
   const isSelf = currentUserId === memberId;
 
   const handleChangeRole = async () => {
@@ -380,8 +393,12 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
           {t("Department Assignments", "تعيينات الأقسام")}
         </h3>
         <div className="rounded-lg border p-4 space-y-3 max-h-40 overflow-y-auto">
-          {availableDepartments && availableDepartments.length > 0 ? (
-            availableDepartments.map((dept) => (
+          {selectedChannels.size === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("Select a channel above to see its departments.", "اختر قناة أعلاه لعرض أقسامها.")}
+            </p>
+          ) : filteredDepartments.length > 0 ? (
+            filteredDepartments.map((dept) => (
               <div key={dept.id} className="flex items-center gap-2">
                 <Checkbox
                   checked={selectedDepartments.has(dept.id)}
@@ -399,10 +416,12 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">{t("No departments available", "لا توجد أقسام متاحة")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("No departments in the selected channels.", "لا توجد أقسام في القنوات المختارة.")}
+            </p>
           )}
         </div>
-        {availableDepartments && availableDepartments.length > 0 && (
+        {filteredDepartments.length > 0 && (
           <Button
             variant="outline"
             size="sm"

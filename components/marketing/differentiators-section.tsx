@@ -18,7 +18,7 @@ function DifferentiatorsSection({
   locale: MarketingLocale;
 }) {
   return (
-    <section id="why-wadesk" className="bg-muted/30 px-4 py-16 sm:py-24">
+    <section id="why-wabdesk" className="bg-muted/30 px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl">
         <h2 className="mb-12 text-center text-3xl font-bold sm:text-4xl">
           {t(locale, "differentiators.heading")}

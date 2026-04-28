@@ -469,6 +469,7 @@ export default defineSchema({
     tenantId: v.string(),
     enabled: v.boolean(),
     delayMinutes: v.number(),          // how many minutes after resolve to send (default: 5)
+    language: v.optional(v.union(v.literal("ar"), v.literal("en"))), // template language
     updatedAt: v.number(),
   })
     .index("by_tenant", ["tenantId"]),

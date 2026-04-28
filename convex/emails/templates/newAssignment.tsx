@@ -23,7 +23,7 @@ export function NewAssignment({ locale, variables }: Props) {
         <Text style={textStyle}>
           تم تعيين محادثة مع <strong>{contactName}</strong> في قناة <strong>{channelName}</strong> إليك{byLine}.
         </Text>
-        <WaSection locale="ar">سجّل دخولك إلى WaDesk للرد على العميل.</WaSection>
+        <WaSection locale="ar">سجّل دخولك إلى WABDesk للرد على العميل.</WaSection>
         <WaButton href={inboxUrl} locale="ar">فتح المحادثة</WaButton>
       </WaEmailLayout>
     );
@@ -36,7 +36,7 @@ export function NewAssignment({ locale, variables }: Props) {
       <Text style={textStyle}>
         A conversation with <strong>{contactName}</strong> in channel <strong>{channelName}</strong> has been assigned to you{byLine}.
       </Text>
-      <WaSection locale="en">Log in to WaDesk to reply to the customer.</WaSection>
+      <WaSection locale="en">Log in to WABDesk to reply to the customer.</WaSection>
       <WaButton href={inboxUrl} locale="en">Open Conversation</WaButton>
     </WaEmailLayout>
   );

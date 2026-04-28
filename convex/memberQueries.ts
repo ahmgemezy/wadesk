@@ -331,7 +331,11 @@ export const getAvailableChannels = query({
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .take(100);
 
-    return channels.map((ch: any) => ({
+    const activeChannels = channels.filter(
+      (ch: any) => ch.status === "active" || ch.isActive === true
+    );
+
+    return activeChannels.map((ch: any) => ({
       id: ch._id,
       name: ch.displayName || ch.name || "Unknown",
     }));
@@ -356,6 +360,7 @@ export const getAvailableDepartments = query({
     return departments.map((dept: any) => ({
       id: dept._id,
       name: dept.name || "Unknown",
+      channelId: dept.channelId ?? null,
     }));
   },
 });

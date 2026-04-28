@@ -10,7 +10,7 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "WaDesk",
+  title: "WABDesk",
   description: "صندوق بريد WhatsApp للفرق — تعاون فريقك على محادثات واحدة",
 };
 

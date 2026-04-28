@@ -21,7 +21,7 @@ function MobileNavSheet({ isAuthenticated, locale }: { isAuthenticated: boolean;
       </SheetTrigger>
       <SheetContent side="right" className="w-72">
         <SheetHeader>
-          <SheetTitle>وا ديسك</SheetTitle>
+          <SheetTitle>{locale === "ar" ? "واب ديسك" : "WABDesk"}</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-3 p-4">
           <Link href="#features" className="text-sm hover:text-primary">
@@ -30,7 +30,7 @@ function MobileNavSheet({ isAuthenticated, locale }: { isAuthenticated: boolean;
           <Link href="#pricing" className="text-sm hover:text-primary">
             {t(locale, "nav.pricing")}
           </Link>
-          <Link href="#why-wadesk" className="text-sm hover:text-primary">
+          <Link href="#why-wabdesk" className="text-sm hover:text-primary">
             {t(locale, "nav.whyWadesk")}
           </Link>
           <hr className="my-2" />

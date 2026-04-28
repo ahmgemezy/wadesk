@@ -55,7 +55,7 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
       <div>
         <h2 className="text-xl font-semibold font-cairo">ربط حساب واتساب بيزنس</h2>
         <p className="text-muted-foreground mt-1 text-sm font-cairo">
-          ستمتلك حساب WABA مباشرة — WaDesk لا يقيدك أبداً.
+          ستمتلك حساب WABA مباشرة — WABDesk لا يقيدك أبداً.
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
           Connect your WhatsApp Business Account — you own it directly.

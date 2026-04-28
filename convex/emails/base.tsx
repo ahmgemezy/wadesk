@@ -74,7 +74,7 @@ export function WaEmailLayout({
                 fontFamily,
               }}
             >
-              WaDesk
+              WABDesk
             </Text>
           </Section>
 
@@ -117,7 +117,7 @@ export function WaEmailLayout({
                 fontFamily,
               }}
             >
-              WaDesk — واديسك
+              WABDesk — واب ديسك
               {" · "}
               {isRtl ? "هذه رسالة تشغيلية تلقائية" : "This is an automated transactional email"}
             </Text>

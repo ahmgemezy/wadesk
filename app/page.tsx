@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 import { MarketingPage } from "@/components/marketing/marketing-page";
 
 export const metadata: Metadata = {
-  title: "وا ديسك — صندوق بريد واتساب للفرق",
+  title: "واب ديسك — صندوق بريد واتساب للفرق",
   description:
     "منصة دعم عملاء على واتساب للشركات الصغيرة والمتوسطة في مصر والخليج. إدارة محادثات واتساب بفريق متعدد الوكلاء.",
   openGraph: {
-    title: "وا ديسك — صندوق بريد واتساب للفرق",
+    title: "واب ديسك — صندوق بريد واتساب للفرق",
     description:
       "ادر محادثات واتساب بفريق كامل من لوحة تحكم واحدة",
     locale: "ar_EG",

@@ -17,7 +17,7 @@ export const sendInviteViaWhatsApp = internalAction({
   handler: async (ctx, args) => {
     const roleText = args.role === "org:supervisor" ? "مشرف" : "وكيل";
     const message = `مرحباً!\n\n` +
-      `لقد تم دعوتك للانضمام إلى فريق ${args.orgName} على WaDesk كـ${roleText}.\n\n` +
+      `لقد تم دعوتك للانضمام إلى فريق ${args.orgName} على WABDesk كـ${roleText}.\n\n` +
       `انقر على الرابط التالي للانضمام:\n${args.inviteLink}\n\n` +
       `إذا كان الرابط لا يعمل، انسخه والصقه في المتصفح.\n\n` +
       `شكراً لتعاملكم معنا 🐪`;

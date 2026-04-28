@@ -2,7 +2,7 @@ import { SignUp } from "@clerk/nextjs";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "WaDesk - Sign Up",
+  title: "WABDesk - Sign Up",
 };
 
 export default function SignUpPage() {

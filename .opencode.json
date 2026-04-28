@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "resend": {
+      "type": "local",
+      "command": ["npx", "-y", "resend-mcp"],
+      "enabled": true,
+      "timeout": 30000,
+      "environment": {
+        "RESEND_API_KEY": "${RESEND_API_KEY}"
+      }
+    }
+  }
+}

@@ -25,7 +25,7 @@ function MarketingNav({
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="text-lg font-bold">
-          وا ديسك
+          {locale === "ar" ? "واب ديسك" : "WABDesk"}
         </Link>
 
         <div className="hidden items-center gap-4 md:flex">
@@ -35,7 +35,7 @@ function MarketingNav({
           <Link href="#pricing" className="text-sm hover:text-primary">
             {t(locale, "nav.pricing")}
           </Link>
-          <Link href="#why-wadesk" className="text-sm hover:text-primary">
+          <Link href="#why-wabdesk" className="text-sm hover:text-primary">
             {t(locale, "nav.whyWadesk")}
           </Link>
 

@@ -1,13 +1,13 @@
-# CLAUDE.md — WaDesk
+# CLAUDE.md — WABDesk
 
-> This file is the single source of truth for Claude Code when working on the WaDesk codebase.
+> This file is the single source of truth for Claude Code when working on the WABDesk codebase.
 > Read this file fully before writing any code, making any architectural decision, or answering any question.
 
 ---
 
 ## 1. Project Overview
 
-**WaDesk** is an Arabic-first, WhatsApp Business API multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf region.
+**WABDesk** is an Arabic-first, WhatsApp Business API multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf region.
 
 **Core Value Proposition:**
 A team inbox built on WhatsApp — multiple agents handle customer conversations from one shared dashboard, with no customer knowing they're talking to a team.
@@ -145,7 +145,7 @@ Retrofitting multi-number support after launch requires painful schema migration
 
 ## 8. WhatsApp Business Profile Editing
 
-Clients can edit their WhatsApp Business profile from within WaDesk dashboard via the Meta Business API.
+Clients can edit their WhatsApp Business profile from within WABDesk dashboard via the Meta Business API.
 
 ### Editable Fields
 
@@ -262,7 +262,7 @@ Additional 20% off all paid plans when billed annually.
 
 ## 11. Competitive Landscape
 
-| Competitor | Type             | Weakness vs WaDesk                                          |
+| Competitor | Type             | Weakness vs WABDesk                                         |
 | ---------- | ---------------- | ----------------------------------------------------------- |
 | ElMujib    | Arab SaaS        | Limited features, poor UX                                   |
 | Tactful.ai | Enterprise       | Too expensive for SMBs                                      |
@@ -272,14 +272,14 @@ Additional 20% off all paid plans when billed annually.
 | WATI       | Global SaaS      | 20% markup on Meta messages, $39/extra agent, English-first |
 | SleekFlow  | Global SaaS      | $15/month per WhatsApp number, expensive for MENA           |
 
-**WaDesk's moat:**
+**WABDesk's moat:**
 
 - Arabic-first UX — no global competitor does this
 - Zero markup on Meta messages — clients pay Meta directly
 - Local currency billing (EGP / SAR / AED)
 - SMB pricing — 5 agents for ~$14 vs WATI's ~$137
 
-**Core sales message:** _"Pay Meta for your messages. Pay WaDesk for your team inbox. Nothing more."_
+**Core sales message:** _"Pay Meta for your messages. Pay WABDesk for your team inbox. Nothing more."_
 
 ---
 
@@ -360,20 +360,20 @@ PADDLE_SELLER_ID=
 
 ## 15. Key Product Decisions (Do Not Revisit Without Good Reason)
 
-| Decision                            | Rationale                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------- |
-| Convex over Supabase                | Real-time first, no SQL complexity, faster to build                       |
-| Clerk over NextAuth                 | Multi-tenant orgs built-in, saves weeks of work                           |
+| Decision                            | Rationale                                                                   |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| Convex over Supabase                | Real-time first, no SQL complexity, faster to build                         |
+| Clerk over NextAuth                 | Multi-tenant orgs built-in, saves weeks of work                             |
 | Paddle over Stripe                  | MoR = handles MENA VAT + global tax automatically; account approval pending |
-| Shared WABA model (Embedded Signup) | Client owns their number, WaDesk can't be shut down                       |
-| Freemium over free trial only       | Lower barrier for Arab SMB market                                         |
-| Arabic-first over bilingual         | Differentiation from all global competitors                               |
+| Shared WABA model (Embedded Signup) | Client owns their number, WABDesk can't be shut down                        |
+| Freemium over free trial only       | Lower barrier for Arab SMB market                                           |
+| Arabic-first over bilingual         | Differentiation from all global competitors                                 |
 
 ---
 
 ## 16. Contact Management (Lightweight CRM)
 
-WaDesk is NOT a full CRM — but it must have enough contact management to make agents effective. Think of it as "CRM-lite" built around WhatsApp conversations.
+WABDesk is NOT a full CRM — but it must have enough contact management to make agents effective. Think of it as "CRM-lite" built around WhatsApp conversations.
 
 ### What's Included (Phase 1)
 
@@ -440,7 +440,7 @@ Clients must be able to export ALL their data at any time — canceling, migrati
 
 - Export button in **Settings → Data & Privacy**
 - Large exports are async — notify when ready (email or in-app)
-- File named clearly: `wadesk-export-[tenant]-[date].zip`
+- File named clearly: `WABDesk-export-[tenant]-[date].zip`
 - On cancellation: keep data accessible for **30 days** then purge — never delete immediately
 
 ### Plan Availability
@@ -485,7 +485,7 @@ Admin enters email → agent receives invite link → creates account → auto-j
 Handled natively by Clerk Organizations.
 
 **B. Invite by WhatsApp**
-Admin enters agent's phone number → WaDesk sends them an invite link via WhatsApp → they click and create account.
+Admin enters agent's phone number → WABDesk sends them an invite link via WhatsApp → they click and create account.
 Preferred for Arab markets — agents don't always check email.
 
 **C. Shareable Invite Link**
@@ -613,7 +613,7 @@ A feature is "done" when:
 
 ---
 
-## 24. What WaDesk is NOT
+## 24. What WABDesk is NOT
 
 - ❌ Not a chatbot builder
 - ❌ Not a broadcast/spam tool
@@ -772,7 +772,7 @@ Clients must be able to export all their data at any time. This is a trust signa
 
 ## 28. WhatsApp Business Profile Editing (Task: WA Profile)
 
-Agents can edit their WhatsApp Business profile from within WaDesk via the Meta Business Management API.
+Agents can edit their WhatsApp Business profile from within WABDesk via the Meta Business Management API.
 
 ### Editable Fields
 
@@ -881,11 +881,13 @@ _Last updated: manually — update this file whenever a major architectural or p
 - TypeScript (strict, no `any`) — enforced project-wide + Next.js 15 (App Router), Convex (backend + realtime), Clerk (auth + multi-tenancy), shadcn/ui, Tailwind CSS v4
 
 <!-- convex-ai-start -->
+
 This project uses [Convex](https://convex.dev) as its backend.
 
 When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
 
 Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+
 <!-- convex-ai-end -->
 
 # Project Rules & Work Protocol

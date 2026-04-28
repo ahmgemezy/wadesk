@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useSyncExternalStore, useEffect, useCallback } from "react";
 
 type MarketingLocale = "ar" | "en";
 
@@ -12,7 +12,7 @@ const dictionary: Dictionary = {
   "nav.dashboard": { ar: "الذهاب إلى لوحة التحكم", en: "Go to Dashboard" },
   "nav.features": { ar: "المميزات", en: "Features" },
   "nav.pricing": { ar: "الأسعار", en: "Pricing" },
-  "nav.whyWadesk": { ar: "لماذا وا ديسك؟", en: "Why WaDesk?" },
+  "nav.whyWadesk": { ar: "لماذا واب ديسك؟", en: "Why WABDesk?" },
   "hero.title": {
     ar: "صندوق بريد WhatsApp للفرق",
     en: "WhatsApp Team Inbox",
@@ -41,15 +41,18 @@ const dictionary: Dictionary = {
   "pricing.unlimited": { ar: "غير محدود", en: "Unlimited" },
   "pricing.bestValue": { ar: "أفضل قيمة", en: "Best Value" },
   "differentiators.heading": {
-    ar: "لماذا وا ديسك؟",
-    en: "Why WaDesk?",
+    ar: "لماذا واب ديسك؟",
+    en: "Why WABDesk?",
   },
   "footer.signUp": { ar: "إنشاء حساب", en: "Sign Up" },
   "footer.signIn": { ar: "تسجيل الدخول", en: "Sign In" },
   "footer.pricing": { ar: "الأسعار", en: "Pricing" },
+  "footer.privacy": { ar: "سياسة الخصوصية", en: "Privacy Policy" },
+  "footer.terms": { ar: "شروط الخدمة", en: "Terms of Service" },
+  "footer.dpa": { ar: "اتفاقية معالجة البيانات", en: "DPA" },
   "footer.copyright": {
-    ar: "© 2026 وا ديسك. جميع الحقوق محفوظة.",
-    en: "© 2026 WaDesk. All rights reserved.",
+    ar: "© 2026 واب ديسك. جميع الحقوق محفوظة.",
+    en: "© 2026 WABDesk. All rights reserved.",
   },
 };
 
@@ -59,21 +62,39 @@ function t(locale: MarketingLocale, key: string): string {
   return entry[locale];
 }
 
-const STORAGE_KEY = "wadesk-marketing-locale";
+const STORAGE_KEY = "wabdesk-marketing-locale";
+
+// Module-level store so all hook instances share a single reactive source of truth.
+// Without this, LegalPageWrapper and content components each hold independent state
+// and toggling locale in the wrapper doesn't re-render the content component.
+let _locale: MarketingLocale = "ar";
+const _listeners = new Set<() => void>();
+
+function _getSnapshot(): MarketingLocale {
+  return _locale;
+}
+
+function _subscribe(listener: () => void): () => void {
+  _listeners.add(listener);
+  return () => { _listeners.delete(listener); };
+}
 
 function useMarketingLocale() {
-  const [locale, setLocaleState] = useState<MarketingLocale>("ar");
-
+  // Hydrate from localStorage once on mount
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === "ar" || stored === "en") {
-      setLocaleState(stored);
+      _locale = stored;
+      _listeners.forEach((l) => l());
     }
   }, []);
 
+  const locale = useSyncExternalStore(_subscribe, _getSnapshot, () => "ar" as MarketingLocale);
+
   const setLocale = useCallback((newLocale: MarketingLocale) => {
-    setLocaleState(newLocale);
+    _locale = newLocale;
     localStorage.setItem(STORAGE_KEY, newLocale);
+    _listeners.forEach((l) => l());
   }, []);
 
   return { locale, setLocale };

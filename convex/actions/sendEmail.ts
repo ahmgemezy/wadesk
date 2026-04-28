@@ -35,8 +35,8 @@ const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
     en: "Notification: New Conversation Assigned to You",
   },
   agent_welcome: {
-    ar: "مرحباً بك في WaDesk",
-    en: "Welcome to WaDesk",
+    ar: "مرحباً بك في WABDesk",
+    en: "Welcome to WABDesk",
   },
   billing_payment_failed: {
     ar: "فشل تجديد الاشتراك — يرجى تحديث بيانات الدفع",
@@ -103,7 +103,7 @@ export const sendEmail = internalAction({
     }
 
     const enrichedVariables: Record<string, string> = {
-      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://app.wadesk.com",
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://app.wabdesk.com",
       ...args.variables,
     };
 
@@ -118,7 +118,7 @@ export const sendEmail = internalAction({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "WaDesk <noreply@wadesk.com>",
+        from: "WABDesk <noreply@wabdesk.com>",
         to: args.to,
         subject,
         html,

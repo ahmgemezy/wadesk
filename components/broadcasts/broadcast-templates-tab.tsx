@@ -87,8 +87,8 @@ export function BroadcastTemplatesTab({ onCreateClick, onEditTemplate }: Props) 
           </h3>
           <p className="text-sm text-muted-foreground mb-4 max-w-md">
             {t(
-              "Create your first broadcast template to send WhatsApp broadcasts without leaving WaDesk.",
-              "أنشئ قالب البث الأول لديك لإرسال حملات WhatsApp دون مغادرة WaDesk.",
+              "Create your first broadcast template to send WhatsApp broadcasts without leaving WABDesk.",
+              "أنشئ قالب البث الأول لديك لإرسال حملات WhatsApp دون مغادرة WABDesk.",
             )}
           </p>
           <Button variant="outline" onClick={onCreateClick}>

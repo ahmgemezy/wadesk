@@ -20,7 +20,7 @@ export function ChannelDeleted({ locale, variables }: Props) {
         <Text style={textStyle}>
           تم حذف رقم واتساب <strong>"{channelName}"</strong> وجميع بياناته (محادثات، رسائل، أقسام) نهائياً لأنه ظل غير متصل لمدة 30 يوماً.
         </Text>
-        <WaSection locale="ar">يمكنك توصيل رقم واتساب جديد للاستمرار في استخدام WaDesk.</WaSection>
+        <WaSection locale="ar">يمكنك توصيل رقم واتساب جديد للاستمرار في استخدام WABDesk.</WaSection>
       </WaEmailLayout>
     );
   }
@@ -32,7 +32,7 @@ export function ChannelDeleted({ locale, variables }: Props) {
       <Text style={textStyle}>
         Your WhatsApp number <strong>"{channelName}"</strong> and all its data (conversations, messages, departments) have been permanently deleted after 30 days of being disconnected.
       </Text>
-      <WaSection locale="en">You can connect a new WhatsApp number to continue using WaDesk.</WaSection>
+      <WaSection locale="en">You can connect a new WhatsApp number to continue using WABDesk.</WaSection>
     </WaEmailLayout>
   );
 }
