@@ -90,7 +90,20 @@ export const get = query({
       return null;
     }
 
-    return conversation;
+    let isCurrentUserDeptMember = false;
+    if (conversation.departmentId) {
+      const membership = await ctx.db
+        .query("departmentMembers")
+        .withIndex("by_department_user", (q) =>
+          q
+            .eq("departmentId", conversation.departmentId as Id<"departments">)
+            .eq("userId", callerId),
+        )
+        .first();
+      isCurrentUserDeptMember = !!membership;
+    }
+
+    return { ...conversation, isCurrentUserDeptMember };
   },
 });
 
@@ -98,9 +111,10 @@ export const assign = mutation({
   args: {
     conversationId: v.id("conversations"),
     agentId: v.optional(v.string()),
+    agentName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
 
     if (!isAdminOrSupervisor(orgRole)) {
       throw new ConvexError("FORBIDDEN");
@@ -135,6 +149,42 @@ export const assign = mutation({
         tenantId,
       });
     }
+
+    const now = Date.now();
+    const assignIdentity = await ctx.auth.getUserIdentity();
+    const assignActorName = assignIdentity?.name ?? assignIdentity?.email ?? "Someone";
+
+    if (args.agentId) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        tenantId,
+        direction: "outbound",
+        content: "",
+        contentType: "system_event",
+        eventType: "agent_assigned",
+        eventData: { actorName: assignActorName, agentName: args.agentName ?? args.agentId },
+        isInternalNote: false,
+        authorId: callerId,
+        status: "sent",
+        timestamp: now,
+        createdAt: now,
+      });
+    } else {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        tenantId,
+        direction: "outbound",
+        content: "",
+        contentType: "system_event",
+        eventType: "agent_unassigned",
+        eventData: { actorName: assignActorName },
+        isInternalNote: false,
+        authorId: callerId,
+        status: "sent",
+        timestamp: now,
+        createdAt: now,
+      });
+    }
   },
 });
 
@@ -165,10 +215,31 @@ export const setStatus = mutation({
 
     await ctx.db.patch(args.conversationId, { status: args.status });
 
+    const statusIdentity = (args.status === "resolved" || args.status === "open")
+      ? await ctx.auth.getUserIdentity()
+      : null;
+
+    if (statusIdentity) {
+      const statusActorName = statusIdentity.name ?? statusIdentity.email ?? "Agent";
+      const statusNow = Date.now();
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        tenantId,
+        direction: "outbound",
+        content: "",
+        contentType: "system_event",
+        eventType: args.status === "resolved" ? "resolved" : "reopened",
+        eventData: { actorName: statusActorName },
+        isInternalNote: false,
+        authorId: callerId,
+        status: "sent",
+        timestamp: statusNow,
+        createdAt: statusNow,
+      });
+    }
+
     if (args.status === "resolved") {
-      // Resolve agent name from the authenticated identity
-      const identity = await ctx.auth.getUserIdentity();
-      const agentName = identity?.name ?? identity?.email ?? undefined;
+      const agentName = statusIdentity?.name ?? statusIdentity?.email ?? undefined;
 
       if (conversation.assignedAgentId) {
         await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, {
@@ -342,6 +413,7 @@ export const assignInternal = internalMutation({
       v.literal("round_robin"),
       v.literal("manual"),
     )),
+    agentName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
@@ -371,6 +443,24 @@ export const assignInternal = internalMutation({
         tenantId: args.tenantId,
       });
     }
+
+    const nowInternal = Date.now();
+    await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId: args.tenantId,
+      direction: "outbound",
+      content: "",
+      contentType: "system_event",
+      eventType: "agent_assigned",
+      eventData: {
+        actorName: "System",
+        agentName: args.agentName ?? args.agentId,
+      },
+      isInternalNote: false,
+      status: "sent",
+      timestamp: nowInternal,
+      createdAt: nowInternal,
+    });
   },
 });
 
@@ -429,19 +519,109 @@ export const transferToDepartment = mutation({
       departmentAssignedBy: callerId,
     });
 
+    const identity = await ctx.auth.getUserIdentity();
+    const actorName = identity?.name ?? identity?.email ?? "Someone";
     const fromName = oldDept?.name ?? "Unassigned";
     const toName = targetDept.name;
+
     await ctx.db.insert("messages", {
       conversationId: args.conversationId,
       tenantId,
       direction: "outbound",
-      content: `Conversation transferred from "${fromName}" to "${toName}"`,
-      contentType: "text",
-      isInternalNote: true,
+      content: "",
+      contentType: "system_event",
+      eventType: "transfer_department",
+      eventData: { actorName, fromDept: fromName, toDept: toName },
+      isInternalNote: false,
       authorId: callerId,
       status: "sent",
       timestamp: now,
       createdAt: now,
     });
+
+    const deptMembers = await ctx.db
+      .query("departmentMembers")
+      .withIndex("by_department", (q) => q.eq("departmentId", args.targetDepartmentId))
+      .collect();
+
+    const memberIds = deptMembers.map((m) => m.userId);
+    const supervisorIds: string[] = targetDept.supervisors ?? [];
+    const recipients = [...new Set([...memberIds, ...supervisorIds])].filter(
+      (id) => id !== callerId,
+    );
+
+    const contact = await ctx.db.get(conversation.contactId);
+    const contactName = contact?.customName ?? contact?.displayName ?? "";
+
+    await Promise.all(
+      recipients.map((userId) =>
+        ctx.db.insert("notifications", {
+          tenantId,
+          userId,
+          type: "conversation_transferred",
+          referenceId: args.conversationId,
+          contactName,
+          message: `${contactName} was transferred to ${toName} by ${actorName}`,
+          read: false,
+          createdAt: now,
+        }),
+      ),
+    );
   },
+});
+
+export const claim = mutation({
+    args: { conversationId: v.id("conversations") },
+    handler: async (ctx, args) => {
+        const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+
+        const conversation = await ctx.db.get(args.conversationId);
+        if (!conversation || conversation.tenantId !== tenantId) {
+            throw new ConvexError("NOT_FOUND");
+        }
+        if (conversation.assignedAgentId) {
+            throw new ConvexError("ALREADY_ASSIGNED");
+        }
+        if (!conversation.departmentId) {
+            throw new ConvexError("NOT_IN_DEPARTMENT_QUEUE");
+        }
+
+        if (!isAdminOrSupervisor(orgRole)) {
+            const membership = await ctx.db
+                .query("departmentMembers")
+                .withIndex("by_department_user", (q) =>
+                    q
+                        .eq("departmentId", conversation.departmentId as Id<"departments">)
+                        .eq("userId", callerId),
+                )
+                .first();
+            if (!membership) throw new ConvexError("NOT_DEPARTMENT_MEMBER");
+        }
+
+        const now = Date.now();
+        const identity = await ctx.auth.getUserIdentity();
+        const callerName = identity?.name ?? identity?.email ?? "Agent";
+
+        await ctx.db.patch(args.conversationId, {
+            assignedAgentId: callerId,
+            assignedAt: now,
+            assignmentType: "manual",
+            lastMessageAt: now,
+        });
+
+        await ctx.db.insert("messages", {
+            conversationId: args.conversationId,
+            tenantId,
+            direction: "outbound",
+            content: "",
+            contentType: "system_event",
+            eventType: "agent_assigned",
+            eventData: { actorName: callerName, agentName: callerName },
+            isInternalNote: false,
+            authorId: callerId,
+            status: "sent",
+            timestamp: now,
+            createdAt: now,
+        });
+    },
 });

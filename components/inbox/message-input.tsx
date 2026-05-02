@@ -53,6 +53,8 @@ export function MessageInput({
   onQuickReplyConsumed,
   replyTo,
   onClearReply,
+  isLocked,
+  isPrivileged,
 }: {
   conversationId: string;
   onQuickReplyOpen?: () => void;
@@ -60,8 +62,11 @@ export function MessageInput({
   onQuickReplyConsumed?: () => void;
   replyTo?: { messageId: string; content: string; authorLabel: string } | null;
   onClearReply?: () => void;
+  isLocked?: boolean;
+  isPrivileged?: boolean;
 }) {
   const t = useT();
+
   const [content, setContent] = useState("");
   const [isNote, setIsNote] = useState(false);
   const [attachment, setAttachment] = useState<PendingAttachment | null>(null);
@@ -269,6 +274,14 @@ export function MessageInput({
   };
 
   const canSend = !uploading && (!!attachment || !!location || (!!content.trim() && content.length <= 4096));
+
+  if (isLocked && !isPrivileged) {
+    return (
+      <div className="border-t bg-muted/40 px-4 py-3 flex items-center justify-center text-sm text-muted-foreground">
+        {t("Claim this conversation first to reply", "استلم المحادثة أولاً للرد")}
+      </div>
+    );
+  }
 
   return (
     <div className="relative border-t border-border/60 p-3 space-y-2 shrink-0">

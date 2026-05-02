@@ -90,6 +90,44 @@ export const getSubscriptionStatus = query({
   },
 });
 
+export const getEmailLocale = internalQuery({
+  args: { tenantId: v.string() },
+  handler: async (ctx, args): Promise<"ar" | "en"> => {
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+    return tenant?.emailLocale ?? "ar";
+  },
+});
+
+export const getEmailLocalePublic = query({
+  args: {},
+  handler: async (ctx): Promise<"ar" | "en"> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.orgId) return "ar";
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", identity.orgId as string))
+      .first();
+    return tenant?.emailLocale ?? "ar";
+  },
+});
+
+export const updateEmailLocale = mutation({
+  args: { locale: v.union(v.literal("ar"), v.literal("en")) },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as import("./auth").OrgRole);
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
+      .first();
+    if (!tenant) throw new ConvexError("TENANT_NOT_FOUND");
+    await ctx.db.patch(tenant._id, { emailLocale: args.locale });
+  },
+});
+
 export const getTenantBySubscriptionId = internalQuery({
   args: { subscriptionId: v.string() },
   handler: async (ctx, args) => {

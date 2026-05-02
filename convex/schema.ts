@@ -15,6 +15,7 @@ export default defineSchema({
     paddle_customer_id: v.optional(v.string()),
     paddle_subscription_id: v.optional(v.string()),
     plan_activated_at: v.optional(v.number()),
+    emailLocale: v.optional(v.union(v.literal("ar"), v.literal("en"))),
   })
     .index("by_tenantId", ["tenantId"]),
 
@@ -211,6 +212,7 @@ export default defineSchema({
       v.literal("sticker"),
       v.literal("location"),
       v.literal("template"),
+      v.literal("system_event"),
     ),
     isInternalNote: v.boolean(),
     authorId: v.optional(v.string()),
@@ -236,6 +238,19 @@ export default defineSchema({
       emoji: v.string(),
       reactorId: v.string(),
     }))),
+    eventType: v.optional(v.union(
+      v.literal("transfer_department"),
+      v.literal("agent_assigned"),
+      v.literal("agent_unassigned"),
+      v.literal("resolved"),
+      v.literal("reopened"),
+    )),
+    eventData: v.optional(v.object({
+      actorName: v.optional(v.string()),
+      fromDept: v.optional(v.string()),
+      toDept: v.optional(v.string()),
+      agentName: v.optional(v.string()),
+    })),
   })
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_tenant", ["tenantId"])
@@ -342,6 +357,7 @@ export default defineSchema({
       v.literal("agent_welcome"),
       v.literal("billing_payment_failed"),
       v.literal("billing_subscription_expired"),
+      v.literal("conversation_transferred"),
     ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),

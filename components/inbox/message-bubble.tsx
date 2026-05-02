@@ -73,11 +73,11 @@ type Reaction = {
   reactorId: string;
 };
 
-type Message = {
+export type Message = {
   _id: string;
   direction: "inbound" | "outbound";
   content: string;
-  contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template";
+  contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template" | "system_event";
   isInternalNote: boolean;
   authorId: string | undefined;
   source?: "customer" | "api" | "mobile";
@@ -88,6 +88,13 @@ type Message = {
   quotedMessageId?: string;
   deletedAt?: number;
   reactions?: Reaction[];
+  eventType?: "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened";
+  eventData?: {
+    actorName?: string;
+    fromDept?: string;
+    toDept?: string;
+    agentName?: string;
+  };
 };
 
 function QuotedMessagePreview({ quoted, isOutbound }: { quoted: Message; isOutbound: boolean }) {
@@ -149,6 +156,95 @@ function ReactionBadges({
   );
 }
 
+function ConversationEventPill({
+  message,
+  locale,
+}: {
+  message: Message;
+  locale: "ar" | "en";
+}) {
+  const isAr = locale === "ar";
+  const { eventType, eventData } = message;
+
+  const config: Record<
+    string,
+    { pillBg: string; pillText: string; lineBg: string; icon: string }
+  > = {
+    transfer_department: {
+      pillBg: "bg-blue-100 dark:bg-blue-950",
+      pillText: "text-blue-700 dark:text-blue-300",
+      lineBg: "bg-blue-200 dark:bg-blue-800",
+      icon: "↗",
+    },
+    agent_assigned: {
+      pillBg: "bg-purple-100 dark:bg-purple-950",
+      pillText: "text-purple-700 dark:text-purple-300",
+      lineBg: "bg-purple-200 dark:bg-purple-800",
+      icon: "👤",
+    },
+    agent_unassigned: {
+      pillBg: "bg-gray-100 dark:bg-gray-800",
+      pillText: "text-gray-600 dark:text-gray-400",
+      lineBg: "bg-gray-300 dark:bg-gray-700",
+      icon: "👤",
+    },
+    resolved: {
+      pillBg: "bg-green-100 dark:bg-green-950",
+      pillText: "text-green-700 dark:text-green-300",
+      lineBg: "bg-green-200 dark:bg-green-800",
+      icon: "✓",
+    },
+    reopened: {
+      pillBg: "bg-yellow-100 dark:bg-yellow-950",
+      pillText: "text-yellow-800 dark:text-yellow-300",
+      lineBg: "bg-yellow-200 dark:bg-yellow-800",
+      icon: "↩",
+    },
+  };
+
+  const style = config[eventType ?? ""] ?? config.agent_unassigned;
+  const actor = eventData?.actorName ?? (isAr ? "شخص ما" : "Someone");
+  const agent = eventData?.agentName ?? "";
+  const toDept = eventData?.toDept ?? "";
+
+  let label = "";
+  if (isAr) {
+    if (eventType === "transfer_department")
+      label = `${actor} نقل إلى ${toDept}`;
+    else if (eventType === "agent_assigned")
+      label = `${actor} أسند إلى ${agent}`;
+    else if (eventType === "agent_unassigned")
+      label = "تم إلغاء الإسناد";
+    else if (eventType === "resolved")
+      label = `${actor} أغلق المحادثة`;
+    else if (eventType === "reopened")
+      label = "أُعيد فتح المحادثة";
+  } else {
+    if (eventType === "transfer_department")
+      label = `${actor} transferred to ${toDept}`;
+    else if (eventType === "agent_assigned")
+      label = `${actor} assigned to ${agent}`;
+    else if (eventType === "agent_unassigned")
+      label = "Conversation unassigned";
+    else if (eventType === "resolved")
+      label = `${actor} resolved this`;
+    else if (eventType === "reopened")
+      label = "Conversation reopened";
+  }
+
+  return (
+    <div className="flex items-center gap-2 my-1 px-2">
+      <div className={`flex-1 h-px ${style.lineBg}`} />
+      <span
+        className={`text-[11px] font-medium rounded-full px-3 py-0.5 whitespace-nowrap ${style.pillBg} ${style.pillText}`}
+      >
+        {style.icon} {label}
+      </span>
+      <div className={`flex-1 h-px ${style.lineBg}`} />
+    </div>
+  );
+}
+
 export function MessageBubble({
   message,
   quotedMessage,
@@ -166,6 +262,11 @@ export function MessageBubble({
 }) {
   const t = useT();
   const locale = useLocale();
+
+  if (message.contentType === "system_event") {
+    return <ConversationEventPill message={message} locale={locale} />;
+  }
+
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const timeStr = new Date(message.timestamp).toLocaleTimeString(

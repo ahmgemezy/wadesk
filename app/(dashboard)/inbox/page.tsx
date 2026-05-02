@@ -16,9 +16,11 @@ import { SeedButton } from "@/components/dev/seed-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
+import { ClaimButton } from "@/components/inbox/claim-button";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/context";
+import { useOrganization } from "@clerk/nextjs";
 
 export default function InboxPage() {
   const t = useT();
@@ -34,6 +36,9 @@ export default function InboxPage() {
   const markAsRead = useMutation(api.inbox.markAsRead);
 
   const { isAuthenticated } = useConvexAuth();
+  const { membership } = useOrganization();
+  const orgRole = membership?.role as string | undefined;
+  const isPrivileged = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
 
   // On mobile we show either the list or the chat panel, not both.
   const showListOnMobile = selectedId === null;
@@ -147,6 +152,14 @@ export default function InboxPage() {
                 <SeedButton />
 
                 {/* Department transfer */}
+                <ClaimButton
+                  conversationId={selectedId}
+                  show={
+                    !!selectedConversation?.departmentId &&
+                    !selectedConversation?.assignedAgentId &&
+                    (!!selectedConversation?.isCurrentUserDeptMember || isPrivileged)
+                  }
+                />
                 {selectedConversation?.channelId && (
                   <TransferDepartmentDialog
                     conversationId={selectedId}
@@ -176,6 +189,8 @@ export default function InboxPage() {
                     onQuickReplyConsumed={() => setQuickReplyContent("")}
                     replyTo={replyTo}
                     onClearReply={() => setReplyTo(null)}
+                    isLocked={!!selectedConversation?.departmentId && !selectedConversation?.assignedAgentId}
+                    isPrivileged={isPrivileged}
                   />
                 </div>
 

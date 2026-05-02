@@ -24,6 +24,13 @@ type MessageItem = {
   quotedMessageId?: string;
   deletedAt?: number;
   reactions?: { emoji: string; reactorId: string }[];
+  eventType?: string;
+  eventData?: {
+    actorName?: string;
+    fromDept?: string;
+    toDept?: string;
+    agentName?: string;
+  };
 };
 
 function formatDateLabel(timestamp: number, locale: "ar" | "en"): string {
@@ -125,6 +132,8 @@ export function ConversationThread({
           quotedMessageId: m.quotedMessageId as string | undefined,
           deletedAt: m.deletedAt as number | undefined,
           reactions: m.reactions as { emoji: string; reactorId: string }[] | undefined,
+          eventType: (m as typeof m & { eventType?: string }).eventType,
+          eventData: (m as typeof m & { eventData?: MessageItem["eventData"] }).eventData,
         }));
 
   const messagesById = new Map(
@@ -220,7 +229,8 @@ export function ConversationThread({
                       | "video"
                       | "sticker"
                       | "location"
-                      | "template",
+                      | "template"
+                      | "system_event",
                     isInternalNote: msg.isInternalNote,
                     authorId: msg.authorId,
                     mediaUrl: msg.mediaUrl,
@@ -230,10 +240,12 @@ export function ConversationThread({
                     quotedMessageId: msg.quotedMessageId,
                     deletedAt: msg.deletedAt,
                     reactions: msg.reactions,
+                    eventType: msg.eventType as "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened" | undefined,
+                    eventData: msg.eventData,
                   }}
                   quotedMessage={
                     msg.quotedMessageId
-                      ? (messagesById.get(msg.quotedMessageId) as any ?? null)
+                      ? (messagesById.get(msg.quotedMessageId) ?? null) as import("./message-bubble").Message | null
                       : null
                   }
                   onReply={(m) =>

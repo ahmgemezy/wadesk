@@ -16,7 +16,8 @@ export type IconName =
   | "Star"
   | "Tag"
   | "FileText"
-  | "Database";
+  | "Database"
+  | "SlidersHorizontal";
 
 export interface NavItem {
   href: string;

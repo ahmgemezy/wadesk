@@ -28,7 +28,7 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
   function handleNotificationClick(notificationId: Id<"notifications">, type: string, referenceId: string) {
     try {
       markRead({ notificationId });
-      if (type === "sla_breach") {
+      if (type === "sla_breach" || type === "conversation_transferred") {
         router.push(`/inbox/${referenceId}`);
       } else if (type === "channel_expiring_soon" || type === "channel_deleted") {
         router.push("/settings/channels");
@@ -102,6 +102,11 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
                   <span className="inline-flex items-center gap-1 text-destructive text-[10px] font-semibold mb-0.5">
                     <Trash2 className="size-3" />
                     {isRtl ? "تم حذف الرقم" : "Channel Deleted"}
+                  </span>
+                )}
+                {n.type === "conversation_transferred" && (
+                  <span className="inline-flex items-center gap-1 text-blue-600 text-[10px] font-semibold mb-0.5">
+                    ↗ {isRtl ? "محادثة جديدة في قسمك" : "New conversation in your dept"}
                   </span>
                 )}
                 <p className="text-sm font-medium">{n.contactName ?? "—"}</p>

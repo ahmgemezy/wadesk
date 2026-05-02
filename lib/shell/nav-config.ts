@@ -59,6 +59,13 @@ export const NAV_ITEMS: NavItem[] = [
     minRole: "supervisor",
     children: [
       {
+        href: "/settings/general",
+        labelAr: "عام",
+        labelEn: "General",
+        icon: "SlidersHorizontal",
+        minRole: "admin",
+      },
+      {
         href: "/settings/team",
         labelAr: "الفريق",
         labelEn: "Team",

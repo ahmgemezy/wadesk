@@ -111,6 +111,21 @@ export const sendEmail = internalAction({
     const html = await render(element);
     const subject = resolveSubject(args.templateKey, args.locale, enrichedVariables);
 
+    const BILLING_TEMPLATES = new Set([
+      "billing_payment_failed",
+      "billing_subscription_expired",
+    ]);
+    const ALERT_TEMPLATES = new Set([
+      "channel_expiring_soon",
+      "channel_deleted",
+      "sla_breach",
+    ]);
+    const fromAddress = BILLING_TEMPLATES.has(args.templateKey)
+      ? "WABDesk Billing <billing@wabdesk.com>"
+      : ALERT_TEMPLATES.has(args.templateKey)
+        ? "WABDesk Alerts <alerts@wabdesk.com>"
+        : "WABDesk <noreply@wabdesk.com>";
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -118,7 +133,7 @@ export const sendEmail = internalAction({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "WABDesk <noreply@wabdesk.com>",
+        from: fromAddress,
         to: args.to,
         subject,
         html,

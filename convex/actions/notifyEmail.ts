@@ -15,7 +15,10 @@ export const slaBreachEmail = internalAction({
     tenantId: v.string(),
   },
   handler: async (ctx, args) => {
-    const email = await resolveUserEmail(args.supervisorUserId);
+    const [email, locale] = await Promise.all([
+      resolveUserEmail(args.supervisorUserId),
+      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
+    ]);
     if (!email) {
       console.warn(`[EMAIL] slaBreachEmail: no email for user ${args.supervisorUserId}`);
       return;
@@ -23,7 +26,7 @@ export const slaBreachEmail = internalAction({
     await ctx.runAction(internal.actions.sendEmail.sendEmail, {
       to: email,
       templateKey: "sla_breach",
-      locale: "ar",
+      locale,
       variables: {
         contactName: args.contactName,
         channelName: args.channelName,
@@ -42,7 +45,10 @@ export const followupDueEmail = internalAction({
     tenantId: v.string(),
   },
   handler: async (ctx, args) => {
-    const email = await resolveUserEmail(args.agentUserId);
+    const [email, locale] = await Promise.all([
+      resolveUserEmail(args.agentUserId),
+      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
+    ]);
     if (!email) {
       console.warn(`[EMAIL] followupDueEmail: no email for user ${args.agentUserId}`);
       return;
@@ -50,7 +56,7 @@ export const followupDueEmail = internalAction({
     await ctx.runAction(internal.actions.sendEmail.sendEmail, {
       to: email,
       templateKey: "followup_due",
-      locale: "ar",
+      locale,
       variables: {
         contactName: args.contactName,
         status: args.status,
@@ -68,7 +74,10 @@ export const newAssignmentEmail = internalAction({
     tenantId: v.string(),
   },
   handler: async (ctx, args) => {
-    const email = await resolveUserEmail(args.agentUserId);
+    const [email, locale] = await Promise.all([
+      resolveUserEmail(args.agentUserId),
+      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
+    ]);
     if (!email) {
       console.warn(`[EMAIL] newAssignmentEmail: no email for user ${args.agentUserId}`);
       return;
@@ -76,7 +85,7 @@ export const newAssignmentEmail = internalAction({
     await ctx.runAction(internal.actions.sendEmail.sendEmail, {
       to: email,
       templateKey: "new_assignment",
-      locale: "ar",
+      locale,
       variables: {
         contactName: args.contactName,
         channelName: args.channelName,
@@ -102,10 +111,13 @@ export const agentWelcomeEmail = internalAction({
     });
     if (alreadySent) return;
 
+    const locale = await ctx.runQuery(internal.lib.tenants.getEmailLocale, {
+      tenantId: args.tenantId,
+    });
     await ctx.runAction(internal.actions.sendEmail.sendEmail, {
       to: args.email,
       templateKey: "agent_welcome",
-      locale: "ar",
+      locale,
       variables: {
         agentName: args.agentName,
         orgName: args.orgName,
@@ -148,15 +160,16 @@ export const billingPaymentFailedEmail = internalAction({
     planName: v.string(),
   },
   handler: async (ctx, args) => {
-    const [adminEmails, orgName] = await Promise.all([
+    const [adminEmails, orgName, locale] = await Promise.all([
       getAdminEmails(args.tenantId),
       resolveOrgName(args.tenantId),
+      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
     ]);
     for (const { email } of adminEmails) {
       await ctx.runAction(internal.actions.sendEmail.sendEmail, {
         to: email,
         templateKey: "billing_payment_failed",
-        locale: "ar",
+        locale,
         variables: { orgName, planName: args.planName },
       });
     }
@@ -169,15 +182,16 @@ export const billingSubscriptionExpiredEmail = internalAction({
     planName: v.string(),
   },
   handler: async (ctx, args) => {
-    const [adminEmails, orgName] = await Promise.all([
+    const [adminEmails, orgName, locale] = await Promise.all([
       getAdminEmails(args.tenantId),
       resolveOrgName(args.tenantId),
+      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
     ]);
     for (const { email } of adminEmails) {
       await ctx.runAction(internal.actions.sendEmail.sendEmail, {
         to: email,
         templateKey: "billing_subscription_expired",
-        locale: "ar",
+        locale,
         variables: { orgName, planName: args.planName },
       });
     }

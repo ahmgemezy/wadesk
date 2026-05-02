@@ -10,6 +10,7 @@ import { StatusSelector } from "@/components/inbox/status-selector";
 import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
 import { TransferDepartmentDialog } from "@/components/inbox/transfer-department-dialog";
 import { useState } from "react";
+import { ClaimButton } from "@/components/inbox/claim-button";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
 import { useT } from "@/lib/i18n/context";
 import { useOrganization } from "@clerk/nextjs";
@@ -44,6 +45,7 @@ export default function ConversationPage() {
 
   const { membership } = useOrganization();
   const isAdmin = membership?.role === "org:admin" || membership?.role === "admin";
+  const isPrivileged = membership?.role === "org:admin" || membership?.role === "admin" || membership?.role === "org:supervisor";
 
   const removeConversation = useMutation(api.conversations.remove);
 
@@ -96,6 +98,14 @@ export default function ConversationPage() {
             <StatusSelector conversationId={conversationId} />
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <ClaimButton
+              conversationId={conversationId}
+              show={
+                !!conversation?.departmentId &&
+                !conversation?.assignedAgentId &&
+                (!!conversation?.isCurrentUserDeptMember || isPrivileged)
+              }
+            />
             {conversation.channelId && (
               <TransferDepartmentDialog
                 conversationId={conversationId}
@@ -151,6 +161,8 @@ export default function ConversationPage() {
           onQuickReplyConsumed={() => setQuickReplyContent("")}
           replyTo={replyTo}
           onClearReply={() => setReplyTo(null)}
+          isLocked={!!conversation?.departmentId && !conversation?.assignedAgentId}
+          isPrivileged={isPrivileged}
         />
       </div>
     </>
