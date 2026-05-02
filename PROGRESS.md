@@ -771,6 +771,73 @@ All tables are real, indexed, and used by live queries:
 
 ---
 
+### Klaro Consent Manager + Google Consent Mode v2
+
+- **Status:** Done
+- **What was built:** Open-source consent banner (Klaro! v0.7.21) integrated with Google Consent Mode v2 default-denied state — ready for GA4/GTM/Facebook Pixel/Google Ads addition.
+- **New files:**
+  - `lib/klaro/config.ts` — Klaro config + AR/EN translations + 5 services (essential, GA4, GTM, FB Pixel, Google Ads)
+  - `lib/klaro/consent-mode.ts` — Consent Mode v2 default state script (all denied except security_storage + functionality_storage)
+  - `components/consent/klaro-provider.tsx` — Client Component with `usePathname` re-init (fixes Klaro issue #552 for Next.js App Router)
+  - `components/consent/cookie-settings-button.tsx` — Footer button to re-open settings modal
+  - `styles/klaro.css` — Custom CSS with RTL overrides + WABDesk indigo branding
+  - `app/cookies/page.tsx` — Cookie Policy legal page (legal page #4)
+  - `components/marketing/cookies-content.tsx` — AR/EN Cookie Policy content with detailed cookie table (10 cookies)
+  - `types/klaro.d.ts` — TypeScript declaration for `klaro/dist/klaro-no-css`
+- **Modified files:**
+  - `app/layout.tsx` — Injected Consent Mode default in `<head>` with `strategy="beforeInteractive"`; mounted `<KlaroProvider />` inside `LocaleProvider`
+  - `components/marketing/marketing-footer.tsx` — Added Cookie Policy link + Cookie Settings button
+  - `components/marketing/legal-page-wrapper.tsx` — Added `"cookies"` to `LegalPage` type, labels, siblingPages, and footer nav
+  - `components/marketing/privacy-content.tsx` — Added analytics + advertising disclosure section (10a AR + 10a EN)
+  - `lib/marketing/i18n.ts` — Added `footer.cookies` and `footer.cookieSettings` keys
+- **Key decisions:**
+  - Notice mode (non-blocking banner) over modal — chosen for conversion
+  - Cookie storage with 365-day expiry over localStorage — better for compliance audits
+  - Default state: all denied except `essential` and `security_storage` / `functionality_storage` — opt-in (GDPR-compliant)
+  - Decline-all button visible (GDPR requirement)
+  - 5 services pre-configured: essential, GA4, GTM, Facebook Pixel, Google Ads
+  - CSS static-imported in `klaro-provider.tsx` (not dynamic) — standard Next.js pattern
+- **Env vars required:** None (Klaro is fully client-side)
+- **TypeScript:** 0 errors
+- **Next step when adding GTM/GA:** Use `type="text/plain"` + `data-name="google-tag-manager"` on the script tag so Klaro controls loading
+- **Post-merge fixes (2026-05-02):**
+  - `privacy-content.tsx` — merged section 10a (analytics disclosure) into section 10 as leading paragraphs in both AR and EN; deleted standalone 10a section
+  - `legal-page-wrapper.tsx` — added `<CookieSettingsButton />` to footer so /privacy, /terms, /dpa, /cookies pages all expose the Klaro modal trigger
+  - Base CSS import confirmed: `klaro/dist/klaro.css` imported exactly once in `klaro-provider.tsx`; no duplicate in `styles/klaro.css`
+
+---
+
+### Klaro Consent Manager — Post-merge bug fixes (2026-05-02)
+
+**Summary:** Four bugs were discovered and fixed after the Klaro integration was merged into the main branch. None of the bugs were regressions in the integration logic itself — they were surface-level issues that only became visible during browser testing across both EN and AR modes. The root causes split into three categories: a locale-system mismatch (Klaro was reading from the wrong locale store), missing translation keys that Klaro expected but the config didn't provide, and CSS selector specificity gaps that caused RTL layout to apply incorrectly.
+
+**Bug 1 — Locale system mismatch**
+`KlaroProvider` was using `LocaleContext` (cookie-driven, sets `<html dir>`) to determine the current locale. The marketing pages use a separate `useMarketingLocale()` hook (localStorage-driven). The two systems are not synchronized — the cookie value can lag behind the localStorage toggle, causing Klaro to render in the wrong language. Fixed by switching `KlaroProvider` to read locale from `useMarketingLocale()`, aligning it with the rest of the marketing site.
+- **File modified:** `components/consent/klaro-provider.tsx`
+
+**Bug 2 — Missing `purposeItem` translation keys + `poweredBy` footer link**
+Klaro rendered `[missing translation]` placeholders for service-count labels (e.g. "1 service", "2 services") because the `purposeItem.service` and `purposeItem.services` keys were absent from both the AR and EN translation objects. Separately, the "Powered by Klaro" footer link was still visible despite the intent to hide it — `poweredBy: ""` (empty string) in per-locale `consentNotice` does not suppress the link; the correct fix is `disablePoweredBy: true` at the top level of the Klaro config object.
+- **File modified:** `lib/klaro/config.ts`
+
+**Bug 3 — RTL CSS applied to `<html>` instead of `#klaro` wrapper**
+`styles/klaro.css` used `[dir="rtl"]` as the ancestor selector for all RTL overrides. Because `<html dir="rtl">` is set permanently by the cookie-driven locale system (even in EN mode — see architectural note below), this selector matched in all page states, applying RTL layout universally. The fix was to change the selector root from `[dir="rtl"]` to `#klaro[dir="rtl"]`, which matches only the Klaro wrapper element (Klaro sets `dir` on `#klaro` independently from the locale toggle). Additionally, four CSS rules were missing from the original RTL overrides: close button physical position, toggle switch anchor, service row padding, and footer button alignment. All four were added under the corrected selector.
+- **File modified:** `styles/klaro.css`
+
+**Bug 4 — Modal background color override not applying**
+Klaro's own stylesheet uses `.cm-klaro` as part of its base selector, giving it higher specificity than WABDesk's overrides which targeted only `#klaro`. Fixed by prepending `.cm-klaro` to the override selector chain to match Klaro's base specificity.
+- **File modified:** `styles/klaro.css`
+
+**Files modified (complete list):**
+- `components/consent/klaro-provider.tsx` — Stages A + B (locale fix + re-init on nav)
+- `components/consent/cookie-settings-button.tsx` — Stage B (locale-aware re-open)
+- `lib/klaro/config.ts` — Stage B (missing translation keys + `disablePoweredBy: true`)
+- `styles/klaro.css` — Stage C (RTL selector specificity + 4 missing RTL rules + modal bg override)
+
+**Architectural note — dual locale system (known limitation, not fixed here):**
+The codebase has two separate locale systems that are not synchronized: (1) a cookie-driven system that sets `<html dir="rtl">` and is used by the dashboard and app shell; (2) a `localStorage`-based toggle used by the marketing pages via `useMarketingLocale()`. The result is that `<html dir="rtl">` is effectively permanent — it does not reflect the marketing site's current language toggle. Klaro is now isolated from this conflict via the `#klaro[dir]` selector, but any future CSS that uses `html[dir="rtl"]` or `[dir="rtl"]` at page root will face the same trap. This should be investigated and resolved before production — ideally by unifying both systems onto a single locale source of truth. Flagged as a pre-launch TODO.
+
+---
+
 ### 013 — WhatsApp Coexistence (Stage 5 — UI Badge + Embedded Signup Config)
 
 - **Status:** Stage 5 Complete — Feature fully shipped

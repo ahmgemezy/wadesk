@@ -7,7 +7,7 @@
 
 ---
 
-**Last Updated:** 2026-04-28 UTC  
+**Last Updated:** 2026-05-02 UTC  
 **Current Branch:** feat/013-departments  
 **Main Branch:** 002-agent-roles  
 **Build Status:** ✅ TypeScript: 0 errors | ✅ 32-table schema deployed | ✅ React Email system live | ✅ Member profile modal complete | ✅ Channel retention system active
@@ -519,12 +519,31 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 
 ### ✅ Legal Pages
 
-- **File:** `app/privacy/page.tsx`, `app/terms/page.tsx`, `app/dpa/page.tsx`
+- **File:** `app/privacy/page.tsx`, `app/terms/page.tsx`, `app/dpa/page.tsx`, `app/cookies/page.tsx`
 - **Status:** ✅ Complete
 - **Features:**
-  - Full Arabic + English content for Privacy Policy, Terms of Service, Data Processing Agreement
-  - `components/marketing/legal-page-wrapper.tsx` — shared layout
-  - Marketing footer updated with links to all three pages
+  - Full Arabic + English content for Privacy Policy, Terms of Service, Data Processing Agreement, Cookie Policy
+  - `components/marketing/legal-page-wrapper.tsx` — shared layout (supports 4 pages)
+  - Marketing footer updated with links to all four pages
+
+### ✅ Cookie Consent Manager (Klaro + Google Consent Mode v2)
+
+- **File:** `app/layout.tsx`, `components/consent/klaro-provider.tsx`
+- **Backend:** N/A (fully client-side)
+- **Status:** ✅ Complete
+- **Features:**
+  - Open-source Klaro! v0.7.21 consent banner (BSD-3, ~30KB)
+  - Notice mode (non-blocking) at bottom of screen
+  - Three categories: essential, analytics, marketing
+  - Five services: essential, Google Analytics 4, Google Tag Manager, Facebook Pixel, Google Ads
+  - Google Consent Mode v2 default-denied state set in `<head>` before any tracking script
+  - 365-day cookie storage (`klaro` cookie)
+  - Arabic (default) + English translations with full RTL support
+  - `Cookie Settings` footer button re-opens preferences modal
+  - Re-initialization on Next.js App Router route change (fix for Klaro issue #552)
+  - WABDesk indigo brand styling
+  - Linked to `/cookies` Cookie Policy page
+  - Ready for GA4/GTM/FB Pixel addition — use `type="text/plain"` + `data-name`
 
 ### ✅ Billing & Subscription Management
 
@@ -678,6 +697,21 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 10 Sessions)
+
+### 2026-05-02: Klaro Consent Manager + Google Consent Mode v2
+
+- ✅ Klaro v0.7.21 integrated with custom config (5 services: essential, GA4, GTM, FB Pixel, Google Ads)
+- ✅ Google Consent Mode v2 default-denied state in `<head>` (`strategy="beforeInteractive"`)
+- ✅ Next.js App Router route-change re-init via `usePathname` in `KlaroProvider`
+- ✅ AR/EN translations + RTL-aware CSS overrides (WABDesk indigo branding)
+- ✅ Cookie Policy page `/cookies` (legal page #4) + footer integration
+- ✅ Privacy Policy updated with analytics disclosure sections (10a AR + 10a EN)
+- ✅ `CookieSettingsButton` in marketing footer re-opens Klaro modal
+- ✅ `LegalPageWrapper` updated to support `"cookies"` page type
+- ✅ `types/klaro.d.ts` module declaration for TypeScript
+- **New files:** `lib/klaro/config.ts`, `lib/klaro/consent-mode.ts`, `components/consent/klaro-provider.tsx`, `components/consent/cookie-settings-button.tsx`, `styles/klaro.css`, `app/cookies/page.tsx`, `components/marketing/cookies-content.tsx`, `types/klaro.d.ts`
+- **Modified files:** `app/layout.tsx`, `components/marketing/marketing-footer.tsx`, `components/marketing/legal-page-wrapper.tsx`, `components/marketing/privacy-content.tsx`, `lib/marketing/i18n.ts`
+- **TypeScript:** 0 errors
 
 ### 2026-04-28: System User Assignment + WA Business Profile Fixes
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { type MarketingLocale, t } from "@/lib/marketing/i18n";
+import { CookieSettingsButton } from "@/components/consent/cookie-settings-button";
 
 function MarketingFooter({ locale }: { locale: MarketingLocale }) {
   return (
@@ -26,6 +27,10 @@ function MarketingFooter({ locale }: { locale: MarketingLocale }) {
           <Link href="/dpa" className="hover:text-primary">
             {t(locale, "footer.dpa")}
           </Link>
+          <Link href="/cookies" className="hover:text-primary">
+            {t(locale, "footer.cookies")}
+          </Link>
+          <CookieSettingsButton />
         </div>
         <p className="text-sm text-muted-foreground">
           {t(locale, "footer.copyright")}

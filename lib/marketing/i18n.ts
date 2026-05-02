@@ -50,6 +50,8 @@ const dictionary: Dictionary = {
   "footer.privacy": { ar: "سياسة الخصوصية", en: "Privacy Policy" },
   "footer.terms": { ar: "شروط الخدمة", en: "Terms of Service" },
   "footer.dpa": { ar: "اتفاقية معالجة البيانات", en: "DPA" },
+  "footer.cookies": { ar: "سياسة ملفات تعريف الارتباط", en: "Cookie Policy" },
+  "footer.cookieSettings": { ar: "إعدادات ملفات تعريف الارتباط", en: "Cookie Settings" },
   "footer.copyright": {
     ar: "© 2026 واب ديسك. جميع الحقوق محفوظة.",
     en: "© 2026 WABDesk. All rights reserved.",

@@ -331,7 +331,30 @@ function PrivacyAr() {
 
         <section>
           <h2 className="mb-3 text-xl font-semibold">١٠. ملفات تعريف الارتباط وتقنيات التتبع</h2>
-          <p className="text-muted-foreground">نستخدم الفئات التالية من ملفات تعريف الارتباط:</p>
+          <p className="text-muted-foreground">
+            نستخدم Google Analytics 4 و Google Tag Manager لفهم كيفية استخدام الزوار للموقع. كما قد نستخدم
+            Facebook Pixel و Google Ads لقياس فعالية حملاتنا الإعلانية. لا تُحمَّل أي من هذه الأدوات قبل
+            الحصول على موافقتك الصريحة عبر مدير الموافقات (Klaro). يمكنك تعديل اختياراتك في أي وقت من خلال{" "}
+            <button
+              type="button"
+              onClick={() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const klaro = (window as any).klaro;
+                if (klaro?.show) klaro.show(undefined, true);
+              }}
+              className="text-primary underline-offset-4 hover:underline cursor-pointer"
+            >
+              إعدادات ملفات تعريف الارتباط
+            </button>{" "}
+            في تذييل الصفحة.
+          </p>
+          <p className="mt-2 text-muted-foreground">
+            للاطلاع على التفاصيل الكاملة لكل ملف، راجع{" "}
+            <Link href="/cookies" className="text-primary underline-offset-4 hover:underline">
+              سياسة ملفات تعريف الارتباط
+            </Link>.
+          </p>
+          <p className="mt-4 text-muted-foreground">نستخدم الفئات التالية من ملفات تعريف الارتباط:</p>
           <div className="mt-3 space-y-3">
             {[
               {
@@ -701,7 +724,31 @@ function PrivacyEn() {
 
         <section>
           <h2 className="mb-3 text-xl font-semibold">10. Cookies &amp; Tracking Technologies</h2>
-          <p className="text-muted-foreground">We use the following cookie categories:</p>
+          <p className="text-muted-foreground">
+            We use Google Analytics 4 and Google Tag Manager to understand how visitors use the site. We may
+            also use Facebook Pixel and Google Ads to measure the effectiveness of our advertising campaigns.
+            None of these tools are loaded until you give your explicit consent through our consent manager
+            (Klaro). You can modify your choices at any time via the{" "}
+            <button
+              type="button"
+              onClick={() => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const klaro = (window as any).klaro;
+                if (klaro?.show) klaro.show(undefined, true);
+              }}
+              className="text-primary underline-offset-4 hover:underline cursor-pointer"
+            >
+              Cookie Settings
+            </button>{" "}
+            link in the page footer.
+          </p>
+          <p className="mt-2 text-muted-foreground">
+            For full details on each cookie, see the{" "}
+            <Link href="/cookies" className="text-primary underline-offset-4 hover:underline">
+              Cookie Policy
+            </Link>.
+          </p>
+          <p className="mt-4 text-muted-foreground">We use the following cookie categories:</p>
           <div className="mt-3 space-y-3">
             {[
               { name: "Strictly Necessary Cookies", desc: "Required for platform authentication and security (session tokens, CSRF protection). Cannot be disabled — the platform cannot function without them.", canOptOut: false },

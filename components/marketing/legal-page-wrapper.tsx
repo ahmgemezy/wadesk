@@ -3,19 +3,22 @@
 import Link from "next/link";
 import { useMarketingLocale } from "@/lib/marketing/i18n";
 import { Button } from "@/components/ui/button";
+import { CookieSettingsButton } from "@/components/consent/cookie-settings-button";
 
-type LegalPage = "privacy" | "terms" | "dpa";
+type LegalPage = "privacy" | "terms" | "dpa" | "cookies";
 
 const labels: Record<LegalPage, { ar: string; en: string; href: string }> = {
-  privacy: { ar: "سياسة الخصوصية", en: "Privacy Policy", href: "/privacy" },
-  terms:   { ar: "شروط الخدمة",     en: "Terms of Service", href: "/terms" },
-  dpa:     { ar: "اتفاقية البيانات", en: "DPA",              href: "/dpa" },
+  privacy: { ar: "سياسة الخصوصية",              en: "Privacy Policy",  href: "/privacy" },
+  terms:   { ar: "شروط الخدمة",                  en: "Terms of Service", href: "/terms" },
+  dpa:     { ar: "اتفاقية البيانات",              en: "DPA",              href: "/dpa" },
+  cookies: { ar: "سياسة ملفات تعريف الارتباط",   en: "Cookie Policy",   href: "/cookies" },
 };
 
 const siblingPages: Record<LegalPage, LegalPage[]> = {
-  privacy: ["terms", "dpa"],
-  terms:   ["privacy", "dpa"],
-  dpa:     ["privacy", "terms"],
+  privacy: ["terms", "dpa", "cookies"],
+  terms:   ["privacy", "dpa", "cookies"],
+  dpa:     ["privacy", "terms", "cookies"],
+  cookies: ["privacy", "terms", "dpa"],
 };
 
 interface LegalPageWrapperProps {
@@ -79,8 +82,8 @@ export function LegalPageWrapper({ children, currentPage }: LegalPageWrapperProp
           <p className="text-sm text-muted-foreground">
             {isAr ? "© 2026 واب ديسك. جميع الحقوق محفوظة." : "© 2026 WABDesk. All rights reserved."}
           </p>
-          <div className="flex gap-4 text-sm text-muted-foreground">
-            {(["privacy", "terms", "dpa"] as LegalPage[]).map((page) => (
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {(["privacy", "terms", "dpa", "cookies"] as LegalPage[]).map((page) => (
               <Link
                 key={page}
                 href={labels[page].href}
@@ -89,6 +92,7 @@ export function LegalPageWrapper({ children, currentPage }: LegalPageWrapperProp
                 {isAr ? labels[page].ar : labels[page].en}
               </Link>
             ))}
+            <CookieSettingsButton />
           </div>
         </div>
       </footer>
