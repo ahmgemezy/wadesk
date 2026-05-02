@@ -1,4 +1,4 @@
-# WaDesk — Build Progress
+# WABDesk — Build Progress
 
 > Single source of truth for project progress. Read by Claude Chat (project manager) to stay updated.
 > **Last audited:** 2026-04-28 — Member profile modal, team presence, channel retention, React Email system, conversation search, batch actions, rate limiting, message scheduling, template library, legal pages, CSAT v2, departments.
@@ -8,7 +8,7 @@
 
 ## Project Summary
 
-**WaDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS for SMBs in Egypt and the Gulf.  
+**WABDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS for SMBs in Egypt and the Gulf.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Paddle (billing integrated)  
 **Current branch:** `feat/013-departments`  
 **Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (32 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete
@@ -20,6 +20,7 @@
 ### Core Infrastructure
 
 **Multi-Tenant Auth (Clerk + Convex)**
+
 - Clerk Organizations = tenants; `orgId` = `tenantId` everywhere
 - Roles: `org:admin`, `org:supervisor`, `org:agent` — enforced server-side in every Convex query/mutation
 - JWT validated in Convex via `auth.getUserIdentity()`
@@ -31,18 +32,21 @@ All tables are real, indexed, and used by live queries:
 `tenants`, `channels`, `contacts`, `contactLists`, `broadcasts`, `conversations`, `messages`, `quickReplies`, `inviteLinks`, `customFields`, `followUps`, `contactEvents`, `notifications`, `onboardingState`, `conversationMetrics`, `automationRules`, `businessHours`, `ruleFireLog`, `conversationLabels`, `channelMembers`, `csatSettings`, `messageTemplates`
 
 **Plan Limits (server-side enforced)**
+
 - `convex/lib/planLimits.ts` — every plan-gated mutation checks tenant plan
 - Limits: agents (3/5/15/∞), channels (1/2/5/∞), automation rules (2/10/30/∞), contact lists (3/10/∞/∞), message templates (0/10/50/∞)
 - Round-robin, CSAT, SLA: Growth+ only
 - Broadcasts: Starter+ only; supervisor role: Starter+ only
 
 **Access Token Encryption**
+
 - AES-256-GCM encryption for WhatsApp access tokens at rest
 - `convex/lib/encryption.ts` — encrypt/decrypt helpers; token decrypted only in Convex actions, never returned to client
 
 ---
 
 ### Onboarding Flow
+
 - Multi-step wizard: create org → connect WhatsApp → invite team → complete
 - Progress tracked in `onboardingState` table
 - `convex/onboarding.ts`: `getState`, `ensureCreated`, `markStep`, `markComplete`
@@ -53,6 +57,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### WhatsApp Channel Management
+
 - **Schema fields:** `phoneNumberId`, `displayPhone`, `displayName`, `wabaId`, `accessToken` (encrypted), `assignmentMode`, `roundRobinIndex`, `status`, `slaThresholdMinutes`, `slaEnabled`
 - `convex/channels.ts`: full CRUD + `setAssignmentMode`, `setSlaThreshold`, `incrementRoundRobinIndex`, `setAccessToken` (encrypts), `disconnectChannel` (revokes Meta webhook subscription)
 - Reconnecting a number reuses existing `channelId` — preserves conversation history
@@ -61,6 +66,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Inbox (Multi-Agent Shared Inbox)
+
 - **Real-time** via Convex `useQuery` subscriptions — no polling
 - `convex/inbox.ts`: `listConversations` (filter: all/mine/unassigned/unread, contactStage), `getMessages`, `markAsRead`, `markAsUnread`, `updateStatus`, `getInternalNotesByContact`
 - `convex/conversations.ts`: `listForCaller`, `get`, `assign`, `assignInternal`, `createIfNeeded`
@@ -70,6 +76,7 @@ All tables are real, indexed, and used by live queries:
 - Pages: `/inbox`, `/inbox/[id]`
 
 **Message Types (inbound + outbound):**
+
 - ✅ Text, Image, Video, Audio, Document, Sticker, Location
 - ✅ Reactions (emoji picker, send/remove via Meta API)
 - ✅ Quoted/reply-to messages
@@ -78,6 +85,7 @@ All tables are real, indexed, and used by live queries:
 - ✅ Optimistic UI: message shows "sending" state, updates to "sent" → "delivered" → "read"
 
 **Outbound Actions (`convex/actions/sendWhatsAppMessage.ts`):**
+
 - `sendMessage` (text) → Meta Graph API
 - `sendMediaMessage` → uploads to Meta media, gets `media_id`, sends
 - `sendLocation` → WhatsApp location message type
@@ -88,6 +96,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Webhook Receiver
+
 - `app/api/webhook/whatsapp/route.ts` — GET (hub verification) + POST (HMAC-SHA256 verify → forward to Convex, return 200 immediately)
 - `convex/http.ts` `metaWebhook` action:
   - Parses message / status / reaction events
@@ -101,6 +110,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Contact Management (CRM-Lite)
+
 - **Schema:** `contacts` (phone, displayName, customName, tags, notes, stage, firstSeenAt, lastSeenAt, country, city, spent, totalConversations), `customFields`, `contactEvents`, `followUps`
 - `convex/contacts.ts`: paginated list, search (phone/name), create, update, archive, addTag, removeTag, updateStage, updateNote
 - `convex/customFields.ts`: setField, listForContact, removeField
@@ -115,6 +125,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Follow-ups
+
 - `convex/followUps.ts`: create, cancel, `listByContact`, `listPending` (role-scoped), `processDue` (internalMutation)
 - Cron: every 30 minutes → `followUps.processDue` → sends pending follow-ups via Meta API → max 2 attempts before auto-fail
 - Revenue tracking per follow-up (`expectedRevenue`, `currency`) — schema only, no analytics UI yet
@@ -123,6 +134,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### 007 — Marketing Site
+
 - **Status:** Done
 - **Branch:** `007-marketing-site` (merged into `002-agent-roles`)
 - **What was built:** Public marketing site (landing page, pricing, features, Arabic-first copy)
@@ -131,6 +143,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### 008 — Dashboard Shell
+
 - **Status:** Done (core shell complete; features added incrementally on this branch)
 - **Branch:** `008-dashboard-shell`
 - **What was built:** Main app shell — sidebar navigation, layout, protected route structure
@@ -143,6 +156,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### 009 — Inbox UI (Mock Data Phase)
+
 - **Status:** Done
 - **What was built:** Full 3-column inbox UI wired to mock data
 - **New files:**
@@ -159,6 +173,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### 010 — WhatsApp Embedded Signup
+
 - **Status:** Done ✅ (spec compliance pass complete)
 - **What was built:** Full Meta WhatsApp Embedded Signup — Admin connects WABA; tokens stored AES-256-GCM encrypted; webhook auto-subscribed; channels page with status badges, disconnect (with Meta webhook revocation), reconnect
 - **Note:** Spec specified a `wabaPhoneNumbers` table — implemented as `channels` instead (better design: multi-number ready from day one). The `by_phone_number_id` index exists on `channels` — Task 011 webhook router is fully unblocked.
@@ -189,6 +204,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### 011 — Webhook Receiver
+
 - **Status:** Done + Extended (2026-04-25)
 - **What was built:** Full Meta WhatsApp Cloud API webhook receiver — inbound messages appear in Inbox in real-time
 - **New files:**
@@ -222,6 +238,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### 012 — Real-time Message Delivery (Inbox Live)
+
 - **Status:** Done
 - **What was built:** Replaced all mock stubs with real Convex queries/mutations; inbox is fully live
 - **Schema changes:**
@@ -237,6 +254,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Permissions Audit & Fix
+
 - **Status:** Done
 - **What was done:** Full audit of role-based permissions across the codebase aligned to CLAUDE.md §25
 - **Bugs fixed:**
@@ -250,6 +268,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Customer Journey
+
 - **Status:** Done
 - **Branch:** `008-dashboard-shell`
 - **What was built:** Full customer stage pipeline + follow-up scheduling system
@@ -272,12 +291,14 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Inbox — Rich Media, Emoji, Attachments & Contact Panel Upgrades
+
 - **Status:** Done
 - **Branch:** `008-dashboard-shell`
 - **Commit:** `e100803`
 - **What was built:** Comprehensive inbox UX improvements across message rendering, composer, conversation list, and contact side panel
 
 #### Message Rendering (MessageBubble)
+
 - Inbound rich media now fully rendered:
   - **Image/Sticker** — `<img>` with lazy loading, rounded, max 256px height
   - **Video** — `<video controls>` with max height
@@ -287,6 +308,7 @@ All tables are real, indexed, and used by live queries:
 - Status ticks: `·` sending · `✓` sent · `✓✓` delivered · `✓✓` (green) read · `✗` failed
 
 #### Outbound Attachments (MessageInput)
+
 - **Image, Video, Document, Audio** — file picker per type → Convex Storage upload → `sendMediaReply` action → Meta Media API
 - **Location** — browser `navigator.geolocation` → `sendLocationReply` mutation → `sendLocation` WhatsApp action
 - **Emoji picker** — `emoji-picker-react` lazy-loaded via `next/dynamic`; positioned `absolute bottom-full` above toolbar; closes on outside click
@@ -294,6 +316,7 @@ All tables are real, indexed, and used by live queries:
 - Location preview card shows lat/lng coordinates
 
 #### Convex Backend (messages.ts, actions/sendWhatsAppMessage.ts)
+
 - `generateUploadUrl` mutation — wraps `ctx.storage.generateUploadUrl()`
 - `sendMediaReply` action — uploads to Meta Media API via FormData → gets `media_id` → sends WhatsApp media message
 - `sendLocationReply` mutation — inserts location message, schedules `sendLocation` action
@@ -302,25 +325,30 @@ All tables are real, indexed, and used by live queries:
 - `getConversationInternal`, `getChannelInternal`, `getContactInternal` — internalQuery helpers
 
 #### Conversation List Improvements
+
 - **Scroll fix** — replaced `ScrollArea` with plain `div overflow-y-auto` (ScrollArea breaks flex height chain)
 - **Stage filter tags** — now `flex-wrap` instead of horizontal scroll; all stages visible
 - **Unread filter tab** — new "Unread" tab in assignment filter; counts and filters conversations with `unreadCount > 0`
 - **Read/Unread toggle** — hover-reveal button per conversation row (MailOpen/MailCheck icons); calls `markAsRead` / `markAsUnread`
 
 #### Sidebar Badge
+
 - `app-sidebar.tsx` — queries live unread count; shows green badge on Inbox nav item (capped at 99+); tooltip says "X unread messages"
 
 #### Contact Panel (ContactPanel)
+
 - **Customer Journey** — clickable stage pills directly in panel (no need to open contact profile page)
 - **Internal Notes section** — pulls recent internal notes from all conversations with this contact via `getInternalNotesByContact`; shown as amber cards with timestamp
 - **Follow-ups section** — pending follow-ups (blue cards with cancel button) + completed follow-ups (grayed, strikethrough); + button opens `FollowUpModal`
 - `channelId` and `conversationId` now threaded down from inbox page → ContactPanel
 
 #### Convex Backend (inbox.ts)
+
 - `markAsUnread` mutation — patches conversation `unreadCount: 1`
 - `getInternalNotesByContact` query — queries all conversations for contact, collects internal notes, returns top 10 sorted desc
 
 #### Bug Fixes
+
 - `ScrollArea` replaced everywhere it broke flex scroll chains (thread + list)
 - Emoji picker fixed: added `relative` to outer wrapper so `absolute bottom-full` positions correctly
 - Tailwind canonical classes fixed: `max-w-[160px]` → `max-w-40`, `after:start-1/2` → `after:inset-s-1/2`, `after:w-[2px]` → `after:w-0.5`, `min-w-[80px]` → `min-w-20`
@@ -329,6 +357,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Smart Contact Lists
+
 - **Status:** Done
 - **Branch:** `009-automation-rules`
 - **Commits:** `eca897a` → `2fbc031`
@@ -353,6 +382,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Broadcast Campaigns — Sending Loop (Task 015-A)
+
 - **Status:** Done
 - **Branch:** `task/015-broadcasts-sending-loop`
 - **What was built:** Batched broadcast sending loop with real-time progress UI and per-contact retry logic
@@ -374,6 +404,7 @@ All tables are real, indexed, and used by live queries:
   - Real-time UI updates via Convex subscription — no polling
 
 ### Broadcast Campaigns — Creation Wizard
+
 - **Status:** Done (UI complete; sending loop implemented above)
 - **Branch:** `009-automation-rules`
 - **Commits:** `5eaffa3`, `dc00b7c`
@@ -393,6 +424,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Task 013 — Full WhatsApp Message Send Pipeline
+
 - **Status:** Done (completed and hardened)
 - **Branch:** `009-automation-rules`
 - **What was built / fixed:**
@@ -409,6 +441,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Conversation Labels
+
 - `convex/labels.ts`: list, create, remove (cascades to all conversations), addToConversation, removeFromConversation
 - `conversationLabels` table: name, color, emoji, tenantId
 - Inline label chips in conversation list + label filter bar in inbox
@@ -417,6 +450,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Quick Replies
+
 - `convex/quickReplies.ts`: list (by category), create, update, remove
 - Insert via slash-command in `MessageInput` or `QuickReplyPanel` popover
 - Pages: `/settings/quick-replies`
@@ -424,6 +458,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Message Templates (with Variables)
+
 - `convex/messageTemplates.ts`: list (by category), create (plan-gated, extracts `{{variable}}` placeholders), update, remove
 - Schema: `messageTemplates` — title, body, category, language (ar/en), variables (extracted), tenantId
 - Variable extraction: regex `/\{\{(\w+)\}\}/g` on save; dynamic fill-in form per variable
@@ -434,6 +469,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### CSAT (Customer Satisfaction)
+
 - `convex/csat.ts`: `sendCsatMessage` (internalAction), `captureRating` (internalMutation), `getSettingsInternal`, `markCsatSent`
 - `csatSettings` table: enabled toggle, delayMinutes
 - `conversationMetrics`: csatSentAt, csatScore (1–5), csatRespondedAt
@@ -445,6 +481,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### SLA Alerts
+
 - `convex/sla.ts`: `checkBreaches` (internalMutation)
 - Cron: every 5 minutes → `sla.checkBreaches` → marks `slaBreachedAt` on conversations that exceeded threshold
 - Notifications sent to channel supervisors (via `channelMembers`)
@@ -455,6 +492,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Department / Channel Members
+
 - `channelMembers` table: maps (channelId, userId, role) with indexes
 - `convex/channelMembers.ts`: listForChannel, addMember, removeMember
 - Used by: SLA notification (find channel supervisors), round-robin (rotation pool)
@@ -463,6 +501,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Round-Robin Assignment
+
 - `convex/actions/roundRobin.ts`: `assignRoundRobin` internalAction
   - Fetches live Clerk org memberships (no stale cache)
   - Picks member at `roundRobinIndex % memberCount`
@@ -477,6 +516,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Automations Engine
+
 - `convex/automations.ts`: listRules, getBusinessHours, createRule, updateRule, deleteRule, reorderRules, setBusinessHours, `checkNoReplyTimeouts` (internalMutation), `fireRuleForConversation` (internalMutation)
 - `businessHours` table: timezone + schedule grid; `automationRules` table; `ruleFireLog` table
 - **4 trigger types:** keyword match · outside business hours · first message · no-reply timeout
@@ -489,6 +529,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Shareable Invite Link UI
+
 - Multi-link per tenant: each link has a label, role (`org:agent` or `org:supervisor`), expiry (7d / 30d / never), and createdBy
 - `convex/inviteLinks.ts`: `list` (all non-revoked links, newest first), `create`, `revoke` (by linkId), `regenerate` (new token, same record)
 - Role gating: Admin can create agent + supervisor links; Supervisor can only create agent links (enforced server-side)
@@ -501,6 +542,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Data Export
+
 - CSV + JSON export for contacts (with all custom fields flattened) and conversations (with optional messages)
 - `convex/export.ts`: `generateContactsExport` (format: csv/json), `generateConversationsExport` (format: json/csv/html, `includeMessages` toggle), `getExportStats` (contact + conversation counts for UI)
 - Files stored in Convex File Storage; action returns `{ url, filename }` for browser download
@@ -511,6 +553,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### WhatsApp Business Profile Editing
+
 - `convex/waBusinessProfile.ts`: `getProfile` (fetches from Meta API), `updateProfile` (patches fields), `uploadProfilePhoto` (uploads to Meta, updates profile)
 - Editable fields: about/description, email, websites, vertical (category), profile photo
 - All calls go through Convex actions (token decrypted server-side, never client)
@@ -520,6 +563,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Contact Lists (Smart Segmentation)
+
 - `convex/contactLists.ts`: listForTenant, create, update, delete, getById, `getCountForFilters`
 - `contactLists` table: name, description, filters (countries/cities/stages/tags)
 - Filter evaluation: in-memory on fetched contacts (no full-text index needed for current scale)
@@ -529,6 +573,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Broadcasts
+
 - `convex/broadcasts.ts`: listForTenant, create (draft), `send` (action)
 - `broadcasts` table: name, listId, channelId, templateName, templateLanguage, status (draft/sending/sent/failed), recipientSnapshot, recipientCount, sentCount, failedCount
 - **Wizard:** name → pick list → pick channel → pick template → review → send (5-step, fully wired to create mutation)
@@ -538,6 +583,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Team Management
+
 - `convex/orgMembers.ts`: inviteByEmail (Clerk API), list (Clerk API), setRole (Clerk API), remove (Clerk API)
 - `inviteLinks` table: token-based invite links (expiry, revoked flag)
 - `convex/actions/validateInvite.ts`: validate token before join
@@ -547,6 +593,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### In-App Notifications
+
 - `notifications` table: type (followup_due / sla_breach), referenceId, message, read
 - `convex/notifications.ts`: list (user-scoped), markAsRead
 - Triggered by: SLA breach (to supervisors), follow-up due (to assigned agent)
@@ -555,6 +602,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Marketing Site + Legal Pages
+
 - Full landing page: hero, features, pricing, differentiators, CTA, footer
 - Pricing table with 4 tiers (Free / Starter / Growth / Business)
 - Arabic/English locale switching
@@ -568,6 +616,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Template Library
+
 - Pre-built library of 66 curated templates accessible from Settings → Templates → "Template Library" tab
 - Industry tabs (e-commerce, healthcare, real estate, etc.) + purpose chips for combined filtering
 - Arabic + English templates across 14 categories (8 Meta + 6 Quick-Reply)
@@ -579,6 +628,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Broadcast Templates Builder
+
 - Dedicated broadcast template management: `components/broadcasts/broadcast-templates-tab.tsx`, `components/broadcasts/broadcast-template-builder.tsx`
 - `convex/broadcastTemplates.ts`: CRUD for tenant-specific broadcast templates synced with Meta
 - `convex/metaTemplates.ts`: Meta template sync (fetch/cache from Meta Graph API)
@@ -589,6 +639,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Quick Reply Variables
+
 - Quick replies now support `{{variable}}` placeholders (same syntax as message templates)
 - Selecting a quick reply with variables opens an inline fill-in form before inserting into composer
 - **Modified:** `components/inbox/quick-reply-panel.tsx` — variable detection + fill-in UX
@@ -597,6 +648,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Settings Sub-Nav
+
 - Settings section now has a persistent sub-navigation component for all settings pages
 - **New file:** `components/settings/settings-sub-nav.tsx`
 - **New file:** `app/(dashboard)/settings/layout.tsx` — wraps all settings routes with sub-nav
@@ -605,6 +657,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Departments Feature
+
 - Channels are organized into departments (groups of channels) for better multi-channel management
 - `convex/departments.ts`: listForTenant, create, update, remove, listForTransfer
 - `convex/departmentMembers.ts`: addMember, removeMember, listForDepartment
@@ -616,6 +669,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Member Profile Modal
+
 - Rich tabbed modal for viewing/managing team members — opens from team member list
 - **Tabs:** Overview (stats, bio, contact details) | Analytics (performance charts) | History (action log) | Manage (role, status, remove)
 - **New files:**
@@ -633,6 +687,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Team Presence System
+
 - Real-time online/offline/away/busy presence indicators for team members
 - **New files:** `convex/presence.ts`, `convex/teamPresence.ts`, `convex/teamPresenceQueries.ts`
 - **New table:** `presence` — userId, tenantId, status, lastSeen
@@ -644,6 +699,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Channel Retention (30-day Auto-Delete)
+
 - Disconnected channels are retained for 30 days then auto-deleted (with all associated data)
 - **New files:** `convex/channelRetention.ts`, `convex/actions/channelRetentionAction.ts`
 - **Schema:** `channels.deletedAt`, `channels.retentionExpiresAt` added
@@ -655,6 +711,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Transactional Email System
+
 - All transactional emails use branded React Email HTML templates (Arabic + English variants)
 - **New directory:** `emails/` — 9 template pairs (AR + EN):
   - `agent-welcome`, `new-assignment`, `sla-breach`, `followup-due`, `followup-due-failed`
@@ -668,6 +725,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Message Scheduling
+
 - Agents can schedule outbound messages for future delivery
 - **New file:** `convex/messageScheduling.ts` — `scheduleMessage` mutation + `sendScheduled` internalAction
 - Scheduled messages stored in `messages` table with `scheduledAt` field and `status: "scheduled"`
@@ -677,6 +735,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Conversation & Message Search
+
 - Full-text search across conversation content and message body
 - **New file:** `convex/search.ts` — `searchConversations` and `searchMessages` queries
 - Uses Convex search index on `messages.content` and `contacts.displayName`
@@ -686,6 +745,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Conversation Merge
+
 - Admin can merge duplicate conversations (same contact, different channels or sessions)
 - **New file:** `convex/conversationMerge.ts` — `mergeConversations` mutation
 - Merges messages from source → target conversation; marks source as resolved with merge note
@@ -694,6 +754,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Batch Actions
+
 - Admin/Supervisor can perform bulk operations on conversations
 - **New file:** `convex/batchActions.ts` — `batchClose`, `batchAssign`, `batchLabel`, `batchDelete`
 - All batch mutations validate `tenantId` and role before operating
@@ -702,6 +763,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Rate Limiting
+
 - Per-user mutation rate limiting to prevent abuse
 - **New file:** `convex/lib/rateLimit.ts` — token-bucket rate limiter using `rateLimits` table
 - **New table:** `rateLimits` — userId, action, tokens, lastRefill
@@ -709,7 +771,31 @@ All tables are real, indexed, and used by live queries:
 
 ---
 
+### 013 — WhatsApp Coexistence (Stage 5 — UI Badge + Embedded Signup Config)
+
+- **Status:** Stage 5 Complete — Feature fully shipped
+- **Branch:** `feat/013-departments`
+- **What was built in Stage 5:**
+  - **`components/onboarding/embedded-signup-button.tsx`** (MODIFIED): Added `featureType: "whatsapp_business_app_onboarding"` and `sessionInfoVersion: "3"` to the `extras` object in `FB.login()`. `featureType` activates WhatsApp Business App Onboarding (coexistence) at Meta's side for all new WABA connections. `sessionInfoVersion: "3"` is the current Meta-recommended companion parameter. Verified via Meta developer docs (context7). The `waba_id` / `phone_number_id` postMessage callback is unaffected.
+  - **`components/inbox/message-bubble.tsx`** (MODIFIED): Two changes:
+    - Added `source?: "customer" | "api" | "mobile"` to the local `Message` type
+    - Added `mobileBadge` element (📱 + "From mobile" / "من الموبايل") rendered only when `!isInbound && message.source === "mobile"`; badge sits in `timeRow` after the StatusTick; Tailwind-only, uses `ms-2` (logical margin, RTL-correct), green-50/green-700 colours, tooltip text; uses existing `useT()` hook with inline strings (no separate locale files — this codebase uses inline `t(en, ar)` at call sites)
+  - **No schema changes** — Stage 5 is entirely UI + signup config
+- **i18n strings added (inline, not in locale files):**
+  - `t("From mobile", "من الموبايل")` — badge label
+  - `t("Sent from the WhatsApp mobile app", "هذه الرسالة أُرسلت من تطبيق الواتساب على الهاتف")` — badge tooltip
+- **Notes:**
+  - `setup: ""` in extras is a pre-existing string (docs show `setup: {}` object form) — not changed in Stage 5; no functional impact
+  - `sessionInfoVersion: "3"` tells Meta to include richer session info in the postMessage; the code only reads `waba_id`/`phone_number_id` from postMessage so this is a no-op for current behavior but future-proofs the signup flow
+  - Badge is RTL-correct: `ms-2` = `margin-inline-start`, `justify-end` on timeRow aligns group to logical end; in RTL the badge renders at the physical right of the time row (logical start), which is expected
+- **Carry-forward TODOs (not in Stage 5):**
+  - `authorId: echo.from` in processEcho stores a phone number, not a Clerk ID — fix with `mobileSenderPhone` field when addressing analytics
+  - Mobile-sent messages do not auto-reopen resolved conversations — revisit if reported as UX issue
+
+---
+
 ### CSAT v2 — Major Update
+
 - CSAT system overhauled (2026-04-27): now uses structured button template instead of free-form text
 - Resolves the Meta 24-hour window violation (previous free-form Arabic text was non-compliant)
 - Rating now captured via interactive button response (1–5 stars as button payload)
@@ -719,6 +805,7 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### WA Business Profile + System User Fix (2026-04-27)
+
 - **Resumable upload API** now used for profile photo uploads (large file support)
 - **Permanent System User Token:** `WHATSAPP_API_TOKEN` env var used for all Meta API calls (not per-channel token)
 - **System user assignment:** on Embedded Signup completion, WABDesk system user is auto-assigned to the WABA (`convex/channels.ts` — `assignSystemUser`)
@@ -727,24 +814,97 @@ All tables are real, indexed, and used by live queries:
 ---
 
 ### Crons (Convex scheduled jobs)
-| Job | Interval | Handler |
-|---|---|---|
-| `process-due-followups` | Every 30 min | `followUps.processDue` |
-| `check-automation-timeouts` | Every 1 min | `automations.checkNoReplyTimeouts` |
-| `check-sla-breaches` | Every 5 min | `sla.checkBreaches` |
-| `check-channel-retention` | Daily | `channelRetention.checkExpired` |
-| `process-scheduled-messages` | Every 1 min | `messageScheduling.sendScheduled` |
-| `refresh-team-presence` | Every 2 min | `teamPresence.refreshAll` |
+
+| Job                          | Interval     | Handler                            |
+| ---------------------------- | ------------ | ---------------------------------- |
+| `process-due-followups`      | Every 30 min | `followUps.processDue`             |
+| `check-automation-timeouts`  | Every 1 min  | `automations.checkNoReplyTimeouts` |
+| `check-sla-breaches`         | Every 5 min  | `sla.checkBreaches`                |
+| `check-channel-retention`    | Daily        | `channelRetention.checkExpired`    |
+| `process-scheduled-messages` | Every 1 min  | `messageScheduling.sendScheduled`  |
+| `refresh-team-presence`      | Every 2 min  | `teamPresence.refreshAll`          |
+
+---
+
+### 013 — WhatsApp Coexistence (Stage 4 — Echo Processing + Source Tagging + Automation Guard)
+
+- **Status:** Stage 4 Finalized — Awaiting Stage 5 (UI badge + Embedded Signup featureType)
+- **Branch:** `feat/013-departments`
+- **What was built in Stage 4:**
+  - **`convex/lib/echoDeduplication.ts`** (NEW): `computeContentHash` (Web Crypto SHA-256 of contentType:content) + `findDuplicateOutbound` — secondary dedup, signature `(ctx, { conversationId, content, contentType, echoTimestamp })`, window anchored on echo's own timestamp (not Date.now()), default 5000ms via `ECHO_DEDUP_WINDOW_MS` env var; queries `by_conversation` on `createdAt` (≡ timestamp for api-sent messages)
+  - **`convex/webhooks/processors/echoes.ts`** (REPLACED stub): Full 3-level dedup — Level 1 primary by wamid → Level 2 secondary content hash + time window → Level 3 tertiary insert as source="mobile"; kill switch (`coexistenceEnabled === false`); conversation SLA clear on mobile reply; does NOT reopen resolved conversations; does NOT increment unreadCount; does NOT call evaluateAndFireAutomations
+  - **`convex/webhooks/processors/history.ts`** (REPLACED stub): Historical message backfill — iterates changes, extracts message-like objects from new_value, deduplicates by wamid; source tagged by direction: outbound → "mobile", inbound → "customer" (source = message origin, not delivery mechanism); only attaches to existing conversations (does not create new ones)
+  - **`convex/webhooks/processors/appStateSync.ts`** (validator tightened): appState arg changed from v.string() to v.union(v.literal("business_app"), v.literal("cloud_api")); returns reason: "v1_stub_no_logic"; still log-only in v1
+  - **`convex/webhooks/meta.ts`** (minor): Removed ! non-null assertions on history and smb_app_state_sync using local const narrowing; narrowed payload type for smb_app_state_sync to literal union
+  - **`convex/webhooks/processors/messages.ts`** (source tagging): Added source: "customer" to createInbound call; added messageSource: "customer" to evaluateAndFireAutomations call
+  - **`convex/messages.ts`** — two changes:
+    - `createInbound`: added optional source arg (v.optional(v.union(...))), persisted on insert
+    - `setMetaMessageId`: idempotent (no-op if already set); if a different row already owns the wamid, logs `[SET_WAMID] wamid_already_owned_by_other_row` and returns — no data deleted
+  - **`convex/inbox.ts`** sendMessage: added source: "api" on outbound message insert (notes get undefined)
+  - **`convex/automations.ts`** evaluateAndFireAutomations: added optional messageSource arg; early-return guard if messageSource is present and !== "customer" (skips automation eval for echoes and API replies)
+- **Stage 4 invariants verified:**
+  - Echo for existing wamid → primary dedup no-op; api source stays api ✅
+  - Echo arrives before wamid patch → secondary hash dedup patches wamid on api row, source stays api ✅
+  - Echo with no outbound match → tertiary insert, source=mobile, no unread, no automation ✅
+  - Two echoes for same wamid → second hits primary dedup, no-op ✅
+  - Customer message → messageSource="customer" passes the guard, automations still fire ✅
+  - setMetaMessageId: wamid already owned by other row → logs anomaly, returns, no delete ✅
+  - History inbound messages → source="customer"; history outbound → source="mobile" ✅
+- **Deferred to Stage 5:**
+  - MessageBubble UI badge (📱 icon for source="mobile" messages)
+  - Embedded Signup featureType parameter (whatsapp_business_app_onboarding)
+- **Notes:**
+  - Media for echoes: metaMediaId stored, mediaUrl left undefined (download deferred to future task)
+  - ECHO_DEDUP_WINDOW_MS is configurable via env var (default 5000ms)
+- **Deferred (carry-forward TODOs for future task):**
+  - `authorId: echo.from` in processEcho stores a business phone number, not a Clerk user ID — violates type contract of the field. Future fix: add separate `mobileSenderPhone` field on messages, set `authorId: undefined` for mobile sends, use new field for mobile-sender lookups
+  - Mobile-sent messages (source="mobile") do not auto-reopen resolved conversations. If the business owner replies from mobile to a resolved thread, the message is stored but the conversation status stays resolved. The resolved conversation may surface high in the inbox via `lastMessageAt` sort. Revisit if reported as UX issue
+
+---
+
+### 013 — WhatsApp Coexistence (Stage 3 — Schema & Webhook Routing)
+
+- **Status:** Stage 3 Complete (Schema + Webhook Router) — Awaiting Stage 4 (Deduplication Logic)
+- **Branch:** `feat/013-departments`
+- **What was built in Stage 3:**
+  - **Schema changes:** Added 3 optional fields to support coexistence (all backward-compatible):
+    - `channels.coexistenceEnabled: v.optional(v.boolean())` — kill switch to disable echo processing (defaults true)
+    - `messages.source: v.optional(v.union(v.literal("customer"), v.literal("api"), v.literal("mobile")))` — tracks message origin
+    - `messages.metaMediaId: v.optional(v.string())` — stores raw Meta media ID for echoes (media download deferred to future task)
+  - **Webhook routing:** Updated `convex/webhooks/meta.ts` to dispatch three coexistence webhook fields:
+    - `smb_message_echoes` → `processEcho` stub (logs only in v1; full dedup logic in Stage 4)
+    - `history` → `processHistory` stub (logs only in v1; state sync in Stage 4)
+    - `smb_app_state_sync` → `processAppStateSync` stub (logs only in v1; state tracking in Stage 4)
+  - **New processor files (stubs for Stage 4):**
+    - `convex/webhooks/processors/echoes.ts` — echo processing entry point
+    - `convex/webhooks/processors/history.ts` — conversation state sync entry point
+    - `convex/webhooks/processors/appStateSync.ts` — app state sync entry point
+  - **TypeScript compilation:** ✅ Passes cleanly (npx tsc --noEmit)
+  - **Convex schema:** ✅ Codegen successful (npx convex codegen); zero compilation errors
+- **Deferred to Stage 4:**
+  - 3-level deduplication strategy (primary by wamid, secondary by content_hash + time window, tertiary insert as mobile message)
+  - Automation guard (skip automation evaluation for mobile-source messages)
+  - Conversation metadata update (lastMessageAt, unreadCount for echoes)
+  - UI source badge display (📱 icon for mobile messages)
+- **Deferred to Stage 5:**
+  - Embedded Signup featureType parameter (`whatsapp_business_app_onboarding`)
+  - Conversation thread message source badge rendering with RTL support
+- **Notes:**
+  - Phase 2 rollout strategy updated: coexistence auto-enabled for all tenants once Meta enables per WABA; `coexistenceEnabled` is kill switch only
+  - Media download for echoes deferred beyond Stage 5; `metaMediaId` stored but `mediaUrl` remains undefined for echoes
+  - Message routing stubs log to `console.log` with JSON tag for debugging; no real processing in v1
 
 ---
 
 ## 🔄 Partially Completed
 
 ### Revenue Analytics — Schema Exists, No UI
+
 - **What's done:** `contacts.spent`, `contacts.spentCurrency` fields in schema; `followUps.expectedRevenue`, `followUps.currency` fields; `RevenueWidget` component exists
 - **What's missing:** No UI to input actual revenue per conversation or per contact. No analytics query for revenue over time. `RevenueWidget` displays the field but there's no editor.
 
 ### WhatsApp Business Profile — Display Name "Pending Review" State
+
 - **What's done:** `updateProfile` action in `convex/waBusinessProfile.ts`, full edit form at `/settings/channels/[channelId]/profile`
 - **What's missing:** Display name changes require Meta review (not instant). Per CLAUDE.md §28, the UI should show an amber "Pending Meta Review" badge and poll for approval. This state tracking is not confirmed in the component scan.
 
@@ -752,25 +912,25 @@ All tables are real, indexed, and used by live queries:
 
 ## ❌ Not Started / Deferred
 
-| Feature | Notes |
-|---|---|
-| ~~**Paddle Billing Integration**~~ | ✅ Completed |
-| ~~**Broadcasts Sending Loop**~~ | ✅ Completed |
-| ~~**Shareable Invite Link UI**~~ | ✅ Completed |
-| ~~**Conversation / Message Search**~~ | ✅ Completed — `convex/search.ts` |
-| ~~**Batch Actions on Inbox**~~ | ✅ Completed — `convex/batchActions.ts` |
-| ~~**Agent Online/Offline Status**~~ | ✅ Completed — presence system via `convex/presence.ts` |
-| ~~**Conversation Merging**~~ | ✅ Completed — `convex/conversationMerge.ts` |
-| ~~**Rate Limiting**~~ | ✅ Completed — `convex/lib/rateLimit.ts` |
-| ~~**Email Notifications**~~ | ✅ Completed — React Email + Resend, 9 template pairs |
-| ~~**Message Scheduling**~~ | ✅ Completed — `convex/messageScheduling.ts` |
-| **Invite by WhatsApp** | CLAUDE.md §19: Admin enters agent phone → send invite via WhatsApp. Low priority — email + shareable link cover most cases. |
-| **WA Display Name Pending Review Badge** | Profile edit form exists; amber "Pending Meta Review" badge not confirmed in UI component scan |
-| **Revenue Analytics UI** | `contact.spent` schema exists, no input UI or revenue-over-time query |
-| **AI / Chatbot Integration** | Rules-based automation only. No LLM-powered auto-replies. Phase 2. |
-| **WhatsApp Catalog** | CLAUDE.md §6 explicitly deferred to Phase 2. |
-| **WooCommerce / Shopify Integration** | Phase 2. |
-| **WhatsApp OTP** | Phase 2. |
+| Feature                                  | Notes                                                                                                                       |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| ~~**Paddle Billing Integration**~~       | ✅ Completed                                                                                                                |
+| ~~**Broadcasts Sending Loop**~~          | ✅ Completed                                                                                                                |
+| ~~**Shareable Invite Link UI**~~         | ✅ Completed                                                                                                                |
+| ~~**Conversation / Message Search**~~    | ✅ Completed — `convex/search.ts`                                                                                           |
+| ~~**Batch Actions on Inbox**~~           | ✅ Completed — `convex/batchActions.ts`                                                                                     |
+| ~~**Agent Online/Offline Status**~~      | ✅ Completed — presence system via `convex/presence.ts`                                                                     |
+| ~~**Conversation Merging**~~             | ✅ Completed — `convex/conversationMerge.ts`                                                                                |
+| ~~**Rate Limiting**~~                    | ✅ Completed — `convex/lib/rateLimit.ts`                                                                                    |
+| ~~**Email Notifications**~~              | ✅ Completed — React Email + Resend, 9 template pairs                                                                       |
+| ~~**Message Scheduling**~~               | ✅ Completed — `convex/messageScheduling.ts`                                                                                |
+| **Invite by WhatsApp**                   | CLAUDE.md §19: Admin enters agent phone → send invite via WhatsApp. Low priority — email + shareable link cover most cases. |
+| **WA Display Name Pending Review Badge** | Profile edit form exists; amber "Pending Meta Review" badge not confirmed in UI component scan                              |
+| **Revenue Analytics UI**                 | `contact.spent` schema exists, no input UI or revenue-over-time query                                                       |
+| **AI / Chatbot Integration**             | Rules-based automation only. No LLM-powered auto-replies. Phase 2.                                                          |
+| **WhatsApp Catalog**                     | CLAUDE.md §6 explicitly deferred to Phase 2.                                                                                |
+| **WooCommerce / Shopify Integration**    | Phase 2.                                                                                                                    |
+| **WhatsApp OTP**                         | Phase 2.                                                                                                                    |
 
 ---
 
@@ -870,10 +1030,10 @@ All tables are real, indexed, and used by live queries:
 
 ## 📋 Recommended Next Steps (Priority Order)
 
-| # | Task | What's needed | Blocker? |
-|---|---|---|---|
-| 1 | **WA Display Name Pending Review Badge** | `wa-business-profile.tsx`: show amber "Pending Meta Review" badge for display name changes; poll Meta API for approval — CLAUDE.md §28 requirement | Low — polish |
-| 2 | **Revenue Analytics UI** | Input field for `contact.spent` in contact panel; revenue-over-time chart in analytics dashboard | Nice-to-have |
-| 3 | **Invite by WhatsApp** | CLAUDE.md §19: send invite link via WhatsApp when admin enters agent phone number | Low priority — email + link cover most cases |
-| 4 | **CSAT Meta Template Approval** | Submit CSAT button template to Meta for pre-approval; currently unverified | Required before production CSAT use |
-| 5 | **Production Hardening** | Webhook signature verification, SLA breach clearing audit, CSAT template approval | Required before launch |
+| #   | Task                                     | What's needed                                                                                                                                      | Blocker?                                     |
+| --- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | **WA Display Name Pending Review Badge** | `wa-business-profile.tsx`: show amber "Pending Meta Review" badge for display name changes; poll Meta API for approval — CLAUDE.md §28 requirement | Low — polish                                 |
+| 2   | **Revenue Analytics UI**                 | Input field for `contact.spent` in contact panel; revenue-over-time chart in analytics dashboard                                                   | Nice-to-have                                 |
+| 3   | **Invite by WhatsApp**                   | CLAUDE.md §19: send invite link via WhatsApp when admin enters agent phone number                                                                  | Low priority — email + link cover most cases |
+| 4   | **CSAT Meta Template Approval**          | Submit CSAT button template to Meta for pre-approval; currently unverified                                                                         | Required before production CSAT use          |
+| 5   | **Production Hardening**                 | Webhook signature verification, SLA breach clearing audit, CSAT template approval                                                                  | Required before launch                       |

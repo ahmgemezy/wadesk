@@ -24,6 +24,7 @@ export default defineSchema({
     displayPhone: v.optional(v.string()),      // E.164 display number
     displayName: v.string(),
     wabaId: v.string(),
+    coexistenceEnabled: v.optional(v.boolean()),  // kill switch: defaults true, set false to disable echo processing
     accessToken: v.optional(v.string()),       // AES-256-GCM encrypted
     tokenEncryptedAt: v.optional(v.number()),
     assignmentMode: v.union(
@@ -87,6 +88,8 @@ export default defineSchema({
     totalConversations: v.optional(v.number()),
     wabaId: v.optional(v.string()),
     departmentId: v.optional(v.id("departments")),
+    healthScore: v.optional(v.number()),
+    sentimentOverall: v.optional(v.union(v.literal("positive"), v.literal("neutral"), v.literal("negative"))),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phone"])
@@ -211,7 +214,9 @@ export default defineSchema({
     ),
     isInternalNote: v.boolean(),
     authorId: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("customer"), v.literal("api"), v.literal("mobile"))),  // message origin: customer inbound, API/agent outbound, or mobile app echo
     mediaUrl: v.optional(v.string()),
+    metaMediaId: v.optional(v.string()),  // raw Meta media ID for echoes (not yet downloaded to storage)
     metaMessageId: v.optional(v.string()),
     failureReason: v.optional(v.string()),
     status: v.union(
@@ -662,4 +667,106 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_tenant_user", ["tenantId", "userId"]),
+
+  knowledgeBaseCategories: defineTable({
+    tenantId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    order: v.number(),
+  })
+    .index("by_tenant", ["tenantId"]),
+
+  knowledgeBaseArticles: defineTable({
+    tenantId: v.string(),
+    categoryId: v.id("knowledgeBaseCategories"),
+    title: v.string(),
+    content: v.string(),
+    status: v.union(v.literal("draft"), v.literal("published")),
+    authorId: v.string(),
+    viewCount: v.number(),
+    helpfulCount: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_category", ["categoryId"])
+    .index("by_tenant_status", ["tenantId", "status"]),
+
+  customerJourneys: defineTable({
+    tenantId: v.string(),
+    contactId: v.id("contacts"),
+    eventType: v.string(),
+    description: v.string(),
+    timestamp: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_contact_timestamp", ["contactId", "timestamp"]),
+
+  sentimentLogs: defineTable({
+    tenantId: v.string(),
+    category: v.string(),
+    date: v.string(),
+    positiveCount: v.number(),
+    neutralCount: v.number(),
+    negativeCount: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_category_date", ["tenantId", "category", "date"]),
+
+  agentDailyStats: defineTable({
+    tenantId: v.string(),
+    userId: v.string(),
+    date: v.string(),
+    conversationsResolved: v.number(),
+    avgFirstResponseTime: v.number(),
+    avgResolutionTime: v.number(),
+    avgCsatScore: v.optional(v.number()),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_date", ["tenantId", "date"])
+    .index("by_tenant_user_date", ["tenantId", "userId", "date"]),
+
+  agentWorkloads: defineTable({
+    tenantId: v.string(),
+    userId: v.string(),
+    currentActiveConversations: v.number(),
+    maxCapacity: v.number(),
+    timestamp: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_user", ["tenantId", "userId"]),
+
+  visualAutomations: defineTable({
+    tenantId: v.string(),
+    name: v.string(),
+    triggerType: v.string(),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_active", ["tenantId", "isActive"]),
+
+  automationNodes: defineTable({
+    tenantId: v.string(),
+    automationId: v.id("visualAutomations"),
+    nodeId: v.string(),
+    type: v.string(),
+    position: v.object({ x: v.number(), y: v.number() }),
+    data: v.any(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_automation", ["automationId"])
+    .index("by_automation_node", ["automationId", "nodeId"]),
+
+  automationEdges: defineTable({
+    tenantId: v.string(),
+    automationId: v.id("visualAutomations"),
+    sourceNodeId: v.string(),
+    targetNodeId: v.string(),
+    condition: v.optional(v.any()),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_automation", ["automationId"]),
 });

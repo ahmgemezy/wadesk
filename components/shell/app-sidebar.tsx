@@ -94,7 +94,7 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
       dir={locale === "ar" ? "rtl" : "ltr"}
     >
       <SidebarHeader className="p-3 flex flex-row items-center gap-2">
-        <span className="text-base font-bold flex-1 tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
+        <span className="text-base font-semibold flex-1 tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
           WABDesk
         </span>
         <LocaleSwitcher locale={locale} />

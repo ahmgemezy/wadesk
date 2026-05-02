@@ -116,7 +116,7 @@ export function ConversationList({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("Search...", "ابحث بالاسم أو الرقم")}
-            className="ps-8 h-8 text-sm"
+            className="ps-8 h-8 text-sm bg-muted/50 border-border/60"
             dir="auto"
           />
         </div>

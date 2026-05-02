@@ -80,6 +80,7 @@ type Message = {
   contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template";
   isInternalNote: boolean;
   authorId: string | undefined;
+  source?: "customer" | "api" | "mobile";
   mediaUrl?: string;
   metaMessageId?: string;
   status: "sending" | "sent" | "delivered" | "read" | "failed";
@@ -181,7 +182,7 @@ export function MessageBubble({
   if (message.deletedAt) {
     return (
       <div className={message.direction === "inbound" ? "flex justify-start" : "flex justify-end"}>
-        <div className={`max-w-[75%] rounded-[20px] p-3 ${message.direction === "inbound" ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm" : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"} opacity-50 italic`}>
+        <div className={`max-w-[75%] rounded-2xl p-3 shadow-sm ${message.direction === "inbound" ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm" : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"} opacity-50 italic`}>
           <div className="text-sm text-muted-foreground flex items-center gap-1">
             <Trash2Icon className="size-3" />
             {t(message.direction === "outbound" ? "You deleted this message" : "This message was deleted", message.direction === "outbound" ? "حذفت هذه الرسالة" : "تم حذف هذه الرسالة")}
@@ -195,7 +196,7 @@ export function MessageBubble({
   if (message.isInternalNote) {
     return (
       <div className="flex justify-start">
-        <div className="max-w-[75%] rounded-[20px] rounded-ee-sm bg-[--internal-note-bg] p-3 border border-dashed border-[--internal-note-border]">
+        <div className="max-w-[75%] rounded-2xl rounded-ee-sm bg-[--internal-note-bg] p-3 border border-dashed border-[--internal-note-border] shadow-sm">
           <div className="text-xs font-medium text-[--internal-note-text] mb-1">
             {t("Internal Note", "ملاحظة داخلية")}
           </div>
@@ -207,11 +208,23 @@ export function MessageBubble({
   }
 
   const isInbound = message.direction === "inbound";
-  const bubbleBase = `max-w-[75%] rounded-[20px] p-3 ${
+  const isMobileSource = !isInbound && message.source === "mobile";
+
+  const bubbleBase = `max-w-[75%] rounded-2xl p-3 shadow-sm ${
     isInbound
       ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm"
-      : "bg-gradient-to-br from-[#00e5a0] to-[#00c4b4] text-[#0a1020] rounded-es-sm"
+      : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"
   }`;
+
+  const mobileBadge = isMobileSource && (
+    <span
+      className="ms-2 inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300"
+      title={t("Sent from the WhatsApp mobile app", "هذه الرسالة أُرسلت من تطبيق الواتساب على الهاتف")}
+    >
+      📱 {t("From mobile", "من الموبايل")}
+    </span>
+  );
+
   const timeRow = (
     <div className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isInbound ? "justify-start" : "justify-end"}`}>
       <span>{timeStr}</span>
@@ -221,6 +234,7 @@ export function MessageBubble({
           onRetry={message.status === "failed" && onRetry ? () => onRetry(message.content) : undefined}
         />
       )}
+      {mobileBadge}
     </div>
   );
 

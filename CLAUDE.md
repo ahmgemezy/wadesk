@@ -350,6 +350,9 @@ WHATSAPP_APP_SECRET=             # Meta App Secret (Meta App Dashboard → Setti
 WHATSAPP_API_TOKEN=              # Permanent System User token for sending messages (task 013)
 WHATSAPP_API_VERSION=v25.0       # Meta API version — always use v25.0 (latest)
 
+# WhatsApp Coexistence (013)
+ECHO_DEDUP_WINDOW_MS=5000        # Secondary dedup window (ms) for mobile echoes — increase if SET_WAMID wamid_already_owned_by_other_row appears frequently in logs
+
 # Paddle
 PADDLE_API_KEY=
 PADDLE_WEBHOOK_SECRET=
@@ -872,6 +875,7 @@ _Last updated: manually — update this file whenever a major architectural or p
 
 ## Recent Changes
 
+- 013-whatsapp-coexistence: WhatsApp Coexistence — phone numbers connected via Embedded Signup support sending from both WABDesk (Cloud API) and the WhatsApp Business mobile app simultaneously; mobile-sent messages mirrored into inbox with 📱 badge (`source: "mobile"`); 3-level echo dedup (wamid → content hash → tertiary insert); history backfill on WABA connection; automation guard skips non-customer sources; `featureType: "whatsapp_business_app_onboarding"` added to Embedded Signup `extras`; kill switch: `channels.coexistenceEnabled = false`; see PROGRESS.md for full implementation details
 - 009-automation-rules: Automation rules engine (if-this-send-that) — new tables: `automationRules`, `businessHours`, `ruleFireLog`; new files: `convex/automations.ts`, `lib/automationHelpers.ts`, `components/automations/` (4 components), `app/(dashboard)/automations/page.tsx`, `components/ui/switch.tsx`; modified: `convex/schema.ts`, `convex/http.ts`, `convex/crons.ts`, `convex/lib/planLimits.ts`, `convex/messages.ts` (fixed totalConversations increment), `lib/shell/nav-config.ts` (sidebar link), `lib/shell/types.ts`, `components/shell/resolve-icon.tsx`; 4 trigger types: keyword, outside_hours, first_message, no_reply_timeout; plan limits: Free 2, Starter 10, Growth 30, Business unlimited; admin+supervisor manage rules, admin-only for business hours
 - 004-multi-tenant-onboarding: Added `onboardingState` table (Convex); `fetchQuery` from `convex/nextjs` (server-side Convex reads in RSC)
 - 005-contact-management: Added `customFields` table (Convex); `libphonenumber-js` (phone normalization); `papaparse` (CSV parsing client-side)

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Cairo } from "next/font/google";
+import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { cookies } from "next/headers";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -20,9 +20,15 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-const cairo = Cairo({
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const ibmPlexArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
-  variable: "--font-cairo",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-arabic",
 });
 
 export default async function RootLayout({
@@ -37,7 +43,7 @@ export default async function RootLayout({
   return (
     <ClerkProvider>
       <html lang={locale} dir={dir} suppressHydrationWarning>
-        <body className={`${cairo.variable} font-cairo antialiased`} suppressHydrationWarning>
+        <body className={`${inter.variable} ${ibmPlexArabic.variable} antialiased`} suppressHydrationWarning>
           <ConvexClientProvider>
             <LocaleProvider locale={locale}>
               <ThemeProvider>{children}</ThemeProvider>

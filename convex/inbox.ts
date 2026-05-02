@@ -176,6 +176,7 @@ export const sendMessage = mutation({
       contentType: "text",
       isInternalNote: isNote,
       authorId: callerId,
+      source: isNote ? undefined : "api",
       status: "sending",
       timestamp: now,
       createdAt: now,

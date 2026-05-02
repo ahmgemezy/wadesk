@@ -1,4 +1,4 @@
-# PROJECT_STATE.md — WaDesk
+# PROJECT_STATE.md — WABDesk
 
 > **AI INSTRUCTION (CRITICAL):**  
 > Any AI agent or assistant working on this repository **MUST** read this file before writing or modifying any code.  
@@ -16,7 +16,7 @@
 
 ## 1. Project Architecture Overview
 
-**WaDesk** is an Arabic-first WhatsApp Business API multi-agent SaaS for SMBs in Egypt and the Gulf region.
+**WABDesk** is an Arabic-first WhatsApp Business API multi-agent SaaS for SMBs in Egypt and the Gulf region.
 
 ### Core Architecture Patterns
 
@@ -30,7 +30,7 @@
 ### Directory Structure
 
 ```
-wadesk/
+WABDesk/
 ├── app/
 │   ├── (auth)/              # Sign-in/sign-up pages (Clerk)
 │   ├── (dashboard)/         # Main app routes (inbox, contacts, analytics, etc.)
@@ -72,25 +72,25 @@ wadesk/
 
 ## 2. Tech Stack
 
-| Layer              | Technology                          | Version  | Purpose                                    |
-| ------------------ | ----------------------------------- | -------- | ------------------------------------------ |
-| Framework          | Next.js (App Router)                | 15.2.2   | React framework + SSR                      |
-| Backend/Database   | Convex                              | 1.34.1   | Real-time database + serverless functions  |
-| Authentication     | Clerk                               | 7.0.8    | Multi-tenant auth + org management         |
-| Payments           | Paddle.js                           | 1.6.2    | Subscription billing (MoR)                 |
-| UI Components      | shadcn/ui                           | Latest   | Component library (Base UI + Radix)        |
-| Styling            | Tailwind CSS                        | 4.2.2    | Utility-first CSS                          |
-| Animations         | Framer Motion                       | 12.38.0  | UI animations                              |
-| Charts             | Recharts                            | 3.8.1    | Analytics visualizations                   |
-| Icons              | Lucide React                        | 0.468.0  | Icon library                               |
-| Phone Validation   | libphonenumber-js                   | 1.12.41  | E.164 phone number normalization           |
-| CSV Parsing        | papaparse                           | 5.5.3    | Client-side CSV import                     |
-| Date Utilities     | date-fns                            | 4.1.0    | Date formatting                            |
-| Language           | TypeScript                          | 5.6.2    | Type-safe JavaScript                       |
-| WhatsApp API       | Meta WhatsApp Business Cloud API    | v19.0+   | WhatsApp messaging                         |
-| Hosting            | Vercel                              | —        | Next.js hosting                            |
-| Package Manager    | npm                                 | —        | Dependency management                      |
-| Build Tool         | Turbopack                           | —        | Fast bundler (Next.js 15 default)          |
+| Layer            | Technology                       | Version | Purpose                                   |
+| ---------------- | -------------------------------- | ------- | ----------------------------------------- |
+| Framework        | Next.js (App Router)             | 15.2.2  | React framework + SSR                     |
+| Backend/Database | Convex                           | 1.34.1  | Real-time database + serverless functions |
+| Authentication   | Clerk                            | 7.0.8   | Multi-tenant auth + org management        |
+| Payments         | Paddle.js                        | 1.6.2   | Subscription billing (MoR)                |
+| UI Components    | shadcn/ui                        | Latest  | Component library (Base UI + Radix)       |
+| Styling          | Tailwind CSS                     | 4.2.2   | Utility-first CSS                         |
+| Animations       | Framer Motion                    | 12.38.0 | UI animations                             |
+| Charts           | Recharts                         | 3.8.1   | Analytics visualizations                  |
+| Icons            | Lucide React                     | 0.468.0 | Icon library                              |
+| Phone Validation | libphonenumber-js                | 1.12.41 | E.164 phone number normalization          |
+| CSV Parsing      | papaparse                        | 5.5.3   | Client-side CSV import                    |
+| Date Utilities   | date-fns                         | 4.1.0   | Date formatting                           |
+| Language         | TypeScript                       | 5.6.2   | Type-safe JavaScript                      |
+| WhatsApp API     | Meta WhatsApp Business Cloud API | v19.0+  | WhatsApp messaging                        |
+| Hosting          | Vercel                           | —       | Next.js hosting                           |
+| Package Manager  | npm                              | —       | Dependency management                     |
+| Build Tool       | Turbopack                        | —       | Fast bundler (Next.js 15 default)         |
 
 ---
 
@@ -100,46 +100,47 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 
 ### Core Data Model
 
-| Table                    | Purpose                                           | Key Fields                                                                           |
-| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `tenants`                | Tenant/organization records                       | `tenantId`, `plan`, `orgName`, `paddle_customer_id`                                  |
-| `channels`               | WhatsApp Business numbers (WABA connections)      | `tenantId`, `phoneNumberId`, `wabaId`, `accessToken` (encrypted), `status`, `deletedAt`, `retentionExpiresAt` |
-| `contacts`               | Customer/contact profiles                         | `tenantId`, `phone`, `displayName`, `stage`, `tags`, `totalConversations`            |
-| `contactLists`           | Filtered contact lists for broadcasts             | `tenantId`, `name`, `filters` (countries, stages, tags)                              |
-| `conversations`          | Conversation threads                              | `tenantId`, `channelId`, `contactId`, `status`, `assignedAgentId`, `labels`         |
-| `messages`               | Individual messages                               | `conversationId`, `direction`, `content`, `contentType`, `metaMessageId`, `scheduledAt` |
-| `quickReplies`           | Saved quick response templates (with variables)   | `tenantId`, `title`, `content`, `category`, `variables[]`                            |
-| `messageTemplates`       | Message templates with `{{variable}}` placeholders | `tenantId`, `title`, `body`, `variables[]`, `language`                              |
-| `metaTemplates`          | Meta-approved broadcast templates (cached)        | `tenantId`, `channelId`, `name`, `status`, `components`                              |
-| `broadcastTemplates`     | Tenant-defined broadcast templates                | `tenantId`, `name`, `category`, `language`, `header`, `body`, `buttons`, `metaStatus` |
-| `automationRules`        | Automation rules (if-this-send-that)              | `tenantId`, `triggerType`, `keywordList`, `responseTemplate`, `priority`             |
-| `businessHours`          | Business hours schedule                           | `tenantId`, `timezone`, `schedule`                                                   |
-| `ruleFireLog`            | Automation execution log (deduplication)          | `tenantId`, `ruleId`, `conversationId`, `firedAt`                                    |
-| `followUps`              | Scheduled follow-up messages                      | `tenantId`, `contactId`, `scheduledAt`, `status`, `expectedRevenue`                  |
-| `broadcasts`             | Broadcast campaigns                               | `tenantId`, `name`, `listId`, `status`, `recipientSnapshot`, `retryMap`              |
-| `csatSettings`           | CSAT survey configuration                         | `tenantId`, `enabled`, `delayMinutes`                                                |
-| `conversationMetrics`    | Denormalized analytics data                       | `tenantId`, `conversationId`, `firstResponseTimeSeconds`, `csatScore`                |
-| `conversationLabels`     | Label definitions                                 | `tenantId`, `name`, `color`, `emoji`                                                 |
-| `channelMembers`         | Channel-agent assignments                         | `tenantId`, `channelId`, `userId`, `role`                                            |
-| `departments`            | Channel groups (departments)                      | `tenantId`, `name`, `description`, `channelIds`                                      |
-| `departmentMembers`      | Department member assignments                     | `tenantId`, `departmentId`, `userId`, `role`                                         |
-| `customFields`           | Custom contact fields (key-value pairs)           | `tenantId`, `contactId`, `key`, `value`                                              |
-| `contactEvents`          | Contact activity timeline                         | `tenantId`, `contactId`, `type`, `metadata`                                          |
-| `notifications`          | In-app notifications (followups, SLA breaches)    | `tenantId`, `userId`, `type`, `message`, `read`                                      |
-| `notificationPreferences` | Per-member email/in-app notification toggles     | `tenantId`, `userId`, `emailEnabled`, `inAppEnabled`, `eventTypes[]`                 |
-| `inviteLinks`            | Time-limited team invite links                    | `tenantId`, `token`, `expiresAt`, `revoked`, `defaultRole`                           |
-| `onboardingState`        | Onboarding progress tracking                      | `tenantId`, `completedSteps[]`, `completedAt`                                        |
-| `memberProfiles`         | Rich member profiles (bio, contact info)          | `tenantId`, `userId`, `bio`, `jobTitle`, `phone`, `avatar`                           |
-| `memberActionLog`        | Audit trail for member management actions         | `tenantId`, `actorId`, `targetId`, `action`, `changedFields`                         |
-| `presence`               | Real-time user presence status                    | `tenantId`, `userId`, `status`, `lastSeen`                                           |
-| `rateLimits`             | Token-bucket rate limiting per user+action        | `userId`, `action`, `tokens`, `lastRefill`                                           |
-| `webhook_events`         | Webhook event debug log                           | `tenantId`, `eventType`, `payload`, `processedAt`                                    |
+| Table                     | Purpose                                            | Key Fields                                                                                                    |
+| ------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `tenants`                 | Tenant/organization records                        | `tenantId`, `plan`, `orgName`, `paddle_customer_id`                                                           |
+| `channels`                | WhatsApp Business numbers (WABA connections)       | `tenantId`, `phoneNumberId`, `wabaId`, `accessToken` (encrypted), `status`, `deletedAt`, `retentionExpiresAt` |
+| `contacts`                | Customer/contact profiles                          | `tenantId`, `phone`, `displayName`, `stage`, `tags`, `totalConversations`                                     |
+| `contactLists`            | Filtered contact lists for broadcasts              | `tenantId`, `name`, `filters` (countries, stages, tags)                                                       |
+| `conversations`           | Conversation threads                               | `tenantId`, `channelId`, `contactId`, `status`, `assignedAgentId`, `labels`                                   |
+| `messages`                | Individual messages                                | `conversationId`, `direction`, `content`, `contentType`, `metaMessageId`, `scheduledAt`                       |
+| `quickReplies`            | Saved quick response templates (with variables)    | `tenantId`, `title`, `content`, `category`, `variables[]`                                                     |
+| `messageTemplates`        | Message templates with `{{variable}}` placeholders | `tenantId`, `title`, `body`, `variables[]`, `language`                                                        |
+| `metaTemplates`           | Meta-approved broadcast templates (cached)         | `tenantId`, `channelId`, `name`, `status`, `components`                                                       |
+| `broadcastTemplates`      | Tenant-defined broadcast templates                 | `tenantId`, `name`, `category`, `language`, `header`, `body`, `buttons`, `metaStatus`                         |
+| `automationRules`         | Automation rules (if-this-send-that)               | `tenantId`, `triggerType`, `keywordList`, `responseTemplate`, `priority`                                      |
+| `businessHours`           | Business hours schedule                            | `tenantId`, `timezone`, `schedule`                                                                            |
+| `ruleFireLog`             | Automation execution log (deduplication)           | `tenantId`, `ruleId`, `conversationId`, `firedAt`                                                             |
+| `followUps`               | Scheduled follow-up messages                       | `tenantId`, `contactId`, `scheduledAt`, `status`, `expectedRevenue`                                           |
+| `broadcasts`              | Broadcast campaigns                                | `tenantId`, `name`, `listId`, `status`, `recipientSnapshot`, `retryMap`                                       |
+| `csatSettings`            | CSAT survey configuration                          | `tenantId`, `enabled`, `delayMinutes`                                                                         |
+| `conversationMetrics`     | Denormalized analytics data                        | `tenantId`, `conversationId`, `firstResponseTimeSeconds`, `csatScore`                                         |
+| `conversationLabels`      | Label definitions                                  | `tenantId`, `name`, `color`, `emoji`                                                                          |
+| `channelMembers`          | Channel-agent assignments                          | `tenantId`, `channelId`, `userId`, `role`                                                                     |
+| `departments`             | Channel groups (departments)                       | `tenantId`, `name`, `description`, `channelIds`                                                               |
+| `departmentMembers`       | Department member assignments                      | `tenantId`, `departmentId`, `userId`, `role`                                                                  |
+| `customFields`            | Custom contact fields (key-value pairs)            | `tenantId`, `contactId`, `key`, `value`                                                                       |
+| `contactEvents`           | Contact activity timeline                          | `tenantId`, `contactId`, `type`, `metadata`                                                                   |
+| `notifications`           | In-app notifications (followups, SLA breaches)     | `tenantId`, `userId`, `type`, `message`, `read`                                                               |
+| `notificationPreferences` | Per-member email/in-app notification toggles       | `tenantId`, `userId`, `emailEnabled`, `inAppEnabled`, `eventTypes[]`                                          |
+| `inviteLinks`             | Time-limited team invite links                     | `tenantId`, `token`, `expiresAt`, `revoked`, `defaultRole`                                                    |
+| `onboardingState`         | Onboarding progress tracking                       | `tenantId`, `completedSteps[]`, `completedAt`                                                                 |
+| `memberProfiles`          | Rich member profiles (bio, contact info)           | `tenantId`, `userId`, `bio`, `jobTitle`, `phone`, `avatar`                                                    |
+| `memberActionLog`         | Audit trail for member management actions          | `tenantId`, `actorId`, `targetId`, `action`, `changedFields`                                                  |
+| `presence`                | Real-time user presence status                     | `tenantId`, `userId`, `status`, `lastSeen`                                                                    |
+| `rateLimits`              | Token-bucket rate limiting per user+action         | `userId`, `action`, `tokens`, `lastRefill`                                                                    |
+| `webhook_events`          | Webhook event debug log                            | `tenantId`, `eventType`, `payload`, `processedAt`                                                             |
 
 ---
 
 ## 4. Implemented Features (Complete Inventory)
 
 ### ✅ Authentication & Multi-Tenancy
+
 - **File:** `app/(auth)/sign-in/[[...sign-in]]/page.tsx`, `app/(auth)/sign-up/[[...sign-up]]/page.tsx`
 - **Backend:** `convex/lib/auth.ts` — `getCallerIdentity`, `getCallerRole`, `assertAdmin`, `assertAdminOrSupervisor`
 - **Status:** ✅ Complete
@@ -150,6 +151,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Role-based access control (Admin, Supervisor, Agent)
 
 ### ✅ Onboarding Flow
+
 - **File:** `app/onboarding/page.tsx`, `components/onboarding/*`
 - **Backend:** `convex/onboarding.ts`
 - **Status:** ✅ Complete
@@ -160,6 +162,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Progress tracking via `onboardingState` table
 
 ### ✅ Conversation Management
+
 - **File:** `app/(dashboard)/inbox/[id]/page.tsx`, `components/inbox/*`
 - **Backend:** `convex/conversations.ts`, `convex/inbox.ts`
 - **Status:** ✅ Complete
@@ -172,6 +175,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Unread count tracking
 
 ### ✅ Contact Management
+
 - **File:** `app/(dashboard)/contacts/[id]/page.tsx`, `components/contacts/*`
 - **Backend:** `convex/contacts.ts`, `convex/customFields.ts`, `convex/contactEvents.ts`
 - **Status:** ✅ Complete
@@ -187,6 +191,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Pagination support
 
 ### ✅ Messaging
+
 - **File:** `app/(dashboard)/inbox/[id]/page.tsx`, `components/inbox/message-input.tsx`
 - **Backend:** `convex/messages.ts`, `convex/actions/sendWhatsAppMessage.ts`
 - **Status:** ✅ Complete
@@ -202,6 +207,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Async WhatsApp send via Convex scheduler
 
 ### ✅ WhatsApp Webhook Integration
+
 - **File:** `app/api/webhook/whatsapp/route.ts` (Next.js route for initial verification only)
 - **Backend:** `convex/http.ts` — `metaWebhook` HTTP action
 - **Status:** ✅ Complete
@@ -214,6 +220,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Webhook signature verification (optional, via `WHATSAPP_APP_SECRET`)
 
 ### ✅ WhatsApp Channel Management
+
 - **File:** `app/(dashboard)/settings/channels/page.tsx`, `components/settings/channels-list.tsx`
 - **Backend:** `convex/channels.ts`
 - **Status:** ✅ Complete
@@ -226,6 +233,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - SLA threshold configuration (per channel)
 
 ### ✅ WhatsApp Business Profile Editing
+
 - **File:** `app/(dashboard)/settings/channels/[channelId]/profile/page.tsx`
 - **Backend:** `convex/waBusinessProfile.ts`
 - **Status:** ✅ Complete (2026-04-27 major update)
@@ -239,6 +247,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - **System user auto-assigned** to WABA on Embedded Signup completion (`assignSystemUser` in `channels.ts`)
 
 ### ✅ Automation Rules Engine
+
 - **File:** `app/(dashboard)/automations/page.tsx`, `components/automations/*`
 - **Backend:** `convex/automations.ts`, `lib/automationHelpers.ts`
 - **Status:** ✅ Complete
@@ -253,6 +262,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Admin + Supervisor can manage rules
 
 ### ✅ Broadcast Campaigns
+
 - **File:** `app/(dashboard)/broadcasts/page.tsx`, `app/(dashboard)/broadcasts/new/page.tsx`
 - **Backend:** `convex/broadcasts.ts`, `convex/actions/processBroadcastBatch.ts`
 - **Status:** ✅ Complete (including batched sending loop)
@@ -267,6 +277,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Plan gating (Growth+ for sending, Starter+ for draft creation)
 
 ### ✅ Follow-up Scheduling
+
 - **File:** `components/contacts/follow-up-dialog.tsx`
 - **Backend:** `convex/followUps.ts`
 - **Status:** ✅ Complete
@@ -279,6 +290,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Auto-churn on max retry failure
 
 ### ✅ CSAT Surveys (v2)
+
 - **File:** `app/(dashboard)/settings/csat/page.tsx`
 - **Backend:** `convex/csat.ts`
 - **Status:** ⚠️ Complete — button-based template; Meta template approval still required
@@ -291,6 +303,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - **Remaining:** Meta template must be pre-approved before production use
 
 ### ✅ SLA Monitoring
+
 - **File:** `components/inbox/conversation-header.tsx` (displays breach indicator)
 - **Backend:** `convex/sla.ts`
 - **Status:** ⚠️ Complete but breach clearing logic unclear
@@ -302,6 +315,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - **Known Issue:** Breach is set but unclear where/when it's cleared (possibly on agent reply in `messages.ts:89`)
 
 ### ✅ Analytics Dashboard
+
 - **File:** `app/(dashboard)/analytics/page.tsx`, `components/analytics/*`
 - **Backend:** `convex/analytics.ts`, `convex/conversationMetrics.ts`
 - **Status:** ✅ Complete
@@ -314,6 +328,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Denormalized `conversationMetrics` for fast queries
 
 ### ✅ Team Management
+
 - **File:** `app/(dashboard)/settings/team/page.tsx`, `components/settings/team-members-list.tsx`
 - **Backend:** `convex/orgMembers.ts`, `convex/inviteLinks.ts`
 - **Status:** ✅ Complete
@@ -327,6 +342,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Last admin protection — `convex/lib/lastAdmin.ts`
 
 ### ✅ Channel Member Assignments
+
 - **File:** `app/(dashboard)/settings/channels/[channelId]/page.tsx`
 - **Backend:** `convex/channelMembers.ts`
 - **Status:** ✅ Complete
@@ -336,6 +352,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Admin/Supervisor can manage assignments
 
 ### ✅ Round-Robin Assignment
+
 - **File:** N/A (backend logic only)
 - **Backend:** `convex/actions/roundRobin.ts`, `convex/channels.ts` — `incrementRoundRobinIndex`
 - **Status:** ✅ Complete
@@ -346,6 +363,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Manual reassignment still allowed by Admin/Supervisor
 
 ### ✅ Data Export
+
 - **File:** `app/(dashboard)/settings/export/page.tsx`
 - **Backend:** `convex/export.ts`
 - **Status:** ✅ Complete
@@ -357,6 +375,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Async export generation (Convex Storage URLs)
 
 ### ✅ Template Library
+
 - **File:** `components/templates/template-library-tab.tsx`, `lib/templateLibrary.ts`
 - **Backend:** `convex/metaTemplates.ts` — Meta template sync + `submitToMeta` action
 - **Status:** ✅ Complete
@@ -369,6 +388,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Variable auto-conversion: `{{named}}` → `{{1}}` before Meta submission
 
 ### ✅ Broadcast Templates
+
 - **File:** `components/broadcasts/broadcast-templates-tab.tsx`, `components/broadcasts/broadcast-template-builder.tsx`
 - **Backend:** `convex/broadcastTemplates.ts`, `convex/metaTemplates.ts`
 - **Status:** ✅ Complete
@@ -379,6 +399,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Media URL override, dynamic URL suffixes per button, variable fill-in inputs
 
 ### ✅ Departments Feature
+
 - **File:** `app/(dashboard)/settings/channels/[channelId]/page.tsx`
 - **Backend:** `convex/departments.ts`, `convex/departmentMembers.ts`
 - **Status:** ✅ Complete
@@ -388,6 +409,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Defensive fix: `listForTransfer` returns `[]` instead of NOT_FOUND on orphaned channelIds
 
 ### ✅ Quick Reply Variables
+
 - **File:** `components/inbox/quick-reply-panel.tsx`
 - **Status:** ✅ Complete
 - **Features:**
@@ -395,6 +417,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Selecting a variable quick reply opens inline fill-in form before inserting
 
 ### ✅ Settings Sub-Navigation
+
 - **File:** `components/settings/settings-sub-nav.tsx`, `app/(dashboard)/settings/layout.tsx`
 - **Status:** ✅ Complete
 - **Features:**
@@ -402,6 +425,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Settings landing page at `/settings`
 
 ### ✅ Member Profile Modal
+
 - **File:** `components/team/member-profile-modal.tsx`, `components/team/member-profile/`
 - **Backend:** `convex/members.ts`, `convex/memberQueries.ts`
 - **Status:** ✅ Complete
@@ -413,6 +437,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Admin/Supervisor can edit member contact details via Manage tab
 
 ### ✅ Team Presence System
+
 - **File:** `components/ui/presence-indicator.tsx`, `components/ui/team-presence-dropdown.tsx`
 - **Backend:** `convex/presence.ts`, `convex/teamPresence.ts`, `convex/teamPresenceQueries.ts`
 - **Status:** ✅ Complete
@@ -423,6 +448,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - `components/shell/presence-initializer.tsx` — sets presence on app load/unload
 
 ### ✅ Channel Retention (30-Day Auto-Delete)
+
 - **File:** `app/(dashboard)/settings/channels/page.tsx`
 - **Backend:** `convex/channelRetention.ts`, `convex/actions/channelRetentionAction.ts`
 - **Status:** ✅ Complete
@@ -434,6 +460,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Channels with only resolved conversations can be force-deleted immediately
 
 ### ✅ Transactional Email System
+
 - **File:** `emails/` (18 template files: 9 types × AR+EN), `convex/emails/`
 - **Backend:** `convex/actions/notifyEmail.ts`, `convex/actions/sendEmail.ts`
 - **Status:** ✅ Complete
@@ -445,6 +472,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - `convex/emails/base.tsx` — shared branded layout with Cairo font and WABDesk colors
 
 ### ✅ Message Scheduling
+
 - **Backend:** `convex/messageScheduling.ts`
 - **Status:** ✅ Complete
 - **Features:**
@@ -454,6 +482,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Failed scheduled sends auto-retry once
 
 ### ✅ Conversation & Message Search
+
 - **Backend:** `convex/search.ts`
 - **Status:** ✅ Complete
 - **Features:**
@@ -463,6 +492,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - UI: search bar in inbox header with result dropdown
 
 ### ✅ Conversation Merge
+
 - **Backend:** `convex/conversationMerge.ts`
 - **Status:** ✅ Complete
 - **Features:**
@@ -471,6 +501,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Admin-only; available from conversation header action menu
 
 ### ✅ Batch Actions
+
 - **Backend:** `convex/batchActions.ts`
 - **Status:** ✅ Complete
 - **Features:**
@@ -479,6 +510,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - All mutations validate `tenantId` and role before operating
 
 ### ✅ Rate Limiting
+
 - **Backend:** `convex/lib/rateLimit.ts`
 - **Status:** ✅ Complete
 - **Features:**
@@ -486,6 +518,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Applied to: `sendMessage`, `sendMediaReply`, `importBatch`
 
 ### ✅ Legal Pages
+
 - **File:** `app/privacy/page.tsx`, `app/terms/page.tsx`, `app/dpa/page.tsx`
 - **Status:** ✅ Complete
 - **Features:**
@@ -494,6 +527,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Marketing footer updated with links to all three pages
 
 ### ✅ Billing & Subscription Management
+
 - **File:** `app/(dashboard)/settings/billing/page.tsx`
 - **Backend:** `convex/billing.ts`, `app/api/paddle/webhook/route.ts`
 - **Status:** ✅ Complete
@@ -506,6 +540,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Multi-currency support (EGP, SAR, AED, USD)
 
 ### ✅ Settings Pages (Complete)
+
 - **File:** `app/(dashboard)/settings/*`
 - **Backend:** Multiple Convex files
 - **Status:** ✅ Complete
@@ -581,28 +616,28 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 
 ## 6. Feature Gating by Plan
 
-| Feature                       | Free | Starter | Growth | Business |
-| ----------------------------- | ---- | ------- | ------ | -------- |
-| **Agents**                    | 3    | 5       | 15     | Unlimited |
-| **Channels**                  | 1    | 2       | 5      | Unlimited |
-| **Conversations/month**       | 300  | Unltd   | Unltd  | Unltd    |
-| **Supervisor Role**           | ❌   | ✅      | ✅     | ✅       |
-| **Quick Replies**             | ✅   | ✅      | ✅     | ✅       |
-| **Internal Notes**            | ✅   | ✅      | ✅     | ✅       |
-| **Contact Management**        | ✅   | ✅      | ✅     | ✅       |
-| **Custom Fields**             | ✅   | ✅      | ✅     | ✅       |
-| **Contact Lists**             | 3    | 10      | Unltd  | Unltd    |
-| **Broadcasts**                | ❌   | ✅      | ✅     | ✅       |
-| **Message Templates**         | 0    | 10      | 50     | Unlimited |
-| **Automation Rules**          | 2    | 10      | 30     | Unlimited |
-| **Round-Robin Assignment**    | ❌   | ❌      | ✅     | ✅       |
-| **CSAT Surveys**              | ❌   | ❌      | ✅     | ✅       |
-| **SLA Monitoring**            | ❌   | ❌      | ✅     | ✅       |
-| **Business Profile Editing**  | ❌   | ❌      | ✅     | ✅       |
-| **Data Export**               | ✅   | ✅      | ✅     | ✅       |
-| **Basic Analytics**           | ✅   | ✅      | ✅     | ✅       |
-| **Advanced Analytics**        | ❌   | ❌      | ✅     | ✅       |
-| **API Access**                | ❌   | ❌      | ❌     | ✅       |
+| Feature                      | Free | Starter | Growth | Business  |
+| ---------------------------- | ---- | ------- | ------ | --------- |
+| **Agents**                   | 3    | 5       | 15     | Unlimited |
+| **Channels**                 | 1    | 2       | 5      | Unlimited |
+| **Conversations/month**      | 300  | Unltd   | Unltd  | Unltd     |
+| **Supervisor Role**          | ❌   | ✅      | ✅     | ✅        |
+| **Quick Replies**            | ✅   | ✅      | ✅     | ✅        |
+| **Internal Notes**           | ✅   | ✅      | ✅     | ✅        |
+| **Contact Management**       | ✅   | ✅      | ✅     | ✅        |
+| **Custom Fields**            | ✅   | ✅      | ✅     | ✅        |
+| **Contact Lists**            | 3    | 10      | Unltd  | Unltd     |
+| **Broadcasts**               | ❌   | ✅      | ✅     | ✅        |
+| **Message Templates**        | 0    | 10      | 50     | Unlimited |
+| **Automation Rules**         | 2    | 10      | 30     | Unlimited |
+| **Round-Robin Assignment**   | ❌   | ❌      | ✅     | ✅        |
+| **CSAT Surveys**             | ❌   | ❌      | ✅     | ✅        |
+| **SLA Monitoring**           | ❌   | ❌      | ✅     | ✅        |
+| **Business Profile Editing** | ❌   | ❌      | ✅     | ✅        |
+| **Data Export**              | ✅   | ✅      | ✅     | ✅        |
+| **Basic Analytics**          | ✅   | ✅      | ✅     | ✅        |
+| **Advanced Analytics**       | ❌   | ❌      | ✅     | ✅        |
+| **API Access**               | ❌   | ❌      | ❌     | ✅        |
 
 **Plan Limits Enforcement:** `convex/lib/planLimits.ts`
 
@@ -645,12 +680,14 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ## 8. Recent Changes (Last 10 Sessions)
 
 ### 2026-04-28: System User Assignment + WA Business Profile Fixes
+
 - ✅ `convex/channels.ts` — `assignSystemUser` action: auto-assigns WABDesk system user to WABA on Embedded Signup completion
 - ✅ `convex/waBusinessProfile.ts` — switched to permanent `WHATSAPP_API_TOKEN`; resumable upload API for profile photos
 - ✅ Removed `.opencode.json` config file (cleanup)
 - **Files:** `convex/channels.ts`, `convex/waBusinessProfile.ts`
 
 ### 2026-04-27: Legal Pages + CSAT v2 + Invite Links UX
+
 - ✅ Legal pages: `/privacy`, `/terms`, `/dpa` — full AR+EN content with branded layout
 - ✅ CSAT v2: switched from free-form text to interactive button template (Meta compliance)
 - ✅ CSAT settings page: live preview, test send button, enhanced config
@@ -660,6 +697,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - **New files:** `app/privacy/page.tsx`, `app/terms/page.tsx`, `app/dpa/page.tsx`, `components/marketing/legal-page-wrapper.tsx`, `components/marketing/privacy-content.tsx`, `components/marketing/terms-content.tsx`, `components/marketing/dpa-content.tsx`
 
 ### 2026-04-27: Transactional Email System (React Email + Resend)
+
 - ✅ 18 React Email template files in `emails/` (9 types × AR+EN)
 - ✅ Shared branded base layout: `convex/emails/base.tsx`
 - ✅ `convex/actions/notifyEmail.ts` — AR/EN routing dispatch action
@@ -668,6 +706,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - **New env var:** `RESEND_API_KEY`
 
 ### 2026-04-27: Channel Retention (30-Day Auto-Delete)
+
 - ✅ `convex/channelRetention.ts` — retention logic (find expired, purge cascade)
 - ✅ `convex/actions/channelRetentionAction.ts` — purge action (conversations, messages, channelMembers, channel)
 - ✅ Schema: `channels.deletedAt`, `channels.retentionExpiresAt`
@@ -676,6 +715,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ Fix: channels with only resolved conversations can be force-deleted immediately
 
 ### 2026-04-27: Member Profile Modal (Full Implementation)
+
 - ✅ `components/team/member-profile-modal.tsx` — tabbed modal shell
 - ✅ 4 tab components: overview-tab, analytics-tab, history-tab, manage-tab
 - ✅ `convex/members.ts` + `convex/memberQueries.ts` — mutations + analytics queries
@@ -689,6 +729,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ New tables: `presence`, `rateLimits` (rate limiting)
 
 ### 2026-04-26: Template Library Industry Filter (Task 5 - Final Integration Check)
+
 - ✅ Verified all 66 templates present in lib/templateLibrary.ts
 - ✅ Confirmed 40 general/universal templates appear in all industry tabs
 - ✅ Validated filtering logic: industry + purpose + category + search intersection
@@ -699,6 +740,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - Status: READY FOR PRODUCTION
 
 ### 2026-04-26: Broadcast Templates Wizard Integration (Task 9 Continuation)
+
 - ✅ Added template source picker to broadcast wizard: "Meta Templates" vs "Broadcast Templates"
 - ✅ Broadcast templates filtered to approved status only (`metaStatus === "approved"`)
 - ✅ Media URL override field (conditional on IMAGE/VIDEO/DOCUMENT header types)
@@ -711,6 +753,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - **File Modified:** `components/broadcasts/create-broadcast-wizard.tsx`
 
 ### 2026-04-25: Template Library Feature
+
 - ✅ Pre-built template library in Settings → Templates; two tabs (My Templates / Template Library)
 - ✅ ~50 curated templates across 14 categories (8 Meta + 6 Quick-Reply); Arabic + English
 - ✅ Preview sheet with WhatsApp bubble + variable highlighting
@@ -720,6 +763,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ Modified: `components/settings/templates-settings.tsx`, `convex/metaTemplates.ts`
 
 ### 2026-04-25: Delete Conversation (Admin Only)
+
 - ✅ Added `conversations.remove` mutation — admin-only (uses `assertAdmin`), cascades to `messages` and `conversationMetrics`
 - ✅ Added delete button (trash icon) in conversation header — visible to `org:admin` only
 - ✅ Confirmation AlertDialog before deletion (Arabic + English copy)
@@ -727,6 +771,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ Added `components/ui/alert-dialog.tsx` (Base UI backed shadcn component)
 
 ### 2026-04-24 (17:30): Department Transfer Orphaned Channel Fix
+
 - ✅ Fixed `ConvexError: NOT_FOUND` in `departments:listForTransfer` query
 - ✅ Root cause: Conversations with channelIds referencing non-existent channels (orphaned data)
 - ✅ Applied defensive programming: Query now returns empty array instead of throwing error
@@ -735,6 +780,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ No new TypeScript errors introduced
 
 ### 2026-04-24 (16:45): Broadcasts Batched Sending Loop Integration
+
 - ✅ Merged `task/015-broadcasts-sending-loop` into `feat/013-departments`
 - ✅ Added `convex/actions/processBroadcastBatch.ts` — production-ready batched sending
 - ✅ Updated `convex/broadcasts.ts` — replaced naive loop with scheduler-based batching
@@ -745,6 +791,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ Verified TypeScript: 0 errors after merge
 
 ### 2026-04-24 (15:30): Deep Architecture Audit + TypeScript Error Fixes
+
 - ✅ Created `PROJECT_STATE.md` (this file)
 - ✅ Performed comprehensive codebase scan
 - ✅ Identified 6 potential issues (documented in "Known Issues" section)
@@ -761,6 +808,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ Verified build: 0 TypeScript errors (down from 8)
 
 ### 2026-04-13: Message Templates (Task 013)
+
 - ✅ Added `messageTemplates` table to schema
 - ✅ Implemented variable extraction (`{{variable}}` → array)
 - ✅ Created template picker + fill-in form UI
@@ -768,6 +816,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ Plan gating: Free (0), Starter (10), Growth (50), Business (Unlimited)
 
 ### 2026-04-12: Automation Rules Engine (Task 009)
+
 - ✅ Added `automationRules`, `businessHours`, `ruleFireLog` tables
 - ✅ Implemented 4 trigger types (keyword, outside_hours, first_message, no_reply_timeout)
 - ✅ Template interpolation with customer_name, business_name, agent_name, current_time
@@ -776,12 +825,14 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ Created `/automations` page + 4 UI components
 
 ### 2026-04-10: Round-Robin Assignment (Task 014)
+
 - ✅ Added `roundRobinIndex` to `channels` table
 - ✅ Implemented `convex/actions/roundRobin.ts`
 - ✅ Growth+ plan gating
 - ✅ Channel member filtering for rotation
 
 ### 2026-04-09: Contact Lifecycle Management (Task 005)
+
 - ✅ Added contact stages (lead/prospect/customer/retained/churned)
 - ✅ Implemented `customFields` table
 - ✅ CSV import with deduplication
@@ -793,6 +844,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ## 9. Testing Checklist (Before Production)
 
 ### Core Flows
+
 - [ ] End-to-end onboarding (sign-up → connect WABA → send test message)
 - [ ] Incoming WhatsApp message → conversation creation → agent reply → WhatsApp send
 - [ ] Role-based access control (Agent cannot see other agents' conversations)
@@ -801,12 +853,14 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - [ ] Token encryption/decryption (no plain-text tokens in database)
 
 ### Arabic/RTL
+
 - [ ] All UI components render correctly in RTL mode
 - [ ] Arabic text displays correctly (Cairo/Tajawal font loaded)
 - [ ] Phone number inputs remain LTR inside RTL layout
 - [ ] Directional icons (arrows, chevrons) flip correctly
 
 ### Automation
+
 - [ ] Keyword trigger fires correctly (case-insensitive matching)
 - [ ] Outside-hours trigger respects business hours + timezone
 - [ ] First-message trigger fires only once per conversation
@@ -815,24 +869,28 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - [ ] Deduplication prevents duplicate rule firing
 
 ### CSAT
+
 - [ ] CSAT message sent after conversation resolution + delay
 - [ ] Rating (1-5) captured correctly via webhook hijacking
 - [ ] Score recorded in `conversationMetrics` (not `messages`)
 - [ ] **TODO:** Replace free-form text with Meta-approved template
 
 ### SLA
+
 - [ ] Breach marked when threshold exceeded
 - [ ] Supervisor notification sent on breach
 - [ ] Breach cleared on agent reply (verify this works)
 - [ ] Breach indicator shows in inbox UI
 
 ### Data Export
+
 - [ ] Contacts CSV export includes all fields
 - [ ] Conversations JSON export includes all messages
 - [ ] Large exports handled asynchronously
 - [ ] Export scoped to caller's `tenantId` (no cross-tenant leakage)
 
 ### Billing
+
 - [ ] Paddle checkout flow completes successfully
 - [ ] Plan upgrade/downgrade works
 - [ ] Webhook updates `tenant.plan` correctly
@@ -843,6 +901,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ## 10. Deployment Checklist
 
 ### Pre-Deployment
+
 - [ ] All environment variables set in Vercel
 - [ ] Convex schema pushed (`npx convex deploy`)
 - [ ] Meta webhook URL configured (points to Convex HTTP endpoint)
@@ -851,6 +910,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - [ ] CORS configured (if using external APIs)
 
 ### Post-Deployment
+
 - [ ] Test webhook verification (GET request to Meta webhook)
 - [ ] Send test WhatsApp message → verify received in inbox
 - [ ] Send reply from inbox → verify customer receives WhatsApp message
@@ -887,6 +947,7 @@ When a conflict is detected:
 ## 12. AI Work Protocol (CRITICAL)
 
 ### Before Writing Any Code:
+
 1. ✅ Read this file (`PROJECT_STATE.md`) fully
 2. ✅ Check if feature already exists in "Implemented Features" section
 3. ✅ Check "Known Issues" for related conflicts
@@ -894,6 +955,7 @@ When a conflict is detected:
 5. ✅ Read CLAUDE.md for project-specific rules
 
 ### After Completing Any Task:
+
 1. ✅ Update "Implemented Features" section (add new feature or update status)
 2. ✅ Update "Recent Changes" section (add entry with date + brief summary)
 3. ✅ Update "Known Issues" if new conflict detected
@@ -901,6 +963,7 @@ When a conflict is detected:
 5. ✅ Run `git status` to verify no unintended changes
 
 ### On Conflict Detection:
+
 1. ✅ Auto-fix if minor (duplicated imports, syntax errors, etc.)
 2. ✅ Flag for review if major (business logic duplication, security issues, etc.)
 3. ✅ Document in "Known Issues" section with priority (🔴 Critical, ⚠️ Medium, 💡 Future)
@@ -910,17 +973,17 @@ When a conflict is detected:
 
 ## 13. Codebase Health Metrics
 
-| Metric                         | Current State                          | Target           |
-| ------------------------------ | -------------------------------------- | ---------------- |
-| Total Convex Functions         | 60+ (queries, mutations, actions)      | Stable           |
-| Total Database Tables          | 32                                     | Stable           |
-| Total App Routes               | 40+                                    | Growing          |
-| TypeScript Strict Mode         | ✅ Enabled                             | Always enabled   |
-| Test Coverage                  | ❌ Not implemented                     | 80%+ (Phase 2)   |
-| Documentation Coverage         | ✅ CLAUDE.md + PROJECT_STATE.md + PROGRESS.md | Maintain  |
-| Known Security Issues          | 0 (webhook sig verification in place)  | 0                |
-| Known Critical Bugs            | 1 (CSAT template pending Meta approval) | 0 before launch |
-| Production Readiness           | 🟡 75% (all core + advanced features done, pre-launch polish needed) | 100% |
+| Metric                 | Current State                                                        | Target          |
+| ---------------------- | -------------------------------------------------------------------- | --------------- |
+| Total Convex Functions | 60+ (queries, mutations, actions)                                    | Stable          |
+| Total Database Tables  | 32                                                                   | Stable          |
+| Total App Routes       | 40+                                                                  | Growing         |
+| TypeScript Strict Mode | ✅ Enabled                                                           | Always enabled  |
+| Test Coverage          | ❌ Not implemented                                                   | 80%+ (Phase 2)  |
+| Documentation Coverage | ✅ CLAUDE.md + PROJECT_STATE.md + PROGRESS.md                        | Maintain        |
+| Known Security Issues  | 0 (webhook sig verification in place)                                | 0               |
+| Known Critical Bugs    | 1 (CSAT template pending Meta approval)                              | 0 before launch |
+| Production Readiness   | 🟡 75% (all core + advanced features done, pre-launch polish needed) | 100%            |
 
 ---
 

@@ -173,6 +173,8 @@ export function EmbeddedSignupButton({
         scope: "whatsapp_business_management,whatsapp_business_messaging",
         extras: {
           setup: "",
+          featureType: "whatsapp_business_app_onboarding",
+          sessionInfoVersion: "3",
         },
       }
     );

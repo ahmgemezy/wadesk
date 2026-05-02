@@ -294,7 +294,7 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
                 {internalNotes.map((note) => (
                   <div
                     key={note._id}
-                    className="rounded-md bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-2 text-xs"
+                    className="rounded-lg bg-amber-50/80 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/40 p-2.5 text-xs shadow-sm"
                   >
                     <p className="whitespace-pre-wrap text-foreground">{note.content}</p>
                     <p className="text-muted-foreground mt-1">{formatDate(note.timestamp)}</p>
@@ -332,7 +332,7 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
                 {pendingFollowUps.map((fu) => (
                   <div
                     key={fu._id}
-                    className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 p-2 text-xs space-y-1"
+                    className="rounded-lg border border-primary/20 dark:border-primary/30 bg-primary/5 dark:bg-primary/10 p-2.5 text-xs space-y-1 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-1">
                       <p className="font-medium text-blue-700 dark:text-blue-300">

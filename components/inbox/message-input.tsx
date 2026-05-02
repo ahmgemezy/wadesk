@@ -271,7 +271,7 @@ export function MessageInput({
   const canSend = !uploading && (!!attachment || !!location || (!!content.trim() && content.length <= 4096));
 
   return (
-    <div className="relative border-t p-3 space-y-2 shrink-0">
+    <div className="relative border-t border-border/60 p-3 space-y-2 shrink-0">
       {/* Attachment preview */}
       {attachment && (
         <div className="flex items-center gap-2 p-2 rounded-lg bg-muted text-sm">

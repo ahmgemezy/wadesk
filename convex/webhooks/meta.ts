@@ -4,6 +4,9 @@ import { verifyMetaSignature } from "./verify";
 import { processMessages } from "./processors/messages";
 import { processStatuses } from "./processors/statuses";
 import { processTemplates } from "./processors/templates";
+import { processEcho } from "./processors/echoes";
+import { processHistory } from "./processors/history";
+import { processAppStateSync } from "./processors/appStateSync";
 import type { MetaMessage } from "./processors/messages";
 import type { MetaStatus } from "./processors/statuses";
 
@@ -15,6 +18,20 @@ function log(event: string, details: Record<string, unknown> = {}) {
 
 function warn(event: string, details: Record<string, unknown> = {}) {
   console.warn(JSON.stringify({ tag: "[WEBHOOK-V2]", event, ...details }));
+}
+
+// ── Coexistence dispatcher helper ────────────────────────────────────────────
+
+async function runSafe(
+  label: string,
+  tenantId: string,
+  fn: () => Promise<unknown>,
+) {
+  try {
+    await fn();
+  } catch (err) {
+    warn(label, { tenantId, error: String(err) });
+  }
 }
 
 // ── Meta webhook HTTP action ─────────────────────────────────────────────────
@@ -62,6 +79,9 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
             contacts?: { profile: { name: string }; wa_id: string }[];
             messages?: MetaMessage[];
             statuses?: MetaStatus[];
+            smb_message_echoes?: MetaMessage[];      // Coexistence: echoes from mobile app
+            history?: { field: string; old_value?: unknown; new_value?: unknown }[];  // Coexistence: conversation state changes
+            smb_app_state_sync?: "business_app" | "cloud_api";  // Coexistence: app state
           };
         }[];
       }[];
@@ -102,6 +122,9 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
             field: change.field,
             messageCount: value?.messages?.length ?? 0,
             statusCount: value?.statuses?.length ?? 0,
+            echoCount: value?.smb_message_echoes?.length ?? 0,
+            historyChangeCount: value?.history?.length ?? 0,
+            appStateSyncPresent: !!value?.smb_app_state_sync,
           });
 
           switch (change.field) {
@@ -117,6 +140,40 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
                 channel,
                 value?.statuses ?? [],
               );
+
+              // ── WhatsApp Coexistence fields ────────────────────────────────
+              for (const echo of value?.smb_message_echoes ?? []) {
+                await runSafe("echo_processing_error", channel.tenantId, () =>
+                  ctx.runMutation(internal.webhooks.processors.echoes.processEcho, {
+                    tenantId: channel.tenantId,
+                    channelId: channel._id,
+                    echo,
+                    wabaId: channel.wabaId,
+                  }),
+                );
+              }
+
+              const historyChanges = value?.history;
+              if (historyChanges) {
+                await runSafe("history_processing_error", channel.tenantId, () =>
+                  ctx.runMutation(internal.webhooks.processors.history.processHistory, {
+                    tenantId: channel.tenantId,
+                    channelId: channel._id,
+                    changes: historyChanges,
+                  }),
+                );
+              }
+
+              const appStateSyncValue = value?.smb_app_state_sync;
+              if (appStateSyncValue) {
+                await runSafe("app_state_sync_processing_error", channel.tenantId, () =>
+                  ctx.runMutation(internal.webhooks.processors.appStateSync.processAppStateSync, {
+                    tenantId: channel.tenantId,
+                    channelId: channel._id,
+                    appState: appStateSyncValue,
+                  }),
+                );
+              }
               break;
 
             case "message_template_status_update":

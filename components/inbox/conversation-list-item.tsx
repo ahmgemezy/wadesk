@@ -110,7 +110,7 @@ export function ConversationListItem({
 
   const statusColor =
     conversation.status === "open"
-      ? "bg-accent/70 text-accent-foreground dark:bg-accent/40 dark:text-accent-foreground"
+      ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
       : conversation.status === "pending"
         ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
         : "bg-muted text-muted-foreground";
@@ -131,8 +131,8 @@ export function ConversationListItem({
     <>
     <div
       className={cn(
-        "group w-full text-start p-3 border-b hover:bg-secondary/70 transition-colors cursor-pointer",
-        isActive && "bg-accent/60 border-s-[3px] border-s-primary",
+        "group w-full text-start p-3 border-b border-border/60 hover:bg-muted/60 transition-colors cursor-pointer",
+        isActive && "bg-accent/40 border-s-2 border-s-primary",
         !conversation.assignedAgentId && !isActive && "bg-(--unassigned-bg)",
       )}
       onClick={onClick}

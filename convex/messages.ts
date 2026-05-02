@@ -186,6 +186,7 @@ export const createInbound = internalMutation({
     timestamp: v.number(),
     senderDisplayName: v.optional(v.string()),
     assignedAgentId: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("customer"), v.literal("api"), v.literal("mobile"))),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -266,6 +267,7 @@ export const createInbound = internalMutation({
       authorId: args.senderPhone,
       metaMessageId: args.metaMessageId,
       ...(args.mediaUrl ? { mediaUrl: args.mediaUrl } : {}),
+      ...(args.source ? { source: args.source } : {}),
       status: "sent",
       timestamp: args.timestamp,
       createdAt: Date.now(),
@@ -557,6 +559,28 @@ export const setMetaMessageId = internalMutation({
   handler: async (ctx, args) => {
     const msg = await ctx.db.get(args.messageId);
     if (!msg || msg.tenantId !== args.tenantId) return;
+
+    // Idempotent: already set to this value, nothing to do.
+    if (msg.metaMessageId === args.metaMessageId) return;
+
+    // If a different row already owns this wamid (echo arrived first and the secondary dedup
+    // in processEcho patched the api row directly), do NOT overwrite — that row is canonical.
+    // Log the anomaly so we can diagnose any Level-2 dedup miss; never delete data here.
+    const existingWithWamid = await ctx.db
+      .query("messages")
+      .withIndex("by_meta_message_id", (q) => q.eq("metaMessageId", args.metaMessageId))
+      .first();
+    if (existingWithWamid && existingWithWamid._id !== args.messageId) {
+      console.log(JSON.stringify({
+        tag: "[SET_WAMID]",
+        event: "wamid_already_owned_by_other_row",
+        currentRow: args.messageId,
+        ownerRow: existingWithWamid._id,
+        ownerSource: existingWithWamid.source,
+      }));
+      return;
+    }
+
     await ctx.db.patch(args.messageId, { metaMessageId: args.metaMessageId });
   },
 });
