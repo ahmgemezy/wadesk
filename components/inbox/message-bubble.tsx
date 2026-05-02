@@ -88,12 +88,13 @@ export type Message = {
   quotedMessageId?: string;
   deletedAt?: number;
   reactions?: Reaction[];
-  eventType?: "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened";
+  eventType?: "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened" | "csat_received";
   eventData?: {
     actorName?: string;
     fromDept?: string;
     toDept?: string;
     agentName?: string;
+    csatScore?: number;
   };
   followUpId?: string;
   followUpCreatorName?: string;
@@ -204,12 +205,20 @@ function ConversationEventPill({
       lineBg: "bg-yellow-200 dark:bg-yellow-800",
       icon: "↩",
     },
+    csat_received: {
+      pillBg: "bg-amber-100 dark:bg-amber-950",
+      pillText: "text-amber-800 dark:text-amber-300",
+      lineBg: "bg-amber-200 dark:bg-amber-800",
+      icon: "",
+    },
   };
 
   const style = config[eventType ?? ""] ?? config.agent_unassigned;
   const actor = eventData?.actorName ?? (isAr ? "شخص ما" : "Someone");
   const agent = eventData?.agentName ?? "";
   const toDept = eventData?.toDept ?? "";
+  const csatScore = eventData?.csatScore;
+  const stars = csatScore ? "⭐".repeat(csatScore) : "";
 
   let label = "";
   if (isAr) {
@@ -223,6 +232,8 @@ function ConversationEventPill({
       label = `${actor} أغلق المحادثة`;
     else if (eventType === "reopened")
       label = "أُعيد فتح المحادثة";
+    else if (eventType === "csat_received")
+      label = `${stars} العميل قيّم ${csatScore}/5`;
   } else {
     if (eventType === "transfer_department")
       label = `${actor} transferred to ${toDept}`;
@@ -234,6 +245,8 @@ function ConversationEventPill({
       label = `${actor} resolved this`;
     else if (eventType === "reopened")
       label = "Conversation reopened";
+    else if (eventType === "csat_received")
+      label = `${stars} Customer rated ${csatScore}/5`;
   }
 
   return (

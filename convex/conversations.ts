@@ -266,6 +266,19 @@ export const setStatus = mutation({
           metadata: { conversationId: args.conversationId },
         });
       }
+
+      // Schedule CSAT message (Growth+; plan + template gates enforced inside the action)
+      const csatConfig = await ctx.db
+        .query("csatSettings")
+        .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+        .first();
+      if (csatConfig?.enabled) {
+        const delayMs = (csatConfig.delayMinutes ?? 5) * 60 * 1000;
+        await ctx.scheduler.runAfter(delayMs, internal.csat.sendCsatMessage, {
+          conversationId: args.conversationId,
+          tenantId,
+        });
+      }
     }
   },
 });

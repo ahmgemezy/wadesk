@@ -21,6 +21,11 @@ coverage/
 
 tsconfig.tsbuildinfo
 .superpowers/brainstorm/*/state/
+.superpowers/brainstorm/*/content/
 .worktrees/
+
+# Playwright test artifacts
+playwright-report/
+test-results/
 
 certificates

@@ -40,6 +40,7 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
   const customFields = useQuery(api.customFields.list, { contactId });
   const followUps = useQuery(api.followUps.listByContact, { contactId });
   const internalNotes = useQuery(api.inbox.getInternalNotesByContact, { contactId });
+  const csatSummary = useQuery(api.csat.getContactCsat, { contactId });
 
   const updateContact = useMutation(api.contacts.update);
   const updateStage = useMutation(api.contacts.updateStage);
@@ -217,6 +218,29 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
             <p className="text-xs text-muted-foreground">{t("Conversations", "المحادثات")}</p>
             <p className="text-sm">{conversationCount}</p>
           </div>
+
+          {/* ── CSAT ── */}
+          {csatSummary && csatSummary.count > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">{t("Satisfaction", "الرضا")}</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-base font-semibold text-amber-700 dark:text-amber-400">
+                  ⭐ {csatSummary.average}/5
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {t(
+                    `${csatSummary.count} ${csatSummary.count === 1 ? "rating" : "ratings"}`,
+                    `${csatSummary.count} ${csatSummary.count === 1 ? "تقييم" : "تقييمات"}`,
+                  )}
+                </span>
+                {csatSummary.lastScore !== null && csatSummary.lastScore !== csatSummary.average && (
+                  <span className="text-xs text-muted-foreground">
+                    {t(`Last: ${csatSummary.lastScore}/5`, `الأخير: ${csatSummary.lastScore}/5`)}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* ── Customer Journey ── */}
           <div className="space-y-2">

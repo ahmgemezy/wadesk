@@ -86,6 +86,11 @@ export const listConversations = query({
           departmentName = dept?.name;
         }
 
+        const metric = await ctx.db
+          .query("conversationMetrics")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .first();
+
         return {
           id: conv._id as string,
           contactId: conv.contactId as string,
@@ -103,6 +108,7 @@ export const listConversations = query({
           channelId: conv.channelId as string,
           departmentId: conv.departmentId ? (conv.departmentId as string) : undefined,
           departmentName,
+          csatScore: metric?.csatScore,
         };
       }),
     );

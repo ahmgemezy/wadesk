@@ -43,6 +43,7 @@ interface ConversationItem {
   labels?: string[];
   slaBreachedAt?: number;
   departmentName?: string;
+  csatScore?: number;
 }
 
 interface ConversationListItemProps {
@@ -247,6 +248,17 @@ export function ConversationListItem({
             >
               {statusLabel}
             </span>
+            {typeof conversation.csatScore === "number" && (
+              <span
+                title={t(
+                  `Customer rated ${conversation.csatScore}/5`,
+                  `العميل قيّم ${conversation.csatScore}/5`,
+                )}
+                className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-medium"
+              >
+                ⭐ {conversation.csatScore}/5
+              </span>
+            )}
             {conversation.departmentName && (
               <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 truncate max-w-20">
                 {conversation.departmentName}

@@ -95,9 +95,15 @@ export const sendCsatMessage = internalAction({
 
       if (!res.ok) return;
 
+      // Render the CSAT body with the channel name substituted for {{1}}.
+      const renderedBody = templateConfig.body.replace("{{1}}", channel.displayName ?? "");
+
       await ctx.runMutation(internal.csat.markCsatSent, {
         conversationId: args.conversationId,
+        tenantId: args.tenantId,
+        channelId: channel._id,
         sentAt: Date.now(),
+        renderedBody,
       });
     } catch {
       // CSAT is non-critical
@@ -110,15 +116,46 @@ export const sendCsatMessage = internalAction({
 export const markCsatSent = internalMutation({
   args: {
     conversationId: v.id("conversations"),
+    tenantId: v.string(),
+    channelId: v.id("channels"),
     sentAt: v.number(),
+    renderedBody: v.string(),
   },
   handler: async (ctx, args) => {
+    // Upsert metrics row — older conversations may predate the metrics table.
+    // Without this, csatSentAt is never recorded and checkAndRecordResponse
+    // can never match the customer's reply.
     const metric = await ctx.db
       .query("conversationMetrics")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .first();
-    if (!metric) return;
-    await ctx.db.patch(metric._id, { csatSentAt: args.sentAt });
+    if (metric) {
+      await ctx.db.patch(metric._id, { csatSentAt: args.sentAt });
+    } else {
+      const conversation = await ctx.db.get(args.conversationId);
+      await ctx.db.insert("conversationMetrics", {
+        tenantId: args.tenantId,
+        conversationId: args.conversationId,
+        channelId: args.channelId,
+        messageCount: 0,
+        createdAt: conversation?.createdAt ?? args.sentAt,
+        csatSentAt: args.sentAt,
+      });
+    }
+
+    // Insert the CSAT outbound into the conversation thread so the agent sees
+    // exactly what was sent to the customer.
+    await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId: args.tenantId,
+      direction: "outbound",
+      content: args.renderedBody,
+      contentType: "text",
+      isInternalNote: false,
+      status: "sent",
+      timestamp: args.sentAt,
+      createdAt: args.sentAt,
+    });
   },
 });
 
@@ -177,9 +214,25 @@ export const checkAndRecordResponse = internalMutation({
 
     if (!metric || !metric.csatSentAt || metric.csatScore !== undefined) return false;
 
+    const respondedAt = Date.now();
     await ctx.db.patch(metric._id, {
       csatScore: score,
-      csatRespondedAt: Date.now(),
+      csatRespondedAt: respondedAt,
+    });
+
+    // Insert a system-event pill in the thread so the agent sees the rating.
+    await ctx.db.insert("messages", {
+      conversationId: conversation._id,
+      tenantId: args.tenantId,
+      direction: "outbound",
+      content: "",
+      contentType: "system_event",
+      eventType: "csat_received",
+      eventData: { csatScore: score },
+      isInternalNote: false,
+      status: "sent",
+      timestamp: respondedAt,
+      createdAt: respondedAt,
     });
 
     return true;
@@ -487,6 +540,44 @@ export const getConversationForCsat = internalQuery({
     const channel = await ctx.db.get(conversation.channelId);
     const contact = await ctx.db.get(conversation.contactId);
     return { ...conversation, channel, contact };
+  },
+});
+
+// ── Public: per-contact CSAT summary (for contact panel) ─────────────────────
+
+export const getContactCsat = query({
+  args: { contactId: v.id("contacts") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const contact = await ctx.db.get(args.contactId);
+    if (!contact || contact.tenantId !== tenantId) return null;
+
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_contact", (q) => q.eq("contactId", args.contactId))
+      .collect();
+
+    const metrics = await Promise.all(
+      conversations.map((c) =>
+        ctx.db
+          .query("conversationMetrics")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", c._id))
+          .first(),
+      ),
+    );
+
+    const scored = metrics
+      .filter((m): m is NonNullable<typeof m> => m !== null && m.csatScore !== undefined)
+      .sort((a, b) => (b.csatRespondedAt ?? 0) - (a.csatRespondedAt ?? 0));
+
+    if (scored.length === 0) return { count: 0, average: null, lastScore: null };
+
+    const total = scored.reduce((sum, m) => sum + (m.csatScore ?? 0), 0);
+    return {
+      count: scored.length,
+      average: Math.round((total / scored.length) * 10) / 10,
+      lastScore: scored[0].csatScore ?? null,
+    };
   },
 });
 
