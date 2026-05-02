@@ -106,7 +106,7 @@ export const sendCsatMessage = internalAction({
         renderedBody,
       });
     } catch {
-      // CSAT is non-critical
+      // Meta send failed — silent; no state changes already happened.
     }
   },
 });
@@ -185,34 +185,50 @@ export const checkAndRecordResponse = internalMutation({
       .first();
     if (!contact) return false;
 
-    let conversations;
+    // Find ALL conversations for this contact (optionally narrowed by channel),
+    // then look for the one with an open CSAT cycle. We can't just pick the
+    // most-recently-created conversation: a contact can have multiple, and
+    // CSAT may have been sent on an older one that's still resolved.
+    let candidates;
     if (args.channelId) {
-      conversations = await ctx.db
+      const all = await ctx.db
         .query("conversations")
         .withIndex("by_tenant_channel", (q) =>
           q.eq("tenantId", args.tenantId).eq("channelId", args.channelId!),
         )
-        .order("desc")
         .collect();
-      conversations = conversations.filter((c) => c.contactId === contact._id);
-      if (conversations.length > 0) conversations = [conversations[0]];
+      candidates = all.filter((c) => c.contactId === contact._id);
     } else {
-      conversations = await ctx.db
+      candidates = await ctx.db
         .query("conversations")
         .withIndex("by_contact", (q) => q.eq("contactId", contact._id))
-        .order("desc")
-        .take(1);
+        .collect();
     }
-    if (conversations.length === 0) return false;
+    if (candidates.length === 0) return false;
 
-    const conversation = conversations[0];
+    // For each candidate, fetch its metric. The conversation we want is the
+    // one whose metric has an open CSAT cycle (csatSentAt set, no later
+    // response). If multiple, pick the most recently-sent.
+    const withOpenCycle: Array<{ conversationId: typeof candidates[number]["_id"]; metricId: import("./_generated/dataModel").Id<"conversationMetrics">; csatSentAt: number }> = [];
+    for (const conv of candidates) {
+      const m = await ctx.db
+        .query("conversationMetrics")
+        .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+        .first();
+      if (!m || !m.csatSentAt) continue;
+      const open = !m.csatRespondedAt || m.csatRespondedAt < m.csatSentAt;
+      if (!open) continue;
+      withOpenCycle.push({ conversationId: conv._id, metricId: m._id, csatSentAt: m.csatSentAt });
+    }
 
-    const metric = await ctx.db
-      .query("conversationMetrics")
-      .withIndex("by_conversation", (q) => q.eq("conversationId", conversation._id))
-      .first();
+    if (withOpenCycle.length === 0) return false;
 
-    if (!metric || !metric.csatSentAt || metric.csatScore !== undefined) return false;
+    withOpenCycle.sort((a, b) => b.csatSentAt - a.csatSentAt);
+    const target = withOpenCycle[0];
+    const metric = await ctx.db.get(target.metricId);
+    if (!metric) return false;
+    const conversation = await ctx.db.get(target.conversationId);
+    if (!conversation) return false;
 
     const respondedAt = Date.now();
     await ctx.db.patch(metric._id, {
