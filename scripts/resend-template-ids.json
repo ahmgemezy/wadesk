@@ -1,0 +1,18 @@
+{
+  "agent_welcome_en": "1b4e8d70-7b04-4c33-907c-298e6ba06e9f",
+  "agent_welcome_ar": "cb01bd7f-1340-4e58-9086-41604450c8ec",
+  "billing_payment_failed_en": "92a31b1b-eebd-41aa-9ccd-c3cd2e47d4ea",
+  "billing_payment_failed_ar": "2a76d52b-b6e0-4f0d-971b-c58d6cb980cc",
+  "billing_subscription_expired_en": "bcb7b955-aaf9-4264-80cc-b03f802aad00",
+  "billing_subscription_expired_ar": "37bb5372-0e03-4fa3-8c54-2274744cd7af",
+  "channel_deleted_en": "ed11ddf8-0550-4866-a23a-fdf44c9ab6bc",
+  "channel_deleted_ar": "bb618101-aaaf-4ab5-9f58-488c8b6ed939",
+  "channel_expiring_soon_en": "5f6e89ae-3c9a-4fd4-b1fe-72ce6629cf51",
+  "channel_expiring_soon_ar": "cb0080a5-fbb9-4977-9f6c-4314df551b6c",
+  "followup_due_en": "a3d98c94-ec53-4c85-aad2-82317afde671",
+  "followup_due_ar": "c909a4c3-6011-4864-9b18-edbcc9514ea4",
+  "new_assignment_en": "c04a4217-e335-4771-acbc-4083ec5f5d90",
+  "new_assignment_ar": "48ec1271-bb78-45c3-8f66-0d2ad99433e8",
+  "sla_breach_en": "b4b1e6bb-6f00-45c2-b6ba-8699d00d7951",
+  "sla_breach_ar": "c14f51d7-b1c8-49c2-ac3c-c3d36ddfa86d"
+}
