@@ -672,6 +672,22 @@ export const retryWebhookSubscription = internalAction({
   },
 });
 
+export const listOtherChannelsForForward = query({
+  args: { excludeChannelId: v.id("channels") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const all = await ctx.db
+      .query("channels")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .collect();
+    return all
+      .filter(
+        (c) => c._id !== args.excludeChannelId && (c.status === "active" || c.status === undefined),
+      )
+      .map((c) => ({ _id: c._id, displayName: c.displayName, displayPhone: c.displayPhone }));
+  },
+});
+
 export const updateSlaThreshold = mutation({
   args: {
     channelId: v.id("channels"),

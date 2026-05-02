@@ -55,6 +55,7 @@ export function MessageInput({
   onClearReply,
   isLocked,
   isPrivileged,
+  isForwarded,
 }: {
   conversationId: string;
   onQuickReplyOpen?: () => void;
@@ -64,6 +65,7 @@ export function MessageInput({
   onClearReply?: () => void;
   isLocked?: boolean;
   isPrivileged?: boolean;
+  isForwarded?: boolean;
 }) {
   const t = useT();
 
@@ -274,6 +276,14 @@ export function MessageInput({
   };
 
   const canSend = !uploading && (!!attachment || !!location || (!!content.trim() && content.length <= 4096));
+
+  if (isForwarded) {
+    return (
+      <div className="border-t bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3 flex items-center justify-center text-sm text-amber-700 dark:text-amber-400">
+        {t("This conversation was forwarded — replies are disabled.", "تم تحويل هذه المحادثة — الردود معطلة.")}
+      </div>
+    );
+  }
 
   if (isLocked && !isPrivileged) {
     return (

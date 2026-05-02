@@ -1,12 +1,37 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
-import { query, mutation, internalMutation, internalQuery } from "./_generated/server";
+import { query, mutation, internalMutation, internalQuery, action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCallerIdentity, getCallerRole, assertAdmin } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
 function isAdminOrSupervisor(orgRole: string): boolean {
   return orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+}
+
+async function callerHasConversationAccess(
+  ctx: any,
+  conversation: { tenantId: string; assignedAgentId?: string; departmentId?: import("./_generated/dataModel").Id<"departments"> },
+  callerId: string,
+  orgRole: string,
+): Promise<boolean> {
+  if (isAdminOrSupervisor(orgRole)) return true;
+  if (conversation.assignedAgentId === callerId) return true;
+  if (!conversation.assignedAgentId) {
+    // Match inbox visibility: unassigned conversations with no department are
+    // visible to all agents (the global "Unassigned" queue), so transfer must
+    // be allowed too. Unassigned-with-department requires dept membership.
+    if (!conversation.departmentId) return true;
+    const member = await ctx.db
+      .query("departmentMembers")
+      .withIndex("by_department", (q: any) =>
+        q.eq("departmentId", conversation.departmentId)
+      )
+      .filter((q: any) => q.eq(q.field("userId"), callerId))
+      .first();
+    return !!member;
+  }
+  return false;
 }
 
 export const listForCaller = query({
@@ -499,20 +524,23 @@ export const internalCloseAllForChannel = internalMutation({
   },
 });
 
-export const transferToDepartment = mutation({
+export const transferWithinChannel = mutation({
   args: {
     conversationId: v.id("conversations"),
     targetDepartmentId: v.id("departments"),
+    assignAgentId: v.optional(v.string()),
+    internalNote: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    if (!isAdminOrSupervisor(orgRole)) {
-      throw new ConvexError("FORBIDDEN");
-    }
 
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) {
       throw new ConvexError("NOT_FOUND");
+    }
+
+    if (!(await callerHasConversationAccess(ctx, conversation, callerId, orgRole))) {
+      throw new ConvexError("FORBIDDEN");
     }
 
     const targetDept = await ctx.db.get(args.targetDepartmentId);
@@ -522,9 +550,22 @@ export const transferToDepartment = mutation({
     if (targetDept.isArchived) {
       throw new ConvexError("DEPARTMENT_ARCHIVED");
     }
-
     if (!targetDept.channelId || targetDept.channelId !== conversation.channelId) {
-      throw new ConvexError("CROSS_CHANNEL_TRANSFER_NOT_ALLOWED");
+      throw new ConvexError("CROSS_CHANNEL_USE_FORWARD");
+    }
+    if (targetDept._id === conversation.departmentId && !args.assignAgentId) {
+      throw new ConvexError("NO_OP_TRANSFER");
+    }
+
+    if (args.assignAgentId) {
+      const member = await ctx.db
+        .query("departmentMembers")
+        .withIndex("by_department", (q) => q.eq("departmentId", args.targetDepartmentId))
+        .filter((q) => q.eq(q.field("userId"), args.assignAgentId!))
+        .first();
+      if (!member) {
+        throw new ConvexError("AGENT_NOT_IN_DEPARTMENT");
+      }
     }
 
     const oldDept = conversation.departmentId
@@ -536,6 +577,14 @@ export const transferToDepartment = mutation({
       departmentId: args.targetDepartmentId,
       departmentAssignedAt: now,
       departmentAssignedBy: callerId,
+      ...(args.assignAgentId
+        ? {
+            assignedAgentId: args.assignAgentId,
+            assignedAt: now,
+            assignmentType: "manual" as const,
+            previousAgentId: conversation.assignedAgentId,
+          }
+        : {}),
     });
 
     const identity = await ctx.auth.getUserIdentity();
@@ -543,14 +592,25 @@ export const transferToDepartment = mutation({
     const fromName = oldDept?.name ?? "Unassigned";
     const toName = targetDept.name;
 
+    let agentName: string | undefined;
+    if (args.assignAgentId) {
+      const member = await ctx.db
+        .query("departmentMembers")
+        .withIndex("by_department_user", (q) =>
+          q.eq("departmentId", args.targetDepartmentId).eq("userId", args.assignAgentId!),
+        )
+        .first();
+      agentName = member?.userName ?? args.assignAgentId;
+    }
+
     await ctx.db.insert("messages", {
       conversationId: args.conversationId,
       tenantId,
       direction: "outbound",
       content: "",
       contentType: "system_event",
-      eventType: "transfer_department",
-      eventData: { actorName, fromDept: fromName, toDept: toName },
+      eventType: "transfer_within_channel",
+      eventData: { actorName, fromDept: fromName, toDept: toName, agentName },
       isInternalNote: false,
       authorId: callerId,
       status: "sent",
@@ -558,15 +618,30 @@ export const transferToDepartment = mutation({
       createdAt: now,
     });
 
+    if (args.internalNote && args.internalNote.trim().length > 0) {
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        tenantId,
+        direction: "outbound",
+        content: args.internalNote.trim(),
+        contentType: "text",
+        isInternalNote: true,
+        authorId: callerId,
+        status: "sent",
+        timestamp: now + 1,
+        createdAt: now + 1,
+      });
+    }
+
     const deptMembers = await ctx.db
       .query("departmentMembers")
       .withIndex("by_department", (q) => q.eq("departmentId", args.targetDepartmentId))
       .collect();
 
     const memberIds = deptMembers.map((m) => m.userId);
-    const supervisorIds: string[] = targetDept.supervisors ?? [];
+    const supervisorIds: string[] = (targetDept as any).supervisors ?? [];
     const recipients = [...new Set([...memberIds, ...supervisorIds])].filter(
-      (id) => id !== callerId,
+      (id) => id !== callerId && id !== args.assignAgentId,
     );
 
     const contact = await ctx.db.get(conversation.contactId);
@@ -583,9 +658,22 @@ export const transferToDepartment = mutation({
           message: `${contactName} was transferred to ${toName} by ${actorName}`,
           read: false,
           createdAt: now,
-        }),
-      ),
+        })
+      )
     );
+
+    if (args.assignAgentId) {
+      await ctx.db.insert("notifications", {
+        tenantId,
+        userId: args.assignAgentId,
+        type: "new_assignment",
+        referenceId: args.conversationId,
+        contactName,
+        message: `${contactName} was assigned to you by ${actorName}`,
+        read: false,
+        createdAt: now,
+      });
+    }
   },
 });
 
@@ -643,4 +731,250 @@ export const claim = mutation({
             createdAt: now,
         });
     },
+});
+
+export const _validateForward = internalQuery({
+  args: {
+    conversationId: v.id("conversations"),
+    targetChannelId: v.id("channels"),
+    targetDepartmentId: v.optional(v.id("departments")),
+    callerId: v.string(),
+    orgRole: v.string(),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== args.tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+    if (conversation.status === "resolved" || conversation.status === "forwarded") {
+      throw new ConvexError("CONVERSATION_NOT_OPEN");
+    }
+    if (
+      !(await callerHasConversationAccess(ctx, conversation, args.callerId, args.orgRole))
+    ) {
+      throw new ConvexError("FORBIDDEN");
+    }
+
+    const sourceChannel = await ctx.db.get(conversation.channelId);
+    if (!sourceChannel) throw new ConvexError("CHANNEL_NOT_FOUND");
+
+    const targetChannel = await ctx.db.get(args.targetChannelId);
+    if (!targetChannel || targetChannel.tenantId !== args.tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+    if (targetChannel._id === sourceChannel._id) {
+      throw new ConvexError("CROSS_CHANNEL_USE_TRANSFER");
+    }
+    if (targetChannel.status !== undefined && targetChannel.status !== "active") {
+      throw new ConvexError("TARGET_CHANNEL_INACTIVE");
+    }
+
+    let targetDeptName: string | undefined;
+    if (args.targetDepartmentId) {
+      const dept = await ctx.db.get(args.targetDepartmentId);
+      if (!dept || dept.tenantId !== args.tenantId) throw new ConvexError("NOT_FOUND");
+      if (dept.channelId !== args.targetChannelId) {
+        throw new ConvexError("DEPARTMENT_NOT_IN_TARGET_CHANNEL");
+      }
+      if (dept.isArchived) throw new ConvexError("DEPARTMENT_ARCHIVED");
+      targetDeptName = dept.name;
+    }
+
+    const now = Date.now();
+    const lastInbound = conversation.lastInboundAt ?? 0;
+    const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+    if (now - lastInbound >= TWENTY_FOUR_HOURS_MS) {
+      throw new ConvexError("OUTSIDE_24H_WINDOW");
+    }
+
+    const contact = await ctx.db.get(conversation.contactId);
+
+    return {
+      sourceChannelId: sourceChannel._id,
+      sourcePhoneNumberId: sourceChannel.phoneNumberId,
+      contactPhone: contact?.phone ?? "",
+      contactName: contact?.customName ?? contact?.displayName ?? "",
+      targetBranchName: targetChannel.displayName,
+      targetBranchNumber: targetChannel.displayPhone ?? "",
+      targetDeptName,
+    };
+  },
+});
+
+export const _finalizeForward = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    targetChannelId: v.id("channels"),
+    targetDepartmentId: v.optional(v.id("departments")),
+    callerId: v.string(),
+    actorName: v.string(),
+    targetBranchName: v.string(),
+    targetBranchNumber: v.string(),
+    targetDeptName: v.optional(v.string()),
+    renderedText: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+
+    await ctx.db.patch(args.conversationId, {
+      status: "forwarded",
+      forwardedToChannelId: args.targetChannelId,
+      forwardedToDepartmentId: args.targetDepartmentId,
+      forwardedAt: now,
+      forwardedBy: args.callerId,
+      assignedAgentId: undefined,
+      departmentId: undefined,
+    });
+
+    const conv = await ctx.db.get(args.conversationId);
+
+    await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId: conv!.tenantId,
+      direction: "outbound",
+      content: "",
+      contentType: "system_event",
+      eventType: "forward_to_branch",
+      eventData: {
+        actorName: args.actorName,
+        targetBranchName: args.targetBranchName,
+        targetBranchNumber: args.targetBranchNumber,
+        targetDeptName: args.targetDeptName,
+      },
+      isInternalNote: false,
+      authorId: args.callerId,
+      status: "sent",
+      timestamp: now,
+      createdAt: now,
+    });
+  },
+});
+
+export const previewForwardMessage = query({
+  args: {
+    conversationId: v.id("conversations"),
+    targetChannelId: v.id("channels"),
+  },
+  handler: async (ctx, args): Promise<string | null> => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId) return null;
+    const target = await ctx.db.get(args.targetChannelId);
+    if (!target || target.tenantId !== tenantId) return null;
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
+      .first();
+    const templates = tenant?.forwardMessageTemplates ?? {
+      ar: "للحصول على خدمة أفضل، تواصل مع فرع {{branchName}} على {{branchNumber}}",
+      en: "For better service, please contact our {{branchName}} branch at {{branchNumber}}",
+    };
+    const lang: "ar" | "en" = "ar";
+    const number = target.displayPhone
+      ? (target.displayPhone.startsWith("+") ? target.displayPhone : `+${target.displayPhone}`)
+      : "";
+    return templates[lang]
+      .replaceAll("{{branchName}}", target.displayName)
+      .replaceAll("{{branchNumber}}", number);
+  },
+});
+
+export const forwardToBranch = action({
+  args: {
+    conversationId: v.id("conversations"),
+    targetChannelId: v.id("channels"),
+    targetDepartmentId: v.optional(v.id("departments")),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || !identity.orgId) throw new ConvexError("UNAUTHORIZED");
+    const tenantId = identity.orgId as string;
+    const callerId = identity.subject;
+    const orgRole = (identity.orgRole as string | undefined) ?? "org:agent";
+    const actorName = identity?.name ?? identity?.email ?? "Someone";
+
+    const ctxData: {
+      sourceChannelId: any;
+      sourcePhoneNumberId: string;
+      contactPhone: string;
+      contactName: string;
+      targetBranchName: string;
+      targetBranchNumber: string;
+      targetDeptName?: string;
+    } = await ctx.runQuery(internal.conversations._validateForward, {
+      conversationId: args.conversationId,
+      targetChannelId: args.targetChannelId,
+      targetDepartmentId: args.targetDepartmentId,
+      callerId,
+      orgRole,
+      tenantId,
+    });
+
+    const templates: { ar: string; en: string } = await ctx.runQuery(internal.lib.tenants.getForwardTemplates, {
+      tenantId,
+    });
+
+    const conversation: any = await ctx.runQuery(internal.conversations.getInternal, {
+      conversationId: args.conversationId,
+    });
+    const lang: "ar" | "en" =
+      conversation && (conversation as any).contactLanguage === "en" ? "en" : "ar";
+
+    const formattedNumber = ctxData.targetBranchNumber
+      ? (ctxData.targetBranchNumber.startsWith("+")
+          ? ctxData.targetBranchNumber
+          : `+${ctxData.targetBranchNumber}`)
+      : "";
+
+    const renderedText = templates[lang]
+      .replaceAll("{{branchName}}", ctxData.targetBranchName)
+      .replaceAll("{{branchNumber}}", formattedNumber);
+
+    const messageId: any = await ctx.runMutation(internal.messages.createOutboundForward, {
+      conversationId: args.conversationId,
+      tenantId,
+      content: renderedText,
+      authorId: callerId,
+    });
+
+    // sendMessage swallows Meta errors and marks the message as "failed" instead
+    // of throwing — so a try/catch alone won't tell us whether the customer
+    // actually received the redirect. Read the message status back and bail
+    // before finalizing if Meta rejected it.
+    try {
+      await ctx.runAction(internal.actions.sendWhatsAppMessage.sendMessage, {
+        messageId,
+        phoneNumberId: ctxData.sourcePhoneNumberId,
+        contactPhone: ctxData.contactPhone,
+        content: renderedText,
+        tenantId,
+      });
+    } catch (e) {
+      await ctx.runMutation(internal.messages.markFailed, {
+        messageId,
+        reason: e instanceof Error ? e.message : "Forward send failed",
+      });
+      throw new ConvexError("FORWARD_SEND_FAILED");
+    }
+
+    const sendResult = await ctx.runQuery(internal.messages.getStatusInternal, {
+      messageId,
+    });
+    if (!sendResult || sendResult.status === "failed" || sendResult.status === "sending") {
+      throw new ConvexError("FORWARD_SEND_FAILED");
+    }
+
+    await ctx.runMutation(internal.conversations._finalizeForward, {
+      conversationId: args.conversationId,
+      targetChannelId: args.targetChannelId,
+      targetDepartmentId: args.targetDepartmentId,
+      callerId,
+      actorName,
+      targetBranchName: ctxData.targetBranchName,
+      targetBranchNumber: formattedNumber,
+      targetDeptName: ctxData.targetDeptName,
+      renderedText,
+    });
+  },
 });

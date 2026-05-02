@@ -88,13 +88,15 @@ export type Message = {
   quotedMessageId?: string;
   deletedAt?: number;
   reactions?: Reaction[];
-  eventType?: "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened" | "csat_received";
+  eventType?: "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened" | "csat_received" | "transfer_within_channel" | "forward_to_branch";
   eventData?: {
     actorName?: string;
     fromDept?: string;
     toDept?: string;
     agentName?: string;
     csatScore?: number;
+    targetBranchName?: string;
+    targetDeptName?: string;
   };
   followUpId?: string;
   followUpCreatorName?: string;
@@ -211,6 +213,18 @@ function ConversationEventPill({
       lineBg: "bg-amber-200 dark:bg-amber-800",
       icon: "",
     },
+    transfer_within_channel: {
+      pillBg: "bg-blue-100 dark:bg-blue-950",
+      pillText: "text-blue-700 dark:text-blue-300",
+      lineBg: "bg-blue-200 dark:bg-blue-800",
+      icon: "↗",
+    },
+    forward_to_branch: {
+      pillBg: "bg-indigo-100 dark:bg-indigo-950",
+      pillText: "text-indigo-700 dark:text-indigo-300",
+      lineBg: "bg-indigo-200 dark:bg-indigo-800",
+      icon: "↗",
+    },
   };
 
   const style = config[eventType ?? ""] ?? config.agent_unassigned;
@@ -234,6 +248,13 @@ function ConversationEventPill({
       label = "أُعيد فتح المحادثة";
     else if (eventType === "csat_received")
       label = `${stars} العميل قيّم ${csatScore}/5`;
+    else if (eventType === "transfer_within_channel") {
+      const dest = eventData?.agentName ? `${toDept} / ${eventData.agentName}` : toDept;
+      label = `${actor} نقل المحادثة إلى ${dest}`;
+    } else if (eventType === "forward_to_branch") {
+      const dest = eventData?.targetDeptName ? `${eventData.targetBranchName} / ${eventData.targetDeptName}` : (eventData?.targetBranchName ?? "");
+      label = `${actor} حول المحادثة إلى ${dest} — تم إغلاقها.`;
+    }
   } else {
     if (eventType === "transfer_department")
       label = `${actor} transferred to ${toDept}`;
@@ -247,6 +268,13 @@ function ConversationEventPill({
       label = "Conversation reopened";
     else if (eventType === "csat_received")
       label = `${stars} Customer rated ${csatScore}/5`;
+    else if (eventType === "transfer_within_channel") {
+      const dest = eventData?.agentName ? `${toDept} / ${eventData.agentName}` : toDept;
+      label = `${actor} transferred this to ${dest}`;
+    } else if (eventType === "forward_to_branch") {
+      const dest = eventData?.targetDeptName ? `${eventData.targetBranchName} / ${eventData.targetDeptName}` : (eventData?.targetBranchName ?? "");
+      label = `${actor} forwarded this to ${dest} — conversation closed.`;
+    }
   }
 
   return (

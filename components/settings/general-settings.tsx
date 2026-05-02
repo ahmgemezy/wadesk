@@ -5,6 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
 import { Mail } from "lucide-react";
+import { ForwardTemplateCard } from "./forward-template-card";
 
 export function GeneralSettings() {
   const t = useT();
@@ -85,6 +86,8 @@ export function GeneralSettings() {
           </button>
         </div>
       </div>
+
+      <ForwardTemplateCard />
     </div>
   );
 }

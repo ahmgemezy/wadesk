@@ -7,7 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./message-bubble";
 import { LabelPicker } from "./label-picker";
-import { useLocale, useTranslatedLabel } from "@/lib/i18n/context";
+import { useLocale, useTranslatedLabel, useT } from "@/lib/i18n/context";
 import { toast } from "sonner";
 
 type MessageItem = {
@@ -91,6 +91,7 @@ export function ConversationThread({
   onSetReplyTo?: (reply: ReplyTo) => void;
 }) {
   const locale = useLocale();
+  const t = useT();
   const translateLabel = useTranslatedLabel();
   const rawMessages = useQuery(api.inbox.getMessages, {
     conversationId: conversationId as Id<"conversations">,
@@ -206,6 +207,27 @@ export function ConversationThread({
           </>
         )}
       </div>
+      {activeConv?.status === "forwarded" && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          {activeConv.forwardedToChannelName
+            ? t(
+                `This conversation was forwarded to ${activeConv.forwardedToChannelName}${
+                  activeConv.forwardedToDepartmentName
+                    ? ` / ${activeConv.forwardedToDepartmentName}`
+                    : ""
+                } — replies are disabled.`,
+                `تم تحويل هذه المحادثة إلى ${activeConv.forwardedToChannelName}${
+                  activeConv.forwardedToDepartmentName
+                    ? ` / ${activeConv.forwardedToDepartmentName}`
+                    : ""
+                } — الردود معطلة.`
+              )
+            : t(
+                "This conversation was forwarded to another branch — replies are disabled.",
+                "تم تحويل هذه المحادثة إلى فرع آخر — الردود معطلة."
+              )}
+        </div>
+      )}
       <div className="flex-1 min-h-0 overflow-y-auto bg-muted/20">
         <div className="p-4 space-y-4">
         {groups.map((group) => (

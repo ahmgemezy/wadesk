@@ -16,6 +16,10 @@ export default defineSchema({
     paddle_subscription_id: v.optional(v.string()),
     plan_activated_at: v.optional(v.number()),
     emailLocale: v.optional(v.union(v.literal("ar"), v.literal("en"))),
+    forwardMessageTemplates: v.optional(v.object({
+      ar: v.string(),
+      en: v.string(),
+    })),
   })
     .index("by_tenantId", ["tenantId"]),
 
@@ -175,6 +179,7 @@ export default defineSchema({
       v.literal("open"),
       v.literal("pending"),
       v.literal("resolved"),
+      v.literal("forwarded"),
     ),
     labels: v.array(v.string()),
     lastMessageAt: v.number(),
@@ -187,6 +192,10 @@ export default defineSchema({
     mergedInto: v.optional(v.id("conversations")),
     mergedAt: v.optional(v.number()),
     totalMergedCount: v.optional(v.number()),
+    forwardedToChannelId: v.optional(v.id("channels")),
+    forwardedToDepartmentId: v.optional(v.id("departments")),
+    forwardedAt: v.optional(v.number()),
+    forwardedBy: v.optional(v.string()),
     hasFollowUp: v.optional(v.boolean()),
   })
     .index("by_tenant", ["tenantId"])
@@ -244,6 +253,8 @@ export default defineSchema({
     }))),
     eventType: v.optional(v.union(
       v.literal("transfer_department"),
+      v.literal("transfer_within_channel"),
+      v.literal("forward_to_branch"),
       v.literal("agent_assigned"),
       v.literal("agent_unassigned"),
       v.literal("resolved"),
@@ -256,6 +267,9 @@ export default defineSchema({
       toDept: v.optional(v.string()),
       agentName: v.optional(v.string()),
       csatScore: v.optional(v.number()),
+      targetBranchName: v.optional(v.string()),
+      targetBranchNumber: v.optional(v.string()),
+      targetDeptName: v.optional(v.string()),
     })),
     followUpId: v.optional(v.id("followUps")),
     creatorDepartmentId: v.optional(v.id("departments")),
@@ -370,6 +384,7 @@ export default defineSchema({
       v.literal("billing_subscription_expired"),
       v.literal("conversation_transferred"),
       v.literal("conversation_reopened"),
+      v.literal("new_assignment"),
     ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),

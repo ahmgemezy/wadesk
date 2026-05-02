@@ -236,6 +236,10 @@ export const createInbound = internalMutation({
       }
     }
 
+    if (conversation && conversation.status === "forwarded") {
+      conversation = null;
+    }
+
     if (!conversation) {
       let departmentId: Id<"departments"> | undefined;
       const defaultDept = await ctx.runQuery(
@@ -865,5 +869,53 @@ export const handleIncomingReaction = internalMutation({
     }
 
     await ctx.db.patch(msg._id, { reactions: updatedReactions });
+  },
+});
+
+export const createOutboundForward = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    tenantId: v.string(),
+    content: v.string(),
+    authorId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId: args.tenantId,
+      direction: "outbound",
+      content: args.content,
+      contentType: "text",
+      isInternalNote: false,
+      authorId: args.authorId,
+      status: "sending",
+      timestamp: now,
+      createdAt: now,
+    });
+    await ctx.db.patch(args.conversationId, {
+      lastMessageAt: now,
+      lastMessagePreview: args.content.slice(0, 100),
+    });
+    return messageId;
+  },
+});
+
+export const markFailed = internalMutation({
+  args: { messageId: v.id("messages"), reason: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      status: "failed",
+      failureReason: args.reason,
+    });
+  },
+});
+
+export const getStatusInternal = internalQuery({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const m = await ctx.db.get(args.messageId);
+    if (!m) return null;
+    return { status: m.status, failureReason: m.failureReason };
   },
 });

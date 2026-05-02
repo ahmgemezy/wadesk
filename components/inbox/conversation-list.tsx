@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useQuery, useConvexAuth } from "convex/react";
 import { useAuth, useOrganization } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -41,6 +43,35 @@ export function ConversationList({
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
 
+  const searchParams = useSearchParams();
+  const urlScope = searchParams.get("scope") ?? "mine";
+
+  const scopeFilter = (() => {
+    if (urlScope === "forwarded") return { status: "forwarded" as const };
+    if (urlScope === "resolved") return { status: "resolved" as const };
+    if (urlScope === "mentions") return { filter: "mine" as const };
+    const channelMatch = urlScope.match(/^channel:([^:]+):(.+)$/);
+    if (channelMatch) {
+      const [, channelId, sub] = channelMatch;
+      return {
+        channelId: channelId as Id<"channels">,
+        ...(sub === "unassigned" ? { filter: "unassigned" as const } : {}),
+      };
+    }
+    const deptMatch = urlScope.match(/^dept:([^:]+):(.+)$/);
+    if (deptMatch) {
+      const [, deptId, sub] = deptMatch;
+      return {
+        departmentId: deptId as Id<"departments">,
+        ...(sub === "unassigned" ? { filter: "unassigned" as const } : {}),
+        ...(sub === "mine" ? { filter: "mine" as const } : {}),
+      };
+    }
+    if (urlScope === "mine") return { filter: "mine" as const };
+    if (urlScope === "unassigned") return { filter: "unassigned" as const };
+    return {};
+  })();
+
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
   const { memberships } = useOrganization({ memberships: true });
@@ -65,7 +96,15 @@ export function ConversationList({
   // so we can show counts on all 3 tabs simultaneously without extra queries.
   const allConversations = useQuery(
     api.inbox.listConversations,
-    isAuthenticated ? { filter: "all", contactStage: stageFilter } : "skip"
+    isAuthenticated
+      ? {
+          filter: ("filter" in scopeFilter ? scopeFilter.filter : "all") as "all" | "mine" | "unassigned",
+          contactStage: stageFilter,
+          ...("channelId" in scopeFilter ? { channelId: scopeFilter.channelId } : {}),
+          ...("departmentId" in scopeFilter ? { departmentId: scopeFilter.departmentId } : {}),
+          ...("status" in scopeFilter ? { status: scopeFilter.status } : {}),
+        }
+      : "skip"
   );
 
   // Derive per-tab counts

@@ -1,7 +1,7 @@
 import { query, internalQuery, internalMutation, mutation } from "../_generated/server";
 import { v, ConvexError } from "convex/values";
 import type { Plan } from "./planLimits";
-import { getCallerIdentity, assertAdmin } from "./auth";
+import { getCallerIdentity, assertAdmin, type OrgRole } from "./auth";
 
 export const getCurrentPlan = query({
   args: {},
@@ -101,6 +101,20 @@ export const getEmailLocale = internalQuery({
   },
 });
 
+export const getForwardTemplates = internalQuery({
+  args: { tenantId: v.string() },
+  handler: async (ctx, args): Promise<{ ar: string; en: string }> => {
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+    return tenant?.forwardMessageTemplates ?? {
+      ar: "للحصول على خدمة أفضل، تواصل مع فرع {{branchName}} على {{branchNumber}}",
+      en: "For better service, please contact our {{branchName}} branch at {{branchNumber}}",
+    };
+  },
+});
+
 export const getEmailLocalePublic = query({
   args: {},
   handler: async (ctx): Promise<"ar" | "en"> => {
@@ -133,5 +147,53 @@ export const getTenantBySubscriptionId = internalQuery({
   handler: async (ctx, args) => {
     const all = await ctx.db.query("tenants").collect();
     return all.find((t) => t.paddle_subscription_id === args.subscriptionId) ?? null;
+  },
+});
+
+export const getForwardTemplatesPublic = query({
+  args: {},
+  handler: async (ctx): Promise<{ ar: string; en: string }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.orgId) {
+      return {
+        ar: "للحصول على خدمة أفضل، تواصل مع فرع {{branchName}} على {{branchNumber}}",
+        en: "For better service, please contact our {{branchName}} branch at {{branchNumber}}",
+      };
+    }
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", identity.orgId as string))
+      .first();
+    return tenant?.forwardMessageTemplates ?? {
+      ar: "للحصول على خدمة أفضل، تواصل مع فرع {{branchName}} على {{branchNumber}}",
+      en: "For better service, please contact our {{branchName}} branch at {{branchNumber}}",
+    };
+  },
+});
+
+export const updateForwardTemplate = mutation({
+  args: { ar: v.string(), en: v.string() },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as OrgRole);
+
+    const required = ["{{branchName}}", "{{branchNumber}}"];
+    const missing: string[] = [];
+    for (const tplVar of required) {
+      if (!args.ar.includes(tplVar) || !args.en.includes(tplVar)) missing.push(tplVar);
+    }
+    if (missing.length > 0) {
+      throw new ConvexError(`MISSING_TEMPLATE_VARIABLES:${missing.join(",")}`);
+    }
+
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
+      .first();
+    if (!tenant) throw new ConvexError("TENANT_NOT_FOUND");
+
+    await ctx.db.patch(tenant._id, {
+      forwardMessageTemplates: { ar: args.ar, en: args.en },
+    });
   },
 });

@@ -6,12 +6,13 @@ import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ConversationList } from "@/components/inbox/conversation-list";
+import { InboxQueueTree } from "@/components/inbox/inbox-queue-tree";
 import { ConversationThread } from "@/components/inbox/conversation-thread";
 import { MessageInput } from "@/components/inbox/message-input";
 import { StatusSelector } from "@/components/inbox/status-selector";
 import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
-import { TransferDepartmentDialog } from "@/components/inbox/transfer-department-dialog";
+import { TransferDialog } from "@/components/inbox/transfer-dialog";
 import { ContactPanel } from "@/components/contacts/contact-panel";
 import { SeedButton } from "@/components/dev/seed-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -119,6 +120,7 @@ function InboxPageInner() {
             showListOnMobile ? "block" : "hidden md:flex",
           )}
         >
+          <InboxQueueTree />
           <ConversationList
             activeConversationId={selectedId ?? undefined}
             onSelect={handleSelect}
@@ -183,22 +185,26 @@ function InboxPageInner() {
                     (!!selectedConversation?.isCurrentUserDeptMember || isPrivileged)
                   }
                 />
+
+                {/* Controls */}
+                {selectedConversation?.status !== "forwarded" && (
+                  <>
                 {selectedConversation?.channelId && (
-                  <TransferDepartmentDialog
+                  <TransferDialog
                     conversationId={selectedId}
                     channelId={selectedConversation.channelId}
                     currentDepartmentId={selectedConversation.departmentId}
                   />
                 )}
-
-                {/* Controls */}
-                <StatusSelector conversationId={selectedId} />
-                <AssignAgentDialog
-                  conversationId={selectedId}
-                  currentAssigneeId={
-                    selectedConversation?.assignedAgentId ?? undefined
-                  }
-                />
+                    <StatusSelector conversationId={selectedId} />
+                    <AssignAgentDialog
+                      conversationId={selectedId}
+                      currentAssigneeId={
+                        selectedConversation?.assignedAgentId ?? undefined
+                      }
+                    />
+                  </>
+                )}
               </div>
 
               {/* Message thread + composer */}
@@ -214,6 +220,7 @@ function InboxPageInner() {
                     onClearReply={() => setReplyTo(null)}
                     isLocked={!!selectedConversation?.departmentId && !selectedConversation?.assignedAgentId}
                     isPrivileged={isPrivileged}
+                    isForwarded={selectedConversation?.status === "forwarded"}
                   />
                 </div>
 
