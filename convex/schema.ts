@@ -47,6 +47,8 @@ export default defineSchema({
     deactivationWarningsSent: v.optional(v.array(v.number())),
     slaThresholdMinutes: v.optional(v.number()),
     slaEnabled: v.optional(v.boolean()),
+    reopenWindowHours: v.optional(v.number()),  // window after resolution where a new inbound reopens the same conversation; default 24h
+
     pendingDisplayName: v.optional(v.string()),
     displayNameStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
     displayNameSubmittedAt: v.optional(v.number()),
@@ -181,9 +183,11 @@ export default defineSchema({
     createdAt: v.number(),
     lastInboundAt: v.optional(v.number()),
     slaBreachedAt: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),  // set when status flips to "resolved"; cleared on reopen — used to gate reopen window
     mergedInto: v.optional(v.id("conversations")),
     mergedAt: v.optional(v.number()),
     totalMergedCount: v.optional(v.number()),
+    hasFollowUp: v.optional(v.boolean()),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_status", ["tenantId", "status"])
@@ -251,6 +255,11 @@ export default defineSchema({
       toDept: v.optional(v.string()),
       agentName: v.optional(v.string()),
     })),
+    followUpId: v.optional(v.id("followUps")),
+    creatorDepartmentId: v.optional(v.id("departments")),
+    followUpCreatorName: v.optional(v.string()),
+    followUpDepartmentName: v.optional(v.string()),
+    followUpDepartmentNameAr: v.optional(v.string()),
   })
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_tenant", ["tenantId"])
@@ -358,6 +367,7 @@ export default defineSchema({
       v.literal("billing_payment_failed"),
       v.literal("billing_subscription_expired"),
       v.literal("conversation_transferred"),
+      v.literal("conversation_reopened"),
     ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
@@ -366,7 +376,9 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_user", ["tenantId", "userId", "read"])
-    .index("by_user_type", ["tenantId", "userId", "type"]),
+    .index("by_user_type", ["tenantId", "userId", "type"])
+    .index("by_user_created", ["tenantId", "userId", "createdAt"])
+    .index("by_created", ["createdAt"]),
 
   metaTemplates: defineTable({
     tenantId: v.string(),

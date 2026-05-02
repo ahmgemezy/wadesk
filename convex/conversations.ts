@@ -196,6 +196,7 @@ export const setStatus = mutation({
       v.literal("pending"),
       v.literal("resolved"),
     ),
+    actorName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -213,14 +214,19 @@ export const setStatus = mutation({
       throw new ConvexError("FORBIDDEN");
     }
 
-    await ctx.db.patch(args.conversationId, { status: args.status });
+    await ctx.db.patch(args.conversationId, {
+      status: args.status,
+      resolvedAt: args.status === "resolved" ? Date.now() : undefined,
+    });
 
     const statusIdentity = (args.status === "resolved" || args.status === "open")
       ? await ctx.auth.getUserIdentity()
       : null;
 
-    if (statusIdentity) {
-      const statusActorName = statusIdentity.name ?? statusIdentity.email ?? "Agent";
+    const resolvedActorName =
+      args.actorName ?? statusIdentity?.name ?? statusIdentity?.email ?? "Agent";
+
+    if (args.status === "resolved" || args.status === "open") {
       const statusNow = Date.now();
       await ctx.db.insert("messages", {
         conversationId: args.conversationId,
@@ -229,7 +235,7 @@ export const setStatus = mutation({
         content: "",
         contentType: "system_event",
         eventType: args.status === "resolved" ? "resolved" : "reopened",
-        eventData: { actorName: statusActorName },
+        eventData: { actorName: resolvedActorName },
         isInternalNote: false,
         authorId: callerId,
         status: "sent",
@@ -239,7 +245,7 @@ export const setStatus = mutation({
     }
 
     if (args.status === "resolved") {
-      const agentName = statusIdentity?.name ?? statusIdentity?.email ?? undefined;
+      const agentName = args.actorName ?? statusIdentity?.name ?? statusIdentity?.email ?? undefined;
 
       if (conversation.assignedAgentId) {
         await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, {

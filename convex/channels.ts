@@ -110,6 +110,23 @@ export const setStatus = internalMutation({
   },
 });
 
+// Marks a channel as needing reconnection without closing its conversations.
+// Used when the WhatsApp access token returns auth errors (e.g. Meta code 190)
+// from a background path — closing every conversation on a token blip would
+// be far too destructive.
+export const markReconnectRequiredInternal = internalMutation({
+  args: { channelId: v.id("channels") },
+  handler: async (ctx, args) => {
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) return;
+    if (channel.status === "reconnect_required") return;
+    await ctx.db.patch(args.channelId, {
+      status: "reconnect_required",
+      disconnectedAt: Date.now(),
+    });
+  },
+});
+
 export const incrementRoundRobinIndex = internalMutation({
   args: { channelId: v.id("channels"), tenantId: v.string() },
   handler: async (ctx, args) => {
@@ -270,6 +287,32 @@ export const updateName = mutation({
 
     await ctx.db.patch(args.channelId, {
       displayName: args.displayName.trim(),
+    });
+  },
+});
+
+export const updateReopenWindow = mutation({
+  args: {
+    channelId: v.id("channels"),
+    hours: v.optional(v.number()),  // undefined → use default 24h
+  },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel || channel.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    if (args.hours !== undefined && (args.hours < 1 || args.hours > 720)) {
+      throw new ConvexError("INVALID_WINDOW");
+    }
+
+    await ctx.db.patch(args.channelId, {
+      reopenWindowHours: args.hours,
     });
   },
 });

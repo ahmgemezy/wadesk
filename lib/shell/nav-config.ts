@@ -121,6 +121,13 @@ export const NAV_ITEMS: NavItem[] = [
         icon: "Star",
         minRole: "admin",
       },
+      {
+        href: "/settings/notifications",
+        labelAr: "الإشعارات",
+        labelEn: "Notifications",
+        icon: "Bell",
+        minRole: "agent",
+      },
     ],
   },
 ];

@@ -10,7 +10,15 @@ export function ChannelExpiringSoon({ locale, variables }: Props) {
   const { channelName, daysLeft, deleteDate, appUrl } = variables;
   const isRtl = locale === "ar";
   const font = isRtl ? "'Cairo', Arial, sans-serif" : "Arial, Helvetica, sans-serif";
-  const textStyle = { color: "#334155", fontSize: 15, lineHeight: "1.7", margin: "0 0 12px", textAlign: (isRtl ? "right" : "left") as "right" | "left", fontFamily: font };
+  const textStyle = {
+    color: "#334155",
+    fontSize: 15,
+    lineHeight: "1.7",
+    margin: "0 0 12px",
+    textAlign: (isRtl ? "right" : "left") as "right" | "left",
+    direction: (isRtl ? "rtl" : "ltr") as "rtl" | "ltr",
+    fontFamily: font,
+  };
 
   if (locale === "ar") {
     return (

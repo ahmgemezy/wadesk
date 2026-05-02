@@ -93,6 +93,7 @@ export function WaEmailLayout({
                 color: "#0F172A",
                 margin: "0 0 20px",
                 textAlign: isRtl ? "right" : "left",
+                direction: isRtl ? "rtl" : "ltr",
                 fontFamily,
               }}
             >
@@ -115,6 +116,7 @@ export function WaEmailLayout({
                 fontSize: 12,
                 margin: 0,
                 fontFamily,
+                direction: isRtl ? "rtl" : "ltr",
               }}
             >
               WABDesk — واب ديسك

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { Suspense, useState, useCallback, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -23,9 +24,27 @@ import { useT } from "@/lib/i18n/context";
 import { useOrganization } from "@clerk/nextjs";
 
 export default function InboxPage() {
+  return (
+    <Suspense fallback={null}>
+      <InboxPageInner />
+    </Suspense>
+  );
+}
+
+function InboxPageInner() {
   const t = useT();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialFromUrl = searchParams.get("c");
+  const [selectedId, setSelectedId] = useState<string | null>(initialFromUrl);
   const [quickReplyOpen, setQuickReplyOpen] = useState(false);
+
+  useEffect(() => {
+    const c = searchParams.get("c");
+    if (c && c !== selectedId) {
+      setSelectedId(c);
+    }
+  }, [searchParams, selectedId]);
   const [quickReplyContent, setQuickReplyContent] = useState("");
   const [replyTo, setReplyTo] = useState<{
     messageId: string;
@@ -59,14 +78,18 @@ export default function InboxPage() {
   const handleSelect = useCallback(
     (id: string) => {
       setSelectedId(id);
+      router.replace(`/inbox?c=${id}`, { scroll: false });
       markAsRead({ conversationId: id as Id<"conversations"> }).catch(() => {
         // non-critical — ignore
       });
     },
-    [markAsRead],
+    [markAsRead, router],
   );
 
-  const handleBack = () => setSelectedId(null);
+  const handleBack = () => {
+    setSelectedId(null);
+    router.replace("/inbox", { scroll: false });
+  };
 
   return (
     <>

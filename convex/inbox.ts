@@ -47,8 +47,14 @@ export const listConversations = query({
     } else if (args.filter === "unassigned") {
       filtered = all.filter((c) => !c.assignedAgentId);
     } else if (!isAdminOrSupervisor) {
+      // Agents see: assigned-to-me, unassigned, OR conversations that contain
+      // a follow-up (so the team can collaborate on outreach across
+      // departments without being blocked by assignment).
       filtered = all.filter(
-        (c) => c.assignedAgentId === callerId || !c.assignedAgentId,
+        (c) =>
+          c.assignedAgentId === callerId ||
+          !c.assignedAgentId ||
+          c.hasFollowUp === true,
       );
     }
 
@@ -233,6 +239,7 @@ export const updateStatus = mutation({
       v.literal("pending"),
       v.literal("resolved"),
     ),
+    actorName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -256,7 +263,31 @@ export const updateStatus = mutation({
       }
     }
 
-    await ctx.db.patch(args.conversationId, { status: args.status });
+    await ctx.db.patch(args.conversationId, {
+      status: args.status,
+      resolvedAt: args.status === "resolved" ? Date.now() : undefined,
+    });
+
+    if (args.status === "resolved" || args.status === "open") {
+      const identity = await ctx.auth.getUserIdentity();
+      const actorName =
+        args.actorName ?? identity?.name ?? identity?.email ?? "Agent";
+      const now = Date.now();
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        tenantId,
+        direction: "outbound",
+        content: "",
+        contentType: "system_event",
+        eventType: args.status === "resolved" ? "resolved" : "reopened",
+        eventData: { actorName },
+        isInternalNote: false,
+        authorId: callerId,
+        status: "sent",
+        timestamp: now,
+        createdAt: now,
+      });
+    }
 
     // Schedule CSAT if resolving
     if (args.status === "resolved") {

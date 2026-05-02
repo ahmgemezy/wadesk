@@ -31,6 +31,10 @@ type MessageItem = {
     toDept?: string;
     agentName?: string;
   };
+  followUpId?: string;
+  followUpCreatorName?: string;
+  followUpDepartmentName?: string;
+  followUpDepartmentNameAr?: string;
 };
 
 function formatDateLabel(timestamp: number, locale: "ar" | "en"): string {
@@ -134,6 +138,10 @@ export function ConversationThread({
           reactions: m.reactions as { emoji: string; reactorId: string }[] | undefined,
           eventType: (m as typeof m & { eventType?: string }).eventType,
           eventData: (m as typeof m & { eventData?: MessageItem["eventData"] }).eventData,
+          followUpId: (m as typeof m & { followUpId?: string }).followUpId,
+          followUpCreatorName: (m as typeof m & { followUpCreatorName?: string }).followUpCreatorName,
+          followUpDepartmentName: (m as typeof m & { followUpDepartmentName?: string }).followUpDepartmentName,
+          followUpDepartmentNameAr: (m as typeof m & { followUpDepartmentNameAr?: string }).followUpDepartmentNameAr,
         }));
 
   const messagesById = new Map(
@@ -242,6 +250,10 @@ export function ConversationThread({
                     reactions: msg.reactions,
                     eventType: msg.eventType as "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened" | undefined,
                     eventData: msg.eventData,
+                    followUpId: msg.followUpId,
+                    followUpCreatorName: msg.followUpCreatorName,
+                    followUpDepartmentName: msg.followUpDepartmentName,
+                    followUpDepartmentNameAr: msg.followUpDepartmentNameAr,
                   }}
                   quotedMessage={
                     msg.quotedMessageId

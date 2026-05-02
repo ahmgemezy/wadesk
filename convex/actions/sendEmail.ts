@@ -26,9 +26,13 @@ const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
     ar: "تنبيه: تجاوز وقت الاستجابة المسموح به",
     en: "Alert: SLA Response Time Exceeded",
   },
-  followup_due: {
-    ar: "تحديث: متابعة العميل",
-    en: "Update: Customer Follow-up",
+  followup_due_sent: {
+    ar: "تم إرسال متابعة {{contactName}} بنجاح",
+    en: "Follow-up sent to {{contactName}}",
+  },
+  followup_due_failed: {
+    ar: "فشل إرسال متابعة {{contactName}}",
+    en: "Follow-up to {{contactName}} failed",
   },
   new_assignment: {
     ar: "إشعار: محادثة جديدة تم تعيينها إليك",
@@ -74,6 +78,8 @@ function buildElement(
     case "sla_breach":
       return React.createElement(SlaBreach, props);
     case "followup_due":
+    case "followup_due_sent":
+    case "followup_due_failed":
       return React.createElement(FollowupDue, props);
     case "new_assignment":
       return React.createElement(NewAssignment, props);
@@ -103,7 +109,7 @@ export const sendEmail = internalAction({
     }
 
     const enrichedVariables: Record<string, string> = {
-      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://app.wabdesk.com",
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://wabdesk.com",
       ...args.variables,
     };
 

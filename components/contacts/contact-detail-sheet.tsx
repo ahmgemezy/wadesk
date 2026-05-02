@@ -263,7 +263,7 @@ export function ContactDetailSheet({
       });
       setShowChannelPicker(false);
       onOpenChange(false);
-      router.push(`/inbox/${convId}`);
+      router.push(`/inbox?c=${convId}`);
     } finally {
       setStartingConversation(false);
     }

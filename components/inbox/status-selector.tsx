@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -21,6 +22,13 @@ export function StatusSelector({
 }) {
   const t = useT();
   const setStatus = useMutation(api.conversations.setStatus);
+  const { user } = useUser();
+  const fullName =
+    user?.fullName ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    null;
+  const actorName =
+    fullName ?? user?.primaryEmailAddress?.emailAddress ?? undefined;
 
   const statuses = [
     { value: "open" as const, label: t("Open", "مفتوح"), color: "bg-slate-500" },
@@ -47,6 +55,7 @@ export function StatusSelector({
               setStatus({
                 conversationId: conversationId as Id<"conversations">,
                 status: s.value,
+                actorName,
               })
             }
           >

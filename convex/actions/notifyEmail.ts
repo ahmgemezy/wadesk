@@ -55,7 +55,7 @@ export const followupDueEmail = internalAction({
     }
     await ctx.runAction(internal.actions.sendEmail.sendEmail, {
       to: email,
-      templateKey: "followup_due",
+      templateKey: args.status === "sent" ? "followup_due_sent" : "followup_due_failed",
       locale,
       variables: {
         contactName: args.contactName,

@@ -39,4 +39,10 @@ crons.interval(
   internal.actions.channelRetentionAction.processChannelRetention,
 );
 
+crons.interval(
+  "purge-old-notifications",
+  { hours: 24 },
+  internal.notifications.purgeOld,
+);
+
 export default crons;

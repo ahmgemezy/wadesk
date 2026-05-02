@@ -15,21 +15,31 @@ export const listForConversation = query({
 
     const isAdminOrSupervisor =
       orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-    if (
-      !isAdminOrSupervisor &&
-      conversation.assignedAgentId !== callerId &&
-      conversation.assignedAgentId !== undefined
-    ) {
-      return [];
-    }
 
-    return ctx.db
+    const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) =>
         q.eq("conversationId", args.conversationId),
       )
       .order("asc")
       .collect();
+
+    // Follow-up carve-out: a conversation that contains a scheduled follow-up
+    // is shared work — every team member needs visibility on it (regardless
+    // of department or current assignment) so we don't double-message a
+    // customer. Admin/Supervisor and the assigned agent see everything as
+    // before; everyone else sees the conversation only when it has a
+    // follow-up message in it.
+    if (
+      !isAdminOrSupervisor &&
+      conversation.assignedAgentId !== callerId &&
+      conversation.assignedAgentId !== undefined
+    ) {
+      const hasFollowUp = messages.some((m) => m.followUpId !== undefined);
+      if (!hasFollowUp) return [];
+    }
+
+    return messages;
   },
 });
 
@@ -211,6 +221,20 @@ export const createInbound = internalMutation({
       .first();
 
     let isNewConversation = false;
+    let didReopen = false;
+
+    // Outside-window check: if the existing conversation is resolved and the
+    // reopen window has elapsed, treat this inbound as a brand new case —
+    // null the local var so the new-conversation branch below runs.
+    if (conversation && conversation.status === "resolved") {
+      const channel = await ctx.db.get(args.channelId);
+      const windowHours = channel?.reopenWindowHours ?? 24;
+      const windowMs = windowHours * 60 * 60 * 1000;
+      const resolvedTime = conversation.resolvedAt ?? conversation.lastMessageAt;
+      if (args.timestamp - resolvedTime >= windowMs) {
+        conversation = null;
+      }
+    }
 
     if (!conversation) {
       let departmentId: Id<"departments"> | undefined;
@@ -244,15 +268,18 @@ export const createInbound = internalMutation({
         totalConversations: (contact?.totalConversations ?? 0) + 1,
       });
     } else {
+      const wasResolved = conversation.status === "resolved";
       const patch: Record<string, unknown> = {
         lastMessageAt: args.timestamp,
         lastMessagePreview: args.content.slice(0, 100),
         unreadCount: (conversation.unreadCount ?? 0) + 1,
         lastInboundAt: args.timestamp,
       };
-      if (conversation.status === "resolved") {
+      if (wasResolved) {
         patch.status = "open";
         patch.slaBreachedAt = undefined;
+        patch.resolvedAt = undefined;
+        didReopen = true;
       }
       await ctx.db.patch(conversation._id, patch);
     }
@@ -272,6 +299,39 @@ export const createInbound = internalMutation({
       timestamp: args.timestamp,
       createdAt: Date.now(),
     });
+
+    // ── Customer reopened a resolved conversation within the window ──────────
+    if (didReopen && conversation) {
+      const contact = await ctx.db.get(contactId);
+      const contactName =
+        contact?.customName ?? contact?.displayName ?? contact?.phone ?? "Customer";
+      await ctx.db.insert("messages", {
+        conversationId: conversation._id,
+        tenantId: args.tenantId,
+        direction: "outbound",
+        content: "",
+        contentType: "system_event",
+        eventType: "reopened",
+        eventData: { actorName: contactName },
+        isInternalNote: false,
+        status: "sent",
+        timestamp: args.timestamp,
+        createdAt: Date.now(),
+      });
+
+      if (conversation.assignedAgentId) {
+        const channel = await ctx.db.get(args.channelId);
+        const channelName = channel?.displayName ?? "";
+        await ctx.runMutation(internal.notifications.internalCreate, {
+          tenantId: args.tenantId,
+          userId: conversation.assignedAgentId,
+          type: "conversation_reopened",
+          referenceId: conversation._id,
+          contactName,
+          message: `${contactName} replied to a resolved conversation${channelName ? ` on ${channelName}` : ""}`,
+        });
+      }
+    }
 
     // ── Customer Journey: fire conversation_started event on new convos ──────
     if (isNewConversation) {

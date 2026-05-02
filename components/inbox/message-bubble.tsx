@@ -1,7 +1,7 @@
 "use client";
 
 import { useT, useLocale } from "@/lib/i18n/context";
-import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIcon } from "lucide-react";
+import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIcon, CalendarClockIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { MessageActionMenu } from "./message-action-menu";
 
@@ -95,6 +95,10 @@ export type Message = {
     toDept?: string;
     agentName?: string;
   };
+  followUpId?: string;
+  followUpCreatorName?: string;
+  followUpDepartmentName?: string;
+  followUpDepartmentNameAr?: string;
 };
 
 function QuotedMessagePreview({ quoted, isOutbound }: { quoted: Message; isOutbound: boolean }) {
@@ -351,6 +355,26 @@ export function MessageBubble({
     <QuotedMessagePreview quoted={quotedMessage} isOutbound={!isInbound} />
   );
 
+  const isFollowUp = !!message.followUpId;
+  const followUpDeptLabel =
+    locale === "ar"
+      ? message.followUpDepartmentNameAr ?? message.followUpDepartmentName
+      : message.followUpDepartmentName;
+  const followUpHeader = isFollowUp && (
+    <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-blue-700 dark:text-blue-300">
+      <CalendarClockIcon className="size-3 shrink-0" />
+      <span>{t("Follow-up", "متابعة")}</span>
+      {message.followUpCreatorName && (
+        <span className="text-foreground/70">· {message.followUpCreatorName}</span>
+      )}
+      {followUpDeptLabel && (
+        <span className="rounded-full bg-blue-100 dark:bg-blue-950 px-1.5 py-0.5 text-[10px]">
+          {followUpDeptLabel}
+        </span>
+      )}
+    </div>
+  );
+
   const actionMenu = (
     <MessageActionMenu
       isOutbound={!isInbound}
@@ -528,6 +552,7 @@ export function MessageBubble({
     <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
       {actionMenu}
       <div className={bubbleBase}>
+        {followUpHeader}
         {quotedPreview}
         <div className="text-sm whitespace-pre-wrap">{linkify(message.content)}</div>
         {timeRow}
