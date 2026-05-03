@@ -871,10 +871,162 @@ On save, parse `body` with regex `/\{\{(\w+)\}\}/g` and store extracted variable
 
 ---
 
+## 30. AI Agent Behavior Rules
+
+> These rules apply to **Claude Code** (and any future AI coding agent) when working on this codebase. They are not optional — they exist to prevent the most common failure modes observed during vibe coding sessions on WabDesk.
+>
+> Read this section before reading any task prompt. If a task prompt conflicts with these rules, these rules win.
+
+---
+
+### 30.1 Think Before Coding
+
+**State assumptions explicitly. Don’t hide confusion. Push back when warranted.**
+
+Before writing any code:
+
+- State your interpretation of the task in your own words. If you’re guessing, say _“I’m guessing that…”_ — don’t proceed silently.
+- If the request has multiple valid interpretations, list them and ask which one. Never pick one silently.
+- If you see a simpler approach than what was requested, propose it before implementing the requested one.
+- If something is unclear about the schema, a business rule in `CLAUDE.md`, or a product decision, **STOP and ask**. Do not invent.
+
+**Example:**
+
+> Task: _“Add a way to disable channels.”_
+> ❌ Wrong: silently add a `disabled: boolean` field and a toggle button.
+> ✅ Right: _“Two interpretations: (a) soft-disable that pauses webhook processing but keeps the row, (b) hard-disable that triggers the existing 30-day retention path (`channels.deletedAt`). Which one?”_
+
+---
+
+### 30.2 Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked. If asked for a button, don’t add a settings panel.
+- No abstractions for single-use code. Don’t extract helpers that are called once.
+- No “flexibility” knobs that weren’t requested (no extra config options, no `options: { strict?: boolean }` parameters that aren’t used).
+- No error handling for impossible scenarios.
+- If you wrote 200 lines and 50 would do, rewrite.
+
+**The senior-engineer test:** Would a senior engineer reading this PR say _“this is overcomplicated”_? If yes, simplify.
+
+**WabDesk-specific overcomplication patterns to avoid:**
+
+- Building a generic “rule engine” when the task was _“add one specific automation trigger”_
+- Wrapping a single Convex mutation in a class or factory
+- Adding feature flags for a feature with one call site
+- Adding `try/catch` around code that cannot throw (Convex mutations already roll back on throw)
+- Creating new shared helpers in `lib/` when the logic is used in one file
+
+---
+
+### 30.3 Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+This is the single biggest source of friction in vibe coding on this repo. Claude Code’s default behavior is to “improve” things while it’s there. **Don’t.**
+
+When editing existing files:
+
+- Don’t reformat code you didn’t change.
+- Don’t rename variables in unchanged blocks.
+- Don’t reorder imports unless your change required it.
+- Don’t “improve” adjacent comments.
+- Don’t refactor working code, even if you think your way is cleaner.
+- Match the existing style of the file, even if you’d write it differently in a fresh file.
+
+When your changes create orphans:
+
+- Remove imports / variables / functions that **your changes** made unused.
+- Do **not** remove pre-existing dead code. If you spot some, mention it in the response — let Ahmed decide.
+
+**The diff test:** Every changed line in the final diff must trace directly to the user’s stated request. If a line changed and you can’t justify it from the request, revert it.
+
+**Operations that require explicit prior discussion (never do these without asking first):**
+
+- `ctx.db.delete(...)` calls
+- Schema field removals or renames (these are migrations, not edits)
+- Index removals
+- Removing or changing the signature of any existing Convex action / mutation / query
+- Touching `convex/lib/auth.ts`, `convex/lib/encryption.ts`, `convex/lib/planLimits.ts`, or `convex/lib/rateLimit.ts`
+- Bumping `WHATSAPP_API_VERSION` or any other environment variable
+- Adding new dependencies to `package.json`
+
+If your task seems to require any of these, **stop and ask first**.
+
+---
+
+### 30.4 Goal-Driven Execution
+
+**Define verifiable success criteria. Loop until they all pass.**
+
+Transform vague tasks into checks you can run:
+
+| Vague task           | Verifiable goal                                                                   |
+| -------------------- | --------------------------------------------------------------------------------- |
+| “Add validation”     | Call the mutation with invalid input, assert it throws the expected `ConvexError` |
+| “Fix the bug”        | Write a repro path first, then make it pass                                       |
+| “Refactor X”         | `npx tsc --noEmit` clean before AND after; no behavior change                     |
+| “Implement task 017” | All Stage 0 reading-list files cited; `PROGRESS.md` entry written; `tsc` clean    |
+
+For every multi-step task, state the plan upfront:
+
+```
+1. Add `coexistenceEnabled` field to schema    → verify: `npx tsc --noEmit` clean
+2. Wire processEcho to read the flag            → verify: kill-switch (flag=false, send echo, assert no insert)
+3. Add UI badge for source="mobile"             → verify: bubble renders with badge for the three source values
+```
+
+Strong success criteria let you loop independently. Weak criteria (_“make it work”_) guarantee back-and-forth.
+
+---
+
+### 30.5 Stage Output Requirements
+
+Every stage of a multi-stage task must end with all four of the following. Skipping any one is a rejection trigger:
+
+1. **The actual code, not a summary.** BEFORE/AFTER diffs with line numbers for edits; full file contents for new files. A checklist of _what you did_ is not acceptable.
+1. **Literal terminal output of `npx tsc --noEmit`.** Paste it exactly. Do not paraphrase. Do not say _“no errors”_ — paste the actual (possibly empty) output.
+1. **A `PROGRESS.md` entry**, pasted in the response in full (not summarized), following the format used by existing entries.
+1. **A push-back invitation.** Every stage ends with: _“If you disagree with any decision above, explain before complying with the next stage.”_
+
+---
+
+### 30.6 Rejection Triggers
+
+Ahmed will reject and re-prompt without merging if any of these appear:
+
+- A summary instead of actual code at a stage boundary
+- An out-of-scope file change (file not listed in the stage’s scope was modified)
+- Placeholder code (_“will fix in production”_, _“TODO: real implementation”_, fake hashes, mock returns)
+- Schema changes that weren’t in the approved Stage 2 plan
+- `any` types
+- New `console.log` calls that aren’t tagged with a bracketed prefix (`[ECHO_DEDUP]`, `[SET_WAMID]`, etc.) matching the existing debug pattern
+- _“I also improved…”_ / _“I noticed and fixed…”_ language about anything that wasn’t asked
+- Default values flipped from the product spec (e.g., spec says _“default true”_ but the field is `v.optional(...)` with no explicit default and is read as falsy)
+
+---
+
+### 30.7 What Counts as Trivial (Skip the Stage Gates)
+
+These rules and the stage-gated workflow apply to **non-trivial** tasks. A task is trivial — and may be done in one shot — only if **all** of the following are true:
+
+- One file, fewer than ~30 lines of change
+- No schema change
+- No new external API call
+- No new Convex action / mutation / query
+- No new env var
+- No security-sensitive area (`auth.ts`, `encryption.ts`, `planLimits.ts`, webhook verification)
+
+When in doubt, treat it as non-trivial.
+
+---
+
 _Last updated: manually — update this file whenever a major architectural or product decision is made._
 
 ## Recent Changes
 
+- 030-ai-agent-behavior-rules: Added §30 covering AI agent behavioral rules — think before coding, simplicity, surgical changes, goal-driven execution, stage output requirements, rejection triggers, and definition of trivial tasks. Applies to Claude Code on all future task work.
 - 013-whatsapp-coexistence: WhatsApp Coexistence — phone numbers connected via Embedded Signup support sending from both WABDesk (Cloud API) and the WhatsApp Business mobile app simultaneously; mobile-sent messages mirrored into inbox with 📱 badge (`source: "mobile"`); 3-level echo dedup (wamid → content hash → tertiary insert); history backfill on WABA connection; automation guard skips non-customer sources; `featureType: "whatsapp_business_app_onboarding"` added to Embedded Signup `extras`; kill switch: `channels.coexistenceEnabled = false`; see PROGRESS.md for full implementation details
 - 009-automation-rules: Automation rules engine (if-this-send-that) — new tables: `automationRules`, `businessHours`, `ruleFireLog`; new files: `convex/automations.ts`, `lib/automationHelpers.ts`, `components/automations/` (4 components), `app/(dashboard)/automations/page.tsx`, `components/ui/switch.tsx`; modified: `convex/schema.ts`, `convex/http.ts`, `convex/crons.ts`, `convex/lib/planLimits.ts`, `convex/messages.ts` (fixed totalConversations increment), `lib/shell/nav-config.ts` (sidebar link), `lib/shell/types.ts`, `components/shell/resolve-icon.tsx`; 4 trigger types: keyword, outside_hours, first_message, no_reply_timeout; plan limits: Free 2, Starter 10, Growth 30, Business unlimited; admin+supervisor manage rules, admin-only for business hours
 - 004-multi-tenant-onboarding: Added `onboardingState` table (Convex); `fetchQuery` from `convex/nextjs` (server-side Convex reads in RSC)
