@@ -126,7 +126,6 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 | `customFields`            | Custom contact fields (key-value pairs)            | `tenantId`, `contactId`, `key`, `value`                                                                       |
 | `contactEvents`           | Contact activity timeline                          | `tenantId`, `contactId`, `type`, `metadata`                                                                   |
 | `notifications`           | In-app notifications (followups, SLA breaches)     | `tenantId`, `userId`, `type`, `message`, `read`                                                               |
-| `notificationPreferences` | Per-member email/in-app notification toggles       | `tenantId`, `userId`, `emailEnabled`, `inAppEnabled`, `eventTypes[]`                                          |
 | `inviteLinks`             | Time-limited team invite links                     | `tenantId`, `token`, `expiresAt`, `revoked`, `defaultRole`                                                    |
 | `onboardingState`         | Onboarding progress tracking                       | `tenantId`, `completedSteps[]`, `completedAt`                                                                 |
 | `memberProfiles`          | Rich member profiles (bio, contact info)           | `tenantId`, `userId`, `bio`, `jobTitle`, `phone`, `avatar`                                                    |
@@ -433,7 +432,6 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Tabbed modal: Overview (bio, contact details, recent activity) | Analytics (performance charts) | History (audit log) | Manage (role, status, remove)
   - `memberProfiles` table: bio, jobTitle, phone, avatar
   - `memberActionLog` table: full audit trail of admin actions
-  - `notificationPreferences` table: per-member email/in-app toggles
   - Admin/Supervisor can edit member contact details via Manage tab
 
 ### ✅ Team Presence System
@@ -762,7 +760,7 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 - ✅ `components/team/member-profile-modal.tsx` — tabbed modal shell
 - ✅ 4 tab components: overview-tab, analytics-tab, history-tab, manage-tab
 - ✅ `convex/members.ts` + `convex/memberQueries.ts` — mutations + analytics queries
-- ✅ New tables: `memberProfiles`, `memberActionLog`, `notificationPreferences`
+- ✅ New tables: `memberProfiles`, `memberActionLog`
 - ✅ Contact details: phone, jobTitle, bio stored per member
 - ✅ `hooks/use-member-profile.ts`, `hooks/use-presence.ts`
 - ✅ Team presence system: `convex/presence.ts`, `convex/teamPresence.ts`, `convex/teamPresenceQueries.ts`

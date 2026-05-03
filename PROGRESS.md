@@ -12,7 +12,7 @@
 **WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Paddle (billing integrated)  
 **Current branch:** `feat/013-departments`  
-**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (40 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete · ✅ Tabbed transfer + cross-branch forward live · ✅ CSAT end-to-end working with score surfacing
+**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (30 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete · ✅ Tabbed transfer + cross-branch forward live · ✅ CSAT end-to-end working with score surfacing
 
 ---
 
@@ -28,9 +28,9 @@
 - Middleware: all dashboard routes protected; public: `/`, `/sign-in`, `/sign-up`, `/select-org`
 - Files: `middleware.ts`, `convex/lib/auth.ts` (auth helpers), `lib/shell/role-utils.ts`
 
-**Convex Schema (40 tables, all real)**
+**Convex Schema (30 tables, all real)**
 All tables are real, indexed, and used by live queries:
-`tenants`, `channels`, `contacts`, `contactLists`, `broadcasts`, `conversations`, `messages`, `quickReplies`, `inviteLinks`, `customFields`, `followUps`, `contactEvents`, `notifications`, `metaTemplates`, `onboardingState`, `conversationMetrics`, `automationRules`, `businessHours`, `ruleFireLog`, `conversationLabels`, `channelMembers`, `csatSettings`, `messageTemplates`, `broadcastTemplates`, `departments`, `departmentMembers`, `rateLimits`, `presence`, `memberActionLog`, `notificationPreferences`, `memberProfiles`, `knowledgeBaseCategories`, `knowledgeBaseArticles`, `customerJourneys`, `sentimentLogs`, `agentDailyStats`, `agentWorkloads`, `visualAutomations`, `automationNodes`, `automationEdges`
+`tenants`, `channels`, `contacts`, `contactLists`, `broadcasts`, `conversations`, `messages`, `quickReplies`, `inviteLinks`, `customFields`, `followUps`, `contactEvents`, `notifications`, `metaTemplates`, `onboardingState`, `conversationMetrics`, `automationRules`, `businessHours`, `ruleFireLog`, `conversationLabels`, `channelMembers`, `csatSettings`, `messageTemplates`, `broadcastTemplates`, `departments`, `departmentMembers`, `rateLimits`, `presence`, `memberActionLog`, `memberProfiles`
 
 **Plan Limits (server-side enforced)**
 
@@ -961,6 +961,29 @@ The codebase has two separate locale systems that are not synchronized: (1) a co
   - Phase 2 rollout strategy updated: coexistence auto-enabled for all tenants once Meta enables per WABA; `coexistenceEnabled` is kill switch only
   - Media download for echoes deferred beyond Stage 5; `metaMediaId` stored but `mediaUrl` remains undefined for echoes
   - Message routing stubs log to `console.log` with JSON tag for debugging; no real processing in v1
+
+---
+
+### Cleanup — Remove 10 Dead Schema Tables (2026-05-04)
+
+Removes 10 schema tables that were either schema-only (no callers anywhere) or wired-but-empty (UI rendered, write path had zero callers). All 10 were verified empty in the local Convex deployment — no destructive migration required, no behavior change to any live feature.
+
+**Schema removed (10 tables):**
+- Schema-only (no callers): `notificationPreferences`, `knowledgeBaseCategories`, `knowledgeBaseArticles`, `sentimentLogs`, `agentDailyStats`, `agentWorkloads`, `visualAutomations`, `automationNodes`, `automationEdges`
+- Wired-but-empty: `customerJourneys` (UI always rendered the empty state — no insert path existed)
+
+**Code removed:**
+- `convex/customerInsights.ts` — dropped `listJourneys` query and `logJourneyEvent` mutation; surviving `getContactInsights` / `updateContactInsights` are unaffected
+- `components/contacts/customer-journey-map.tsx` — full file delete
+- `app/(dashboard)/contacts/[id]/page.tsx` — dropped `CustomerJourneyMap` usage; collapsed the now-degenerate two-tab `<Tabs>` shell on the right column to a single Card with `CardHeader` + `CardContent` (the surviving "Detailed Activity" tab promoted to a `CardTitle`)
+
+**Docs:**
+- `docs/superpowers/plans/2026-04-09-customer-journey.md` and `docs/superpowers/specs/2026-04-09-customer-journey-design.md` moved to `paused/` subdirectories (preserved for future revival, not deleted)
+- Stale narrative references to `notificationPreferences` cleaned from `PROJECT_STATE.md` (3 lines) and `AUDIT_REPORT.md` (1 row)
+
+**No behavior change.** No live query, mutation, action, or scheduled function referenced any of the removed tables.
+
+Files: `convex/schema.ts`, `convex/customerInsights.ts`, `app/(dashboard)/contacts/[id]/page.tsx`, `components/contacts/customer-journey-map.tsx` (deleted), `PROGRESS.md`, `PROJECT_STATE.md`, `AUDIT_REPORT.md`, `docs/superpowers/{plans,specs}/2026-04-09-customer-journey*.md` (moved)
 
 ---
 

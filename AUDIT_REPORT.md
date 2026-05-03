@@ -198,7 +198,6 @@ All tables are scoped to `tenantId` (Clerk `orgId`). Every query must filter by 
 | `csatSettings` | CSAT toggle, delay, template config |
 | `conversationMetrics` | Denormalized analytics (response time, CSAT score) |
 | `notifications` | In-app notifications (SLA breach, follow-up due) |
-| `notificationPreferences` | Per-member email/in-app notification toggles |
 | `inviteLinks` | Time-limited invite links (label, role, expiry) |
 | `onboardingState` | Onboarding step completion tracking |
 | `memberProfiles` | Rich member profiles (bio, jobTitle, phone, avatar) |

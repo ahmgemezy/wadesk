@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ContactTimeline } from "@/components/contacts/contact-timeline";
-import { CustomerJourneyMap } from "@/components/contacts/customer-journey-map";
 import { FollowUpModal } from "@/components/contacts/follow-up-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +18,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowRight,
   ArrowLeft,
@@ -303,41 +301,27 @@ export default function ContactProfilePage({
             </Card>
           </div>
 
-          {/* Right Column: Timeline & Journeys */}
+          {/* Right Column: Timeline */}
           <div className="lg:col-span-2 space-y-6">
             <Card className="min-h-[600px] flex flex-col">
-              <Tabs defaultValue="journey" className="flex flex-col flex-1">
-                <div className="border-b px-6 py-3">
-                  <TabsList className="bg-muted/50">
-                    <TabsTrigger value="journey" className="text-xs font-medium">
-                      {t("Journey Map", "خريطة الرحلة")}
-                    </TabsTrigger>
-                    <TabsTrigger value="activity" className="text-xs font-medium">
-                      {t("Detailed Activity", "النشاط المفصل")}
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-                
-                <CardContent className="flex-1 p-6 overflow-y-auto">
-                  <TabsContent value="journey" className="mt-0 h-full">
-                    <CustomerJourneyMap contactId={contactId} locale={isRtl ? "ar" : "en"} />
-                  </TabsContent>
-                  
-                  <TabsContent value="activity" className="mt-0 h-full">
-                    <ContactTimeline events={events} locale={isRtl ? "ar" : "en"} />
-                    {status === "CanLoadMore" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-6 w-full shadow-sm"
-                        onClick={() => loadMore(20)}
-                      >
-                        {t("Load more", "تحميل المزيد")}
-                      </Button>
-                    )}
-                  </TabsContent>
-                </CardContent>
-              </Tabs>
+              <CardHeader className="border-b pb-3">
+                <CardTitle className="text-sm font-semibold">
+                  {t("Detailed Activity", "النشاط المفصل")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 p-6 overflow-y-auto">
+                <ContactTimeline events={events} locale={isRtl ? "ar" : "en"} />
+                {status === "CanLoadMore" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-6 w-full shadow-sm"
+                    onClick={() => loadMore(20)}
+                  >
+                    {t("Load more", "تحميل المزيد")}
+                  </Button>
+                )}
+              </CardContent>
             </Card>
 
             {/* Follow-ups Grid */}
