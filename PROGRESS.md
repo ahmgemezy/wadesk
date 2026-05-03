@@ -12,7 +12,7 @@
 **WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Paddle (billing integrated)  
 **Current branch:** `feat/013-departments`  
-**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (30 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete · ✅ Tabbed transfer + cross-branch forward live · ✅ CSAT end-to-end working with score surfacing
+**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (31 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete · ✅ Tabbed transfer + cross-branch forward live · ✅ CSAT end-to-end working with score surfacing
 
 ---
 
@@ -28,9 +28,9 @@
 - Middleware: all dashboard routes protected; public: `/`, `/sign-in`, `/sign-up`, `/select-org`
 - Files: `middleware.ts`, `convex/lib/auth.ts` (auth helpers), `lib/shell/role-utils.ts`
 
-**Convex Schema (30 tables, all real)**
+**Convex Schema (31 tables, all real)**
 All tables are real, indexed, and used by live queries:
-`tenants`, `channels`, `contacts`, `contactLists`, `broadcasts`, `conversations`, `messages`, `quickReplies`, `inviteLinks`, `customFields`, `followUps`, `contactEvents`, `notifications`, `metaTemplates`, `onboardingState`, `conversationMetrics`, `automationRules`, `businessHours`, `ruleFireLog`, `conversationLabels`, `channelMembers`, `csatSettings`, `messageTemplates`, `broadcastTemplates`, `departments`, `departmentMembers`, `rateLimits`, `presence`, `memberActionLog`, `memberProfiles`
+`tenants`, `channels`, `contacts`, `contactLists`, `broadcasts`, `conversations`, `messages`, `quickReplies`, `inviteLinks`, `customFields`, `followUps`, `contactEvents`, `notifications`, `metaTemplates`, `onboardingState`, `conversationMetrics`, `automationRules`, `businessHours`, `ruleFireLog`, `conversationLabels`, `channelMembers`, `csatSettings`, `messageTemplates`, `broadcastTemplates`, `departments`, `departmentMembers`, `webhook_events`, `rateLimits`, `presence`, `memberActionLog`, `memberProfiles`
 
 **Plan Limits (server-side enforced)**
 
@@ -682,7 +682,6 @@ All tables are real, indexed, and used by live queries:
   - `hooks/use-member-profile.ts` — data fetching hook
 - **Convex:** `convex/members.ts` (mutations), `convex/memberQueries.ts` (queries + analytics)
 - **New tables:** `memberProfiles` (bio, jobTitle, phone, avatar), `memberActionLog` (audit trail)
-- `notificationPreferences` table: per-member email/in-app notification toggles
 - Contact details stored: phone, job title, bio — Admin/Supervisor can edit via Manage tab
 
 ---
