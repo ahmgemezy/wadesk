@@ -1,17 +1,18 @@
 # WABDesk — Build Progress
 
 > Single source of truth for project progress. Read by Claude Chat (project manager) to stay updated.
-> **Last audited:** 2026-04-28 — Member profile modal, team presence, channel retention, React Email system, conversation search, batch actions, rate limiting, message scheduling, template library, legal pages, CSAT v2, departments.
+> **Last audited:** 2026-05-03 — Positioning statement updated across docs, marketing copy, and legal pages (drops "API"/"SaaS"; "Egypt and the Gulf" → "Arabic-speaking markets"). Tabbed transfer dialog + cross-branch forward + queue tree, 24h conversation reopen window, real-name resolve attribution, conversation activity pills, transfer notifications, conversation claim, CSAT end-to-end fix + score surfacing, general settings page + Resend template sync, CLAUDE.md §30 AI agent behavior rules.
+> **Previously audited:** 2026-04-28 — Member profile modal, team presence, channel retention, React Email system, conversation search, batch actions, rate limiting, message scheduling, template library, legal pages, CSAT v2, departments.
 > Never modify CLAUDE.md unless explicitly asked.
 
 ---
 
 ## Project Summary
 
-**WABDesk** is an Arabic-first WhatsApp Business multi-agent customer support SaaS for SMBs in Egypt and the Gulf.  
+**WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Paddle (billing integrated)  
 **Current branch:** `feat/013-departments`  
-**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (32 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete
+**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (40 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete · ✅ Tabbed transfer + cross-branch forward live · ✅ CSAT end-to-end working with score surfacing
 
 ---
 
@@ -27,9 +28,9 @@
 - Middleware: all dashboard routes protected; public: `/`, `/sign-in`, `/sign-up`, `/select-org`
 - Files: `middleware.ts`, `convex/lib/auth.ts` (auth helpers), `lib/shell/role-utils.ts`
 
-**Convex Schema (27 tables, all real)**
+**Convex Schema (40 tables, all real)**
 All tables are real, indexed, and used by live queries:
-`tenants`, `channels`, `contacts`, `contactLists`, `broadcasts`, `conversations`, `messages`, `quickReplies`, `inviteLinks`, `customFields`, `followUps`, `contactEvents`, `notifications`, `onboardingState`, `conversationMetrics`, `automationRules`, `businessHours`, `ruleFireLog`, `conversationLabels`, `channelMembers`, `csatSettings`, `messageTemplates`
+`tenants`, `channels`, `contacts`, `contactLists`, `broadcasts`, `conversations`, `messages`, `quickReplies`, `inviteLinks`, `customFields`, `followUps`, `contactEvents`, `notifications`, `metaTemplates`, `onboardingState`, `conversationMetrics`, `automationRules`, `businessHours`, `ruleFireLog`, `conversationLabels`, `channelMembers`, `csatSettings`, `messageTemplates`, `broadcastTemplates`, `departments`, `departmentMembers`, `rateLimits`, `presence`, `memberActionLog`, `notificationPreferences`, `memberProfiles`, `knowledgeBaseCategories`, `knowledgeBaseArticles`, `customerJourneys`, `sentimentLogs`, `agentDailyStats`, `agentWorkloads`, `visualAutomations`, `automationNodes`, `automationEdges`
 
 **Plan Limits (server-side enforced)**
 
@@ -960,6 +961,109 @@ The codebase has two separate locale systems that are not synchronized: (1) a co
   - Phase 2 rollout strategy updated: coexistence auto-enabled for all tenants once Meta enables per WABA; `coexistenceEnabled` is kill switch only
   - Media download for echoes deferred beyond Stage 5; `metaMediaId` stored but `mediaUrl` remains undefined for echoes
   - Message routing stubs log to `console.log` with JSON tag for debugging; no real processing in v1
+
+---
+
+### Tabbed Transfer Dialog + Cross-Branch Forward + Inbox Queue Tree (2026-05-03)
+
+Replaces the department-only transfer dialog with a tabbed flow covering both **within-branch routing** (department + optional agent + internal note) and **cross-branch forwarding** (sends a tenant-editable templated message to the customer through the source channel's number, then closes the conversation as `status: "forwarded"`).
+
+**Schema delta:**
+- `conversations.status` union extended with `"forwarded"`
+- `conversations`: new `forwardedToChannelId`, `forwardedToDepartmentId`, `forwardedAt`, `forwardedBy` audit fields
+- `messages.eventType` union extended with `transfer_within_channel` and `forward_to_branch` (legacy `transfer_department` retained for read compat)
+- `messages.eventData` extended with target branch/dept fields
+- `tenants.forwardMessageTemplates` (optional, `ar` / `en`)
+
+**Server:**
+- `conversations.transferWithinChannel` (replaces `transferToDepartment`; agent-accessible; supports optional agent + internal note)
+- `conversations.forwardToBranch` action with paired `_validateForward` / `_finalizeForward` helpers — reads message status after Meta send and bails before finalizing if Meta rejected the send
+- `conversations.previewForwardMessage` (server-rendered preview)
+- `inbox.queueCounts` — role-scoped sidebar tree data
+- `channels.listOtherChannelsForForward`
+- `departmentMembers.listForDepartment`
+- `lib/tenants.{getForwardTemplates,getForwardTemplatesPublic,updateForwardTemplate}`
+- `messages.createOutboundForward`, `markFailed`, `getStatusInternal`
+- Inbound 24h-reopen rule skips `status: "forwarded"` — forwarded conversations always start a fresh inbound
+
+**UI:**
+- New `components/inbox/transfer-dialog.tsx` (355 lines, tabbed) replaces deleted `transfer-department-dialog.tsx`
+- New `components/inbox/inbox-queue-tree.tsx` (175 lines) — role-scoped queue tree in inbox sidebar
+- New `components/settings/forward-template-card.tsx` (111 lines) — admin edits AR/EN forward templates from `/settings/general`
+
+Files: `app/(dashboard)/inbox/page.tsx`, `components/inbox/{transfer-dialog,inbox-queue-tree,conversation-list,conversation-thread,message-bubble,message-input}.tsx`, `components/settings/{forward-template-card,general-settings}.tsx`, `convex/{conversations,channels,inbox,messages,schema}.ts`, `convex/lib/tenants.ts`
+
+---
+
+### CSAT End-to-End Fix + Score Surfacing (2026-05-02)
+
+CSAT was silently broken: `conversations.setStatus` (the only mutation the UI calls) never scheduled the CSAT action — only the unused `inbox.updateStatus` did. Even when CSAT did run, `markCsatSent` no-op'd if the `conversationMetrics` row was missing, so `csatSentAt` was never recorded and customer 1–5 replies were treated as regular messages, reopening the conversation.
+
+**Fixes (`ed413c8`):**
+- `conversations.setStatus` now schedules `sendCsatMessage` when CSAT is enabled
+- `markCsatSent` upserts the `conversationMetrics` row instead of failing on missing data
+- `markCsatSent` inserts the rendered CSAT body as an outbound text message in the thread so agents can see what was sent
+- `checkAndRecordResponse` inserts a `csat_received` system event with `eventData.csatScore` after recording the score
+
+**Cycle-matching fix (`5ff394b`):**
+- Previous logic took the most-recent conversation and checked its metric — but a contact can have multiple conversations and the open CSAT cycle may live on an older one. New logic scans all of the contact's conversations, filters to those with an open CSAT cycle (`csatSentAt` set, no later customer response), and picks the most recently-sent.
+
+**Surfacing:**
+- New amber thread pill: `⭐⭐⭐⭐⭐ Customer rated 5/5` via the new `csat_received` `eventType` (schema + MessageBubble)
+- New `⭐ N/5` badge on each conversation card in the inbox list (`inbox.listForUser` joins `conversationMetrics`)
+- New "Satisfaction" section in the contact panel: average, count, and last score (new `csat.getContactCsat` query)
+
+Files: `convex/{csat,conversations,inbox,schema}.ts`, `components/inbox/{message-bubble,conversation-list-item,conversation-list}.tsx`, `components/contacts/contact-panel.tsx`, `.gitignore` (added `playwright-report/`, `test-results/`, `brainstorm content/`)
+
+---
+
+### 24-Hour Conversation Reopen Window + Real-Name Resolve Attribution (2026-05-02)
+
+- Resolved/reopened activity pills now show the actual member name (Clerk profile via `useUser` → mutation arg) — not the literal "Agent". `inbox.updateStatus` creates the same system event so behavior is consistent between the two status mutations.
+- New windowed-reopen behavior on inbound: when a customer replies within `channels.reopenWindowHours` (default 24h) of resolution, the same conversation reopens with a "↩ {customer} reopened" pill and the previously-assigned agent gets a notification. After the window, a brand-new conversation is created — fresh SLA, fresh assignment.
+- Schema delta: `conversations.resolvedAt`, `channels.reopenWindowHours`; new `conversation_reopened` notification type
+- Per-channel admin UI to configure the reopen window (1–720h) at `/settings/channels/[channelId]`
+
+**Bundled in the same commit (in-progress work from prior sessions):**
+- **Follow-ups precise scheduling**: `runAt` set to the exact dispatch time; sent follow-ups recorded back into the inbox conversation thread (`convex/followUps.ts` +341/-87 lines)
+- **Notifications settings page**: `app/(dashboard)/settings/notifications/page.tsx` + `components/settings/notifications-settings.tsx` (240 lines)
+- **Email template polish** across `agentWelcome`, `billingPaymentFailed`, `billingSubscriptionExpired`, `channelDeleted`, `channelExpiringSoon`, `followupDue`, `newAssignment`, `slaBreach`, and `base.tsx`
+- Inbox page tightening, contact detail sheet adjustments, sign-in/up minor edits
+
+Files: `convex/{channels,conversations,inbox,messages,notifications,followUps,schema,crons}.ts`, `convex/emails/**`, `components/inbox/{conversation-thread,message-bubble,status-selector}.tsx`, `components/ui/notification-bell.tsx`, `lib/notification-routes.ts`, `lib/shell/nav-config.ts`
+
+---
+
+### Conversation Activity Pills + Transfer Notifications + Conversation Claim (2026-05-02)
+
+- New `system_event` message type with `eventType` + `eventData` fields on the `messages` table
+- Centered, color-coded event pills replace internal-note transfer logs in the conversation thread: `transfer_department`, `agent_assigned`, `agent_unassigned`, `resolved`, `reopened`
+- All pills bilingual (AR/EN) via `useT()`; rendered in `components/inbox/message-bubble.tsx`
+- New `conversation_transferred` notification type — fans out to all department members + supervisors on transfer, skipping the actor
+- New `conversations.claim` mutation: server-side membership check; non-privileged agents see a locked MessageInput until they claim an unassigned-to-them conversation
+- New `components/inbox/claim-button.tsx` wired into both inbox pages
+- Schema delta: `messages.eventType`, `messages.eventData`; `notifications` types union extended
+- Bug fixes folded in: React Rules-of-Hooks fix in MessageInput (early return moved after hooks), double `getUserIdentity` removed in `setStatus`, `any` casts removed in `conversation-thread`, `Message` type exported from `message-bubble`
+
+Files: `convex/{conversations,schema}.ts`, `convex/lib/tenants.ts`, `components/inbox/{claim-button,message-bubble,conversation-thread,message-input,assign-agent-dialog}.tsx`, `app/(dashboard)/inbox/{page,[id]/page}.tsx`, `components/ui/notification-bell.tsx`, `lib/shell/nav-config.ts`
+
+---
+
+### General Settings Page + Resend Template Sync Tooling (2026-05-01)
+
+- New `app/(dashboard)/settings/general/page.tsx` + `components/settings/general-settings.tsx` (90 lines) — workspace-wide settings landing
+- `scripts/sync-resend-templates.ts` (256 lines): syncs React Email templates → Resend; produces `scripts/resend-template-ids.json` mapping
+- `scripts/test-email.ts` (65 lines): one-off send for verifying template rendering against a real address
+- No schema or runtime impact — tooling-only addition
+
+---
+
+### CLAUDE.md §30 — AI Agent Behavior Rules (2026-05-03)
+
+- Added §30 to `CLAUDE.md`: think-before-coding, simplicity-first, surgical-changes, goal-driven execution, stage output requirements, rejection triggers, and definition of "trivial"
+- Establishes mandatory stage-gated workflow for all non-trivial tasks: BEFORE/AFTER diffs at stage boundaries, literal `npx tsc --noEmit` output, `PROGRESS.md` entry per stage, push-back invitation
+- Lists explicit rejection triggers (e.g., summary instead of code, out-of-scope file edits, `any` types, unrequested "improvements", placeholder code)
+- Doc-only — no code or schema impact
 
 ---
 

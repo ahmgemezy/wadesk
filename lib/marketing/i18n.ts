@@ -18,8 +18,8 @@ const dictionary: Dictionary = {
     en: "WhatsApp Team Inbox",
   },
   "hero.subtitle": {
-    ar: "منصة دعم عملاء على واتساب للشركات الصغيرة والمتوسطة في مصر والخليج. إدارة محادثات واتساب بفريق متعدد الوكلاء.",
-    en: "WhatsApp customer support platform for small and medium businesses in Egypt and the Gulf. Manage WhatsApp conversations with a multi-agent team.",
+    ar: "منصة دعم عملاء على واتساب للشركات الصغيرة والمتوسطة في الأسواق الناطقة بالعربية. إدارة محادثات واتساب بفريق متعدد الوكلاء.",
+    en: "WhatsApp customer support platform for small and medium businesses in Arabic-speaking markets. Manage WhatsApp conversations with a multi-agent team.",
   },
   "cta.signup": { ar: "ابدأ مجاناً", en: "Start Free" },
   "cta.dashboard": {

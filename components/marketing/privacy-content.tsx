@@ -465,7 +465,7 @@ function PrivacyEn() {
           <strong>Effective Date:</strong> April 28, 2026
         </p>
         <p className="mt-4 text-muted-foreground leading-relaxed">
-          WABDesk (&ldquo;WABDesk,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) operates a WhatsApp Business API multi-agent customer support platform. This Privacy Policy explains how we collect, use, store, share, and protect your personal data when you use our platform at{" "}
+          WABDesk (&ldquo;WABDesk,&rdquo; &ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) operates a multi-agent WhatsApp Business customer support platform. This Privacy Policy explains how we collect, use, store, share, and protect your personal data when you use our platform at{" "}
           <span className="font-medium">wabdesk.com</span>.
         </p>
         <p className="mt-3 text-muted-foreground leading-relaxed">

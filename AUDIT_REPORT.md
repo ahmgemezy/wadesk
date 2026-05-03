@@ -9,7 +9,7 @@
 
 ## 1. Project Overview
 
-**WaDesk** is an Arabic-first, WhatsApp Business API multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf region. Multiple agents handle WhatsApp conversations from a shared team inbox; no customer knows they're talking to a team.
+**WaDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets. Multiple agents handle WhatsApp conversations from a shared team inbox; no customer knows they're talking to a team.
 
 **Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪  
 **Language:** Arabic-first UI (RTL), English supported  

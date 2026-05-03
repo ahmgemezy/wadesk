@@ -7,12 +7,12 @@
 
 ## 1. Project Overview
 
-**WABDesk** is an Arabic-first, WhatsApp Business API multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf region.
+**WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.
 
 **Core Value Proposition:**
 A team inbox built on WhatsApp — multiple agents handle customer conversations from one shared dashboard, with no customer knowing they're talking to a team.
 
-**Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪, Gulf region  
+**Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪, broader Arabic-speaking markets  
 **Language:** Arabic-first UI (RTL), English supported  
 **Founder:** Solo founder (Ahmed), non-technical, uses AI-assisted (vibe coding) workflows
 
@@ -1026,6 +1026,7 @@ _Last updated: manually — update this file whenever a major architectural or p
 
 ## Recent Changes
 
+- 031-positioning-update: Updated WABDesk positioning across docs, marketing site, and legal copy. Drops "API" and "SaaS" from customer-facing surfaces; replaces "Egypt and the Gulf" with "Arabic-speaking markets" — broader positioning aligned with future expansion. "Arabic-first" preserved as the moat. Files touched: CLAUDE.md §1, PROJECT_STATE.md §1, PROGRESS.md, AUDIT_REPORT.md, app/page.tsx (AR meta description), lib/marketing/i18n.ts (hero.subtitle AR+EN), components/marketing/privacy-content.tsx (EN intro). No schema, runtime, or pricing-currency changes.
 - 030-ai-agent-behavior-rules: Added §30 covering AI agent behavioral rules — think before coding, simplicity, surgical changes, goal-driven execution, stage output requirements, rejection triggers, and definition of trivial tasks. Applies to Claude Code on all future task work.
 - 013-whatsapp-coexistence: WhatsApp Coexistence — phone numbers connected via Embedded Signup support sending from both WABDesk (Cloud API) and the WhatsApp Business mobile app simultaneously; mobile-sent messages mirrored into inbox with 📱 badge (`source: "mobile"`); 3-level echo dedup (wamid → content hash → tertiary insert); history backfill on WABA connection; automation guard skips non-customer sources; `featureType: "whatsapp_business_app_onboarding"` added to Embedded Signup `extras`; kill switch: `channels.coexistenceEnabled = false`; see PROGRESS.md for full implementation details
 - 009-automation-rules: Automation rules engine (if-this-send-that) — new tables: `automationRules`, `businessHours`, `ruleFireLog`; new files: `convex/automations.ts`, `lib/automationHelpers.ts`, `components/automations/` (4 components), `app/(dashboard)/automations/page.tsx`, `components/ui/switch.tsx`; modified: `convex/schema.ts`, `convex/http.ts`, `convex/crons.ts`, `convex/lib/planLimits.ts`, `convex/messages.ts` (fixed totalConversations increment), `lib/shell/nav-config.ts` (sidebar link), `lib/shell/types.ts`, `components/shell/resolve-icon.tsx`; 4 trigger types: keyword, outside_hours, first_message, no_reply_timeout; plan limits: Free 2, Starter 10, Growth 30, Business unlimited; admin+supervisor manage rules, admin-only for business hours
