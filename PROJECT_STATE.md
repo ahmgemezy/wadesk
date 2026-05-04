@@ -7,10 +7,10 @@
 
 ---
 
-**Last Updated:** 2026-05-03 UTC  
+**Last Updated:** 2026-05-04 UTC  
 **Current Branch:** feat/013-departments  
 **Main Branch:** 002-agent-roles  
-**Build Status:** ✅ TypeScript: 0 errors | ✅ 40-table schema deployed | ✅ React Email system live | ✅ Member profile modal complete | ✅ Channel retention system active | ✅ Tabbed transfer + cross-branch forward | ✅ CSAT end-to-end working | ✅ 24h conversation reopen window | ✅ Conversation activity pills + claim
+**Build Status:** ✅ TypeScript: 0 errors | ✅ 33-table schema deployed | ✅ React Email system live | ✅ Member profile modal complete | ✅ Channel retention system active | ✅ Tabbed transfer + cross-branch forward | ✅ CSAT end-to-end working | ✅ 24h conversation reopen window | ✅ Conversation activity pills + claim | ✅ Notification preferences system live
 
 ---
 
@@ -94,7 +94,7 @@ WABDesk/
 
 ---
 
-## 3. Database Schema (32 Tables)
+## 3. Database Schema (33 Tables)
 
 All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enforce multi-tenant isolation.
 
@@ -126,6 +126,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 | `customFields`            | Custom contact fields (key-value pairs)            | `tenantId`, `contactId`, `key`, `value`                                                                       |
 | `contactEvents`           | Contact activity timeline                          | `tenantId`, `contactId`, `type`, `metadata`                                                                   |
 | `notifications`           | In-app notifications (followups, SLA breaches)     | `tenantId`, `userId`, `type`, `message`, `read`                                                               |
+| `notificationPreferences` | Per-user notification channel toggles              | `tenantId`, `userId`, `eventType`, `channel` (`in_app`/`email`), `enabled`                                    |
 | `inviteLinks`             | Time-limited team invite links                     | `tenantId`, `token`, `expiresAt`, `revoked`, `defaultRole`                                                    |
 | `onboardingState`         | Onboarding progress tracking                       | `tenantId`, `completedSteps[]`, `completedAt`                                                                 |
 | `memberProfiles`          | Rich member profiles (bio, contact info)           | `tenantId`, `userId`, `bio`, `jobTitle`, `phone`, `avatar`                                                    |
@@ -457,6 +458,25 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - Admin notified 7 days before deletion (email + in-app)
   - Channels with only resolved conversations can be force-deleted immediately
 
+### ✅ Notification Preferences System
+
+- **File:** `app/(dashboard)/settings/notifications/page.tsx`, `components/settings/notifications-{tab-shell,preferences,preferences-row,error-boundary}.tsx`
+- **Backend:** `convex/notifications.ts` (`notifyDispatch`, `notifySend`, `getPreferences`, `updatePreference`), `convex/lib/notificationEvents.ts`, `convex/lib/rateLimit.ts` (`tryConsumeQuota`), `convex/lib/tenants.ts` (`readPlan`)
+- **Hook:** `hooks/use-notification-preferences.ts`
+- **Status:** ✅ Complete (2026-05-04)
+- **Features:**
+  - Per-user toggles for 7 event types × 2 channels (in-app + email) = 14 toggle states per user
+  - Free plans: in-app only; Starter+ unlocks email channel
+  - `sla_breach` and `csat_received` events are Growth+-only
+  - Daily email cap per plan: Starter 50, Growth 200, Business 1000 (soft cap — in-app still fires)
+  - `notifyDispatch` is the single dispatch mutation — all 9+ call sites migrated to it
+  - Optimistic UI updates with auto-revert on failure
+  - Plan-gated toggle rows with upgrade prompts
+  - 3 new email templates: `conversationTransferred`, `conversationReopened`, `csatReceived`
+  - New `notificationPreferences` table (33rd table in schema)
+  - Literals added to `notifications.type`: `conversation_assigned`, `channel_token_expired`
+  - Removed dead exports: `slaBreachEmail`, `followupDueEmail`, `newAssignmentEmail` from `notifyEmail.ts`
+
 ### ✅ Transactional Email System
 
 - **File:** `emails/` (18 template files: 9 types × AR+EN), `convex/emails/`
@@ -572,6 +592,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - `/settings/csat` — CSAT survey configuration
   - `/settings/export` — Data export
   - `/settings/billing` — Subscription management
+  - `/settings/notifications` — Notification preferences (Log tab + Preferences tab)
 
 ---
 
@@ -695,6 +716,20 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 10 Sessions)
+
+### 2026-05-04: Notification Preferences System
+
+- ✅ New `notificationPreferences` table — per-user × event-type × channel toggles (33rd table)
+- ✅ `notifyDispatch` mutation replaces 9 direct `ctx.db.insert("notifications", ...)` call sites; 3 new call sites added (assign, assignInternal, csat.checkAndRecordResponse)
+- ✅ `notifySend` internalAction resolves agent email via Clerk Node and dispatches to Resend with plan-gated daily cap
+- ✅ New Convex lib files: `notificationEvents.ts` (event type registry + defaults), `rateLimit.ts:tryConsumeQuota` helper, `tenants.ts:readPlan` helper
+- ✅ 3 new React Email templates: `conversationTransferred`, `conversationReopened`, `csatReceived`
+- ✅ New UI: `/settings/notifications` tabbed page (Log + Preferences), 4 component files, `hooks/use-notification-preferences.ts`, `lib/notifications/eventLabels.ts`
+- ✅ Free plan: in-app only; Starter+: email channel unlocked; Growth+: sla_breach + csat_received events
+- ✅ Dead email exports removed from `notifyEmail.ts`: `slaBreachEmail`, `followupDueEmail`, `newAssignmentEmail`
+- ✅ `followUps.ts` literal corrected: `channel_expiring_soon` → `channel_token_expired`
+- **New env var:** `RESEND_API_KEY` (Convex env) — email sends silently no-op if absent
+- TypeScript: 0 errors | 23 files changed across 5 implementation commits
 
 ### 2026-05-03: Positioning Statement Update Across Codebase
 
@@ -1069,7 +1104,7 @@ When a conflict is detected:
 | Metric                 | Current State                                                        | Target          |
 | ---------------------- | -------------------------------------------------------------------- | --------------- |
 | Total Convex Functions | 60+ (queries, mutations, actions)                                    | Stable          |
-| Total Database Tables  | 32                                                                   | Stable          |
+| Total Database Tables  | 33                                                                   | Stable          |
 | Total App Routes       | 40+                                                                  | Growing         |
 | TypeScript Strict Mode | ✅ Enabled                                                           | Always enabled  |
 | Test Coverage          | ❌ Not implemented                                                   | 80%+ (Phase 2)  |
