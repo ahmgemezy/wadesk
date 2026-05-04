@@ -11,6 +11,30 @@
 
 ---
 
+> ## ⚠️ Stage 1 Amendment — Email Resolution Architecture (2026-05-04)
+>
+> **This document was amended after Stage 2 review surfaced an architectural
+> defect in the email-resolution flow.** Stage 1 originally had `notifyDispatch`
+> accept an `email` arg from callers. This is incompatible with mutation context
+> (Clerk Node SDK requires `"use node"`, which mutations cannot use).
+>
+> **Fix:** `notifyDispatch.args` accepts `userId` only. `notifySend` (an action
+> with Node available) resolves the email via `resolveUserEmail` from
+> `convex/lib/emailHelpers.ts` — the canonical helper used by `slaBreachEmail`
+> and other existing `*Email` wrappers.
+>
+> Sections affected: Section 5b (notifyDispatch), Section 7 (notifySend).
+> Call sites pass `userId`, never `email`. Apply this fix BEFORE any Stage 2
+> migration.
+>
+> **Acknowledged tradeoff:** if email resolution fails inside `notifySend`
+> (e.g., Clerk lookup fails, user has no primary email on file), the daily-
+> email-cap slot consumed by `notifyDispatch.tryConsumeQuota` is "spent"
+> without an email being sent. Acceptable — soft cap, rare failure mode,
+> recovering the slot adds complexity for marginal savings.
+
+---
+
 ## Pre-flight checklist
 
 Verify the following files are at the line counts shown. If any file's line count differs by more than ±3 lines, **stop and re-confirm with the reviewer before applying** — the BEFORE blocks below were captured against these exact counts.
@@ -528,36 +552,54 @@ import {
 
 ```
 
+(`resolveUserEmail` is already exported from `convex/lib/emailHelpers.ts` and is the canonical Clerk-resolution path used by the existing `slaBreachEmail`, `followupDueEmail`, and `newAssignmentEmail` wrappers — no new dependency needed.)
+
 Append at the very end of the file:
 
 ```ts
 
 /**
- * Generic notification email dispatcher. Maps a toggleable eventType to
- * the matching React Email template and forwards to internal.actions.sendEmail.
+ * Generic notification email dispatcher. Resolves the recipient's email from
+ * Clerk (via the lib/emailHelpers helper, which uses @clerk/nextjs/server),
+ * then forwards to internal.actions.sendEmail with the appropriate template.
+ * Called only by notifyDispatch via ctx.scheduler.runAfter.
  *
- * Called only by notifyDispatch (via ctx.scheduler.runAfter). Do not call
- * directly from feature code — use notifyDispatch instead.
+ * Email resolution lives here (not in notifyDispatch) because Clerk Node SDK
+ * requires "use node", which is action-only. If email resolution fails or
+ * the user has no primary email, this action returns silently — the daily-
+ * cap slot in rateLimits has already been consumed by notifyDispatch
+ * (acknowledged tradeoff per the Stage 1 amendment callout near the top
+ * of this document).
  */
 export const notifySend = internalAction({
   args: {
-    to: v.string(),
-    eventType: toggleableEventTypeValidator,
+    userId: v.string(),
     tenantId: v.string(),
+    eventType: toggleableEventTypeValidator,
     variables: v.any(),
   },
   handler: async (ctx, args) => {
+    // 1. Resolve email via the canonical helper (matches slaBreachEmail's pattern).
+    const email = await resolveUserEmail(args.userId);
+    if (!email) {
+      console.warn("notifySend: user has no primary email", args.userId);
+      return;
+    }
+
+    // 2. Look up locale + map event to template.
     const locale = await ctx.runQuery(internal.lib.tenants.getEmailLocale, {
       tenantId: args.tenantId,
     });
     const templateKey = mapEventToTemplateKey(args.eventType);
     if (!templateKey) {
       // Event has no email template yet (e.g. csat_received before Stage 6).
-      // Silent skip — in-app row already fired.
+      // Silent skip — in-app row already fired upstream.
       return;
     }
+
+    // 3. Forward to the existing sendEmail action.
     await ctx.runAction(internal.actions.sendEmail.sendEmail, {
-      to: args.to,
+      to: email,
       templateKey,
       locale,
       variables: args.variables,
@@ -594,6 +636,11 @@ The `internal.actions.sendEmail.sendEmail` reference resolves to the existing in
 - **DO NOT** modify any of the existing email actions (`slaBreachEmail`, `followupDueEmail`, etc.) — Stage 2 will retire them gradually as call sites migrate to `notifyDispatch`. Stage 1 leaves them intact.
 - **DO NOT** "use node" twice — the directive is already present at the top of the file.
 - **DO NOT** convert the `mapEventToTemplateKey` function to an exported const — it is intentionally module-private.
+- **DO NOT** introduce a new Clerk-client construction pattern. The canonical Clerk-resolution path in this codebase is `resolveUserEmail(userId)` from `convex/lib/emailHelpers.ts`. Match `slaBreachEmail`'s usage exactly — consistency wins.
+- **DO NOT** import `@clerk/backend` or `@clerk/clerk-sdk-node` — they are not installed. Use `resolveUserEmail`.
+- **DO NOT** swallow the email-resolution result silently with no log — `console.warn` on missing email is required for observability.
+- **DO NOT** retry inside this handler — Convex retries failed actions automatically; manual retry would compound.
+- **DO NOT** call `tryConsumeQuota` here to "give back" the slot — the soft-cap leak is acknowledged.
 
 ---
 
@@ -701,8 +748,9 @@ export const notifyDispatch = internalMutation({
     referenceId: v.string(),
     contactName: v.optional(v.string()),
     message: v.string(),
-    // Email-only fields. Required when emailEnabled may be true; ignored otherwise.
-    email: v.optional(v.string()),
+    // Optional template variables forwarded opaquely to notifySend (which
+    // hands them to the React Email render call). Dispatch never inspects
+    // these — keep payload shape consistent with each event's template.
     emailVariables: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
@@ -731,7 +779,7 @@ export const notifyDispatch = internalMutation({
 
     // 3. Email channel plan-gate: Free plan has no email channel.
     const emailGateOpen = plan !== "free";
-    const wantsEmail = emailEnabledByPref && emailGateOpen && Boolean(args.email);
+    const wantsEmail = emailEnabledByPref && emailGateOpen;
 
     // 4. In-app row — write if enabled.
     if (inAppEnabled) {
@@ -748,6 +796,9 @@ export const notifyDispatch = internalMutation({
     }
 
     // 5. Email — if enabled and under daily cap, schedule the send.
+    //    Email resolution happens INSIDE notifySend (which has Node available
+    //    via "use node"). notifyDispatch never touches Clerk — it cannot,
+    //    because mutations are not Node-context.
     if (wantsEmail) {
       const cap = EMAIL_DAILY_CAP_BY_PLAN[plan];
       if (cap !== null) {
@@ -755,9 +806,9 @@ export const notifyDispatch = internalMutation({
         const slotConsumed = await tryConsumeQuota(ctx, key, cap);
         if (slotConsumed) {
           await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.notifySend, {
-            to: args.email!,
-            eventType: args.eventType,
+            userId: args.userId,
             tenantId: args.tenantId,
+            eventType: args.eventType,
             variables: args.emailVariables ?? {},
           });
         }
@@ -780,6 +831,7 @@ export const notifyDispatch = internalMutation({
 - **DO NOT** schedule the email send with a delay other than `0`. The "fire-and-forget" semantics depend on the action enqueueing immediately.
 - **DO NOT** filter `wantsEmail` on whether the *call site* would have sent an email previously — the gate is the user's preference + plan + cap, full stop. Stage 2 ports each call site; this dispatcher does not need site-aware logic.
 - **DO NOT** read `notificationPreferences` outside the `by_tenant_user_event` index — full-table scans on this table are not safe at scale.
+- **DO NOT** add an `email` arg to `notifyDispatch`. Mutations cannot resolve email-from-userId (no Node access). The action-side `notifySend` resolves email via Clerk; that is the only correct location.
 
 ---
 
