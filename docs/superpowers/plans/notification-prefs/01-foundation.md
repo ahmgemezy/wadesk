@@ -35,6 +35,24 @@
 
 ---
 
+> ## ⚠️ Stage 1 Amendment B — Schema literal `conversation_assigned` (2026-05-04)
+>
+> **This document was amended a second time after Stage 2 review.** The Stage 2
+> per-call-site review surfaced that the schema's `notifications.type` literal
+> union accepts `"new_assignment"` but NOT `"conversation_assigned"`. Stage 2's
+> M5 / A1 / A2 sites write `type: "conversation_assigned"` via `notifyDispatch`
+> and would hit a Convex `ArgumentValidationError` at runtime.
+>
+> **Fix:** add `v.literal("conversation_assigned")` to the schema's
+> `notifications.type` union, alongside the existing `v.literal("new_assignment")`.
+> Both literals coexist; pre-existing rows with `"new_assignment"` are NOT
+> migrated. Future inserts via `notifyDispatch` use `"conversation_assigned"`.
+>
+> Sections affected: Section 1b (schema additions to convex/schema.ts).
+> This amendment must be applied BEFORE Stage 2's M5 / A1 / A2 sites.
+
+---
+
 ## Pre-flight checklist
 
 Verify the following files are at the line counts shown. If any file's line count differs by more than ±3 lines, **stop and re-confirm with the reviewer before applying** — the BEFORE blocks below were captured against these exact counts.
@@ -104,7 +122,7 @@ Add a new `channel_token_expired` literal alongside the existing `channel_expiri
 
 **Note:** Do not remove `channel_expiring_soon` — both literals coexist; existing rows keep using the original. Stage 2 will migrate the misnamed call site at `convex/followUps.ts:476` from `channel_expiring_soon` to `channel_token_expired`. Until then, no row uses the new literal — that is expected.
 
-### 1b — New `notificationPreferences` table
+### 1b-1 — New `notificationPreferences` table
 
 **Placement:** Insert immediately before the `memberProfiles` definition. In the file as captured, `memberProfiles: defineTable({` starts at **line 693** (preceded by the closing `,` of `memberActionLog`'s last index on line 692, then a blank line). **Verify this line number with `grep -n 'memberProfiles:' convex/schema.ts` before editing.**
 
@@ -131,6 +149,55 @@ Insert this block (with the trailing blank line preserved so `memberProfiles` ke
     .index("by_tenant_user_event", ["tenantId", "userId", "eventType"]),
 
 ```
+
+### 1b-2 — Add `conversation_assigned` literal to `notifications.type` union
+
+**BEFORE** — current `notifications.type` union (lines 375–388 of `convex/schema.ts`):
+
+```ts
+    type: v.union(
+      v.literal("followup_due"),
+      v.literal("sla_breach"),
+      v.literal("template_approved"),
+      v.literal("template_rejected"),
+      v.literal("channel_expiring_soon"),
+      v.literal("channel_deleted"),
+      v.literal("agent_welcome"),
+      v.literal("billing_payment_failed"),
+      v.literal("billing_subscription_expired"),
+      v.literal("conversation_transferred"),
+      v.literal("conversation_reopened"),
+      v.literal("new_assignment"),
+    ),
+```
+
+**AFTER** — same union with `conversation_assigned` added (insert immediately after `new_assignment` for visual proximity):
+
+```ts
+    type: v.union(
+      v.literal("followup_due"),
+      v.literal("sla_breach"),
+      v.literal("template_approved"),
+      v.literal("template_rejected"),
+      v.literal("channel_expiring_soon"),
+      v.literal("channel_deleted"),
+      v.literal("agent_welcome"),
+      v.literal("billing_payment_failed"),
+      v.literal("billing_subscription_expired"),
+      v.literal("conversation_transferred"),
+      v.literal("conversation_reopened"),
+      v.literal("new_assignment"),
+      v.literal("conversation_assigned"),
+    ),
+```
+
+> **DO NOT** remove `v.literal("new_assignment")`. Pre-existing rows in the
+> `notifications` table use this literal. Removing it would break the schema
+> against existing data.
+>
+> **DO NOT** add `v.literal("channel_token_expired")` here in this amendment
+> — that's already covered in Section 1a (Stage 1's original schema split).
+> Verify it's there; do not duplicate.
 
 #### Anti-instructions for Section 1
 
