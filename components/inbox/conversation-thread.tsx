@@ -7,7 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "./message-bubble";
 import { LabelPicker } from "./label-picker";
-import { useLocale, useTranslatedLabel } from "@/lib/i18n/context";
+import { useLocale, useTranslatedLabel, useT } from "@/lib/i18n/context";
 import { toast } from "sonner";
 
 type MessageItem = {
@@ -24,6 +24,17 @@ type MessageItem = {
   quotedMessageId?: string;
   deletedAt?: number;
   reactions?: { emoji: string; reactorId: string }[];
+  eventType?: string;
+  eventData?: {
+    actorName?: string;
+    fromDept?: string;
+    toDept?: string;
+    agentName?: string;
+  };
+  followUpId?: string;
+  followUpCreatorName?: string;
+  followUpDepartmentName?: string;
+  followUpDepartmentNameAr?: string;
 };
 
 function formatDateLabel(timestamp: number, locale: "ar" | "en"): string {
@@ -80,6 +91,7 @@ export function ConversationThread({
   onSetReplyTo?: (reply: ReplyTo) => void;
 }) {
   const locale = useLocale();
+  const t = useT();
   const translateLabel = useTranslatedLabel();
   const rawMessages = useQuery(api.inbox.getMessages, {
     conversationId: conversationId as Id<"conversations">,
@@ -125,6 +137,12 @@ export function ConversationThread({
           quotedMessageId: m.quotedMessageId as string | undefined,
           deletedAt: m.deletedAt as number | undefined,
           reactions: m.reactions as { emoji: string; reactorId: string }[] | undefined,
+          eventType: (m as typeof m & { eventType?: string }).eventType,
+          eventData: (m as typeof m & { eventData?: MessageItem["eventData"] }).eventData,
+          followUpId: (m as typeof m & { followUpId?: string }).followUpId,
+          followUpCreatorName: (m as typeof m & { followUpCreatorName?: string }).followUpCreatorName,
+          followUpDepartmentName: (m as typeof m & { followUpDepartmentName?: string }).followUpDepartmentName,
+          followUpDepartmentNameAr: (m as typeof m & { followUpDepartmentNameAr?: string }).followUpDepartmentNameAr,
         }));
 
   const messagesById = new Map(
@@ -189,7 +207,28 @@ export function ConversationThread({
           </>
         )}
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto bg-muted/30">
+      {activeConv?.status === "forwarded" && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          {activeConv.forwardedToChannelName
+            ? t(
+                `This conversation was forwarded to ${activeConv.forwardedToChannelName}${
+                  activeConv.forwardedToDepartmentName
+                    ? ` / ${activeConv.forwardedToDepartmentName}`
+                    : ""
+                } — replies are disabled.`,
+                `تم تحويل هذه المحادثة إلى ${activeConv.forwardedToChannelName}${
+                  activeConv.forwardedToDepartmentName
+                    ? ` / ${activeConv.forwardedToDepartmentName}`
+                    : ""
+                } — الردود معطلة.`
+              )
+            : t(
+                "This conversation was forwarded to another branch — replies are disabled.",
+                "تم تحويل هذه المحادثة إلى فرع آخر — الردود معطلة."
+              )}
+        </div>
+      )}
+      <div className="flex-1 min-h-0 overflow-y-auto bg-muted/20">
         <div className="p-4 space-y-4">
         {groups.map((group) => (
           <div key={group.date}>
@@ -220,7 +259,8 @@ export function ConversationThread({
                       | "video"
                       | "sticker"
                       | "location"
-                      | "template",
+                      | "template"
+                      | "system_event",
                     isInternalNote: msg.isInternalNote,
                     authorId: msg.authorId,
                     mediaUrl: msg.mediaUrl,
@@ -230,10 +270,16 @@ export function ConversationThread({
                     quotedMessageId: msg.quotedMessageId,
                     deletedAt: msg.deletedAt,
                     reactions: msg.reactions,
+                    eventType: msg.eventType as "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened" | undefined,
+                    eventData: msg.eventData,
+                    followUpId: msg.followUpId,
+                    followUpCreatorName: msg.followUpCreatorName,
+                    followUpDepartmentName: msg.followUpDepartmentName,
+                    followUpDepartmentNameAr: msg.followUpDepartmentNameAr,
                   }}
                   quotedMessage={
                     msg.quotedMessageId
-                      ? (messagesById.get(msg.quotedMessageId) as any ?? null)
+                      ? (messagesById.get(msg.quotedMessageId) ?? null) as import("./message-bubble").Message | null
                       : null
                   }
                   onReply={(m) =>

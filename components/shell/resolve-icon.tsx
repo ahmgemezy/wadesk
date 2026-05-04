@@ -15,6 +15,8 @@ import {
   Tag,
   FileText,
   Database,
+  SlidersHorizontal,
+  Bell,
 } from "lucide-react";
 import type { IconName } from "@/lib/shell/types";
 import type { LucideIcon } from "lucide-react";
@@ -36,6 +38,8 @@ const ICON_MAP: Record<IconName, LucideIcon> = {
   Tag,
   FileText,
   Database,
+  SlidersHorizontal,
+  Bell,
 };
 
 export function resolveIcon(name: IconName): LucideIcon {

@@ -222,44 +222,46 @@ export const inviteByWhatsApp = action({
     }
 
     const channels = await ctx.runQuery(internal.channels.listByTenantId, { tenantId });
-    const channel = channels?.[0];
+    const channel = channels?.find(c => c.isActive && c.status === "active");
     if (!channel) {
-      throw new ConvexError({ message: "WHATSAPP_SEND_FAILED", data: { reason: "No WhatsApp channel connected" } });
+      return { whatsappSent: false, inviteUrl };
     }
 
-    const response = await fetch(
-      `https://graph.facebook.com/v25.0/${channel.phoneNumberId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to: args.phone,
-          type: "template",
-          template: {
-            name: "agent_invite",
-            language: { code: "ar" },
-            components: [
-              {
-                type: "body",
-                parameters: [{ type: "text", text: inviteUrl }],
-              },
-            ],
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v25.0/${channel.phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+            "Content-Type": "application/json",
           },
-        }),
-      },
-    );
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: args.phone,
+            type: "template",
+            template: {
+              name: "agent_invite",
+              language: { code: "ar" },
+              components: [
+                {
+                  type: "body",
+                  parameters: [{ type: "text", text: inviteUrl }],
+                },
+              ],
+            },
+          }),
+        },
+      );
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new ConvexError({
-        message: "WHATSAPP_SEND_FAILED",
-        data: { reason: errorBody },
-      });
+      if (!response.ok) {
+        return { whatsappSent: false, inviteUrl };
+      }
+    } catch {
+      return { whatsappSent: false, inviteUrl };
     }
+
+    return { whatsappSent: true, inviteUrl };
   },
 });
 

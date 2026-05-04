@@ -125,7 +125,7 @@ export default function ChannelsListPage() {
           <div>
             <h2 className="text-base font-semibold font-cairo">{t("Connect WhatsApp Business", "ربط حساب واتساب بيزنس")}</h2>
             <p className="text-sm text-muted-foreground mt-0.5 font-cairo">
-              {t("You'll own the WABA directly — WaDesk never locks you in", "ستمتلك حساب WABA مباشرة — WaDesk لا يقيدك أبداً")}
+              {t("You'll own the WABA directly — WABDesk never locks you in", "ستمتلك حساب WABA مباشرة — WABDesk لا يقيدك أبداً")}
             </p>
           </div>
 

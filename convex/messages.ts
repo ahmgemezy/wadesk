@@ -15,21 +15,31 @@ export const listForConversation = query({
 
     const isAdminOrSupervisor =
       orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-    if (
-      !isAdminOrSupervisor &&
-      conversation.assignedAgentId !== callerId &&
-      conversation.assignedAgentId !== undefined
-    ) {
-      return [];
-    }
 
-    return ctx.db
+    const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) =>
         q.eq("conversationId", args.conversationId),
       )
       .order("asc")
       .collect();
+
+    // Follow-up carve-out: a conversation that contains a scheduled follow-up
+    // is shared work — every team member needs visibility on it (regardless
+    // of department or current assignment) so we don't double-message a
+    // customer. Admin/Supervisor and the assigned agent see everything as
+    // before; everyone else sees the conversation only when it has a
+    // follow-up message in it.
+    if (
+      !isAdminOrSupervisor &&
+      conversation.assignedAgentId !== callerId &&
+      conversation.assignedAgentId !== undefined
+    ) {
+      const hasFollowUp = messages.some((m) => m.followUpId !== undefined);
+      if (!hasFollowUp) return [];
+    }
+
+    return messages;
   },
 });
 
@@ -186,6 +196,7 @@ export const createInbound = internalMutation({
     timestamp: v.number(),
     senderDisplayName: v.optional(v.string()),
     assignedAgentId: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("customer"), v.literal("api"), v.literal("mobile"))),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -210,6 +221,24 @@ export const createInbound = internalMutation({
       .first();
 
     let isNewConversation = false;
+    let didReopen = false;
+
+    // Outside-window check: if the existing conversation is resolved and the
+    // reopen window has elapsed, treat this inbound as a brand new case —
+    // null the local var so the new-conversation branch below runs.
+    if (conversation && conversation.status === "resolved") {
+      const channel = await ctx.db.get(args.channelId);
+      const windowHours = channel?.reopenWindowHours ?? 24;
+      const windowMs = windowHours * 60 * 60 * 1000;
+      const resolvedTime = conversation.resolvedAt ?? conversation.lastMessageAt;
+      if (args.timestamp - resolvedTime >= windowMs) {
+        conversation = null;
+      }
+    }
+
+    if (conversation && conversation.status === "forwarded") {
+      conversation = null;
+    }
 
     if (!conversation) {
       let departmentId: Id<"departments"> | undefined;
@@ -243,15 +272,18 @@ export const createInbound = internalMutation({
         totalConversations: (contact?.totalConversations ?? 0) + 1,
       });
     } else {
+      const wasResolved = conversation.status === "resolved";
       const patch: Record<string, unknown> = {
         lastMessageAt: args.timestamp,
         lastMessagePreview: args.content.slice(0, 100),
         unreadCount: (conversation.unreadCount ?? 0) + 1,
         lastInboundAt: args.timestamp,
       };
-      if (conversation.status === "resolved") {
+      if (wasResolved) {
         patch.status = "open";
         patch.slaBreachedAt = undefined;
+        patch.resolvedAt = undefined;
+        didReopen = true;
       }
       await ctx.db.patch(conversation._id, patch);
     }
@@ -266,10 +298,49 @@ export const createInbound = internalMutation({
       authorId: args.senderPhone,
       metaMessageId: args.metaMessageId,
       ...(args.mediaUrl ? { mediaUrl: args.mediaUrl } : {}),
+      ...(args.source ? { source: args.source } : {}),
       status: "sent",
       timestamp: args.timestamp,
       createdAt: Date.now(),
     });
+
+    // ── Customer reopened a resolved conversation within the window ──────────
+    if (didReopen && conversation) {
+      const contact = await ctx.db.get(contactId);
+      const contactName =
+        contact?.customName ?? contact?.displayName ?? contact?.phone ?? "Customer";
+      await ctx.db.insert("messages", {
+        conversationId: conversation._id,
+        tenantId: args.tenantId,
+        direction: "outbound",
+        content: "",
+        contentType: "system_event",
+        eventType: "reopened",
+        eventData: { actorName: contactName },
+        isInternalNote: false,
+        status: "sent",
+        timestamp: args.timestamp,
+        createdAt: Date.now(),
+      });
+
+      if (conversation.assignedAgentId) {
+        const channel = await ctx.db.get(args.channelId);
+        const channelName = channel?.displayName ?? "";
+        await ctx.runMutation(internal.notifications.notifyDispatch, {
+          tenantId: args.tenantId,
+          userId: conversation.assignedAgentId,
+          eventType: "conversation_reopened",
+          referenceId: conversation._id,
+          contactName,
+          message: `${contactName} replied to a resolved conversation${channelName ? ` on ${channelName}` : ""}`,
+          emailVariables: {
+            contactName,
+            channelName,
+            conversationId: conversation._id,
+          },
+        });
+      }
+    }
 
     // ── Customer Journey: fire conversation_started event on new convos ──────
     if (isNewConversation) {
@@ -557,6 +628,28 @@ export const setMetaMessageId = internalMutation({
   handler: async (ctx, args) => {
     const msg = await ctx.db.get(args.messageId);
     if (!msg || msg.tenantId !== args.tenantId) return;
+
+    // Idempotent: already set to this value, nothing to do.
+    if (msg.metaMessageId === args.metaMessageId) return;
+
+    // If a different row already owns this wamid (echo arrived first and the secondary dedup
+    // in processEcho patched the api row directly), do NOT overwrite — that row is canonical.
+    // Log the anomaly so we can diagnose any Level-2 dedup miss; never delete data here.
+    const existingWithWamid = await ctx.db
+      .query("messages")
+      .withIndex("by_meta_message_id", (q) => q.eq("metaMessageId", args.metaMessageId))
+      .first();
+    if (existingWithWamid && existingWithWamid._id !== args.messageId) {
+      console.log(JSON.stringify({
+        tag: "[SET_WAMID]",
+        event: "wamid_already_owned_by_other_row",
+        currentRow: args.messageId,
+        ownerRow: existingWithWamid._id,
+        ownerSource: existingWithWamid.source,
+      }));
+      return;
+    }
+
     await ctx.db.patch(args.messageId, { metaMessageId: args.metaMessageId });
   },
 });
@@ -781,5 +874,53 @@ export const handleIncomingReaction = internalMutation({
     }
 
     await ctx.db.patch(msg._id, { reactions: updatedReactions });
+  },
+});
+
+export const createOutboundForward = internalMutation({
+  args: {
+    conversationId: v.id("conversations"),
+    tenantId: v.string(),
+    content: v.string(),
+    authorId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId: args.tenantId,
+      direction: "outbound",
+      content: args.content,
+      contentType: "text",
+      isInternalNote: false,
+      authorId: args.authorId,
+      status: "sending",
+      timestamp: now,
+      createdAt: now,
+    });
+    await ctx.db.patch(args.conversationId, {
+      lastMessageAt: now,
+      lastMessagePreview: args.content.slice(0, 100),
+    });
+    return messageId;
+  },
+});
+
+export const markFailed = internalMutation({
+  args: { messageId: v.id("messages"), reason: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      status: "failed",
+      failureReason: args.reason,
+    });
+  },
+});
+
+export const getStatusInternal = internalQuery({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, args) => {
+    const m = await ctx.db.get(args.messageId);
+    if (!m) return null;
+    return { status: m.status, failureReason: m.failureReason };
   },
 });

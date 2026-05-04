@@ -1,7 +1,7 @@
 "use client";
 
 import { useT, useLocale } from "@/lib/i18n/context";
-import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIcon } from "lucide-react";
+import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIcon, CalendarClockIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { MessageActionMenu } from "./message-action-menu";
 
@@ -73,13 +73,14 @@ type Reaction = {
   reactorId: string;
 };
 
-type Message = {
+export type Message = {
   _id: string;
   direction: "inbound" | "outbound";
   content: string;
-  contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template";
+  contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template" | "system_event";
   isInternalNote: boolean;
   authorId: string | undefined;
+  source?: "customer" | "api" | "mobile";
   mediaUrl?: string;
   metaMessageId?: string;
   status: "sending" | "sent" | "delivered" | "read" | "failed";
@@ -87,6 +88,20 @@ type Message = {
   quotedMessageId?: string;
   deletedAt?: number;
   reactions?: Reaction[];
+  eventType?: "transfer_department" | "agent_assigned" | "agent_unassigned" | "resolved" | "reopened" | "csat_received" | "transfer_within_channel" | "forward_to_branch";
+  eventData?: {
+    actorName?: string;
+    fromDept?: string;
+    toDept?: string;
+    agentName?: string;
+    csatScore?: number;
+    targetBranchName?: string;
+    targetDeptName?: string;
+  };
+  followUpId?: string;
+  followUpCreatorName?: string;
+  followUpDepartmentName?: string;
+  followUpDepartmentNameAr?: string;
 };
 
 function QuotedMessagePreview({ quoted, isOutbound }: { quoted: Message; isOutbound: boolean }) {
@@ -148,6 +163,133 @@ function ReactionBadges({
   );
 }
 
+function ConversationEventPill({
+  message,
+  locale,
+}: {
+  message: Message;
+  locale: "ar" | "en";
+}) {
+  const isAr = locale === "ar";
+  const { eventType, eventData } = message;
+
+  const config: Record<
+    string,
+    { pillBg: string; pillText: string; lineBg: string; icon: string }
+  > = {
+    transfer_department: {
+      pillBg: "bg-blue-100 dark:bg-blue-950",
+      pillText: "text-blue-700 dark:text-blue-300",
+      lineBg: "bg-blue-200 dark:bg-blue-800",
+      icon: "↗",
+    },
+    agent_assigned: {
+      pillBg: "bg-purple-100 dark:bg-purple-950",
+      pillText: "text-purple-700 dark:text-purple-300",
+      lineBg: "bg-purple-200 dark:bg-purple-800",
+      icon: "👤",
+    },
+    agent_unassigned: {
+      pillBg: "bg-gray-100 dark:bg-gray-800",
+      pillText: "text-gray-600 dark:text-gray-400",
+      lineBg: "bg-gray-300 dark:bg-gray-700",
+      icon: "👤",
+    },
+    resolved: {
+      pillBg: "bg-green-100 dark:bg-green-950",
+      pillText: "text-green-700 dark:text-green-300",
+      lineBg: "bg-green-200 dark:bg-green-800",
+      icon: "✓",
+    },
+    reopened: {
+      pillBg: "bg-yellow-100 dark:bg-yellow-950",
+      pillText: "text-yellow-800 dark:text-yellow-300",
+      lineBg: "bg-yellow-200 dark:bg-yellow-800",
+      icon: "↩",
+    },
+    csat_received: {
+      pillBg: "bg-amber-100 dark:bg-amber-950",
+      pillText: "text-amber-800 dark:text-amber-300",
+      lineBg: "bg-amber-200 dark:bg-amber-800",
+      icon: "",
+    },
+    transfer_within_channel: {
+      pillBg: "bg-blue-100 dark:bg-blue-950",
+      pillText: "text-blue-700 dark:text-blue-300",
+      lineBg: "bg-blue-200 dark:bg-blue-800",
+      icon: "↗",
+    },
+    forward_to_branch: {
+      pillBg: "bg-indigo-100 dark:bg-indigo-950",
+      pillText: "text-indigo-700 dark:text-indigo-300",
+      lineBg: "bg-indigo-200 dark:bg-indigo-800",
+      icon: "↗",
+    },
+  };
+
+  const style = config[eventType ?? ""] ?? config.agent_unassigned;
+  const actor = eventData?.actorName ?? (isAr ? "شخص ما" : "Someone");
+  const agent = eventData?.agentName ?? "";
+  const toDept = eventData?.toDept ?? "";
+  const csatScore = eventData?.csatScore;
+  const stars = csatScore ? "⭐".repeat(csatScore) : "";
+
+  let label = "";
+  if (isAr) {
+    if (eventType === "transfer_department")
+      label = `${actor} نقل إلى ${toDept}`;
+    else if (eventType === "agent_assigned")
+      label = `${actor} أسند إلى ${agent}`;
+    else if (eventType === "agent_unassigned")
+      label = "تم إلغاء الإسناد";
+    else if (eventType === "resolved")
+      label = `${actor} أغلق المحادثة`;
+    else if (eventType === "reopened")
+      label = "أُعيد فتح المحادثة";
+    else if (eventType === "csat_received")
+      label = `${stars} العميل قيّم ${csatScore}/5`;
+    else if (eventType === "transfer_within_channel") {
+      const dest = eventData?.agentName ? `${toDept} / ${eventData.agentName}` : toDept;
+      label = `${actor} نقل المحادثة إلى ${dest}`;
+    } else if (eventType === "forward_to_branch") {
+      const dest = eventData?.targetDeptName ? `${eventData.targetBranchName} / ${eventData.targetDeptName}` : (eventData?.targetBranchName ?? "");
+      label = `${actor} حول المحادثة إلى ${dest} — تم إغلاقها.`;
+    }
+  } else {
+    if (eventType === "transfer_department")
+      label = `${actor} transferred to ${toDept}`;
+    else if (eventType === "agent_assigned")
+      label = `${actor} assigned to ${agent}`;
+    else if (eventType === "agent_unassigned")
+      label = "Conversation unassigned";
+    else if (eventType === "resolved")
+      label = `${actor} resolved this`;
+    else if (eventType === "reopened")
+      label = "Conversation reopened";
+    else if (eventType === "csat_received")
+      label = `${stars} Customer rated ${csatScore}/5`;
+    else if (eventType === "transfer_within_channel") {
+      const dest = eventData?.agentName ? `${toDept} / ${eventData.agentName}` : toDept;
+      label = `${actor} transferred this to ${dest}`;
+    } else if (eventType === "forward_to_branch") {
+      const dest = eventData?.targetDeptName ? `${eventData.targetBranchName} / ${eventData.targetDeptName}` : (eventData?.targetBranchName ?? "");
+      label = `${actor} forwarded this to ${dest} — conversation closed.`;
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 my-1 px-2">
+      <div className={`flex-1 h-px ${style.lineBg}`} />
+      <span
+        className={`text-[11px] font-medium rounded-full px-3 py-0.5 whitespace-nowrap ${style.pillBg} ${style.pillText}`}
+      >
+        {style.icon} {label}
+      </span>
+      <div className={`flex-1 h-px ${style.lineBg}`} />
+    </div>
+  );
+}
+
 export function MessageBubble({
   message,
   quotedMessage,
@@ -165,6 +307,11 @@ export function MessageBubble({
 }) {
   const t = useT();
   const locale = useLocale();
+
+  if (message.contentType === "system_event") {
+    return <ConversationEventPill message={message} locale={locale} />;
+  }
+
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
   const timeStr = new Date(message.timestamp).toLocaleTimeString(
@@ -181,7 +328,7 @@ export function MessageBubble({
   if (message.deletedAt) {
     return (
       <div className={message.direction === "inbound" ? "flex justify-start" : "flex justify-end"}>
-        <div className={`max-w-[75%] rounded-[20px] p-3 ${message.direction === "inbound" ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm" : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"} opacity-50 italic`}>
+        <div className={`max-w-[75%] rounded-2xl p-3 shadow-sm ${message.direction === "inbound" ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm" : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"} opacity-50 italic`}>
           <div className="text-sm text-muted-foreground flex items-center gap-1">
             <Trash2Icon className="size-3" />
             {t(message.direction === "outbound" ? "You deleted this message" : "This message was deleted", message.direction === "outbound" ? "حذفت هذه الرسالة" : "تم حذف هذه الرسالة")}
@@ -195,7 +342,7 @@ export function MessageBubble({
   if (message.isInternalNote) {
     return (
       <div className="flex justify-start">
-        <div className="max-w-[75%] rounded-[20px] rounded-ee-sm bg-[--internal-note-bg] p-3 border border-dashed border-[--internal-note-border]">
+        <div className="max-w-[75%] rounded-2xl rounded-ee-sm bg-[--internal-note-bg] p-3 border border-dashed border-[--internal-note-border] shadow-sm">
           <div className="text-xs font-medium text-[--internal-note-text] mb-1">
             {t("Internal Note", "ملاحظة داخلية")}
           </div>
@@ -207,11 +354,23 @@ export function MessageBubble({
   }
 
   const isInbound = message.direction === "inbound";
-  const bubbleBase = `max-w-[75%] rounded-[20px] p-3 ${
+  const isMobileSource = !isInbound && message.source === "mobile";
+
+  const bubbleBase = `max-w-[75%] rounded-2xl p-3 shadow-sm ${
     isInbound
       ? "bg-[--customer-bubble-bg] text-[--customer-bubble-text] rounded-ee-sm"
-      : "bg-gradient-to-br from-[#00e5a0] to-[#00c4b4] text-[#0a1020] rounded-es-sm"
+      : "bg-[--agent-bubble-bg] text-[--agent-bubble-text] rounded-es-sm"
   }`;
+
+  const mobileBadge = isMobileSource && (
+    <span
+      className="ms-2 inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300"
+      title={t("Sent from the WhatsApp mobile app", "هذه الرسالة أُرسلت من تطبيق الواتساب على الهاتف")}
+    >
+      📱 {t("From mobile", "من الموبايل")}
+    </span>
+  );
+
   const timeRow = (
     <div className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isInbound ? "justify-start" : "justify-end"}`}>
       <span>{timeStr}</span>
@@ -221,6 +380,7 @@ export function MessageBubble({
           onRetry={message.status === "failed" && onRetry ? () => onRetry(message.content) : undefined}
         />
       )}
+      {mobileBadge}
     </div>
   );
 
@@ -234,6 +394,26 @@ export function MessageBubble({
 
   const quotedPreview = quotedMessage && (
     <QuotedMessagePreview quoted={quotedMessage} isOutbound={!isInbound} />
+  );
+
+  const isFollowUp = !!message.followUpId;
+  const followUpDeptLabel =
+    locale === "ar"
+      ? message.followUpDepartmentNameAr ?? message.followUpDepartmentName
+      : message.followUpDepartmentName;
+  const followUpHeader = isFollowUp && (
+    <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-blue-700 dark:text-blue-300">
+      <CalendarClockIcon className="size-3 shrink-0" />
+      <span>{t("Follow-up", "متابعة")}</span>
+      {message.followUpCreatorName && (
+        <span className="text-foreground/70">· {message.followUpCreatorName}</span>
+      )}
+      {followUpDeptLabel && (
+        <span className="rounded-full bg-blue-100 dark:bg-blue-950 px-1.5 py-0.5 text-[10px]">
+          {followUpDeptLabel}
+        </span>
+      )}
+    </div>
   );
 
   const actionMenu = (
@@ -413,6 +593,7 @@ export function MessageBubble({
     <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
       {actionMenu}
       <div className={bubbleBase}>
+        {followUpHeader}
         {quotedPreview}
         <div className="text-sm whitespace-pre-wrap">{linkify(message.content)}</div>
         {timeRow}

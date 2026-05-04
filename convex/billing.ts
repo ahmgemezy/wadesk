@@ -243,9 +243,27 @@ export const paddleWebhook = httpAction(async (ctx, request) => {
       paddleSubscriptionId: data.id,
     });
   } else if (event_type === "subscription.canceled") {
+    const currentPlan: Plan = await ctx.runQuery(internal.lib.tenants.getPlan, {
+      tenantId: resolvedTenantId,
+    });
+    const canceledPlanName = currentPlan ?? "المدفوع";
+
     await ctx.runMutation(internal.billing.handlePaddleEvent, {
       tenantId: resolvedTenantId,
       newPlan: "free",
+    });
+
+    await ctx.runAction(internal.actions.notifyEmail.billingSubscriptionExpiredEmail, {
+      tenantId: resolvedTenantId,
+      planName: canceledPlanName,
+    });
+  } else if (event_type === "transaction.payment_failed") {
+    const priceId = data.items?.[0]?.price?.id ?? "";
+    const failedPlanName = planForPriceId(priceId) ?? "المدفوع";
+
+    await ctx.runAction(internal.actions.notifyEmail.billingPaymentFailedEmail, {
+      tenantId: resolvedTenantId,
+      planName: failedPlanName,
     });
   }
 

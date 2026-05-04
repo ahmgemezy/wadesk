@@ -11,13 +11,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { notificationRoute } from "@/lib/notification-routes";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 
 export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
   const router = useRouter();
   const { isAuthenticated } = useConvexAuth();
-  
+
   const unreadCount = useQuery(api.notifications.getUnreadCount, isAuthenticated ? undefined : "skip");
   const notifications = useQuery(api.notifications.listForUser, isAuthenticated ? undefined : "skip") ?? [];
   const markRead = useMutation(api.notifications.markRead);
@@ -25,16 +26,17 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
 
   const isRtl = locale === "ar";
 
-  function handleNotificationClick(notificationId: Id<"notifications">, type: string, referenceId: string) {
+  function handleNotificationClick(
+    notificationId: Id<"notifications">,
+    type: string,
+    referenceId: string,
+    isRead: boolean,
+  ) {
     try {
-      markRead({ notificationId });
-      if (type === "sla_breach") {
-        router.push(`/inbox/${referenceId}`);
-      } else if (type === "channel_expiring_soon" || type === "channel_deleted") {
-        router.push("/settings/channels");
-      } else {
-        router.push(`/contacts`);
+      if (!isRead) {
+        markRead({ notificationId });
       }
+      router.push(notificationRoute(type, referenceId));
     } catch {
       // Silently ignore errors
     }
@@ -80,12 +82,18 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
             notifications.map((n) => (
               <button
                 key={n._id}
-                onClick={() => handleNotificationClick(n._id, n.type, n.referenceId)}
+                onClick={() => handleNotificationClick(n._id, n.type, n.referenceId, n.read)}
                 className={cn(
-                  "w-full text-start px-4 py-3 hover:bg-muted transition-colors border-b last:border-b-0",
+                  "w-full text-start px-4 py-3 hover:bg-muted transition-colors border-b last:border-b-0 relative",
                   !n.read && "bg-blue-50 dark:bg-blue-950/20",
                 )}
               >
+                {!n.read && (
+                  <span
+                    aria-label={isRtl ? "غير مقروء" : "Unread"}
+                    className="absolute top-3 inset-e-3 h-2 w-2 rounded-full bg-blue-500"
+                  />
+                )}
                 {n.type === "sla_breach" && (
                   <span className="inline-flex items-center gap-1 text-amber-600 text-[10px] font-semibold mb-0.5">
                     <AlertTriangle className="size-3" />
@@ -104,7 +112,19 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
                     {isRtl ? "تم حذف الرقم" : "Channel Deleted"}
                   </span>
                 )}
-                <p className="text-sm font-medium">{n.contactName ?? "—"}</p>
+                {n.type === "conversation_transferred" && (
+                  <span className="inline-flex items-center gap-1 text-blue-600 text-[10px] font-semibold mb-0.5">
+                    ↗ {isRtl ? "محادثة جديدة في قسمك" : "New conversation in your dept"}
+                  </span>
+                )}
+                {n.type === "conversation_reopened" && (
+                  <span className="inline-flex items-center gap-1 text-yellow-700 text-[10px] font-semibold mb-0.5">
+                    ↩ {isRtl ? "أعاد العميل المحادثة" : "Customer replied to resolved"}
+                  </span>
+                )}
+                <p className={cn("text-sm pe-4", !n.read ? "font-semibold" : "font-medium")}>
+                  {n.contactName ?? "—"}
+                </p>
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                   {n.message}
                 </p>
@@ -117,6 +137,14 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
               </button>
             ))
           )}
+        </div>
+        <div className="border-t">
+          <button
+            onClick={() => router.push("/settings/notifications")}
+            className="w-full px-4 py-2.5 text-xs font-medium text-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            {isRtl ? "عرض الكل" : "See all"}
+          </button>
         </div>
       </PopoverContent>
     </Popover>

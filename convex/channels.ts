@@ -110,6 +110,23 @@ export const setStatus = internalMutation({
   },
 });
 
+// Marks a channel as needing reconnection without closing its conversations.
+// Used when the WhatsApp access token returns auth errors (e.g. Meta code 190)
+// from a background path — closing every conversation on a token blip would
+// be far too destructive.
+export const markReconnectRequiredInternal = internalMutation({
+  args: { channelId: v.id("channels") },
+  handler: async (ctx, args) => {
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) return;
+    if (channel.status === "reconnect_required") return;
+    await ctx.db.patch(args.channelId, {
+      status: "reconnect_required",
+      disconnectedAt: Date.now(),
+    });
+  },
+});
+
 export const incrementRoundRobinIndex = internalMutation({
   args: { channelId: v.id("channels"), tenantId: v.string() },
   handler: async (ctx, args) => {
@@ -274,6 +291,32 @@ export const updateName = mutation({
   },
 });
 
+export const updateReopenWindow = mutation({
+  args: {
+    channelId: v.id("channels"),
+    hours: v.optional(v.number()),  // undefined → use default 24h
+  },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel || channel.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    if (args.hours !== undefined && (args.hours < 1 || args.hours > 720)) {
+      throw new ConvexError("INVALID_WINDOW");
+    }
+
+    await ctx.db.patch(args.channelId, {
+      reopenWindowHours: args.hours,
+    });
+  },
+});
+
 export const remove = mutation({
   args: {
     channelId: v.id("channels"),
@@ -366,6 +409,34 @@ export const completeEmbeddedSignup = action({
 
       if (tokenData.error?.code === 190) {
         throw new ConvexError("TOKEN_REVOKED");
+      }
+    }
+
+    // 3b. Assign WABDesk system user to client's WABA (BSP architecture)
+    // After this, the platform system user token works for all this WABA's operations
+    const systemUserId = process.env.META_SYSTEM_USER_ID ?? "";
+    const platformToken = process.env.WHATSAPP_API_TOKEN ?? "";
+    if (systemUserId && platformToken) {
+      const assignRes = await fetch(
+        `https://graph.facebook.com/v25.0/${args.wabaId}/assigned_users`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            user: systemUserId,
+            tasks: JSON.stringify(["MANAGE", "DEVELOP", "MESSAGING"]),
+          }),
+        }
+      );
+      if (assignRes.ok) {
+        // Switch to permanent platform token — client token will eventually expire
+        accessToken = platformToken;
+      } else {
+        const err = await assignRes.json();
+        console.warn("[CHANNEL] System user assignment failed, falling back to client token", err);
       }
     }
 
@@ -598,6 +669,22 @@ export const retryWebhookSubscription = internalAction({
     } else {
       console.error("[CHANNEL] Webhook subscription failed after", MAX_ATTEMPTS, "attempts — manual intervention required");
     }
+  },
+});
+
+export const listOtherChannelsForForward = query({
+  args: { excludeChannelId: v.id("channels") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const all = await ctx.db
+      .query("channels")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .collect();
+    return all
+      .filter(
+        (c) => c._id !== args.excludeChannelId && (c.status === "active" || c.status === undefined),
+      )
+      .map((c) => ({ _id: c._id, displayName: c.displayName, displayPhone: c.displayPhone }));
   },
 });
 

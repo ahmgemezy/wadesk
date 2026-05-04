@@ -205,7 +205,7 @@ export default function QuickRepliesPage() {
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetContent className="flex flex-col w-full sm:!max-w-[450px] text-start p-0">
-          <SheetHeader className="px-6 pt-6 pb-2">
+          <SheetHeader className="border-b border-border/60 bg-muted/20">
             <SheetTitle>
               {editingId ? t("Edit Quick Reply", "تعديل الرد السريع") : t("Add New Reply", "إضافة رد جديد")}
             </SheetTitle>
@@ -244,7 +244,7 @@ export default function QuickRepliesPage() {
             </div>
           </div>
 
-          <div className="p-6 border-t mt-auto flex flex-col gap-2">
+          <div className="px-6 py-4 border-t border-border/60 bg-muted/30 mt-auto flex flex-col gap-2">
             <Button onClick={handleSave} disabled={saving || !title.trim() || !body.trim()} className="w-full">
               {saving ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
             </Button>

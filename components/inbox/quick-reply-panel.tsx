@@ -80,17 +80,20 @@ export function QuickReplyPanel({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="left" className="w-80">
-        <SheetHeader>
+      <SheetContent side="left" className="w-80 p-0 flex flex-col">
+        <SheetHeader className="border-b border-border/60 bg-muted/20">
           <SheetTitle>{t("Quick Replies", "ردود سريعة")}</SheetTitle>
         </SheetHeader>
-        <div className="p-4 space-y-4">
+        <div className="px-4 pt-3 pb-2">
           <Input
             placeholder={t("Search...", "بحث...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             dir="auto"
+            className="bg-muted/50 border-border/60"
           />
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 space-y-4">
           {fillItem ? (
             <div className="space-y-3">
               <p className="text-sm font-medium">{t("Fill in variables", "املأ المتغيرات")}</p>
@@ -135,10 +138,10 @@ export function QuickReplyPanel({
             {grouped &&
               Object.entries(grouped).map(([category, replies]) => (
                 <div key={category} className="mb-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                  <h3 className="text-[10px] uppercase tracking-widest font-medium text-muted-foreground mb-2">
                     {category}
                   </h3>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {replies.map((qr) => (
                       <button
                         key={qr._id}
@@ -163,10 +166,10 @@ export function QuickReplyPanel({
                             onClose();
                           }
                         }}
-                        className="w-full text-start p-2 rounded-md hover:bg-accent transition-colors"
+                        className="w-full text-start p-3 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-accent/40 transition-all group"
                       >
-                        <div className="text-sm font-medium">{qr.title}</div>
-                        <div className="text-xs text-muted-foreground truncate">
+                        <div className="text-sm font-medium group-hover:text-primary transition-colors">{qr.title}</div>
+                        <div className="text-xs text-muted-foreground truncate mt-0.5">
                           {qr.content}
                         </div>
                       </button>

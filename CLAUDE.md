@@ -1,18 +1,18 @@
-# CLAUDE.md — WaDesk
+# CLAUDE.md — WABDesk
 
-> This file is the single source of truth for Claude Code when working on the WaDesk codebase.
+> This file is the single source of truth for Claude Code when working on the WABDesk codebase.
 > Read this file fully before writing any code, making any architectural decision, or answering any question.
 
 ---
 
 ## 1. Project Overview
 
-**WaDesk** is an Arabic-first, WhatsApp Business API multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf region.
+**WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.
 
 **Core Value Proposition:**
 A team inbox built on WhatsApp — multiple agents handle customer conversations from one shared dashboard, with no customer knowing they're talking to a team.
 
-**Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪, Gulf region  
+**Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪, broader Arabic-speaking markets  
 **Language:** Arabic-first UI (RTL), English supported  
 **Founder:** Solo founder (Ahmed), non-technical, uses AI-assisted (vibe coding) workflows
 
@@ -145,7 +145,7 @@ Retrofitting multi-number support after launch requires painful schema migration
 
 ## 8. WhatsApp Business Profile Editing
 
-Clients can edit their WhatsApp Business profile from within WaDesk dashboard via the Meta Business API.
+Clients can edit their WhatsApp Business profile from within WABDesk dashboard via the Meta Business API.
 
 ### Editable Fields
 
@@ -262,7 +262,7 @@ Additional 20% off all paid plans when billed annually.
 
 ## 11. Competitive Landscape
 
-| Competitor | Type             | Weakness vs WaDesk                                          |
+| Competitor | Type             | Weakness vs WABDesk                                         |
 | ---------- | ---------------- | ----------------------------------------------------------- |
 | ElMujib    | Arab SaaS        | Limited features, poor UX                                   |
 | Tactful.ai | Enterprise       | Too expensive for SMBs                                      |
@@ -272,14 +272,14 @@ Additional 20% off all paid plans when billed annually.
 | WATI       | Global SaaS      | 20% markup on Meta messages, $39/extra agent, English-first |
 | SleekFlow  | Global SaaS      | $15/month per WhatsApp number, expensive for MENA           |
 
-**WaDesk's moat:**
+**WABDesk's moat:**
 
 - Arabic-first UX — no global competitor does this
 - Zero markup on Meta messages — clients pay Meta directly
 - Local currency billing (EGP / SAR / AED)
 - SMB pricing — 5 agents for ~$14 vs WATI's ~$137
 
-**Core sales message:** _"Pay Meta for your messages. Pay WaDesk for your team inbox. Nothing more."_
+**Core sales message:** _"Pay Meta for your messages. Pay WABDesk for your team inbox. Nothing more."_
 
 ---
 
@@ -350,6 +350,9 @@ WHATSAPP_APP_SECRET=             # Meta App Secret (Meta App Dashboard → Setti
 WHATSAPP_API_TOKEN=              # Permanent System User token for sending messages (task 013)
 WHATSAPP_API_VERSION=v25.0       # Meta API version — always use v25.0 (latest)
 
+# WhatsApp Coexistence (013)
+ECHO_DEDUP_WINDOW_MS=5000        # Secondary dedup window (ms) for mobile echoes — increase if SET_WAMID wamid_already_owned_by_other_row appears frequently in logs
+
 # Paddle
 PADDLE_API_KEY=
 PADDLE_WEBHOOK_SECRET=
@@ -360,20 +363,20 @@ PADDLE_SELLER_ID=
 
 ## 15. Key Product Decisions (Do Not Revisit Without Good Reason)
 
-| Decision                            | Rationale                                                                 |
-| ----------------------------------- | ------------------------------------------------------------------------- |
-| Convex over Supabase                | Real-time first, no SQL complexity, faster to build                       |
-| Clerk over NextAuth                 | Multi-tenant orgs built-in, saves weeks of work                           |
+| Decision                            | Rationale                                                                   |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| Convex over Supabase                | Real-time first, no SQL complexity, faster to build                         |
+| Clerk over NextAuth                 | Multi-tenant orgs built-in, saves weeks of work                             |
 | Paddle over Stripe                  | MoR = handles MENA VAT + global tax automatically; account approval pending |
-| Shared WABA model (Embedded Signup) | Client owns their number, WaDesk can't be shut down                       |
-| Freemium over free trial only       | Lower barrier for Arab SMB market                                         |
-| Arabic-first over bilingual         | Differentiation from all global competitors                               |
+| Shared WABA model (Embedded Signup) | Client owns their number, WABDesk can't be shut down                        |
+| Freemium over free trial only       | Lower barrier for Arab SMB market                                           |
+| Arabic-first over bilingual         | Differentiation from all global competitors                                 |
 
 ---
 
 ## 16. Contact Management (Lightweight CRM)
 
-WaDesk is NOT a full CRM — but it must have enough contact management to make agents effective. Think of it as "CRM-lite" built around WhatsApp conversations.
+WABDesk is NOT a full CRM — but it must have enough contact management to make agents effective. Think of it as "CRM-lite" built around WhatsApp conversations.
 
 ### What's Included (Phase 1)
 
@@ -440,7 +443,7 @@ Clients must be able to export ALL their data at any time — canceling, migrati
 
 - Export button in **Settings → Data & Privacy**
 - Large exports are async — notify when ready (email or in-app)
-- File named clearly: `wadesk-export-[tenant]-[date].zip`
+- File named clearly: `WABDesk-export-[tenant]-[date].zip`
 - On cancellation: keep data accessible for **30 days** then purge — never delete immediately
 
 ### Plan Availability
@@ -485,7 +488,7 @@ Admin enters email → agent receives invite link → creates account → auto-j
 Handled natively by Clerk Organizations.
 
 **B. Invite by WhatsApp**
-Admin enters agent's phone number → WaDesk sends them an invite link via WhatsApp → they click and create account.
+Admin enters agent's phone number → WABDesk sends them an invite link via WhatsApp → they click and create account.
 Preferred for Arab markets — agents don't always check email.
 
 **C. Shareable Invite Link**
@@ -613,7 +616,7 @@ A feature is "done" when:
 
 ---
 
-## 24. What WaDesk is NOT
+## 24. What WABDesk is NOT
 
 - ❌ Not a chatbot builder
 - ❌ Not a broadcast/spam tool
@@ -772,7 +775,7 @@ Clients must be able to export all their data at any time. This is a trust signa
 
 ## 28. WhatsApp Business Profile Editing (Task: WA Profile)
 
-Agents can edit their WhatsApp Business profile from within WaDesk via the Meta Business Management API.
+Agents can edit their WhatsApp Business profile from within WABDesk via the Meta Business Management API.
 
 ### Editable Fields
 
@@ -868,10 +871,164 @@ On save, parse `body` with regex `/\{\{(\w+)\}\}/g` and store extracted variable
 
 ---
 
+## 30. AI Agent Behavior Rules
+
+> These rules apply to **Claude Code** (and any future AI coding agent) when working on this codebase. They are not optional — they exist to prevent the most common failure modes observed during vibe coding sessions on WabDesk.
+>
+> Read this section before reading any task prompt. If a task prompt conflicts with these rules, these rules win.
+
+---
+
+### 30.1 Think Before Coding
+
+**State assumptions explicitly. Don’t hide confusion. Push back when warranted.**
+
+Before writing any code:
+
+- State your interpretation of the task in your own words. If you’re guessing, say _“I’m guessing that…”_ — don’t proceed silently.
+- If the request has multiple valid interpretations, list them and ask which one. Never pick one silently.
+- If you see a simpler approach than what was requested, propose it before implementing the requested one.
+- If something is unclear about the schema, a business rule in `CLAUDE.md`, or a product decision, **STOP and ask**. Do not invent.
+
+**Example:**
+
+> Task: _“Add a way to disable channels.”_
+> ❌ Wrong: silently add a `disabled: boolean` field and a toggle button.
+> ✅ Right: _“Two interpretations: (a) soft-disable that pauses webhook processing but keeps the row, (b) hard-disable that triggers the existing 30-day retention path (`channels.deletedAt`). Which one?”_
+
+---
+
+### 30.2 Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked. If asked for a button, don’t add a settings panel.
+- No abstractions for single-use code. Don’t extract helpers that are called once.
+- No “flexibility” knobs that weren’t requested (no extra config options, no `options: { strict?: boolean }` parameters that aren’t used).
+- No error handling for impossible scenarios.
+- If you wrote 200 lines and 50 would do, rewrite.
+
+**The senior-engineer test:** Would a senior engineer reading this PR say _“this is overcomplicated”_? If yes, simplify.
+
+**WabDesk-specific overcomplication patterns to avoid:**
+
+- Building a generic “rule engine” when the task was _“add one specific automation trigger”_
+- Wrapping a single Convex mutation in a class or factory
+- Adding feature flags for a feature with one call site
+- Adding `try/catch` around code that cannot throw (Convex mutations already roll back on throw)
+- Creating new shared helpers in `lib/` when the logic is used in one file
+
+---
+
+### 30.3 Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+This is the single biggest source of friction in vibe coding on this repo. Claude Code’s default behavior is to “improve” things while it’s there. **Don’t.**
+
+When editing existing files:
+
+- Don’t reformat code you didn’t change.
+- Don’t rename variables in unchanged blocks.
+- Don’t reorder imports unless your change required it.
+- Don’t “improve” adjacent comments.
+- Don’t refactor working code, even if you think your way is cleaner.
+- Match the existing style of the file, even if you’d write it differently in a fresh file.
+
+When your changes create orphans:
+
+- Remove imports / variables / functions that **your changes** made unused.
+- Do **not** remove pre-existing dead code. If you spot some, mention it in the response — let Ahmed decide.
+
+**The diff test:** Every changed line in the final diff must trace directly to the user’s stated request. If a line changed and you can’t justify it from the request, revert it.
+
+**Operations that require explicit prior discussion (never do these without asking first):**
+
+- `ctx.db.delete(...)` calls
+- Schema field removals or renames (these are migrations, not edits)
+- Index removals
+- Removing or changing the signature of any existing Convex action / mutation / query
+- Touching `convex/lib/auth.ts`, `convex/lib/encryption.ts`, `convex/lib/planLimits.ts`, or `convex/lib/rateLimit.ts`
+- Bumping `WHATSAPP_API_VERSION` or any other environment variable
+- Adding new dependencies to `package.json`
+
+If your task seems to require any of these, **stop and ask first**.
+
+---
+
+### 30.4 Goal-Driven Execution
+
+**Define verifiable success criteria. Loop until they all pass.**
+
+Transform vague tasks into checks you can run:
+
+| Vague task           | Verifiable goal                                                                   |
+| -------------------- | --------------------------------------------------------------------------------- |
+| “Add validation”     | Call the mutation with invalid input, assert it throws the expected `ConvexError` |
+| “Fix the bug”        | Write a repro path first, then make it pass                                       |
+| “Refactor X”         | `npx tsc --noEmit` clean before AND after; no behavior change                     |
+| “Implement task 017” | All Stage 0 reading-list files cited; `PROGRESS.md` entry written; `tsc` clean    |
+
+For every multi-step task, state the plan upfront:
+
+```
+1. Add `coexistenceEnabled` field to schema    → verify: `npx tsc --noEmit` clean
+2. Wire processEcho to read the flag            → verify: kill-switch (flag=false, send echo, assert no insert)
+3. Add UI badge for source="mobile"             → verify: bubble renders with badge for the three source values
+```
+
+Strong success criteria let you loop independently. Weak criteria (_“make it work”_) guarantee back-and-forth.
+
+---
+
+### 30.5 Stage Output Requirements
+
+Every stage of a multi-stage task must end with all four of the following. Skipping any one is a rejection trigger:
+
+1. **The actual code, not a summary.** BEFORE/AFTER diffs with line numbers for edits; full file contents for new files. A checklist of _what you did_ is not acceptable.
+1. **Literal terminal output of `npx tsc --noEmit`.** Paste it exactly. Do not paraphrase. Do not say _“no errors”_ — paste the actual (possibly empty) output.
+1. **A `PROGRESS.md` entry**, pasted in the response in full (not summarized), following the format used by existing entries.
+1. **A push-back invitation.** Every stage ends with: _“If you disagree with any decision above, explain before complying with the next stage.”_
+
+---
+
+### 30.6 Rejection Triggers
+
+Ahmed will reject and re-prompt without merging if any of these appear:
+
+- A summary instead of actual code at a stage boundary
+- An out-of-scope file change (file not listed in the stage’s scope was modified)
+- Placeholder code (_“will fix in production”_, _“TODO: real implementation”_, fake hashes, mock returns)
+- Schema changes that weren’t in the approved Stage 2 plan
+- `any` types
+- New `console.log` calls that aren’t tagged with a bracketed prefix (`[ECHO_DEDUP]`, `[SET_WAMID]`, etc.) matching the existing debug pattern
+- _“I also improved…”_ / _“I noticed and fixed…”_ language about anything that wasn’t asked
+- Default values flipped from the product spec (e.g., spec says _“default true”_ but the field is `v.optional(...)` with no explicit default and is read as falsy)
+
+---
+
+### 30.7 What Counts as Trivial (Skip the Stage Gates)
+
+These rules and the stage-gated workflow apply to **non-trivial** tasks. A task is trivial — and may be done in one shot — only if **all** of the following are true:
+
+- One file, fewer than ~30 lines of change
+- No schema change
+- No new external API call
+- No new Convex action / mutation / query
+- No new env var
+- No security-sensitive area (`auth.ts`, `encryption.ts`, `planLimits.ts`, webhook verification)
+
+When in doubt, treat it as non-trivial.
+
+---
+
 _Last updated: manually — update this file whenever a major architectural or product decision is made._
 
 ## Recent Changes
 
+- 031-positioning-update: Updated WABDesk positioning across docs, marketing site, and legal copy. Drops "API" and "SaaS" from customer-facing surfaces; replaces "Egypt and the Gulf" with "Arabic-speaking markets" — broader positioning aligned with future expansion. "Arabic-first" preserved as the moat. Files touched: CLAUDE.md §1, PROJECT_STATE.md §1, PROGRESS.md, AUDIT_REPORT.md, app/page.tsx (AR meta description), lib/marketing/i18n.ts (hero.subtitle AR+EN), components/marketing/privacy-content.tsx (EN intro). No schema, runtime, or pricing-currency changes.
+- 030-ai-agent-behavior-rules: Added §30 covering AI agent behavioral rules — think before coding, simplicity, surgical changes, goal-driven execution, stage output requirements, rejection triggers, and definition of trivial tasks. Applies to Claude Code on all future task work.
+- 013-whatsapp-coexistence: WhatsApp Coexistence — phone numbers connected via Embedded Signup support sending from both WABDesk (Cloud API) and the WhatsApp Business mobile app simultaneously; mobile-sent messages mirrored into inbox with 📱 badge (`source: "mobile"`); 3-level echo dedup (wamid → content hash → tertiary insert); history backfill on WABA connection; automation guard skips non-customer sources; `featureType: "whatsapp_business_app_onboarding"` added to Embedded Signup `extras`; kill switch: `channels.coexistenceEnabled = false`; see PROGRESS.md for full implementation details
 - 009-automation-rules: Automation rules engine (if-this-send-that) — new tables: `automationRules`, `businessHours`, `ruleFireLog`; new files: `convex/automations.ts`, `lib/automationHelpers.ts`, `components/automations/` (4 components), `app/(dashboard)/automations/page.tsx`, `components/ui/switch.tsx`; modified: `convex/schema.ts`, `convex/http.ts`, `convex/crons.ts`, `convex/lib/planLimits.ts`, `convex/messages.ts` (fixed totalConversations increment), `lib/shell/nav-config.ts` (sidebar link), `lib/shell/types.ts`, `components/shell/resolve-icon.tsx`; 4 trigger types: keyword, outside_hours, first_message, no_reply_timeout; plan limits: Free 2, Starter 10, Growth 30, Business unlimited; admin+supervisor manage rules, admin-only for business hours
 - 004-multi-tenant-onboarding: Added `onboardingState` table (Convex); `fetchQuery` from `convex/nextjs` (server-side Convex reads in RSC)
 - 005-contact-management: Added `customFields` table (Convex); `libphonenumber-js` (phone normalization); `papaparse` (CSV parsing client-side)
@@ -881,11 +1038,13 @@ _Last updated: manually — update this file whenever a major architectural or p
 - TypeScript (strict, no `any`) — enforced project-wide + Next.js 15 (App Router), Convex (backend + realtime), Clerk (auth + multi-tenancy), shadcn/ui, Tailwind CSS v4
 
 <!-- convex-ai-start -->
+
 This project uses [Convex](https://convex.dev) as its backend.
 
 When working on Convex code, **always read `convex/_generated/ai/guidelines.md` first** for important guidelines on how to correctly use Convex APIs and patterns. The file contains rules that override what you may have learned about Convex from training data.
 
 Convex agent skills for common tasks can be installed by running `npx convex ai-files install`.
+
 <!-- convex-ai-end -->
 
 # Project Rules & Work Protocol

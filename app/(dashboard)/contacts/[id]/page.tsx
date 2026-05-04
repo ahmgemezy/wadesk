@@ -16,7 +16,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowRight, ArrowLeft, CalendarClock, GlobeIcon, MapPinIcon, TagIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowRight,
+  ArrowLeft,
+  CalendarClock,
+  GlobeIcon,
+  MapPinIcon,
+  TagIcon,
+  ActivityIcon,
+  SmileIcon,
+  FrownIcon,
+  MehIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { toast } from "sonner";
@@ -50,6 +63,7 @@ export default function ContactProfilePage({
   const contactId = id as Id<"contacts">;
 
   const contactData = useQuery(api.contacts.getById, isAuthenticated ? { contactId } : "skip");
+  const insightsData = useQuery(api.customerInsights.getContactInsights, isAuthenticated ? { contactId } : "skip");
   const followUps = useQuery(api.followUps.listByContact, isAuthenticated ? { contactId } : "skip");
   const { results: events, loadMore, status } = usePaginatedQuery(
     api.contactEvents.getTimeline,
@@ -89,46 +103,57 @@ export default function ContactProfilePage({
     (f) => f.status !== "pending" && f.status !== "cancelled"
   );
 
-  // Get channelId from existing follow-up, or default to the first available channel
   const channelId = (followUps ?? [])[0]?.channelId as Id<"channels"> | undefined ?? channels?.[0]?._id;
 
+  // Sentiment Helper
+  const getSentimentDetails = (sentiment: string | null) => {
+    switch (sentiment) {
+      case "positive": return { icon: <SmileIcon className="size-4 text-emerald-500" />, label: t("Positive", "إيجابي"), color: "bg-emerald-500/10 text-emerald-500" };
+      case "negative": return { icon: <FrownIcon className="size-4 text-red-500" />, label: t("Negative", "سلبي"), color: "bg-red-500/10 text-red-500" };
+      case "neutral": return { icon: <MehIcon className="size-4 text-amber-500" />, label: t("Neutral", "محايد"), color: "bg-amber-500/10 text-amber-500" };
+      default: return { icon: <MehIcon className="size-4 text-muted-foreground" />, label: t("Unknown", "غير معروف"), color: "bg-muted text-muted-foreground" };
+    }
+  };
+
+  const sentiment = getSentimentDetails(insightsData?.sentimentOverall ?? null);
+  const healthScore = insightsData?.healthScore ?? null;
+
   return (
-    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen">
+    <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-muted/10">
       {/* Header */}
-      <div className="border-b px-6 py-4 flex items-center gap-4">
+      <div className="border-b bg-background px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => router.push("/contacts")}
           aria-label={t("Back", "رجوع")}
+          className="shrink-0"
         >
           {isRtl ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
         </Button>
 
-        <Avatar className="h-10 w-10 shrink-0">
-          <AvatarFallback>{initials}</AvatarFallback>
+        <Avatar className="h-10 w-10 shrink-0 ring-2 ring-background shadow-sm">
+          <AvatarFallback className="bg-primary/5 text-primary font-semibold">{initials}</AvatarFallback>
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-lg truncate" dir="auto">{displayName}</p>
+          <p className="font-semibold text-lg truncate text-foreground" dir="auto">{displayName}</p>
           {contact.phone && (
-            <p className="text-sm text-muted-foreground" dir="ltr">{contact.phone}</p>
+            <p className="text-sm text-muted-foreground font-medium" dir="ltr">{contact.phone}</p>
           )}
         </div>
 
-        {/* Stage badge */}
-        <span className={cn("px-2 py-1 rounded-full text-xs font-medium shrink-0", stageLabel.color)}>
+        <Badge variant="secondary" className="px-3 py-1 font-semibold text-xs shrink-0 capitalize shadow-none border-border/50">
           {isRtl ? stageLabel.ar : stageLabel.en}
-        </span>
+        </Badge>
 
-        {/* Stage changer */}
         <Select value={stage} onValueChange={(v) => void updateStage({ contactId, stage: v as Stage })}>
-          <SelectTrigger className="h-8 w-auto text-sm px-2">
+          <SelectTrigger className="h-9 w-32 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {STAGES.map((s) => (
-              <SelectItem key={s} value={s}>
+              <SelectItem key={s} value={s} className="font-medium">
                 {isRtl ? STAGE_LABELS[s].ar : STAGE_LABELS[s].en}
               </SelectItem>
             ))}
@@ -144,148 +169,211 @@ export default function ContactProfilePage({
             setFollowUpOpen(true);
           }}
           size="sm"
-          className="shrink-0 gap-2"
+          className="shrink-0 gap-2 shadow-sm"
         >
           <CalendarClock className="h-4 w-4" />
           {t("Schedule Follow-up", "جدولة متابعة")}
         </Button>
       </div>
 
-      {/* Two-column body */}
-      <div className="grid lg:grid-cols-3 gap-0 h-[calc(100vh-73px)]">
-        {/* Left: full timeline */}
-        <div className="lg:col-span-2 border-e overflow-y-auto p-6">
-          <h2 className="font-semibold mb-4">{t("Activity Timeline", "سجل النشاط")}</h2>
-          <ContactTimeline events={events} locale={isRtl ? "ar" : "en"} />
-          {status === "CanLoadMore" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4 w-full"
-              onClick={() => loadMore(20)}
-            >
-              {t("Load more", "تحميل المزيد")}
-            </Button>
-          )}
-        </div>
+      <div className="p-6">
+        <div className="grid lg:grid-cols-3 gap-6 max-w-7xl mx-auto items-start">
+          
+          {/* Left Column: Insights & Details */}
+          <div className="space-y-6">
+            
+            {/* Insights Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <ActivityIcon className="size-4 text-primary" />
+                  {t("Customer Insights", "رؤى العميل")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Health Score */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t("Health Score", "درجة الصحة")}
+                  </span>
+                  {healthScore !== null ? (
+                    <div className="flex items-center gap-3">
+                      <div className="text-3xl font-bold tracking-tight text-foreground">{healthScore}</div>
+                      <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className={cn("h-full rounded-full transition-all duration-500", 
+                            healthScore > 70 ? "bg-emerald-500" : healthScore > 40 ? "bg-amber-500" : "bg-red-500"
+                          )} 
+                          style={{ width: `${healthScore}%` }} 
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{t("No data available", "لا توجد بيانات")}</p>
+                  )}
+                </div>
 
-        {/* Right: details + follow-ups */}
-        <div className="overflow-y-auto p-6 space-y-6">
+                {/* Sentiment */}
+                <div className="flex flex-col gap-1.5 pt-2 border-t border-border/50">
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t("Overall Sentiment", "الانطباع العام")}
+                  </span>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium", sentiment.color)}>
+                      {sentiment.icon}
+                      {sentiment.label}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Contact details */}
-          {(contact.country || contact.city || contact.tags?.length > 0 || contact.notes) && (
-            <div>
-              <h3 className="font-medium text-sm mb-3">{t("Details", "التفاصيل")}</h3>
-              <div className="space-y-2 text-sm">
-                {contact.country && (
-                  <div className="flex items-center gap-2">
-                    <GlobeIcon className="size-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">{t("Country", "الدولة")}:</span>
-                    <span>{contact.country}</span>
+            {/* Profile Details Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold">{t("Profile Details", "تفاصيل الملف الشخصي")}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                {(contact.country || contact.city) ? (
+                  <div className="space-y-3">
+                    {contact.country && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <GlobeIcon className="size-4 shrink-0" />
+                          <span>{t("Country", "الدولة")}</span>
+                        </div>
+                        <span className="font-medium text-foreground">{contact.country}</span>
+                      </div>
+                    )}
+                    {contact.city && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPinIcon className="size-4 shrink-0" />
+                          <span>{t("City", "المدينة")}</span>
+                        </div>
+                        <span className="font-medium text-foreground">{contact.city}</span>
+                      </div>
+                    )}
                   </div>
-                )}
-                {contact.city && (
-                  <div className="flex items-center gap-2">
-                    <MapPinIcon className="size-3.5 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">{t("City", "المدينة")}:</span>
-                    <span>{contact.city}</span>
-                  </div>
-                )}
+                ) : null}
+
                 {contact.tags?.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <TagIcon className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                    <span className="text-muted-foreground">{t("Tags", "الوسوم")}:</span>
-                    <div className="flex flex-wrap gap-1">
+                  <div className="pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                      <TagIcon className="size-4 shrink-0" />
+                      <span>{t("Tags", "الوسوم")}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
                       {contact.tags.map((tag) => (
-                        <span key={tag} className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">
-                          {tag}
-                        </span>
+                        <Badge key={tag} variant="secondary" className="font-normal text-xs">{tag}</Badge>
                       ))}
                     </div>
                   </div>
                 )}
+
                 {contact.notes && (
-                  <div className="mt-2 p-3 bg-muted rounded-lg text-sm text-muted-foreground whitespace-pre-wrap">
-                    {contact.notes}
+                  <div className="pt-2 border-t border-border/50">
+                    <span className="text-muted-foreground mb-2 block">{t("Notes", "ملاحظات")}</span>
+                    <p className="p-3 bg-[#f1f5f9] dark:bg-muted/50 rounded-md text-sm text-foreground whitespace-pre-wrap leading-relaxed shadow-inner">
+                      {contact.notes}
+                    </p>
                   </div>
                 )}
-              </div>
-            </div>
-          )}
+              </CardContent>
+            </Card>
 
-          {/* Stats */}
-          <div>
-            <h3 className="font-medium text-sm mb-3">{t("Stats", "الإحصائيات")}</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("Conversations", "المحادثات")}</span>
-                <span>{contactData.conversationCount ?? 0}</span>
-              </div>
-              {contact.firstSeenAt && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("First contact", "أول تواصل")}</span>
-                  <span dir="ltr">{new Date(contact.firstSeenAt).toLocaleDateString()}</span>
+            {/* Stats Summary */}
+            <Card>
+              <CardContent className="p-0 flex divide-x divide-border">
+                <div className="flex-1 p-4 flex flex-col items-center justify-center text-center">
+                  <span className="text-2xl font-bold tracking-tight">{contactData.conversationCount ?? 0}</span>
+                  <span className="text-xs text-muted-foreground mt-1">{t("Conversations", "محادثات")}</span>
                 </div>
-              )}
-              {contact.lastSeenAt && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("Last contact", "آخر تواصل")}</span>
-                  <span>
-                    {formatDistanceToNow(new Date(contact.lastSeenAt), {
-                      addSuffix: true,
-                      locale: dateLocale,
-                    })}
-                  </span>
-                </div>
-              )}
-            </div>
+                {contact.lastSeenAt && (
+                  <div className="flex-1 p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-sm font-semibold truncate w-full" title={new Date(contact.lastSeenAt).toLocaleDateString()}>
+                      {formatDistanceToNow(new Date(contact.lastSeenAt), { locale: dateLocale })}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">{t("Last Active", "آخر نشاط")}</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Pending follow-ups */}
-          {pendingFollowUps.length > 0 && (
-            <div>
-              <h3 className="font-medium text-sm mb-3">
-                {t("Pending Follow-ups", "المتابعات المعلقة")}
-              </h3>
-              <ul className="space-y-2">
-                {pendingFollowUps.map((f) => (
-                  <li key={f._id} className="text-sm border rounded p-3 space-y-1">
-                    <p className="font-medium">
-                      {new Date(f.scheduledAt).toLocaleString()}
-                    </p>
-                    <p className="text-muted-foreground line-clamp-2">{f.whatsappMessage}</p>
-                    {f.expectedRevenue && (
-                      <p className="text-xs text-muted-foreground">
-                        {f.expectedRevenue} {f.currency}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Past follow-ups */}
-          {pastFollowUps.length > 0 && (
-            <div>
-              <h3 className="font-medium text-sm mb-3">
-                {t("Past Follow-ups", "المتابعات السابقة")}
-              </h3>
-              <ul className="space-y-2">
-                {pastFollowUps.map((f) => (
-                  <li
-                    key={f._id}
-                    className="text-sm border rounded p-3 space-y-1 opacity-70"
+          {/* Right Column: Timeline */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="min-h-[600px] flex flex-col">
+              <CardHeader className="border-b pb-3">
+                <CardTitle className="text-sm font-semibold">
+                  {t("Detailed Activity", "النشاط المفصل")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 p-6 overflow-y-auto">
+                <ContactTimeline events={events} locale={isRtl ? "ar" : "en"} />
+                {status === "CanLoadMore" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-6 w-full shadow-sm"
+                    onClick={() => loadMore(20)}
                   >
-                    <p className="font-medium capitalize">
-                      {f.status} — {new Date(f.scheduledAt).toLocaleString()}
-                    </p>
-                    <p className="text-muted-foreground line-clamp-1">{f.whatsappMessage}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                    {t("Load more", "تحميل المزيد")}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Follow-ups Grid */}
+            {(pendingFollowUps.length > 0 || pastFollowUps.length > 0) && (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {pendingFollowUps.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold text-primary">
+                        {t("Pending Follow-ups", "المتابعات المعلقة")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-3">
+                        {pendingFollowUps.map((f) => (
+                          <li key={f._id} className="text-sm border border-border/60 bg-muted/10 rounded-md p-3 space-y-1.5 shadow-sm">
+                            <p className="font-medium text-foreground">
+                              {new Date(f.scheduledAt).toLocaleString(dateLocale.code)}
+                            </p>
+                            <p className="text-muted-foreground line-clamp-2 leading-relaxed">{f.whatsappMessage}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {pastFollowUps.length > 0 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold text-muted-foreground">
+                        {t("Past Follow-ups", "المتابعات السابقة")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="space-y-3">
+                        {pastFollowUps.slice(0, 3).map((f) => (
+                          <li key={f._id} className="text-sm border border-transparent bg-muted/40 rounded-md p-3 space-y-1.5">
+                            <p className="font-medium text-muted-foreground capitalize flex justify-between">
+                              <span>{f.status}</span>
+                              <span className="text-xs opacity-70">{new Date(f.scheduledAt).toLocaleDateString(dateLocale.code)}</span>
+                            </p>
+                            <p className="text-muted-foreground line-clamp-1">{f.whatsappMessage}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

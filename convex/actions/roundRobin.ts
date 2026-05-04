@@ -54,7 +54,13 @@ export const assignRoundRobin = internalAction({
       if (activeMembers.length === 0) return;
 
       const idx = (department.roundRobinIndex ?? 0) % activeMembers.length;
-      const assignedAgentId = activeMembers[idx].publicUserData?.userId;
+      const agentMember = activeMembers[idx];
+      const assignedAgentId = agentMember.publicUserData?.userId;
+      const agentName =
+        agentMember.publicUserData?.firstName ??
+        agentMember.publicUserData?.identifier ??
+        assignedAgentId ??
+        undefined;
 
       if (assignedAgentId) {
         await ctx.runMutation(internal.conversations.assignInternal, {
@@ -62,6 +68,7 @@ export const assignRoundRobin = internalAction({
           agentId: assignedAgentId,
           tenantId: args.tenantId,
           assignmentType: "round_robin",
+          agentName,
         });
       }
     } else {
@@ -69,12 +76,15 @@ export const assignRoundRobin = internalAction({
       const sortedIds = [...agentIds].sort();
       const idx = (department.roundRobinIndex ?? 0) % sortedIds.length;
       const assignedAgentId = sortedIds[idx];
+      const matchedMember = deptMembers.find((m) => m.userId === assignedAgentId);
+      const agentName = matchedMember?.userName ?? assignedAgentId;
 
       await ctx.runMutation(internal.conversations.assignInternal, {
         conversationId: args.conversationId,
         agentId: assignedAgentId,
         tenantId: args.tenantId,
         assignmentType: "round_robin",
+        agentName,
       });
     }
 

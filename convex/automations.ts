@@ -375,8 +375,12 @@ export const evaluateAndFireAutomations = internalMutation({
     conversationId: v.id("conversations"),
     messageContent: v.string(),
     isNewConversation: v.boolean(),
+    messageSource: v.optional(v.union(v.literal("customer"), v.literal("api"), v.literal("mobile"))),
   },
   handler: async (ctx, args) => {
+    // Skip automation eval for non-customer messages (echoes from mobile, agent API replies)
+    if (args.messageSource !== undefined && args.messageSource !== "customer") return;
+
     const lastOutbound = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) =>

@@ -17,6 +17,7 @@ import {
   UploadIcon,
   InfoIcon,
   LockIcon,
+  AlertTriangleIcon,
 } from "lucide-react";
 import {
   Tooltip,
@@ -60,6 +61,7 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
 
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<Record<string, unknown> | null>(null);
+  const [tokenExpired, setTokenExpired] = useState(false);
 
   const [description, setDescription] = useState("");
   const [address, setAddress] = useState("");
@@ -90,10 +92,17 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
       })
       .catch((err) => {
         if (cancelled) return;
-        toast.error(
-          t("Failed to load profile", "فشل تحميل الملف التجاري"),
-          { description: err instanceof Error ? err.message : String(err) }
-        );
+        const raw = err instanceof Error ? err.message : String(err);
+        let parsed: { code?: string; message?: string } = {};
+        try { parsed = JSON.parse(raw); } catch { /* not JSON */ }
+        if (parsed.code === "TOKEN_EXPIRED" || /TOKEN_EXPIRED/.test(raw)) {
+          setTokenExpired(true);
+        } else {
+          toast.error(
+            t("Failed to load profile", "فشل تحميل الملف التجاري"),
+            { description: parsed.message ?? raw }
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -154,6 +163,28 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
           <span className="ms-2 text-sm text-muted-foreground">
             {t("Loading profile...", "جاري تحميل الملف التجاري...")}
           </span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (tokenExpired) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+          <AlertTriangleIcon className="size-10 text-amber-500" />
+          <p className="font-medium">
+            {t("WhatsApp session expired", "انتهت جلسة واتساب")}
+          </p>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            {t(
+              "The access token for this channel has expired. Please reconnect your WhatsApp number to restore access.",
+              "انتهت صلاحية رمز الوصول لهذه القناة. يرجى إعادة ربط رقم واتساب لاستعادة الوصول."
+            )}
+          </p>
+          <Button variant="outline" onClick={() => router.push("/settings/channels")}>
+            {t("Reconnect Channel", "إعادة ربط القناة")}
+          </Button>
         </CardContent>
       </Card>
     );

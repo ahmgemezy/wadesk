@@ -86,21 +86,21 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     clearState();
     setSending(true);
     try {
-      await inviteByWhatsApp({ phone: phone.trim(), role: effectiveRole });
-      setPhone("");
-      onInvited();
-      onClose();
+      const result = await inviteByWhatsApp({ phone: phone.trim(), role: effectiveRole });
+      if (result.whatsappSent) {
+        setPhone("");
+        onInvited();
+        onClose();
+      } else {
+        setError(t("WhatsApp template not set up yet. Share this invite link instead:", "قالب واتساب غير مُعدّ بعد. شارك رابط الدعوة:"));
+        setLinkFallback(result.inviteUrl);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("INVALID_PHONE")) {
         setError(t("Invalid phone number (E.164: +201012345678)", "رقم هاتف غير صالح (مثال: +201012345678)"));
       } else if (msg.includes("PLAN_LIMIT")) {
         setError(t("Plan limit reached", "تم بلوغ الحد الأقصى"));
-      } else if (msg.includes("WHATSAPP_SEND_FAILED")) {
-        setError(t("WhatsApp send failed. You can share this link instead:", "فشل إرسال واتساب. يمكنك مشاركة هذا الرابط:"));
-        if (activeLink?.url) {
-          setLinkFallback(activeLink.url);
-        }
       } else if (msg.includes("FORBIDDEN")) {
         setError(t("Forbidden", "غير مصرح"));
       } else if (msg.includes("SUPERVISOR_CAN_ONLY_INVITE_AGENTS")) {

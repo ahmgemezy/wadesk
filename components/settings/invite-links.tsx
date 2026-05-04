@@ -253,9 +253,10 @@ function CreateLinkDialog({ open, onClose, isSupervisor }: CreateLinkDialogProps
 interface LinkCardProps {
   link: InviteLink;
   isAdminOrSupervisor: boolean;
+  memberNameMap: Map<string, string>;
 }
 
-function LinkCard({ link, isAdminOrSupervisor }: LinkCardProps) {
+function LinkCard({ link, isAdminOrSupervisor, memberNameMap }: LinkCardProps) {
   const t = useT();
   const revoke = useMutation(api.inviteLinks.revoke);
   const regenerate = useMutation(api.inviteLinks.regenerate);
@@ -345,7 +346,7 @@ function LinkCard({ link, isAdminOrSupervisor }: LinkCardProps) {
         <span>•</span>
         <span>
           {t("Created by:", "أُنشئ بواسطة:")}{" "}
-          {link.createdBy.slice(0, 8)}
+          {memberNameMap.get(link.createdBy) ?? link.createdBy.slice(0, 8)}
         </span>
       </div>
 
@@ -421,11 +422,20 @@ function LinkCard({ link, isAdminOrSupervisor }: LinkCardProps) {
 
 export function InviteLinks() {
   const t = useT();
-  const { membership } = useOrganization();
+  const { membership, memberships } = useOrganization({ memberships: { pageSize: 500, keepPreviousData: true } });
   const orgRole = ((membership as unknown) as Record<string, unknown>)?.role as string | undefined;
   const isAdmin = orgRole === "org:admin" || orgRole === "admin";
   const isSupervisor = orgRole === "org:supervisor";
   const isAdminOrSupervisor = isAdmin || isSupervisor;
+
+  const memberNameMap = new Map<string, string>(
+    (memberships?.data ?? []).flatMap((m) => {
+      const pd = m.publicUserData;
+      if (!pd?.userId) return [];
+      const name = [pd.firstName, pd.lastName].filter(Boolean).join(" ") || pd.identifier || pd.userId;
+      return [[pd.userId, name]];
+    })
+  );
 
   const links = useQuery(api.inviteLinks.list);
   const [createOpen, setCreateOpen] = useState(false);
@@ -499,6 +509,7 @@ export function InviteLinks() {
                 key={link._id}
                 link={link}
                 isAdminOrSupervisor={isAdminOrSupervisor}
+                memberNameMap={memberNameMap}
               />
             ))}
           </div>

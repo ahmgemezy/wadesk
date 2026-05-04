@@ -2,7 +2,7 @@
 
 import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
-import { clerkClient } from "@clerk/nextjs/server";
+import { getAdminEmails } from "../lib/emailHelpers";
 import type { Id } from "../_generated/dataModel";
 
 export const processChannelRetention = internalAction({
@@ -26,14 +26,17 @@ export const processChannelRetention = internalAction({
           tenantId: channel.tenantId,
         });
 
-        const adminEmails = await getAdminEmails(channel.tenantId);
+        const [adminEmails, locale] = await Promise.all([
+          getAdminEmails(channel.tenantId),
+          ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: channel.tenantId }),
+        ]);
 
         // Send deletion emails
         for (const { email } of adminEmails) {
           await ctx.runAction(internal.actions.sendEmail.sendEmail, {
             to: email,
             templateKey: "channel_deleted",
-            locale: "en",
+            locale,
             variables: { channelName: channel.displayName },
           });
         }
@@ -61,14 +64,17 @@ export const processChannelRetention = internalAction({
             day: "numeric",
           });
 
-          const adminEmails = await getAdminEmails(channel.tenantId);
+          const [adminEmails, locale] = await Promise.all([
+            getAdminEmails(channel.tenantId),
+            ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: channel.tenantId }),
+          ]);
 
           // Send warning emails
           for (const { email } of adminEmails) {
             await ctx.runAction(internal.actions.sendEmail.sendEmail, {
               to: email,
               templateKey: "channel_expiring_soon",
-              locale: "en",
+              locale,
               variables: {
                 channelName: channel.displayName,
                 daysLeft: String(daysLeft),
@@ -98,24 +104,3 @@ export const processChannelRetention = internalAction({
     }
   },
 });
-
-async function getAdminEmails(
-  orgId: string
-): Promise<Array<{ userId: string; email: string }>> {
-  try {
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList(
-      { organizationId: orgId, limit: 100 }
-    );
-    return memberships.data
-      .filter((m) => m.role === "org:admin")
-      .filter((m) => m.publicUserData?.userId)
-      .map((m) => ({
-        userId: m.publicUserData!.userId!,
-        email: (m.publicUserData?.identifier ?? "") as string,
-      }))
-      .filter((m) => m.email);
-  } catch {
-    return [];
-  }
-}

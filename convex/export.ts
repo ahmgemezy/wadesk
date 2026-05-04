@@ -246,7 +246,7 @@ function generateHtmlFromExportData(
 <html lang="${htmlLang}" dir="${htmlDir}">
 <head>
 <meta charset="UTF-8">
-<title>WaDesk — ${L.title} — ${tenantId} — ${date}</title>
+<title>WABDesk — ${L.title} — ${tenantId} — ${date}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f0f2f5;height:100vh;display:flex;direction:rtl}

@@ -1,129 +1,119 @@
 "use node";
 
+import * as React from "react";
+import { render } from "@react-email/render";
 import { internalAction } from "../_generated/server";
 import { v, ConvexError } from "convex/values";
+import { ChannelExpiringSoon } from "../emails/templates/channelExpiringSoon";
+import { ChannelDeleted } from "../emails/templates/channelDeleted";
+import { SlaBreach } from "../emails/templates/slaBreach";
+import { FollowupDue } from "../emails/templates/followupDue";
+import { NewAssignment } from "../emails/templates/newAssignment";
+import { AgentWelcome } from "../emails/templates/agentWelcome";
+import { BillingPaymentFailed } from "../emails/templates/billingPaymentFailed";
+import { BillingSubscriptionExpired } from "../emails/templates/billingSubscriptionExpired";
+import { ConversationTransferred } from "../emails/templates/conversationTransferred";
+import { ConversationReopened } from "../emails/templates/conversationReopened";
+import { CsatReceived } from "../emails/templates/csatReceived";
 
-type EmailTemplate = {
-  subject: string;
-  body: string;
-  isHtml?: boolean;
-};
-
-const TEMPLATES: Record<string, Record<string, EmailTemplate>> = {
-  sla_breach: {
-    ar: {
-      subject: "تنبيه: تجاوز فترة الاستجابة المسموحة",
-      body: `مرحباً،
-
-تم تجاوز فترة الاستجابة المسموحة في محادثة مع {{contactName}}.
-
-يرجى الرد في أقرب وقت ممكن.
-
-شكراً لك، فريق WaDesk`,
-    },
-    en: {
-      subject: "Alert: SLA Response Time Exceeded",
-      body: `Hello,
-
-The SLA response time has been exceeded for a conversation with {{contactName}}.
-
-Please respond as soon as possible.
-
-Thanks,
-WaDesk Team`,
-    },
-  },
-  followup_due: {
-    ar: {
-      subject: "تنبيه: متابعة مستحقة",
-      body: `مرحباً،
-
-لديك متابعة مستحقة مع {{contactName}}.
-
-يرجى إكمال المتابعة.
-
-شكراً لك، فريق WaDesk`,
-    },
-    en: {
-      subject: "Alert: Follow-up Due",
-      body: `Hello,
-
-You have a follow-up due with {{contactName}}.
-
-Please complete the follow-up.
-
-Thanks,
-WaDesk Team`,
-    },
-  },
-  new_assignment: {
-    ar: {
-      subject: "إشعار: محادثة جديدة",
-      body: `مرحباً،
-
-تمت محادثة جديدة مع {{contactName}}.
-
-تسجيل الدخول إلى WaDesk للرد.
-
-شكراً لك، فريق WaDesk`,
-    },
-    en: {
-      subject: "Notification: New Conversation",
-      body: `Hello,
-
-A new conversation has started with {{contactName}}.
-
-Log in to WaDesk to reply.
-
-Thanks,
-WaDesk Team`,
-    },
-  },
+const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
   channel_expiring_soon: {
-    ar: {
-      subject: "إجراء مطلوب: سيتم حذف رقم واتساب خلال {{daysLeft}} أيام",
-      body: `مرحباً،
-
-رقم واتساب "{{channelName}}" غير متصل وسيتم حذفه نهائياً خلال {{daysLeft}} أيام (في {{deleteDate}}).
-
-لمنع الحذف، أعد توصيل رقمك من الإعدادات > أرقام واتساب.
-
-شكراً،
-فريق WaDesk`,
-    },
-    en: {
-      subject: "Action Required: WhatsApp Number Deletes in {{daysLeft}} Days",
-      body: `Hello,
-
-Your WhatsApp number "{{channelName}}" has been disconnected and will be permanently deleted in {{daysLeft}} days (on {{deleteDate}}).
-
-To prevent deletion, reconnect from Settings > WhatsApp Numbers.
-
-Thanks,
-WaDesk Team`,
-    },
+    ar: "إجراء مطلوب: سيُحذف رقم واتساب خلال {{daysLeft}} أيام",
+    en: "Action Required: WhatsApp Number Deletes in {{daysLeft}} Days",
   },
   channel_deleted: {
-    ar: {
-      subject: "تم حذف رقم واتساب نهائياً",
-      body: `مرحباً،
-
-تم حذف رقم واتساب "{{channelName}}" وجميع بياناته (محادثات، رسائل، أقسام) نهائياً لأنه ظل غير متصل لمدة 30 يوماً.
-
-شكراً،
-فريق WaDesk`,
-    },
-    en: {
-      subject: "WhatsApp Number Permanently Deleted",
-      body: `Hello,
-
-Your WhatsApp number "{{channelName}}" and all its data (conversations, messages, departments) have been permanently deleted after 30 days of being disconnected.
-
-Thanks,
-WaDesk Team`,
-    },
+    ar: "تم حذف رقم واتساب نهائياً",
+    en: "WhatsApp Number Permanently Deleted",
+  },
+  sla_breach: {
+    ar: "تنبيه: تجاوز وقت الاستجابة المسموح به",
+    en: "Alert: SLA Response Time Exceeded",
+  },
+  followup_due_sent: {
+    ar: "تم إرسال متابعة {{contactName}} بنجاح",
+    en: "Follow-up sent to {{contactName}}",
+  },
+  followup_due_failed: {
+    ar: "فشل إرسال متابعة {{contactName}}",
+    en: "Follow-up to {{contactName}} failed",
+  },
+  new_assignment: {
+    ar: "إشعار: محادثة جديدة تم تعيينها إليك",
+    en: "Notification: New Conversation Assigned to You",
+  },
+  agent_welcome: {
+    ar: "مرحباً بك في WABDesk",
+    en: "Welcome to WABDesk",
+  },
+  billing_payment_failed: {
+    ar: "فشل تجديد الاشتراك — يرجى تحديث بيانات الدفع",
+    en: "Subscription Payment Failed — Action Required",
+  },
+  billing_subscription_expired: {
+    ar: "انتهت صلاحية الاشتراك",
+    en: "Your Subscription Has Expired",
+  },
+  conversation_transferred: {
+    ar: "تم تحويل محادثة مع {{contactName}} إلى فريقك",
+    en: "A conversation with {{contactName}} was transferred to your team",
+  },
+  conversation_reopened: {
+    ar: "{{contactName}} أرسل رسالة جديدة في محادثة محسومة",
+    en: "{{contactName}} replied to a resolved conversation",
+  },
+  csat_received: {
+    ar: "تم استلام تقييم العميل",
+    en: "Customer rating received",
   },
 };
+
+function resolveSubject(
+  templateKey: string,
+  locale: "ar" | "en",
+  variables: Record<string, string>,
+): string {
+  let subject = SUBJECTS[templateKey]?.[locale] ?? templateKey;
+  for (const [key, value] of Object.entries(variables)) {
+    subject = subject.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value);
+  }
+  return subject;
+}
+
+function buildElement(
+  templateKey: string,
+  locale: "ar" | "en",
+  variables: Record<string, string>,
+): React.ReactElement {
+  const props = { locale, variables };
+  switch (templateKey) {
+    case "channel_expiring_soon":
+      return React.createElement(ChannelExpiringSoon, props);
+    case "channel_deleted":
+      return React.createElement(ChannelDeleted, props);
+    case "sla_breach":
+      return React.createElement(SlaBreach, props);
+    case "followup_due":
+    case "followup_due_sent":
+    case "followup_due_failed":
+      return React.createElement(FollowupDue, props);
+    case "new_assignment":
+      return React.createElement(NewAssignment, props);
+    case "agent_welcome":
+      return React.createElement(AgentWelcome, props);
+    case "billing_payment_failed":
+      return React.createElement(BillingPaymentFailed, props);
+    case "billing_subscription_expired":
+      return React.createElement(BillingSubscriptionExpired, props);
+    case "conversation_transferred":
+      return React.createElement(ConversationTransferred, props);
+    case "conversation_reopened":
+      return React.createElement(ConversationReopened, props);
+    case "csat_received":
+      return React.createElement(CsatReceived, props);
+    default:
+      throw new ConvexError(`TEMPLATE_NOT_FOUND: ${templateKey}`);
+  }
+}
 
 export const sendEmail = internalAction({
   args: {
@@ -132,22 +122,36 @@ export const sendEmail = internalAction({
     locale: v.union(v.literal("ar"), v.literal("en")),
     variables: v.record(v.string(), v.string()),
   },
-  handler: async (ctx, args) => {
+  handler: async (_ctx, args) => {
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("[EMAIL_SKIP] RESEND_API_KEY not configured");
       return { ok: false, reason: "RESEND_NOT_CONFIGURED" };
     }
 
-    const template = TEMPLATES[args.templateKey]?.[args.locale];
-    if (!template) {
-      throw new ConvexError(`TEMPLATE_NOT_FOUND: ${args.templateKey}`);
-    }
+    const enrichedVariables: Record<string, string> = {
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://wabdesk.com",
+      ...args.variables,
+    };
 
-    let body = template.body;
-    for (const [key, value] of Object.entries(args.variables)) {
-      body = body.replace(new RegExp(`{{${key}}}`, "g"), value);
-    }
+    const element = buildElement(args.templateKey, args.locale, enrichedVariables);
+    const html = await render(element);
+    const subject = resolveSubject(args.templateKey, args.locale, enrichedVariables);
+
+    const BILLING_TEMPLATES = new Set([
+      "billing_payment_failed",
+      "billing_subscription_expired",
+    ]);
+    const ALERT_TEMPLATES = new Set([
+      "channel_expiring_soon",
+      "channel_deleted",
+      "sla_breach",
+    ]);
+    const fromAddress = BILLING_TEMPLATES.has(args.templateKey)
+      ? "WABDesk Billing <billing@wabdesk.com>"
+      : ALERT_TEMPLATES.has(args.templateKey)
+        ? "WABDesk Alerts <alerts@wabdesk.com>"
+        : "WABDesk <noreply@wabdesk.com>";
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -156,10 +160,10 @@ export const sendEmail = internalAction({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "WaDesk <noreply@wadesk.com>",
+        from: fromAddress,
         to: args.to,
-        subject: template.subject,
-        text: body,
+        subject,
+        html,
       }),
     });
 

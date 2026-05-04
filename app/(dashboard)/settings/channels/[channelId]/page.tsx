@@ -37,11 +37,16 @@ export default function ChannelSettingsPage({
   const [reconnectError, setReconnectError] = useState<string | null>(null);
   const [reconnectSuccess, setReconnectSuccess] = useState(false);
 
+  const updateReopenWindow = useMutation(api.channels.updateReopenWindow);
+  const [reopenHours, setReopenHours] = useState<string>("");
+  const [savingReopen, setSavingReopen] = useState(false);
+
   useEffect(() => {
     if (channel) {
       setSlaMinutes(channel.slaThresholdMinutes ? String(channel.slaThresholdMinutes) : "");
+      setReopenHours(channel.reopenWindowHours ? String(channel.reopenWindowHours) : "");
     }
-  }, [channel?.slaThresholdMinutes]);
+  }, [channel?.slaThresholdMinutes, channel?.reopenWindowHours]);
   const router = useRouter();
 
   const isInGracePeriod =
@@ -263,6 +268,71 @@ export default function ChannelSettingsPage({
               }}
             >
               {t("Disable", "تعطيل")}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2 border-t pt-6">
+        <h3 className="text-sm font-medium">{t("Reopen Window", "نافذة إعادة الفتح")}</h3>
+        <p className="text-xs text-muted-foreground">
+          {t(
+            "If a customer replies within this many hours of resolving, reopen the same conversation. After that, start a new one. Default: 24 hours.",
+            "إذا رد العميل خلال هذا العدد من الساعات بعد إغلاق المحادثة، يُعاد فتحها. بعد ذلك، تبدأ محادثة جديدة. الافتراضي: 24 ساعة.",
+          )}
+        </p>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min={1}
+            max={720}
+            placeholder={t("e.g. 24", "مثال: 24")}
+            value={reopenHours}
+            onChange={(e) => setReopenHours(e.target.value)}
+            className="w-32"
+          />
+          <span className="text-sm text-muted-foreground">
+            {t("hours", "ساعة")}
+          </span>
+          <Button
+            size="sm"
+            disabled={savingReopen}
+            onClick={async () => {
+              setSavingReopen(true);
+              try {
+                const parsed = parseInt(reopenHours);
+                await updateReopenWindow({
+                  channelId,
+                  hours: isNaN(parsed) || parsed <= 0 ? undefined : parsed,
+                });
+                toast.success(t("Reopen window saved", "تم حفظ نافذة إعادة الفتح"));
+              } catch {
+                toast.error(t("Failed to save", "فشل الحفظ"));
+              } finally {
+                setSavingReopen(false);
+              }
+            }}
+          >
+            {savingReopen ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
+          </Button>
+          {reopenHours && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                setSavingReopen(true);
+                try {
+                  await updateReopenWindow({ channelId, hours: undefined });
+                  setReopenHours("");
+                  toast.success(t("Reset to default (24h)", "تمت إعادة الضبط (24 ساعة)"));
+                } catch {
+                  toast.error(t("Failed to reset", "فشل إعادة الضبط"));
+                } finally {
+                  setSavingReopen(false);
+                }
+              }}
+            >
+              {t("Reset", "إعادة")}
             </Button>
           )}
         </div>

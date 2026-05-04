@@ -139,6 +139,7 @@ export async function processMessages(
       mediaUrl,
       timestamp: Number(msg.timestamp) * 1000,
       senderDisplayName: senderName,
+      source: "customer",
     });
 
     if (result.isDuplicate) continue;
@@ -169,6 +170,7 @@ export async function processMessages(
       conversationId: result.conversationId,
       messageContent: content,
       isNewConversation: result.isNewConversation,
+      messageSource: "customer",
     });
   }
 }

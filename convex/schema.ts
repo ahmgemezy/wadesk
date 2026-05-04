@@ -15,6 +15,11 @@ export default defineSchema({
     paddle_customer_id: v.optional(v.string()),
     paddle_subscription_id: v.optional(v.string()),
     plan_activated_at: v.optional(v.number()),
+    emailLocale: v.optional(v.union(v.literal("ar"), v.literal("en"))),
+    forwardMessageTemplates: v.optional(v.object({
+      ar: v.string(),
+      en: v.string(),
+    })),
   })
     .index("by_tenantId", ["tenantId"]),
 
@@ -24,6 +29,7 @@ export default defineSchema({
     displayPhone: v.optional(v.string()),      // E.164 display number
     displayName: v.string(),
     wabaId: v.string(),
+    coexistenceEnabled: v.optional(v.boolean()),  // kill switch: defaults true, set false to disable echo processing
     accessToken: v.optional(v.string()),       // AES-256-GCM encrypted
     tokenEncryptedAt: v.optional(v.number()),
     assignmentMode: v.union(
@@ -45,6 +51,8 @@ export default defineSchema({
     deactivationWarningsSent: v.optional(v.array(v.number())),
     slaThresholdMinutes: v.optional(v.number()),
     slaEnabled: v.optional(v.boolean()),
+    reopenWindowHours: v.optional(v.number()),  // window after resolution where a new inbound reopens the same conversation; default 24h
+
     pendingDisplayName: v.optional(v.string()),
     displayNameStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
     displayNameSubmittedAt: v.optional(v.number()),
@@ -87,6 +95,8 @@ export default defineSchema({
     totalConversations: v.optional(v.number()),
     wabaId: v.optional(v.string()),
     departmentId: v.optional(v.id("departments")),
+    healthScore: v.optional(v.number()),
+    sentimentOverall: v.optional(v.union(v.literal("positive"), v.literal("neutral"), v.literal("negative"))),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phone"])
@@ -169,6 +179,7 @@ export default defineSchema({
       v.literal("open"),
       v.literal("pending"),
       v.literal("resolved"),
+      v.literal("forwarded"),
     ),
     labels: v.array(v.string()),
     lastMessageAt: v.number(),
@@ -177,9 +188,15 @@ export default defineSchema({
     createdAt: v.number(),
     lastInboundAt: v.optional(v.number()),
     slaBreachedAt: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),  // set when status flips to "resolved"; cleared on reopen — used to gate reopen window
     mergedInto: v.optional(v.id("conversations")),
     mergedAt: v.optional(v.number()),
     totalMergedCount: v.optional(v.number()),
+    forwardedToChannelId: v.optional(v.id("channels")),
+    forwardedToDepartmentId: v.optional(v.id("departments")),
+    forwardedAt: v.optional(v.number()),
+    forwardedBy: v.optional(v.string()),
+    hasFollowUp: v.optional(v.boolean()),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_status", ["tenantId", "status"])
@@ -208,10 +225,13 @@ export default defineSchema({
       v.literal("sticker"),
       v.literal("location"),
       v.literal("template"),
+      v.literal("system_event"),
     ),
     isInternalNote: v.boolean(),
     authorId: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("customer"), v.literal("api"), v.literal("mobile"))),  // message origin: customer inbound, API/agent outbound, or mobile app echo
     mediaUrl: v.optional(v.string()),
+    metaMediaId: v.optional(v.string()),  // raw Meta media ID for echoes (not yet downloaded to storage)
     metaMessageId: v.optional(v.string()),
     failureReason: v.optional(v.string()),
     status: v.union(
@@ -231,6 +251,31 @@ export default defineSchema({
       emoji: v.string(),
       reactorId: v.string(),
     }))),
+    eventType: v.optional(v.union(
+      v.literal("transfer_department"),
+      v.literal("transfer_within_channel"),
+      v.literal("forward_to_branch"),
+      v.literal("agent_assigned"),
+      v.literal("agent_unassigned"),
+      v.literal("resolved"),
+      v.literal("reopened"),
+      v.literal("csat_received"),
+    )),
+    eventData: v.optional(v.object({
+      actorName: v.optional(v.string()),
+      fromDept: v.optional(v.string()),
+      toDept: v.optional(v.string()),
+      agentName: v.optional(v.string()),
+      csatScore: v.optional(v.number()),
+      targetBranchName: v.optional(v.string()),
+      targetBranchNumber: v.optional(v.string()),
+      targetDeptName: v.optional(v.string()),
+    })),
+    followUpId: v.optional(v.id("followUps")),
+    creatorDepartmentId: v.optional(v.id("departments")),
+    followUpCreatorName: v.optional(v.string()),
+    followUpDepartmentName: v.optional(v.string()),
+    followUpDepartmentNameAr: v.optional(v.string()),
   })
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_tenant", ["tenantId"])
@@ -333,7 +378,16 @@ export default defineSchema({
       v.literal("template_approved"),
       v.literal("template_rejected"),
       v.literal("channel_expiring_soon"),
+      v.literal("channel_token_expired"),
       v.literal("channel_deleted"),
+      v.literal("agent_welcome"),
+      v.literal("billing_payment_failed"),
+      v.literal("billing_subscription_expired"),
+      v.literal("conversation_transferred"),
+      v.literal("conversation_reopened"),
+      v.literal("new_assignment"),
+      v.literal("conversation_assigned"),
+      v.literal("csat_received"),
     ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
@@ -341,7 +395,10 @@ export default defineSchema({
     read: v.boolean(),
     createdAt: v.number(),
   })
-    .index("by_user", ["tenantId", "userId", "read"]),
+    .index("by_user", ["tenantId", "userId", "read"])
+    .index("by_user_type", ["tenantId", "userId", "type"])
+    .index("by_user_created", ["tenantId", "userId", "createdAt"])
+    .index("by_created", ["createdAt"]),
 
   metaTemplates: defineTable({
     tenantId: v.string(),
@@ -465,6 +522,7 @@ export default defineSchema({
     tenantId: v.string(),
     enabled: v.boolean(),
     delayMinutes: v.number(),          // how many minutes after resolve to send (default: 5)
+    language: v.optional(v.union(v.literal("ar"), v.literal("en"))), // template language
     updatedAt: v.number(),
   })
     .index("by_tenant", ["tenantId"]),
@@ -636,16 +694,23 @@ export default defineSchema({
     .index("by_tenant_timestamp", ["tenantId", "timestamp"]),
 
   notificationPreferences: defineTable({
-    userId: v.string(),
     tenantId: v.string(),
+    userId: v.string(),
+    eventType: v.union(
+      v.literal("sla_breach"),
+      v.literal("followup_due"),
+      v.literal("conversation_transferred"),
+      v.literal("conversation_assigned"),
+      v.literal("conversation_reopened"),
+      v.literal("csat_received"),
+      v.literal("channel_expiring_soon"),
+    ),
+    inAppEnabled: v.boolean(),
     emailEnabled: v.boolean(),
-    emailSlabreach: v.boolean(),
-    emailFollowup: v.boolean(),
-    emailNewAssignment: v.boolean(),
-    emailCsatAlert: v.boolean(),
+    updatedAt: v.number(),
   })
-    .index("by_user", ["userId"])
-    .index("by_tenant_user", ["tenantId", "userId"]),
+    .index("by_tenant_user", ["tenantId", "userId"])
+    .index("by_tenant_user_event", ["tenantId", "userId", "eventType"]),
 
   memberProfiles: defineTable({
     tenantId: v.string(),

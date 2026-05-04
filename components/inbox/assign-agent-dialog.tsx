@@ -56,6 +56,7 @@ export function AssignAgentDialog({
                 assign({
                   conversationId: conversationId as Id<"conversations">,
                   agentId: userId ?? undefined,
+                  agentName: name,
                 })
               }
             >

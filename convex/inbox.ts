@@ -27,6 +27,12 @@ export const listConversations = query({
     )),
     departmentId: v.optional(v.id("departments")),
     channelId: v.optional(v.id("channels")),
+    status: v.optional(v.union(
+      v.literal("open"),
+      v.literal("pending"),
+      v.literal("resolved"),
+      v.literal("forwarded"),
+    )),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -47,8 +53,14 @@ export const listConversations = query({
     } else if (args.filter === "unassigned") {
       filtered = all.filter((c) => !c.assignedAgentId);
     } else if (!isAdminOrSupervisor) {
+      // Agents see: assigned-to-me, unassigned, OR conversations that contain
+      // a follow-up (so the team can collaborate on outreach across
+      // departments without being blocked by assignment).
       filtered = all.filter(
-        (c) => c.assignedAgentId === callerId || !c.assignedAgentId,
+        (c) =>
+          c.assignedAgentId === callerId ||
+          !c.assignedAgentId ||
+          c.hasFollowUp === true,
       );
     }
 
@@ -58,6 +70,10 @@ export const listConversations = query({
 
     if (args.departmentId) {
       filtered = filtered.filter((c) => c.departmentId === args.departmentId);
+    }
+
+    if (args.status) {
+      filtered = filtered.filter((c) => c.status === args.status);
     }
 
     const page = filtered.slice(0, 200);
@@ -80,6 +96,11 @@ export const listConversations = query({
           departmentName = dept?.name;
         }
 
+        const metric = await ctx.db
+          .query("conversationMetrics")
+          .withIndex("by_conversation", (q) => q.eq("conversationId", conv._id))
+          .first();
+
         return {
           id: conv._id as string,
           contactId: conv.contactId as string,
@@ -97,6 +118,7 @@ export const listConversations = query({
           channelId: conv.channelId as string,
           departmentId: conv.departmentId ? (conv.departmentId as string) : undefined,
           departmentName,
+          csatScore: metric?.csatScore,
         };
       }),
     );
@@ -118,7 +140,23 @@ export const getConversation = query({
     const { tenantId } = await getCallerIdentity(ctx);
     const conv = await ctx.db.get(args.conversationId);
     if (!conv || conv.tenantId !== tenantId) return null;
-    return conv;
+
+    let forwardedToChannelName: string | undefined;
+    let forwardedToDepartmentName: string | undefined;
+    if (conv.forwardedToChannelId) {
+      const target = await ctx.db.get(conv.forwardedToChannelId);
+      if (target && target.tenantId === tenantId) {
+        forwardedToChannelName = target.displayName;
+      }
+    }
+    if (conv.forwardedToDepartmentId) {
+      const dept = await ctx.db.get(conv.forwardedToDepartmentId);
+      if (dept && dept.tenantId === tenantId) {
+        forwardedToDepartmentName = dept.name;
+      }
+    }
+
+    return { ...conv, forwardedToChannelName, forwardedToDepartmentName };
   },
 });
 
@@ -176,6 +214,7 @@ export const sendMessage = mutation({
       contentType: "text",
       isInternalNote: isNote,
       authorId: callerId,
+      source: isNote ? undefined : "api",
       status: "sending",
       timestamp: now,
       createdAt: now,
@@ -232,6 +271,7 @@ export const updateStatus = mutation({
       v.literal("pending"),
       v.literal("resolved"),
     ),
+    actorName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -255,7 +295,31 @@ export const updateStatus = mutation({
       }
     }
 
-    await ctx.db.patch(args.conversationId, { status: args.status });
+    await ctx.db.patch(args.conversationId, {
+      status: args.status,
+      resolvedAt: args.status === "resolved" ? Date.now() : undefined,
+    });
+
+    if (args.status === "resolved" || args.status === "open") {
+      const identity = await ctx.auth.getUserIdentity();
+      const actorName =
+        args.actorName ?? identity?.name ?? identity?.email ?? "Agent";
+      const now = Date.now();
+      await ctx.db.insert("messages", {
+        conversationId: args.conversationId,
+        tenantId,
+        direction: "outbound",
+        content: "",
+        contentType: "system_event",
+        eventType: args.status === "resolved" ? "resolved" : "reopened",
+        eventData: { actorName },
+        isInternalNote: false,
+        authorId: callerId,
+        status: "sent",
+        timestamp: now,
+        createdAt: now,
+      });
+    }
 
     // Schedule CSAT if resolving
     if (args.status === "resolved") {
@@ -505,5 +569,140 @@ export const seed = mutation({
     }
 
     return { ok: true };
+  },
+});
+
+// ─── Queue Counts (sidebar tree) ────────────────────────────────────────────
+
+export const queueCounts = query({
+  args: {},
+  handler: async (ctx) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+    const isAdmin = orgRole === "org:admin" || orgRole === "admin";
+    const isSupervisor = orgRole === "org:supervisor";
+    const isPrivileged = isAdmin || isSupervisor;
+
+    const allChannels = await ctx.db
+      .query("channels")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .collect();
+
+    const channelMemberships = await ctx.db
+      .query("channelMembers")
+      .withIndex("by_tenant_user", (q) => q.eq("tenantId", tenantId).eq("userId", callerId))
+      .collect();
+    const myChannelIds = new Set(channelMemberships.map((m) => m.channelId));
+
+    const visibleChannels = isAdmin
+      ? allChannels
+      : allChannels.filter((c) => myChannelIds.has(c._id));
+
+    const allDepts = await ctx.db
+      .query("departments")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .collect();
+
+    const myDeptMemberships = await ctx.db
+      .query("departmentMembers")
+      .withIndex("by_tenant_user", (q) => q.eq("tenantId", tenantId).eq("userId", callerId))
+      .collect();
+    const myDeptIds = new Set(myDeptMemberships.map((m) => m.departmentId));
+
+    const allOpen = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_status", (q) =>
+        q.eq("tenantId", tenantId).eq("status", "open")
+      )
+      .collect();
+
+    const allPending = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_status", (q) =>
+        q.eq("tenantId", tenantId).eq("status", "pending")
+      )
+      .collect();
+
+    const allActive = [...allOpen, ...allPending];
+
+    const visible = (c: (typeof allActive)[number]): boolean => {
+      if (isPrivileged) return true;
+      if (c.assignedAgentId === callerId) return true;
+      if (!c.assignedAgentId && c.departmentId && myDeptIds.has(c.departmentId)) return true;
+      return false;
+    };
+
+    const channelsResult = visibleChannels.map((channel) => {
+      const inChannel = allActive.filter((c) => c.channelId === channel._id && visible(c));
+      const unassigned = inChannel.filter((c) => !c.departmentId).length;
+
+      const channelDepts = allDepts.filter(
+        (d) =>
+          d.channelId === channel._id &&
+          !d.isArchived &&
+          (isPrivileged || myDeptIds.has(d._id))
+      );
+
+      const departments = channelDepts.map((d) => {
+        const inDept = inChannel.filter((c) => c.departmentId === d._id);
+        return {
+          _id: d._id,
+          name: d.name,
+          total: inDept.length,
+          unassignedInDept: inDept.filter((c) => !c.assignedAgentId).length,
+          mineInDept: inDept.filter((c) => c.assignedAgentId === callerId).length,
+        };
+      });
+
+      return {
+        _id: channel._id,
+        displayName: channel.displayName,
+        total: inChannel.length,
+        unassigned,
+        departments,
+      };
+    });
+
+    const mine = allActive.filter((c) => c.assignedAgentId === callerId).length;
+
+    const unreadNotifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_user", (q) =>
+        q.eq("tenantId", tenantId).eq("userId", callerId).eq("read", false)
+      )
+      .collect();
+
+    const forwardedAll = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_status", (q) =>
+        q.eq("tenantId", tenantId).eq("status", "forwarded")
+      )
+      .collect();
+    const resolvedAll = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_status", (q) =>
+        q.eq("tenantId", tenantId).eq("status", "resolved")
+      )
+      .collect();
+
+    const forwarded = isPrivileged
+      ? forwardedAll.length
+      : forwardedAll.filter((c) =>
+          c.assignedAgentId === callerId ||
+          (c.departmentId && myDeptIds.has(c.departmentId))
+        ).length;
+    const resolved = isPrivileged
+      ? resolvedAll.length
+      : resolvedAll.filter((c) =>
+          c.assignedAgentId === callerId ||
+          (c.departmentId && myDeptIds.has(c.departmentId))
+        ).length;
+
+    return {
+      mine,
+      mentions: unreadNotifications.length,
+      channels: channelsResult,
+      forwarded,
+      resolved,
+    };
   },
 });

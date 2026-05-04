@@ -1,22 +1,23 @@
 # WaDesk — Full Codebase Audit Report
 
-**Date:** 2026-04-04  
-**Branch:** `008-dashboard-shell`  
-**Purpose:** Comprehensive project report for AI-assisted review and guidance
+**Date:** 2026-04-28  
+**Branch:** `feat/013-departments`  
+**Main Branch:** `002-agent-roles`  
+**Purpose:** Comprehensive project state snapshot for AI-assisted review and guidance
 
 ---
 
 ## 1. Project Overview
 
-**WaDesk** is an Arabic-first, WhatsApp Business API multi-agent customer support SaaS targeting SMBs in Egypt and the Gulf region. It provides a shared team inbox where multiple agents handle WhatsApp conversations from a single dashboard.
+**WaDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets. Multiple agents handle WhatsApp conversations from a shared team inbox; no customer knows they're talking to a team.
 
-**Primary Markets:** Egypt, Saudi Arabia, UAE  
+**Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪  
 **Language:** Arabic-first UI (RTL), English supported  
-**Status:** Early development — core inbox and team management built, many features still missing
+**Status:** Advanced development — all Phase 1 core features complete; pre-launch polish remaining
 
 ---
 
-## 2. Tech Stack (with exact versions from package.json)
+## 2. Tech Stack
 
 | Layer | Technology | Version |
 |---|---|---|
@@ -24,18 +25,23 @@
 | React | React | ^19.2.4 |
 | Backend / DB | Convex | ^1.34.1 |
 | Auth | Clerk (@clerk/nextjs) | ^7.0.8 |
-| UI Components | shadcn/ui (shadcn package) | ^4.1.2 |
+| UI Components | shadcn/ui | ^4.1.2 |
 | Styling | Tailwind CSS | ^4.2.2 |
+| Animations | Framer Motion | ^12.38.0 |
+| Charts | Recharts | ^3.8.1 |
 | Icons | Lucide React | ^0.468.0 |
-| Theme | next-themes | ^0.4.6 |
-| Resizable Panels | react-resizable-panels | ^4.9.0 |
-| Toast | Sonner | ^2.0.7 |
+| Email Templates | React Email | latest |
+| Email Delivery | Resend | latest |
+| Phone Validation | libphonenumber-js | ^1.12.41 |
+| CSV Parsing | papaparse | ^5.5.3 |
+| Date Utilities | date-fns | ^4.1.0 |
+| Emoji Picker | emoji-picker-react | latest |
 | Language | TypeScript | ^5.6.2 |
-| Hosting | Vercel | (configured) |
-| WhatsApp API | Meta Graph API | v21.0 |
-| Payments | Lemon Squeezy | NOT YET INTEGRATED |
+| Hosting | Vercel | configured |
+| WhatsApp API | Meta Graph API | v25.0 |
+| Payments | Paddle (MoR) | account pending approval |
 
-**No test framework is installed** (no Jest, Vitest, Playwright, or Cypress).
+**No test framework installed** (no Jest, Vitest, Playwright, or Cypress).
 
 ---
 
@@ -44,730 +50,427 @@
 ```
 wadesk/
 ├── app/
-│   ├── layout.tsx                              # Root: ClerkProvider > html(lang="ar" dir="rtl") > ConvexClientProvider > ThemeProvider
-│   ├── page.tsx                                # Marketing page with auth redirect logic
-│   ├── globals.css
-│   ├── onboarding/page.tsx                     # Clerk CreateOrganization
+│   ├── layout.tsx                              # Root: ClerkProvider > html(lang="ar" dir="rtl") > ConvexClientProvider
+│   ├── page.tsx                                # Marketing landing page
+│   ├── privacy/, terms/, dpa/                 # Legal pages (AR+EN)
+│   ├── onboarding/page.tsx                     # Multi-step onboarding wizard
 │   ├── accept-invite/page.tsx                  # Post email-invite redirect
 │   ├── join/[token]/page.tsx                   # Invite link join flow
-│   ├── (auth)/
-│   │   ├── sign-in/[[...sign-in]]/page.tsx
-│   │   └── sign-up/[[...sign-up]]/page.tsx
+│   ├── select-org/page.tsx                     # Org selector after sign-up
+│   ├── (auth)/sign-in/, sign-up/               # Clerk auth pages
 │   └── (dashboard)/
-│       ├── layout.tsx                          # Auth guard (redirect if no userId/orgId)
-│       ├── inbox/
-│       │   ├── page.tsx                        # Main inbox: conversation list + thread + message input
-│       │   └── [id]/page.tsx                   # Single conversation view
+│       ├── layout.tsx                          # Auth guard + presence initializer
+│       ├── inbox/page.tsx                      # Main inbox (conversation list)
+│       ├── inbox/[id]/page.tsx                 # Single conversation view
+│       ├── contacts/page.tsx                   # Contact list
+│       ├── contacts/[id]/page.tsx              # Contact profile
+│       ├── lists/page.tsx, lists/[id]/page.tsx # Contact lists / smart segments
+│       ├── broadcasts/page.tsx                 # Broadcast campaigns
+│       ├── broadcasts/new/page.tsx             # Create broadcast wizard
+│       ├── automations/page.tsx                # Automation rules builder
+│       ├── analytics/page.tsx                  # Team analytics (Admin/Supervisor)
+│       ├── my-stats/page.tsx                   # Personal stats (all roles)
 │       └── settings/
-│           ├── layout.tsx                      # Admin/Supervisor guard
-│           ├── team/page.tsx                   # Team management
-│           ├── quick-replies/page.tsx          # Quick replies CRUD
-│           └── channels/[channelId]/page.tsx   # Channel assignment mode settings
+│           ├── layout.tsx                      # Settings sub-nav wrapper
+│           ├── channels/page.tsx               # Channel list
+│           ├── channels/[channelId]/page.tsx   # Channel details + assignment mode
+│           ├── channels/[channelId]/profile/   # WA Business Profile editing
+│           ├── team/page.tsx                   # Team members + invite links
+│           ├── labels/page.tsx                 # Conversation labels
+│           ├── quick-replies/page.tsx          # Quick replies (with variables)
+│           ├── templates/page.tsx              # Message templates + Template Library
+│           ├── csat/page.tsx                   # CSAT v2 settings
+│           ├── export/page.tsx                 # Data export
+│           └── billing/page.tsx                # Paddle billing
 ├── components/
-│   ├── convex-client-provider.tsx
-│   ├── theme-provider.tsx
-│   ├── inbox/
-│   │   ├── assign-agent-dialog.tsx
-│   │   ├── conversation-list.tsx
-│   │   ├── conversation-list-item.tsx
-│   │   ├── conversation-thread.tsx
-│   │   ├── message-bubble.tsx
-│   │   ├── message-input.tsx
-│   │   ├── quick-reply-panel.tsx
-│   │   └── status-selector.tsx
-│   ├── marketing/
-│   │   ├── marketing-page.tsx
-│   │   ├── hero-section.tsx
-│   │   ├── features-section.tsx
-│   │   ├── differentiators-section.tsx
-│   │   ├── pricing-section.tsx
-│   │   ├── marketing-nav.tsx
-│   │   ├── marketing-footer.tsx
-│   │   └── mobile-nav-sheet.tsx
-│   ├── settings/
-│   │   ├── assignment-mode-select.tsx
-│   │   ├── invite-modal.tsx
-│   │   ├── role-select.tsx
-│   │   └── team-member-list.tsx
-│   └── ui/                                     # shadcn/ui components
-│       ├── badge.tsx, button.tsx, dialog.tsx
-│       ├── dropdown-menu.tsx, input.tsx
-│       ├── resizable.tsx, scroll-area.tsx
-│       ├── sheet.tsx, textarea.tsx
+│   ├── inbox/                    # ConversationList, Thread, MessageBubble, MessageInput, QuickReplyPanel
+│   ├── contacts/                 # ContactList, ContactDetailSheet, ContactTimeline, CSVImport
+│   ├── analytics/                # Charts (VolumeChart, LabelDistribution, StageFunnel, etc.)
+│   ├── automations/              # Rule cards, form, business hours
+│   ├── broadcasts/               # Campaign list, wizard, template builder
+│   ├── lists/                    # ListPage, ListCard, CreateListDialog
+│   ├── onboarding/               # Wizard steps (Connect WA, Invite Team, etc.)
+│   ├── settings/                 # All settings components + settings-sub-nav.tsx
+│   ├── shell/                    # AppSidebar, UserMenu, NotificationBell, PresenceInitializer
+│   ├── team/                     # MemberProfileModal + 4 tab components
+│   ├── templates/                # TemplatePicker, FillForm, LibraryTab, MetaSubmitForm
+│   ├── marketing/                # Landing page sections + legal content components
+│   └── ui/                       # shadcn/ui + PresenceIndicator, TeamPresenceDropdown, AlertDialog
 ├── convex/
-│   ├── schema.ts                               # 6 tables: channels, contacts, conversations, messages, quickReplies, inviteLinks
-│   ├── auth.config.ts                          # Clerk provider config
-│   ├── http.ts                                 # Meta webhook handler
-│   ├── channels.ts                             # Channel queries/mutations
-│   ├── contacts.ts                             # Contact queries/mutations
-│   ├── conversations.ts                        # Conversation queries/mutations
-│   ├── messages.ts                             # Message queries/mutations
-│   ├── quickReplies.ts                         # Quick reply CRUD
-│   ├── inviteLinks.ts                          # Invite link management
-│   ├── orgMembers.ts                           # Clerk org member management (actions)
+│   ├── schema.ts                 # 32-table schema
+│   ├── http.ts                   # Meta webhook HTTP action
+│   ├── crons.ts                  # 6 scheduled jobs
 │   ├── actions/
-│   │   ├── sendWhatsAppMessage.ts              # Send outbound WhatsApp message
-│   │   ├── roundRobin.ts                       # Round-robin assignment logic
-│   │   └── validateInvite.ts                   # Invite token validation + Clerk membership creation
-│   └── lib/
-│       ├── auth.ts                             # getCallerIdentity, getCallerRole, assertAdmin, assertAdminOrSupervisor
-│       ├── planLimits.ts                       # Plan agent limits (free=2, starter=5, growth=15, business=Infinity)
-│       └── lastAdmin.ts                        # Prevent removing last admin
+│   │   ├── sendWhatsAppMessage.ts
+│   │   ├── roundRobin.ts
+│   │   ├── validateInvite.ts
+│   │   ├── channelRetentionAction.ts
+│   │   ├── notifyEmail.ts
+│   │   ├── sendEmail.ts
+│   │   ├── sendInviteWhatsApp.ts
+│   │   └── processBroadcastBatch.ts
+│   ├── lib/
+│   │   ├── auth.ts, encryption.ts, planLimits.ts, rateLimit.ts, lastAdmin.ts
+│   ├── emails/                   # React Email base layout + components
+│   └── [40+ feature files]       # One file per feature domain
+├── emails/                       # React Email templates (18 files: 9 types × AR+EN)
 ├── lib/
-│   ├── utils.ts                                # cn() utility
-│   └── marketing/
-│       ├── i18n.ts                             # Marketing page translations
-│       └── pricing-data.ts                     # Pricing plan data
-├── middleware.ts                                # Clerk auth middleware
-├── global.d.ts
-├── package.json
-├── CLAUDE.md                                   # Project spec / instructions
-└── tsconfig.json
+│   ├── utils.ts, phoneGeo.ts, automationHelpers.ts, templateHelpers.ts
+│   ├── templateLibrary.ts        # 66 pre-built templates with industry tags
+│   ├── shell/                    # nav-config, role-utils, locale-action, types
+│   ├── i18n/                     # AR/EN translation context
+│   └── marketing/                # Pricing data, marketing i18n
+├── hooks/
+│   └── use-mobile.ts, use-member-profile.ts, use-presence.ts
+├── types/meta.ts                  # TypeScript types for Meta API payloads
+├── middleware.ts                   # Clerk auth middleware
+└── CLAUDE.md                       # Project spec (source of truth)
 ```
 
 ---
 
 ## 4. Environment Variables
 
-### Present in .env.local:
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-- `CLERK_SECRET_KEY`
-- `NEXT_PUBLIC_CONVEX_URL`
-- `META_APP_SECRET`
-- `META_WEBHOOK_VERIFY_TOKEN`
-- `CONVEX_DEPLOYMENT`
-- `NEXT_PUBLIC_CONVEX_SITE_URL`
+### Required (must be set in Vercel + Convex dashboard)
 
-### Missing (required but not set):
-- `META_SYSTEM_USER_TOKEN` — **CRITICAL**: outbound WhatsApp messages will fail without this
-- `NEXT_PUBLIC_APP_URL` — invite links will default to `http://localhost:3000`
-- `META_APP_ID` — needed for Embedded Signup (not yet implemented)
-- `CONVEX_DEPLOY_KEY` — needed for production deployment
-- `LEMONSQUEEZY_API_KEY` — payments not yet integrated
-- `LEMONSQUEEZY_WEBHOOK_SECRET` — payments not yet integrated
+```env
+# Clerk
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+
+# Convex
+NEXT_PUBLIC_CONVEX_URL=
+CONVEX_DEPLOY_KEY=
+CONVEX_SITE_URL=          # e.g. https://happy-animal-123.convex.site
+
+# Meta WhatsApp
+META_APP_ID=
+META_APP_SECRET=
+META_WEBHOOK_VERIFY_TOKEN=
+META_SYSTEM_USER_TOKEN=
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=   # Same as META_WEBHOOK_VERIFY_TOKEN
+WHATSAPP_WEBHOOK_SECRET=         # Shared secret between Next.js and Convex
+WHATSAPP_APP_SECRET=             # For HMAC-SHA256 signature verification
+WHATSAPP_API_TOKEN=              # Permanent system user token
+WHATSAPP_API_VERSION=v25.0
+
+# Paddle
+PADDLE_API_KEY=
+PADDLE_WEBHOOK_SECRET=
+PADDLE_SELLER_ID=
+
+# Email (Resend)
+RESEND_API_KEY=
+
+# Encryption
+CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
+```
 
 ---
 
-## 5. Database Schema (Convex)
+## 5. Database Schema (32 Tables)
 
-### 6 Tables defined in `convex/schema.ts`:
+All tables are scoped to `tenantId` (Clerk `orgId`). Every query must filter by `tenantId`.
 
-#### `channels`
-```typescript
-{
-  tenantId: string,
-  phoneNumberId: string,          // Meta phone number ID
-  displayName: string,
-  wabaId: string,                 // WhatsApp Business Account ID
-  assignmentMode: "first_reply" | "manual" | "round_robin",
-  roundRobinIndex: number,
-  isActive: boolean,
-  createdAt: number,
-}
-// Indexes: by_tenant, by_tenant_phone, by_phone_number_id
-```
-
-#### `contacts`
-```typescript
-{
-  tenantId: string,
-  phone: string,                  // E.164 format
-  displayName: string,
-  customName?: string,
-  tags: string[],
-  notes?: string,
-  source: "auto" | "manual" | "import",
-  firstSeenAt: number,
-  lastSeenAt: number,
-  assignedAgentId?: string,
-  createdAt: number,
-}
-// Indexes: by_tenant, by_tenant_phone
-```
-
-#### `conversations`
-```typescript
-{
-  tenantId: string,
-  channelId: Id<"channels">,
-  contactId: Id<"contacts">,
-  assignedAgentId?: string,       // Clerk userId
-  status: "open" | "pending" | "resolved",
-  labels: string[],
-  lastMessageAt: number,
-  lastMessagePreview: string,
-  unreadCount: number,
-  createdAt: number,
-}
-// Indexes: by_tenant, by_tenant_status, by_tenant_agent, by_tenant_channel, by_last_message
-```
-
-#### `messages`
-```typescript
-{
-  conversationId: Id<"conversations">,
-  tenantId: string,
-  direction: "inbound" | "outbound",
-  content: string,
-  contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template",
-  isInternalNote: boolean,
-  authorId?: string,
-  mediaUrl?: string,
-  metaMessageId?: string,
-  status: "sent" | "delivered" | "read" | "failed",
-  timestamp: number,
-  createdAt: number,
-}
-// Indexes: by_conversation, by_tenant, by_meta_message_id
-```
-
-#### `quickReplies`
-```typescript
-{
-  tenantId: string,
-  title: string,
-  content: string,
-  usageCount: number,
-  category?: string,
-  createdBy: string,
-  createdAt: number,
-}
-// Indexes: by_tenant, by_tenant_category
-```
-
-#### `inviteLinks`
-```typescript
-{
-  tenantId: string,
-  token: string,                  // 32 random bytes hex-encoded
-  createdBy: string,
-  expiresAt: number,              // 7-day expiry
-  revoked: boolean,
-  defaultRole: "org:agent",       // Always agent
-  createdAt: number,
-}
-// Indexes: by_tenant, by_token
-```
-
-### Notable: No `tenants` table exists
-There is no table to store tenant-level settings like `plan`, billing info, or feature flags. Plan is always hardcoded to `"free"`.
+| Table | Purpose |
+|---|---|
+| `tenants` | Tenant records, plan, Paddle customer ID |
+| `channels` | WABA connections (encrypted access token, retention fields) |
+| `contacts` | Customer profiles (phone, stage, tags, custom fields) |
+| `contactLists` | Smart/static contact segments for broadcasts |
+| `broadcasts` | Broadcast campaigns with batched send + retry map |
+| `broadcastTemplates` | Tenant-defined broadcast templates (Meta submission flow) |
+| `metaTemplates` | Meta-approved templates cached per channel |
+| `conversations` | Conversation threads (status, assignment, labels, SLA) |
+| `messages` | Individual messages (all types, reactions, quotes, scheduling) |
+| `quickReplies` | Quick replies with `{{variable}}` support |
+| `messageTemplates` | Templates with named variables; plan-gated |
+| `automationRules` | If-this-send-that rules (4 trigger types) |
+| `businessHours` | Timezone-aware business hours schedule |
+| `ruleFireLog` | Deduplication log for automation rule execution |
+| `followUps` | Scheduled follow-up messages with revenue tracking |
+| `contactEvents` | Append-only activity timeline per contact |
+| `customFields` | Key-value custom fields per contact |
+| `conversationLabels` | Label definitions (name, color, emoji) |
+| `channelMembers` | Channel-agent assignments (for round-robin + SLA) |
+| `departments` | Channel groups for multi-channel management |
+| `departmentMembers` | Department member assignments |
+| `csatSettings` | CSAT toggle, delay, template config |
+| `conversationMetrics` | Denormalized analytics (response time, CSAT score) |
+| `notifications` | In-app notifications (SLA breach, follow-up due) |
+| `inviteLinks` | Time-limited invite links (label, role, expiry) |
+| `onboardingState` | Onboarding step completion tracking |
+| `memberProfiles` | Rich member profiles (bio, jobTitle, phone, avatar) |
+| `memberActionLog` | Audit trail for admin actions on members |
+| `presence` | Real-time user presence (online/offline/away/busy) |
+| `rateLimits` | Token-bucket rate limiting per user+action |
+| `webhook_events` | Webhook event debug log |
 
 ---
 
 ## 6. Authentication & Authorization
 
 ### Auth Stack
-- **Clerk** handles user auth, org management, and role assignment
-- **Convex** verifies Clerk JWT on every query/mutation via `ctx.auth.getUserIdentity()`
+- **Clerk** — user auth, org management, role assignment, invite emails
+- **Convex** — verifies Clerk JWT on every query/mutation via `ctx.auth.getUserIdentity()`
 - `orgId` from Clerk = `tenantId` throughout the system
 
-### Auth Flow
-1. User signs up via Clerk (`/sign-up`)
-2. Creates or joins an organization (`/onboarding` or `/join/[token]`)
-3. All dashboard routes require both `userId` AND `orgId`
-4. Middleware protects all routes except `/`, `/sign-in`, `/sign-up`
-
-### Role System (3 roles)
+### Role System
 ```typescript
 type OrgRole = "org:admin" | "org:supervisor" | "org:agent";
 ```
 
-### Core Auth Functions (`convex/lib/auth.ts`)
-```typescript
-// Returns { tenantId, callerId, orgRole } — throws if not authenticated
-export async function getCallerIdentity(ctx: Ctx)
-
-// Returns normalized OrgRole — maps "admin" to "org:admin"
-export async function getCallerRole(ctx: Ctx): Promise<OrgRole>
-
-// Throws FORBIDDEN if not admin
-export function assertAdmin(role: OrgRole): void
-
-// Throws FORBIDDEN if not admin or supervisor
-export function assertAdminOrSupervisor(role: OrgRole): void
-```
-
-### Auth Config (`convex/auth.config.ts`)
-```typescript
-export default {
-  providers: [{
-    domain: "https://communal-octopus-5.clerk.accounts.dev", // DEV domain hardcoded
-    applicationID: "convex",
-  }],
-};
-```
+### Role Enforcement
+- All Convex queries/mutations validate `tenantId` and `orgRole` server-side
+- Client-side checks exist but are never the sole enforcement layer
+- `convex/lib/auth.ts`: `getCallerIdentity`, `getCallerRole`, `assertAdmin`, `assertAdminOrSupervisor`
 
 ### Permission Matrix (as implemented)
 
 | Action | Admin | Supervisor | Agent |
 |---|---|---|---|
-| View all conversations | Yes | Yes | Own + unassigned only |
-| Assign conversations | Yes | Yes | No |
-| Set conversation status | Yes | Yes | Own + unassigned only |
-| Send reply | Yes | Yes | Own + unassigned only |
-| Add internal note | Yes | Yes | Own + unassigned only |
-| Manage quick replies | Yes | **BUG: No** | No |
-| Manage team | Yes | View only | No |
-| Change roles | Yes | No | No |
-| Remove members | Yes | No | No |
-| Generate invite links | Yes | No | No |
-| Channel settings | Yes | No | No |
-| Settings page access | Yes | Yes | Blocked at layout |
+| View all conversations | ✅ | ✅ | ❌ own + unassigned only |
+| Assign conversations | ✅ | ✅ | ❌ |
+| Reply to conversations | ✅ | ✅ | ✅ own only |
+| Manage quick replies / templates | ✅ | ✅ | ❌ |
+| Invite agents | ✅ | ✅ | ❌ |
+| Invite supervisors/admins | ✅ | ❌ | ❌ |
+| Remove members (agents only) | ✅ | ✅ | ❌ |
+| Change roles | ✅ | ❌ | ❌ |
+| Connect/disconnect WABA | ✅ | ❌ | ❌ |
+| View team-wide analytics | ✅ | ✅ | ❌ |
+| Manage billing | ✅ | ❌ | ❌ |
+| Trigger data export | ✅ | ✅ | ❌ |
 
 ---
 
 ## 7. Features Inventory
 
-### [DONE] Core Inbox
-- Real-time conversation list with Convex subscriptions
-- Conversation thread view with message bubbles
-- Message input with send functionality
-- Conversation status management (open/pending/resolved)
-- Channel filter in inbox
-- Status filter in inbox
-- Unread count tracking
-- Resizable panel layout (conversation list / thread)
+### ✅ Complete — Core Inbox & Messaging
+- Real-time conversation list (Convex subscriptions, no polling)
+- Assignment modes: first-reply-wins, manual, round-robin (Growth+)
+- Role-based visibility: agents see own + unassigned; Admin/Supervisor see all
+- All inbound message types: text, image, video, audio, document, sticker, location, reactions, quotes
+- Outbound: text, media (Convex Storage → Meta Media API), location, quoted, reactions
+- Internal notes (amber, invisible to customer)
+- Message status ticks: sending → sent → delivered → read → failed (with retry)
+- Conversation soft-delete (Admin only, cascades to messages + metrics)
+- Batch actions: batchClose, batchAssign, batchLabel, batchDelete
+- Conversation merge (Admin, source marked resolved with merge note)
+- Message scheduling (future delivery with 1-min cron dispatch)
+- Full-text search: message content + contact names (Convex search index, role-gated)
+- SLA breach indicator in inbox (⚠️ badge when threshold exceeded)
+- Unread count badge on sidebar Inbox nav item
 
-### [DONE] Message Handling
-- Inbound message reception via Meta webhook
-- Outbound message sending via Meta Graph API v21.0
-- Message status tracking (sent/delivered/read/failed)
-- Internal notes (invisible to customer)
-- Message deduplication by `metaMessageId`
-- Auto-reopen resolved conversations on new inbound message
+### ✅ Complete — Contact Management
+- Auto-capture on first inbound message
+- Contact lifecycle stages: lead → prospect → customer → retained → churned
+- Manual creation + CSV import (deduplication, preview, max 10k rows)
+- Custom fields (key-value, unlimited)
+- Contact events timeline (10+ event types)
+- Tag management
+- Search by name or phone number
+- Follow-up scheduling (cron, max 2 attempts, revenue tracking)
+- Contact lists (smart filters: country, stage, tags; static lists)
 
-### [DONE] Team Management
-- Invite by email (Clerk native)
-- Invite by WhatsApp (sends template message with invite link)
-- Shareable invite links (7-day expiry, auto-revoke old)
-- Role management (change role with last-admin protection)
-- Remove member (with conversation unassignment)
-- Team member list view
+### ✅ Complete — WhatsApp Integration
+- Meta Embedded Signup (tenant connects own WABA in < 5 min)
+- WABDesk system user auto-assigned to WABA on signup
+- AES-256-GCM encrypted access token at rest
+- Webhook: HMAC-SHA256 signature verification, all message types, deduplication
+- Channel status: connecting / active / disconnected / reconnect_required
+- Business Profile editing: photo (resumable upload), description, address, category, website (Growth+)
+- Permanent system user token (`WHATSAPP_API_TOKEN`) used for Meta API calls
+- 30-day channel retention on disconnect → daily cron auto-purge
 
-### [DONE] Assignment System
-- First-reply-wins auto-assignment
-- Manual assignment by admin/supervisor
-- Agent reassignment
-- Conversation unassignment on member removal
+### ✅ Complete — Team Management
+- Invite by email (Clerk native), by WhatsApp (custom link), shareable link (7d/30d/never expiry)
+- Multiple concurrent invite links per tenant (label, role-gated creation)
+- Role: Admin, Supervisor (Starter+), Agent
+- Last-admin protection
+- Member profile modal: overview, analytics, history, manage tabs
+- Real-time team presence (online/offline/away/busy)
+- Per-member notification preferences
+- Audit log of all admin actions on members
 
-### [PARTIAL] Round Robin Assignment
-- Round-robin action exists (`convex/actions/roundRobin.ts`)
-- Channel stores `roundRobinIndex`
-- Assignment mode selectable in channel settings
-- **BUG: Round-robin action is NEVER CALLED** — not triggered from inbound message handler
+### ✅ Complete — Broadcasts
+- Contact list segmentation (smart + static)
+- Batched send: 50 contacts/batch, 2s between batches, MAX_RETRIES=3 per contact
+- Real-time progress tracking (sent/failed counts live)
+- Broadcast templates: tenant-defined with Meta submission workflow
+- Meta template cache (`metaTemplates` table)
+- Plan-gated: Starter+ create drafts, Growth+ send
 
-### [DONE] Contact Management (Basic)
-- Auto-create contact on first inbound message
-- Contact list query
-- Upsert by phone (update lastSeenAt if exists)
+### ✅ Complete — Automations
+- 4 trigger types: keyword match, outside business hours, first message, no-reply timeout
+- Template interpolation: `{{customer_name}}`, `{{business_name}}`, `{{agent_name}}`, `{{current_time}}`
+- Priority-ordered execution, fire-log deduplication
+- Business hours (timezone-aware, grid schedule)
+- Plan limits: Free (2), Starter (10), Growth (30), Business (∞)
 
-### [DONE] Quick Replies
-- CRUD operations (create/update/delete)
-- Category filtering
-- Usage count tracking
-- Quick reply panel in inbox
+### ✅ Complete — Templates
+- Quick replies with `{{variable}}` placeholders (fill-in form before insert)
+- Message templates with named variables (plan-gated: 0/10/50/∞)
+- Template Library: 66 pre-built templates, industry tabs + purpose chips
+- Bold variable values in WhatsApp messages (`*{{N}}*` wrapping)
 
-### [DONE] Invite Links
-- Generate with 32-byte random token
-- 7-day expiry
-- Auto-revoke previous active link on generate
-- Validate and join flow
-- Plan limit checking on join
+### ✅ Complete — Analytics
+- Denormalized read-model (`conversationMetrics`) updated non-blocking via scheduler
+- Team-wide: total conversations, avg response time, resolution time, CSAT, SLA breaches
+- Agent performance: first response time, resolution time, conversation count
+- Conversation volume trends (time-series)
+- Label and stage distribution charts
+- Role gating: Admin/Supervisor = team-wide; Agent = own stats only
 
-### [DONE] Marketing Site
-- Hero section, features, differentiators, pricing
-- Arabic/English content
-- Mobile responsive navigation
+### ✅ Complete — CSAT (v2)
+- Post-resolution survey (configurable delay 0–60 min)
+- Sends interactive button template (1–5 stars) — Meta-compliant approach
+- Rating captured via webhook button-reply interception
+- Score recorded in `conversationMetrics` (not messages)
+- Settings page: live preview, test send, toggle (Growth+)
+- ⚠️ Meta template pre-approval still required before production use
 
-### [DONE] Webhook Integration
-- Meta webhook verification (GET)
-- Inbound message processing (POST)
-- HMAC-SHA256 signature verification
-- Message status update processing
+### ✅ Complete — SLA Monitoring
+- Per-channel SLA threshold (minutes)
+- 5-min cron marks breached conversations
+- Supervisor in-app notification on breach
+- SLA cleared on agent reply
+- Breach indicator (⚠️) in inbox conversation list
 
-### [PARTIAL] Multi-Channel Support
-- Schema supports multiple channels per tenant
-- Channel filter in inbox UI
-- Channel-specific assignment mode
-- **Missing:** No UI to add/connect new channels (Embedded Signup not implemented)
+### ✅ Complete — Data Export
+- Contacts CSV (all fields including custom fields flattened)
+- Conversations JSON (full conversation + messages, format options)
+- Async generation (Convex Storage URLs), available on all plans
+- Admin/Supervisor only; strictly `tenantId`-scoped
 
-### [PARTIAL] Plan Limits
-- Plan limits defined: free=2 agents, starter=5, growth=15, business=unlimited
-- Agent limit checked on invite
-- **Missing:** No `tenants` table, plan always defaults to "free"
-- **Missing:** No billing integration (Lemon Squeezy not set up)
+### ✅ Complete — Billing
+- Paddle Checkout integration (Paddle.js v2)
+- Plan switching (upgrade/downgrade)
+- Webhook processing: subscription.created / updated / canceled
+- 4 plans: Free, Starter ($9.99), Growth ($22.99), Business ($44.99)
+- Multi-currency: EGP, SAR, AED, USD
 
-### [MISSING] WhatsApp Embedded Signup
-- Not implemented — no way for tenants to connect their own WhatsApp number
+### ✅ Complete — Notifications & Email
+- In-app notification bell (SLA breach, follow-up due)
+- Transactional email: 9 event types × AR+EN templates via Resend
+- Per-member email notification preferences
 
-### [MISSING] Dashboard Navigation/Sidebar
-- No sidebar or navigation exists in the dashboard layout
-- Users have no way to navigate between inbox, settings, contacts, etc. without URL
-
-### [MISSING] Analytics
-- No analytics dashboard
-- No response time tracking
-- No agent performance metrics
-- No conversation volume tracking
-
-### [MISSING] Contact Management (Full)
-- No contact detail/edit page
-- No manual contact creation UI
-- No CSV/Excel import
-- No tag management UI
-- No custom fields
-- No contact search/filter
-
-### [MISSING] Conversation Labels
-- `labels` field exists on conversations schema (empty array)
-- No UI for label management
-- No label creation/editing
-- No label filtering
-
-### [MISSING] SLA & Response Time Alerts
-- Not implemented at all
-
-### [MISSING] CSAT (Customer Satisfaction)
-- Not implemented at all
-
-### [MISSING] Data Export
-- Not implemented at all
-
-### [MISSING] Conversation Templates (with variables)
-- Quick replies exist but no variable/template support
-
-### [MISSING] WhatsApp Business Profile Editing
-- Not implemented
-
-### [MISSING] Dark Mode
-- ThemeProvider is set up but no theme toggle exists in the UI
-
-### [MISSING] Media Message Support
-- Schema supports image/document/audio/video/sticker/location content types
-- Webhook handler marks all non-text messages as "unsupported"
-- No media download, display, or sending
+### ✅ Complete — Infrastructure
+- Rate limiting (token-bucket, `rateLimits` table)
+- Departments (channel grouping, conversation transfer)
+- Settings sub-nav (persistent across all settings pages)
+- Legal pages: Privacy Policy, Terms of Service, DPA (AR+EN)
 
 ---
 
-## 8. API Routes & Endpoints
+## 8. Convex Functions (60+)
 
-### HTTP Routes (`convex/http.ts`)
+### Cron Jobs (6)
+| Job | Interval | Handler |
+|---|---|---|
+| `process-due-followups` | Every 30 min | `followUps.processDue` |
+| `check-automation-timeouts` | Every 1 min | `automations.checkNoReplyTimeouts` |
+| `check-sla-breaches` | Every 5 min | `sla.checkBreaches` |
+| `check-channel-retention` | Daily | `channelRetention.checkExpired` |
+| `process-scheduled-messages` | Every 1 min | `messageScheduling.sendScheduled` |
+| `refresh-team-presence` | Every 2 min | `teamPresence.refreshAll` |
+
+### HTTP Endpoints (`convex/http.ts`)
 | Method | Path | Purpose |
 |---|---|---|
-| GET | `/meta-webhook` | Meta webhook verification (hub.mode, hub.verify_token, hub.challenge) |
-| POST | `/meta-webhook` | Inbound messages + status updates (HMAC-SHA256 verified) |
-
-### Convex Queries (client-callable)
-| Function | Auth | Description |
-|---|---|---|
-| `channels.listForTenant` | Any authenticated | List all channels for tenant |
-| `channels.get` | Any authenticated | Get single channel (tenant-scoped) |
-| `conversations.listForCaller` | Role-based | Admin/Supervisor see all; Agent sees own + unassigned |
-| `conversations.get` | Role-based | Same visibility rules |
-| `messages.listForConversation` | Role-based | Messages for a conversation (with access check) |
-| `contacts.listForTenant` | Any authenticated | List all contacts for tenant |
-| `quickReplies.list` | Any authenticated | List quick replies, optional category filter |
-| `inviteLinks.getActive` | Admin only | Get current active invite link |
-
-### Convex Mutations (client-callable)
-| Function | Auth | Description |
-|---|---|---|
-| `conversations.assign` | Admin/Supervisor | Assign conversation to agent |
-| `conversations.setStatus` | Role-based | Change conversation status |
-| `messages.sendReply` | Role-based | Send outbound message + schedule WhatsApp delivery |
-| `messages.addInternalNote` | Role-based | Add internal note to conversation |
-| `messages.clearUnread` | Any authenticated | Reset unread count |
-| `channels.setAssignmentMode` | Admin only | Change channel assignment mode |
-| `quickReplies.create` | Admin only (BUG) | Create quick reply |
-| `quickReplies.update` | Admin only (BUG) | Update quick reply |
-| `quickReplies.remove` | Admin only (BUG) | Delete quick reply |
-| `inviteLinks.generate` | Admin only | Generate new invite link |
-| `inviteLinks.revokeLink` | Admin only | Revoke active invite link |
-
-### Convex Actions (client-callable)
-| Function | Auth | Description |
-|---|---|---|
-| `orgMembers.inviteByEmail` | Admin only | Send Clerk email invitation |
-| `orgMembers.inviteByWhatsApp` | Admin only | Send WhatsApp invite with link |
-| `orgMembers.list` | Admin/Supervisor | List org members + pending invites |
-| `orgMembers.changeRole` | Admin only | Change member role |
-| `orgMembers.removeMember` | Admin only | Remove member + unassign conversations |
-| `actions.validateInvite.validateAndJoin` | Any authenticated | Validate invite token and join org |
-
-### Convex Internal Functions (server-only)
-| Function | Type | Description |
-|---|---|---|
-| `messages.createInbound` | Mutation | Process inbound WhatsApp message |
-| `messages.updateStatus` | Mutation | Update message status by ID |
-| `messages.updateStatusByMetaId` | Mutation | Update message status by Meta ID |
-| `conversations.unassignAll` | Mutation | Unassign all conversations from agent |
-| `conversations.assignInternal` | Mutation | Assign conversation (no auth check) |
-| `channels.listByPhoneId` | Query | Find channel by phone number ID |
-| `channels.listByTenantId` | Query | Find channels by tenant |
-| `channels.getById` | Query | Get channel by ID |
-| `channels.incrementRoundRobinIndex` | Mutation | Increment round-robin counter |
-| `contacts.upsertByPhone` | Mutation | Create or update contact |
-| `inviteLinks.getByToken` | Query | Find invite link by token |
-| `inviteLinks.getActiveForTenant` | Query | Find active link for tenant |
-| `inviteLinks.ensureActive` | Mutation | Get or create active invite link |
-| `actions.sendWhatsAppMessage.sendMessage` | Action | Send WhatsApp text via Meta API |
-| `actions.roundRobin.assignRoundRobin` | Action | Round-robin assignment logic |
+| GET | `/meta-webhook` | Meta webhook hub verification |
+| POST | `/meta-webhook` | Inbound messages + status updates |
+| POST | `/webhooks/meta` | Structured webhook (wabaId-routed) |
 
 ---
 
-## 9. Components Inventory
+## 9. Known Issues & Remaining Work
 
-### Inbox Components (`components/inbox/`)
+### 🔴 Critical (Must Fix Before Production)
 
-| Component | Purpose |
+**CSAT Template Requires Meta Pre-Approval**
+- `convex/csat.ts` now sends interactive button template (correct approach)
+- The template itself must be submitted to and approved by Meta
+- Until approved, CSAT cannot be sent outside the 24-hour conversation window
+- Action: Submit template, store approved template ID in `csatSettings`
+
+### ⚠️ Medium Priority
+
+**SLA Breach Clearing Audit**
+- `convex/sla.ts` marks `slaBreachedAt`; `convex/messages.ts` clears it on agent reply
+- Behavior is implemented but should be explicitly tested end-to-end
+- Edge case: agent reply from a different device/session
+
+**Follow-up MAX_ATTEMPTS Hardcoded**
+- `convex/followUps.ts`: `MAX_ATTEMPTS=2` is not configurable per tenant
+- May be too aggressive for some use cases; consider making it a tenant setting
+
+**Business Hours Timezone Validation**
+- `lib/automationHelpers.ts` uses `Intl.DateTimeFormat` for timezone validation
+- Not robust for all edge cases; consider `date-fns-tz` for production
+
+**Token Encryption Consistency**
+- All places storing/retrieving `accessToken` should use `convex/lib/encryption.ts` helpers
+- Spot-check shows correct usage; full audit recommended before launch
+
+### ❌ Not Started / Deferred
+
+| Feature | Priority |
 |---|---|
-| `conversation-list.tsx` | Filterable list of conversations with real-time updates |
-| `conversation-list-item.tsx` | Single conversation row (contact name, preview, unread badge, status) |
-| `conversation-thread.tsx` | Message thread display with auto-scroll |
-| `message-bubble.tsx` | Individual message bubble (inbound/outbound/internal note styling) |
-| `message-input.tsx` | Text input with send button |
-| `quick-reply-panel.tsx` | Quick reply selector panel |
-| `status-selector.tsx` | Conversation status dropdown (open/pending/resolved) |
-| `assign-agent-dialog.tsx` | Dialog to assign conversation to an agent |
-
-### Settings Components (`components/settings/`)
-
-| Component | Purpose |
-|---|---|
-| `team-member-list.tsx` | Team member list with role badges, invite modal trigger |
-| `invite-modal.tsx` | Modal for inviting by email, WhatsApp, or shareable link |
-| `role-select.tsx` | Role dropdown selector |
-| `assignment-mode-select.tsx` | Channel assignment mode selector (first_reply/manual/round_robin) |
-
-### Marketing Components (`components/marketing/`)
-
-| Component | Purpose |
-|---|---|
-| `marketing-page.tsx` | Full marketing page composition |
-| `hero-section.tsx` | Hero banner with CTA |
-| `features-section.tsx` | Feature cards grid |
-| `differentiators-section.tsx` | Competitive advantages section |
-| `pricing-section.tsx` | Pricing plans with currency switching |
-| `marketing-nav.tsx` | Top navigation bar |
-| `marketing-footer.tsx` | Footer |
-| `mobile-nav-sheet.tsx` | Mobile navigation sheet |
-
-### UI Components (`components/ui/`) — shadcn/ui
-`badge`, `button`, `dialog`, `dropdown-menu`, `input`, `resizable`, `scroll-area`, `sheet`, `textarea`
-
-### Provider Components
-| Component | Purpose |
-|---|---|
-| `convex-client-provider.tsx` | Wraps ConvexReactClient + ClerkProvider for Convex |
-| `theme-provider.tsx` | next-themes ThemeProvider wrapper |
+| WA Display Name Pending Review Badge | Low (polish) |
+| Revenue Analytics UI (`contact.spent` input + chart) | Nice-to-have |
+| Invite by WhatsApp (agent phone → link via WA) | Low — email + link cover most cases |
+| Advanced SLA rules per label/channel | Business plan feature |
+| WhatsApp Catalog | Phase 2 |
+| Chatbot / LLM-powered auto-replies | Phase 2 |
+| WooCommerce / Shopify integration | Phase 2 |
+| WhatsApp OTP | Phase 2 |
 
 ---
 
-## 10. Known Bugs & Issues
+## 10. Security Assessment
 
-### BUG 1: Supervisor excluded from quick reply management
-**Files:** `convex/quickReplies.ts` (lines 35-36, 62-63, 89-90)
-```typescript
-// Current (broken):
-const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin";
-// Should be:
-const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-```
-The CLAUDE.md spec says Supervisors should be able to create labels/templates. Quick replies use the same pattern.
-
-### BUG 2: Supervisor excluded from message access checks
-**File:** `convex/messages.ts` (lines 14-15, 47-48)
-```typescript
-// Current (broken):
-const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin";
-// Missing: || orgRole === "org:supervisor"
-```
-Supervisors should be able to view all conversations per the spec, but the messages query will return empty for conversations assigned to other agents.
-
-### BUG 3: Round-robin assignment never triggered
-**File:** `convex/actions/roundRobin.ts` exists and works, but `convex/http.ts` (inbound message handler) and `convex/messages.ts` (`createInbound`) never call it. New conversations on round-robin channels remain unassigned.
-
-### BUG 4: Plan always defaults to "free"
-**File:** `convex/lib/planLimits.ts` — `assertAgentLimitNotReached` has `plan: Plan = "free"` default. No caller ever passes a plan value because there's no `tenants` table storing plan info.
-
-### BUG 5: Missing `META_SYSTEM_USER_TOKEN`
-Outbound WhatsApp messages (`convex/actions/sendWhatsAppMessage.ts`) use `process.env.META_SYSTEM_USER_TOKEN` which is not in `.env.local`. All outbound messages will fail.
-
-### BUG 6: Missing `NEXT_PUBLIC_APP_URL`
-Invite links (`convex/inviteLinks.ts`, `convex/orgMembers.ts`) fall back to `http://localhost:3000`. In production, invite links will point to localhost.
-
-### BUG 7: Clerk auth.config.ts hardcodes dev domain
-**File:** `convex/auth.config.ts` — Domain is hardcoded to `communal-octopus-5.clerk.accounts.dev`. Must be environment-variable-driven for production.
-
-### BUG 8: No dashboard navigation
-No sidebar, navbar, or any navigation UI in the dashboard layout. Users cannot navigate between pages without manually typing URLs.
-
-### BUG 9: Webhook swallows all errors silently
-**File:** `convex/http.ts` (line 110) — `catch {}` swallows all errors in webhook POST handler. Malformed payloads, failed mutations, etc. are invisible.
-
----
-
-## 11. TODOs in Code
-
-```
-convex/channels.ts:78: // TODO: check tenant plan when plan field exists
-```
-
----
-
-## 12. What's Missing (Prioritized)
-
-### Tier 1 — Blocking Launch
-1. **WhatsApp Embedded Signup** — No way for tenants to connect their WhatsApp number. This is the core onboarding step.
-2. **Dashboard sidebar/navigation** — Users literally cannot navigate the app.
-3. **Fix `META_SYSTEM_USER_TOKEN`** — Outbound messages won't work.
-4. **Fix `NEXT_PUBLIC_APP_URL`** — Invite links broken in production.
-5. **Fix supervisor role bugs** — Supervisors locked out of features they should access.
-6. **Wire up round-robin assignment** — Feature exists but isn't connected.
-7. **Tenants table + plan management** — No way to manage billing/plans per tenant.
-
-### Tier 2 — Required for Viable Product
-8. **Contact management UI** — View, edit, search, filter contacts.
-9. **Conversation labels** — Schema field exists, no UI.
-10. **Analytics dashboard** — No metrics at all.
-11. **Media message support** — Images, documents, audio all show as "unsupported".
-12. **Data export** — Required by spec for all plans.
-13. **Dark mode toggle** — ThemeProvider exists, no UI toggle.
-14. **Lemon Squeezy billing integration** — No payment system.
-
-### Tier 3 — Growth Features
-15. **SLA & response time alerts**
-16. **CSAT (customer satisfaction ratings)**
-17. **Conversation templates with variables**
-18. **WhatsApp Business Profile editing**
-19. **CSV/Excel contact import**
-20. **Agent offline auto-unassign**
-21. **Broadcast/bulk campaigns**
-22. **Chatbot/automation flows**
-
----
-
-## 13. Security Assessment
-
-### Good
-- All Convex queries/mutations validate `tenantId` from auth context
-- Webhook signature verification using HMAC-SHA256
-- Phone number validation (E.164) on WhatsApp invite
-- Invite link tokens are cryptographically random (32 bytes)
+### Strong Points
+- All Convex queries/mutations validate `tenantId` from auth context (no cross-tenant leakage)
+- HMAC-SHA256 webhook signature verification (Meta + internal webhook secret)
+- AES-256-GCM encryption for WABA access tokens at rest
+- Clerk JWT validated in every Convex function
+- Rate limiting on high-frequency mutations (`sendMessage`, `importBatch`)
 - Last-admin protection prevents org lockout
-- Middleware protects all dashboard routes
+- Role checks enforced server-side; client-side checks are display-only
+- `WHATSAPP_API_TOKEN` is a permanent system user token (not per-channel token leaked to clients)
+- Phone numbers stored in E.164 format
+- Cryptographically random invite link tokens (32 bytes)
 
-### Concerns
-- `convex/auth.config.ts` hardcodes Clerk dev domain — prod will break
-- No rate limiting on webhook endpoint
-- Error swallowing in webhook handler hides potential issues
-- `META_SYSTEM_USER_TOKEN` not set — if set incorrectly, could expose token in error logs
-- No input sanitization on message content (potential XSS if content rendered as HTML)
-- `.env.local` is gitignored but `CLAUDE.md` lists all expected env var names
-
----
-
-## 14. Key Code Snippets
-
-### Auth Identity Extraction (used in every query/mutation)
-```typescript
-// convex/lib/auth.ts
-export async function getCallerIdentity(ctx: Ctx) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new ConvexError("UNAUTHORIZED");
-  if (!identity.orgId) throw new ConvexError("NO_ORG");
-  return {
-    tenantId: identity.orgId,
-    callerId: identity.subject,
-    orgRole: identity.orgRole ?? "org:agent",
-  };
-}
-```
-
-### Role-Based Conversation Visibility
-```typescript
-// convex/conversations.ts — listForCaller handler
-if (isAdminOrSupervisor(orgRole)) {
-  // See ALL conversations for tenant (with optional status filter)
-  conversations = await ctx.db.query("conversations")
-    .withIndex("by_tenant_status", ...)
-    .collect();
-} else {
-  // Agents see only: assigned to them + unassigned
-  const assigned = await ctx.db.query("conversations")
-    .withIndex("by_tenant_agent", q => q.eq("tenantId", tenantId).eq("assignedAgentId", callerId))
-    .collect();
-  const unassigned = await ctx.db.query("conversations")
-    .withIndex("by_tenant_agent", q => q.eq("tenantId", tenantId).eq("assignedAgentId", undefined))
-    .collect();
-  conversations = [...assigned, ...unassigned];
-}
-```
-
-### First-Reply-Wins Assignment
-```typescript
-// convex/messages.ts — sendReply handler
-let assignedAgentId = conversation.assignedAgentId;
-if (!assignedAgentId && channel.assignmentMode === "first_reply") {
-  assignedAgentId = callerId;
-}
-await ctx.db.patch(args.conversationId, {
-  lastMessageAt: Date.now(),
-  lastMessagePreview: args.content.slice(0, 100),
-  assignedAgentId,
-});
-```
-
-### Inbound Message Processing
-```typescript
-// convex/messages.ts — createInbound handler (internal)
-// 1. Dedup by metaMessageId
-const existing = await ctx.db.query("messages")
-  .withIndex("by_meta_message_id", q => q.eq("metaMessageId", args.metaMessageId))
-  .first();
-if (existing) return existing._id;
-
-// 2. Upsert contact
-const contactId = await ctx.runMutation(internal.contacts.upsertByPhone, { ... });
-
-// 3. Find or create conversation
-let conversation = await ctx.db.query("conversations")
-  .withIndex("by_tenant_channel", ...)
-  .filter(q => q.eq(q.field("contactId"), contactId))
-  .first();
-
-if (!conversation) {
-  // Create new conversation
-  await ctx.db.insert("conversations", { status: "open", ... });
-} else {
-  // Update existing: bump unread, reopen if resolved
-  if (conversation.status === "resolved") patch.status = "open";
-}
-
-// 4. Insert message
-return ctx.db.insert("messages", { direction: "inbound", ... });
-```
-
-### Webhook Signature Verification
-```typescript
-// convex/http.ts
-async function verifySignature(body: string, signature: string, appSecret: string): Promise<boolean> {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(appSecret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(body));
-  const hexMac = Array.from(new Uint8Array(mac)).map(b => b.toString(16).padStart(2, "0")).join("");
-  return signature === `sha256=${hexMac}`;
-}
-```
-
-### Plan Limits
-```typescript
-// convex/lib/planLimits.ts
-const PLAN_LIMITS: Record<string, number> = {
-  free: 2, starter: 5, growth: 15, business: Infinity,
-};
-// NOTE: plan parameter always defaults to "free" — no tenant plan storage exists
-```
+### Remaining Concerns
+- No input sanitization on message content (not an XSS risk since content is not rendered as HTML, but worth auditing React rendering)
+- Large export actions have no size-cap protection (10k contacts CSV could be very large)
+- `webhook_events` debug log stores raw payloads — should be purged on a schedule to avoid PII retention issues
+- `rateLimits` table tokens need periodic cleanup (stale entries for inactive users)
 
 ---
 
-*End of audit report.*
+## 11. Architecture Patterns
+
+### Multi-Tenancy
+- Every table has `tenantId: v.string()` — Clerk `orgId`
+- Every query must call `getCallerIdentity()` first and filter by `tenantId`
+- No cross-tenant data access is possible through the API layer
+
+### Real-time
+- All inbox data via `useQuery` subscriptions (no polling, no REST)
+- Optimistic updates on message send: `"sending"` state → server patches to `"sent"`
+- Presence system uses Convex scheduler heartbeat (no WebSocket overhead)
+
+### External API Calls
+- All Meta API calls are Convex actions (never client-side)
+- Channel access token decrypted only inside actions, never returned to client
+- Resend email calls via `convex/actions/sendEmail.ts`
+
+### Plan Gating
+- `convex/lib/planLimits.ts` — all plan-gated mutations check `tenant.plan` before proceeding
+- Plan stored in `tenants` table; updated by Paddle webhook
+
+---
+
+*End of audit report. Last updated: 2026-04-28.*

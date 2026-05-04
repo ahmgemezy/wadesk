@@ -43,6 +43,7 @@ interface ConversationItem {
   labels?: string[];
   slaBreachedAt?: number;
   departmentName?: string;
+  csatScore?: number;
 }
 
 interface ConversationListItemProps {
@@ -110,7 +111,7 @@ export function ConversationListItem({
 
   const statusColor =
     conversation.status === "open"
-      ? "bg-accent/70 text-accent-foreground dark:bg-accent/40 dark:text-accent-foreground"
+      ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
       : conversation.status === "pending"
         ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
         : "bg-muted text-muted-foreground";
@@ -131,8 +132,8 @@ export function ConversationListItem({
     <>
     <div
       className={cn(
-        "group w-full text-start p-3 border-b hover:bg-secondary/70 transition-colors cursor-pointer",
-        isActive && "bg-accent/60 border-s-[3px] border-s-primary",
+        "group w-full text-start p-3 border-b border-border/60 hover:bg-muted/60 transition-colors cursor-pointer",
+        isActive && "bg-accent/40 border-s-2 border-s-primary",
         !conversation.assignedAgentId && !isActive && "bg-(--unassigned-bg)",
       )}
       onClick={onClick}
@@ -247,6 +248,17 @@ export function ConversationListItem({
             >
               {statusLabel}
             </span>
+            {typeof conversation.csatScore === "number" && (
+              <span
+                title={t(
+                  `Customer rated ${conversation.csatScore}/5`,
+                  `العميل قيّم ${conversation.csatScore}/5`,
+                )}
+                className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-medium"
+              >
+                ⭐ {conversation.csatScore}/5
+              </span>
+            )}
             {conversation.departmentName && (
               <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 truncate max-w-20">
                 {conversation.departmentName}

@@ -1,0 +1,370 @@
+/* WABDesk Klaro consent banner overrides
+   - Brand colors (indigo primary) — all hardcoded; CSS vars not available on marketing pages
+   - Cairo/Tajawal font
+   - RTL layout (scoped to #klaro[dir="rtl"] so EN/AR toggle works correctly)
+   - Mobile-responsive stacked buttons
+   The base klaro.css is imported separately in klaro-provider.tsx */
+
+/* ── Font & base ─────────────────────────────────────────── */
+.klaro .cookie-modal,
+.klaro .cookie-notice {
+  font-family: var(--font-arabic, "Cairo"), "Tajawal", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+/* ── Notice banner (bottom bar) ──────────────────────────── */
+.klaro .cookie-notice {
+  background: #ffffff;
+  color: #191b23;
+  border-top: 1px solid #c3c6d7;
+  box-shadow: 0 -4px 24px rgba(37, 99, 235, 0.08);
+  border-radius: 0;
+}
+
+/* "Customize" link — must be clearly visible on white banner */
+.klaro .cookie-notice .cn-learn-more,
+.klaro .cookie-notice a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 500;
+}
+
+.klaro .cookie-notice-hidden {
+  display: none !important;
+}
+
+/* ── Modal ───────────────────────────────────────────────── */
+/* Hardcoded white: hsl(var(--card)) was failing because --card is a hex value, not HSL triple */
+.klaro .cookie-modal .cm-modal.cm-klaro {
+  background: #ffffff;
+  color: #191b23;
+  border: 1px solid #c3c6d7;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
+}
+
+/* Modal overlay backdrop */
+.klaro .cookie-modal {
+  background: rgba(15, 12, 41, 0.55);
+}
+
+/* ── Modal text — all selectors include .cm-klaro to beat Klaro's own specificity ── */
+
+/* Header section background + separator */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-header {
+  background: #ffffff;
+  border-bottom: 1px solid #ededf9;
+}
+
+/* Title: "Cookie Preferences" */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-header h1,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-header h1.title,
+.klaro .cookie-modal .cm-modal.cm-klaro h1 {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+/* Header description paragraph */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-header p,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-header .cm-link {
+  color: #434655;
+}
+
+/* Body section */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-body {
+  background: #ffffff;
+  color: #191b23;
+}
+
+/* Purpose group title — "Essential", "Analytics", "Marketing" */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-list-title,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-purpose-title,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-service-title {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Purpose + service description text */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-list-description,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-service-description,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-body p,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-body span {
+  color: #434655;
+}
+
+/* "↓ 1 service" / "↓ 2 services" expand links */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-services-link,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-purpose-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* All other links inside the modal (Privacy Policy, etc.) */
+.klaro .cookie-modal .cm-modal.cm-klaro a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* "Enable/disable all" row */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-footer-body,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-footer-body p,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-all-toggles .cm-list-title {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-all-toggles .cm-list-description,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-all-toggles p {
+  color: #434655;
+}
+
+/* Footer background */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-footer {
+  background: #ffffff;
+  border-top: 1px solid #ededf9;
+}
+
+/* Close button (×) — Klaro renders this as an SVG with stroke="currentColor".
+   The □ square comes from Klaro's default border on the button element. */
+.klaro .cookie-modal .cm-modal.cm-klaro .hide {
+  color: #565e74;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.klaro .cookie-modal .cm-modal.cm-klaro .hide svg {
+  color: #565e74;
+  stroke: #565e74;
+  fill: none;
+}
+
+.klaro .cookie-modal .cm-modal.cm-klaro .hide svg line,
+.klaro .cookie-modal .cm-modal.cm-klaro .hide svg path,
+.klaro .cookie-modal .cm-modal.cm-klaro .hide svg polyline {
+  stroke: #565e74;
+}
+
+.klaro .cookie-modal .cm-modal.cm-klaro .hide:hover {
+  color: #0f172a;
+}
+
+.klaro .cookie-modal .cm-modal.cm-klaro .hide:hover svg,
+.klaro .cookie-modal .cm-modal.cm-klaro .hide:hover svg line,
+.klaro .cookie-modal .cm-modal.cm-klaro .hide:hover svg path,
+.klaro .cookie-modal .cm-modal.cm-klaro .hide:hover svg polyline {
+  stroke: #0f172a;
+}
+
+/* Purpose expand/collapse arrows */
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-caret,
+.klaro .cookie-modal .cm-modal.cm-klaro .cm-caret svg {
+  color: #2563eb;
+  fill: #2563eb;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+/* Accept / Accept All — WABDesk indigo */
+.klaro .cm-btn-success,
+.klaro .cm-btn-accept,
+.klaro .cm-btn-accept-all {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+}
+
+.klaro .cm-btn-success:hover,
+.klaro .cm-btn-accept:hover,
+.klaro .cm-btn-accept-all:hover {
+  background: #1d4ed8;
+}
+
+/* Decline All — outlined */
+.klaro .cm-btn-danger,
+.klaro .cm-btn-decline {
+  background: transparent;
+  color: #434655;
+  border: 1px solid #c3c6d7;
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 0.5rem 1.25rem;
+}
+
+.klaro .cm-btn-danger:hover,
+.klaro .cm-btn-decline:hover {
+  background: #ededf9;
+  color: #191b23;
+}
+
+/* Save selection — indigo ghost */
+.klaro .cm-btn-accept-selected,
+.klaro .cm-btn-save {
+  background: #dae2fd;
+  color: #131b2e;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+}
+
+.klaro .cm-btn-accept-selected:hover,
+.klaro .cm-btn-save:hover {
+  background: #c3d0fb;
+}
+
+/* ── Footer buttons — evenly spaced ─────────────────────── */
+.klaro .cookie-modal .cm-modal .cm-footer-buttons {
+  justify-content: flex-start;
+  gap: 0.5rem;
+  border-top: 1px solid #ededf9;
+}
+
+/* ── Toggles ─────────────────────────────────────────────── */
+.klaro .cm-list-input:checked + .cm-list-label .slider,
+.klaro .cm-list-input.only-required + .cm-list-label .slider {
+  background: #2563eb;
+}
+
+/* Toggle track (unchecked) */
+.klaro .cm-list-label .slider {
+  background: #c3c6d7;
+}
+
+/* ── RTL overrides ───────────────────────────────────────── */
+/* Scoped to #klaro[dir="rtl"] — only fires when our provider sets RTL.
+   Previously used [dir="rtl"] which matched <html dir="rtl"> (always present),
+   causing EN pages to render Klaro in RTL mode. */
+
+#klaro[dir="rtl"] .klaro .cookie-notice,
+#klaro[dir="rtl"] .klaro .cookie-modal {
+  text-align: right;
+  direction: rtl;
+}
+
+#klaro[dir="rtl"] .klaro .cm-list-input {
+  left: auto;
+  right: 0;
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+#klaro[dir="rtl"] .klaro .cm-list-label {
+  padding-right: 0;
+  padding-left: 1rem;
+}
+
+#klaro[dir="rtl"] .klaro .cm-list-label .cm-switch {
+  left: auto;
+  right: 0;
+}
+
+/* Toggle thumb: start position flipped to right side */
+#klaro[dir="rtl"] .klaro .cm-list-label .slider::before {
+  left: auto;
+  right: 5px;
+}
+
+/* Toggle checked: thumb moves left-ward in RTL (negative translateX) */
+#klaro[dir="rtl"] .klaro .cm-list-label input:checked + .slider::before,
+#klaro[dir="rtl"] .klaro .cm-list-input:checked + .cm-list-label .slider::before {
+  transform: translateX(-20px);
+}
+
+/* Half-checked / only-required variants */
+#klaro[dir="rtl"] .klaro .cm-list-input.half-checked:checked + .cm-list-label .slider::before,
+#klaro[dir="rtl"] .klaro .cm-list-input.only-required + .cm-list-label .slider::before {
+  transform: translateX(-10px);
+}
+
+#klaro[dir="rtl"] .klaro .cm-btn + .cm-btn {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Close button: flip from physical right to physical left */
+#klaro[dir="rtl"] .klaro .cookie-modal .cm-modal .hide {
+  right: auto;
+  left: 20px;
+}
+
+/* Header: clear space on left side (where close button now sits) */
+#klaro[dir="rtl"] .klaro .cookie-modal .cm-modal .cm-header {
+  padding-right: 1em;
+  padding-left: 24px;
+}
+
+#klaro[dir="rtl"] .klaro .cookie-modal .cm-modal .cm-header h1.title {
+  padding-right: 0;
+  padding-left: 20px;
+}
+
+/* Service rows: flip the 60px indent that clears the toggle */
+#klaro[dir="rtl"] .klaro .cookie-modal .cm-body ul.cm-services li.cm-service,
+#klaro[dir="rtl"] .klaro .cookie-modal .cm-body ul.cm-services li.cm-purpose,
+#klaro[dir="rtl"] .klaro .cookie-modal .cm-body ul.cm-purposes li.cm-service,
+#klaro[dir="rtl"] .klaro .cookie-modal .cm-body ul.cm-purposes li.cm-purpose {
+  padding-left: 0;
+  padding-right: 60px;
+}
+
+/* Text alignment — right-align all text nodes in RTL modal */
+#klaro[dir="rtl"] .klaro .cm-modal .cm-header h1,
+#klaro[dir="rtl"] .klaro .cm-modal .cm-header p,
+#klaro[dir="rtl"] .klaro .cm-modal .cm-body p,
+#klaro[dir="rtl"] .klaro .cm-modal .cm-body div,
+#klaro[dir="rtl"] .klaro .cm-modal .cm-body span,
+#klaro[dir="rtl"] .klaro .cm-services .cm-service,
+#klaro[dir="rtl"] .klaro .cm-list-title,
+#klaro[dir="rtl"] .klaro .cm-list-description,
+#klaro[dir="rtl"] .klaro .cm-purpose-title,
+#klaro[dir="rtl"] .klaro .cm-service-title,
+#klaro[dir="rtl"] .klaro .cm-all-toggles,
+#klaro[dir="rtl"] .klaro .cm-all-toggles p,
+#klaro[dir="rtl"] .klaro .cm-footer-body,
+#klaro[dir="rtl"] .klaro .cm-footer-body p {
+  text-align: right;
+}
+
+/* Service expand links ("↓ 1 خدمة") — block so text-align applies */
+#klaro[dir="rtl"] .klaro .cm-services-link,
+#klaro[dir="rtl"] .klaro .cm-purpose-link {
+  display: block;
+  text-align: right;
+}
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .klaro .cookie-notice {
+    padding: 1rem;
+  }
+
+  .klaro .cookie-notice .cn-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .klaro .cookie-notice .cn-buttons {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .klaro .cookie-notice .cn-buttons .cm-btn {
+    width: 100%;
+    margin: 0.25rem 0;
+  }
+
+  #klaro[dir="rtl"] .klaro .cookie-notice .cn-buttons .cm-btn {
+    margin: 0.25rem 0;
+  }
+}
