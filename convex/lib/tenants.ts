@@ -1,5 +1,7 @@
 import { query, internalQuery, internalMutation, mutation } from "../_generated/server";
 import { v, ConvexError } from "convex/values";
+import type { GenericMutationCtx, GenericQueryCtx } from "convex/server";
+import type { DataModel } from "../_generated/dataModel";
 import type { Plan } from "./planLimits";
 import { getCallerIdentity, assertAdmin, type OrgRole } from "./auth";
 
@@ -197,3 +199,21 @@ export const updateForwardTemplate = mutation({
     });
   },
 });
+
+/**
+ * Read the tenant's plan from inside a mutation context (where ctx.runQuery
+ * is unavailable). Returns "free" if the tenant row is missing.
+ *
+ * Use from internalMutation handlers; for actions, prefer
+ * ctx.runQuery(internal.lib.tenants.getPlan).
+ */
+export async function readPlan(
+  ctx: GenericMutationCtx<DataModel> | GenericQueryCtx<DataModel>,
+  tenantId: string,
+): Promise<Plan> {
+  const tenant = await ctx.db
+    .query("tenants")
+    .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
+    .first();
+  return (tenant?.plan as Plan | undefined) ?? "free";
+}

@@ -378,6 +378,7 @@ export default defineSchema({
       v.literal("template_approved"),
       v.literal("template_rejected"),
       v.literal("channel_expiring_soon"),
+      v.literal("channel_token_expired"),
       v.literal("channel_deleted"),
       v.literal("agent_welcome"),
       v.literal("billing_payment_failed"),
@@ -385,6 +386,8 @@ export default defineSchema({
       v.literal("conversation_transferred"),
       v.literal("conversation_reopened"),
       v.literal("new_assignment"),
+      v.literal("conversation_assigned"),
+      v.literal("csat_received"),
     ),
     referenceId: v.string(),
     contactName: v.optional(v.string()),
@@ -689,6 +692,25 @@ export default defineSchema({
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_member", ["tenantId", "memberId"])
     .index("by_tenant_timestamp", ["tenantId", "timestamp"]),
+
+  notificationPreferences: defineTable({
+    tenantId: v.string(),
+    userId: v.string(),
+    eventType: v.union(
+      v.literal("sla_breach"),
+      v.literal("followup_due"),
+      v.literal("conversation_transferred"),
+      v.literal("conversation_assigned"),
+      v.literal("conversation_reopened"),
+      v.literal("csat_received"),
+      v.literal("channel_expiring_soon"),
+    ),
+    inAppEnabled: v.boolean(),
+    emailEnabled: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_tenant_user", ["tenantId", "userId"])
+    .index("by_tenant_user_event", ["tenantId", "userId", "eventType"]),
 
   memberProfiles: defineTable({
     tenantId: v.string(),
