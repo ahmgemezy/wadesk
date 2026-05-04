@@ -1089,6 +1089,45 @@ Files: `convex/{conversations,schema}.ts`, `convex/lib/tenants.ts`, `components/
 
 ---
 
+### Notification Preferences Feature (2026-05-04)
+
+Adds per-user notification preferences with channel-specific toggles. Users can opt
+out of in-app or email notifications for each event type independently. Free plans get
+in-app notifications only; Starter+ plans unlock the email channel. Two events
+(sla_breach, csat_received) are Growth+-only.
+
+**New schema:**
+- `notificationPreferences` table — per-user × event-type × channel preferences (~14 rows per user max)
+- New literals: `conversation_assigned` and `channel_token_expired` added to `notifications.type` union (alongside the legacy `new_assignment` and `channel_expiring_soon`)
+
+**New code:**
+- `convex/notifications.ts` — `notifyDispatch` (central mutation; reads prefs, gates by plan, writes in-app, schedules email), `notifySend` (action; resolves email via Clerk Node, dispatches to Resend), `getPreferences` + `updatePreference` (CRUD)
+- `convex/lib/notificationEvents.ts` — single source of truth for event types, defaults, plan-gating, and the daily-email-cap key builder
+- `convex/lib/rateLimit.ts` — `tryConsumeQuota` helper (soft cap, never throws — counterpart to `enforceRateLimit`)
+- `convex/lib/tenants.ts` — `readPlan` helper (sync plan-fetch for mutation context)
+- `convex/emails/templates/{conversationTransferred,conversationReopened,csatReceived}.tsx` — 3 new React Email templates
+- `app/(dashboard)/settings/notifications/page.tsx` — tabbed page (Log + Preferences)
+- `components/settings/notifications-{tab-shell,preferences,preferences-row,error-boundary}.tsx` — UI components
+- `hooks/use-notification-preferences.ts` — single hook with optimistic updates + plan-aware gating flags
+- `lib/notifications/eventLabels.ts` — UI-side event labels with en/ar translations
+
+**Refactored:**
+- 9 existing notification call sites migrated from direct `ctx.db.insert("notifications", ...)` to `notifyDispatch`
+- 3 new call sites added to close gaps: `assign` and `assignInternal` now write in-app rows; `csat.ts checkAndRecordResponse` now dispatches a notification
+- 3 unused `*Email` internalAction exports removed from `notifyEmail.ts`: `slaBreachEmail`, `followupDueEmail`, `newAssignmentEmail`
+- `followUps.ts` literal corrected from `channel_expiring_soon` (semantic mismatch — was actually a token-expiry event) to `channel_token_expired`
+
+**Cost economics:**
+- Resend free tier (3000/mo, 100/day) supports the launch phase; conservative email defaults keep ~30 emails/day per active tenant
+- Per-plan daily cap: Starter 50, Growth 200, Business 1000; soft cap silently drops over-cap emails (in-app still fires)
+- Upgrade Resend Pro at ~5 paying tenants
+
+**Files: 23 files changed across 5 implementation commits + 1 PROGRESS.md commit (this commit).**
+
+Implementer: GLM 5.1 (cheaper coding model). Reviewer: Claude Code. Approver: Ahmed. Planning artifacts at `docs/superpowers/plans/notification-prefs/01-foundation.md` through `06-execution.md`.
+
+---
+
 ## 🔄 Partially Completed
 
 ### Revenue Analytics — Schema Exists, No UI
