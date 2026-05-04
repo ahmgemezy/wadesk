@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, Clock, Trash2, Bell, CheckCheck } from "lucide-react";
+import { AlertTriangle, Clock, Trash2, Bell, CheckCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { notificationRoute } from "@/lib/notification-routes";
@@ -204,6 +204,13 @@ export function NotificationsSettings() {
                   {n.type === "conversation_reopened" && (
                     <span className="inline-flex items-center gap-1 text-yellow-700 text-[10px] font-semibold">
                       ↩ {t("Customer replied to resolved", "أعاد العميل المحادثة")}
+                    </span>
+                  )}
+                  {(n.type === "conversation_assigned" ||
+                    n.type === "new_assignment") && (
+                    <span className="inline-flex items-center gap-1 text-blue-600 text-[10px] font-semibold">
+                      <UserPlus className="size-3" />
+                      {t("Assigned to you", "تم التعيين لك")}
                     </span>
                   )}
                 </div>

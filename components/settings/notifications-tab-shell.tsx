@@ -3,10 +3,9 @@
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NotificationsSettings } from "@/components/settings/notifications-settings";
+import { NotificationsPreferences } from "@/components/settings/notifications-preferences";
+import { NotificationsErrorBoundary } from "@/components/settings/notifications-error-boundary";
 import { useT } from "@/lib/i18n/context";
-
-// Stage 4 will add this import after creating the file:
-// import { NotificationsPreferences } from "@/components/settings/notifications-preferences";
 
 const VALID_TABS = ["log", "preferences"] as const;
 type TabValue = (typeof VALID_TABS)[number];
@@ -49,8 +48,9 @@ export function NotificationsTabShell() {
         <NotificationsSettings />
       </TabsContent>
       <TabsContent value="preferences" className="mt-4">
-        {/* Stage 4: uncomment import above and replace this div with <NotificationsPreferences /> */}
-        <div className="h-64 rounded-lg bg-muted animate-pulse" />
+        <NotificationsErrorBoundary>
+          <NotificationsPreferences />
+        </NotificationsErrorBoundary>
       </TabsContent>
     </Tabs>
   );
