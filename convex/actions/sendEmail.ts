@@ -12,6 +12,9 @@ import { NewAssignment } from "../emails/templates/newAssignment";
 import { AgentWelcome } from "../emails/templates/agentWelcome";
 import { BillingPaymentFailed } from "../emails/templates/billingPaymentFailed";
 import { BillingSubscriptionExpired } from "../emails/templates/billingSubscriptionExpired";
+import { ConversationTransferred } from "../emails/templates/conversationTransferred";
+import { ConversationReopened } from "../emails/templates/conversationReopened";
+import { CsatReceived } from "../emails/templates/csatReceived";
 
 const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
   channel_expiring_soon: {
@@ -49,6 +52,18 @@ const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
   billing_subscription_expired: {
     ar: "انتهت صلاحية الاشتراك",
     en: "Your Subscription Has Expired",
+  },
+  conversation_transferred: {
+    ar: "تم تحويل محادثة مع {{contactName}} إلى فريقك",
+    en: "A conversation with {{contactName}} was transferred to your team",
+  },
+  conversation_reopened: {
+    ar: "{{contactName}} أرسل رسالة جديدة في محادثة محسومة",
+    en: "{{contactName}} replied to a resolved conversation",
+  },
+  csat_received: {
+    ar: "تم استلام تقييم العميل",
+    en: "Customer rating received",
   },
 };
 
@@ -89,6 +104,12 @@ function buildElement(
       return React.createElement(BillingPaymentFailed, props);
     case "billing_subscription_expired":
       return React.createElement(BillingSubscriptionExpired, props);
+    case "conversation_transferred":
+      return React.createElement(ConversationTransferred, props);
+    case "conversation_reopened":
+      return React.createElement(ConversationReopened, props);
+    case "csat_received":
+      return React.createElement(CsatReceived, props);
     default:
       throw new ConvexError(`TEMPLATE_NOT_FOUND: ${templateKey}`);
   }

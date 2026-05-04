@@ -144,11 +144,6 @@ export const notifySend = internalAction({
       tenantId: args.tenantId,
     });
     const templateKey = mapEventToTemplateKey(args.eventType);
-    if (!templateKey) {
-      // Event has no email template yet (e.g. csat_received before Stage 6).
-      // Silent skip — in-app row already fired upstream.
-      return;
-    }
 
     // 3. Forward to the existing sendEmail action.
     await ctx.runAction(internal.actions.sendEmail.sendEmail, {
@@ -160,18 +155,14 @@ export const notifySend = internalAction({
   },
 });
 
-/**
- * Maps a toggleable eventType to the matching templateKey understood by
- * sendEmail. Templates that don't exist yet return null — Stage 6 fills these in.
- */
-function mapEventToTemplateKey(eventType: ToggleableEventType): string | null {
+function mapEventToTemplateKey(eventType: ToggleableEventType): string {
   switch (eventType) {
     case "sla_breach":               return "sla_breach";
     case "followup_due":             return "followup_due_sent"; // failure variant uses different path
     case "conversation_assigned":    return "new_assignment";
     case "channel_expiring_soon":    return "channel_expiring_soon";
-    case "conversation_transferred": return null; // Stage 6 — template TBD
-    case "conversation_reopened":    return null; // Stage 6 — template TBD
-    case "csat_received":            return null; // Stage 6 — template TBD
+    case "conversation_transferred": return "conversation_transferred";
+    case "conversation_reopened":    return "conversation_reopened";
+    case "csat_received":            return "csat_received";
   }
 }
