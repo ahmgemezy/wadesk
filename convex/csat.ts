@@ -251,6 +251,25 @@ export const checkAndRecordResponse = internalMutation({
       createdAt: respondedAt,
     });
 
+    if (conversation.assignedAgentId) {
+      const csatContact = await ctx.db.get(conversation.contactId);
+      const csatContactName =
+        csatContact?.customName ?? csatContact?.displayName ?? csatContact?.phone ?? "";
+      await ctx.runMutation(internal.notifications.notifyDispatch, {
+        tenantId: args.tenantId,
+        userId: conversation.assignedAgentId,
+        eventType: "csat_received",
+        referenceId: conversation._id,
+        contactName: csatContactName,
+        message: `${csatContactName} rated the conversation ${score}/5`,
+        emailVariables: {
+          contactName: csatContactName,
+          score: String(score),
+          conversationId: conversation._id,
+        },
+      });
+    }
+
     return true;
   },
 });

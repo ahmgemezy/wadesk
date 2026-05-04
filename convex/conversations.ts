@@ -166,12 +166,22 @@ export const assign = mutation({
         contact?.customName ?? contact?.displayName ?? contact?.phone ?? "";
       const channelName = channel?.displayName ?? "";
 
-      await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.newAssignmentEmail, {
-        agentUserId: args.agentId,
-        contactName,
-        channelName,
-        conversationId: args.conversationId,
+      const assignIdentity = await ctx.auth.getUserIdentity();
+      const assignActorName = assignIdentity?.name ?? assignIdentity?.email ?? "Someone";
+
+      await ctx.runMutation(internal.notifications.notifyDispatch, {
         tenantId,
+        userId: args.agentId,
+        eventType: "conversation_assigned",
+        referenceId: args.conversationId,
+        contactName,
+        message: `${contactName} was assigned to you by ${assignActorName}`,
+        emailVariables: {
+          contactName,
+          channelName,
+          conversationId: args.conversationId,
+          assignedByName: assignActorName,
+        },
       });
     }
 
@@ -479,12 +489,19 @@ export const assignInternal = internalMutation({
         contact?.customName ?? contact?.displayName ?? contact?.phone ?? "";
       const channelName = channel?.displayName ?? "";
 
-      await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.newAssignmentEmail, {
-        agentUserId: args.agentId,
-        contactName,
-        channelName,
-        conversationId: args.conversationId,
+      await ctx.runMutation(internal.notifications.notifyDispatch, {
         tenantId: args.tenantId,
+        userId: args.agentId,
+        eventType: "conversation_assigned",
+        referenceId: args.conversationId,
+        contactName,
+        message: `${contactName} was assigned to you by System`,
+        emailVariables: {
+          contactName,
+          channelName,
+          conversationId: args.conversationId,
+          assignedByName: "System",
+        },
       });
     }
 
@@ -647,31 +664,38 @@ export const transferWithinChannel = mutation({
     const contact = await ctx.db.get(conversation.contactId);
     const contactName = contact?.customName ?? contact?.displayName ?? "";
 
-    await Promise.all(
-      recipients.map((userId) =>
-        ctx.db.insert("notifications", {
-          tenantId,
-          userId,
-          type: "conversation_transferred",
-          referenceId: args.conversationId,
+    for (const userId of recipients) {
+      await ctx.runMutation(internal.notifications.notifyDispatch, {
+        tenantId,
+        userId,
+        eventType: "conversation_transferred",
+        referenceId: args.conversationId,
+        contactName,
+        message: `${contactName} was transferred to ${toName} by ${actorName}`,
+        emailVariables: {
           contactName,
-          message: `${contactName} was transferred to ${toName} by ${actorName}`,
-          read: false,
-          createdAt: now,
-        })
-      )
-    );
+          targetDept: toName,
+          actorName,
+          conversationId: args.conversationId,
+        },
+      });
+    }
 
     if (args.assignAgentId) {
-      await ctx.db.insert("notifications", {
+      const channelForEmail = await ctx.db.get(conversation.channelId);
+      await ctx.runMutation(internal.notifications.notifyDispatch, {
         tenantId,
         userId: args.assignAgentId,
-        type: "new_assignment",
+        eventType: "conversation_assigned",
         referenceId: args.conversationId,
         contactName,
         message: `${contactName} was assigned to you by ${actorName}`,
-        read: false,
-        createdAt: now,
+        emailVariables: {
+          contactName,
+          channelName: channelForEmail?.displayName ?? "",
+          conversationId: args.conversationId,
+          assignedByName: actorName,
+        },
       });
     }
   },

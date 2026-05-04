@@ -326,13 +326,18 @@ export const createInbound = internalMutation({
       if (conversation.assignedAgentId) {
         const channel = await ctx.db.get(args.channelId);
         const channelName = channel?.displayName ?? "";
-        await ctx.runMutation(internal.notifications.internalCreate, {
+        await ctx.runMutation(internal.notifications.notifyDispatch, {
           tenantId: args.tenantId,
           userId: conversation.assignedAgentId,
-          type: "conversation_reopened",
+          eventType: "conversation_reopened",
           referenceId: conversation._id,
           contactName,
           message: `${contactName} replied to a resolved conversation${channelName ? ` on ${channelName}` : ""}`,
+          emailVariables: {
+            contactName,
+            channelName,
+            conversationId: conversation._id,
+          },
         });
       }
     }

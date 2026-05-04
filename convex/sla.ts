@@ -64,24 +64,19 @@ export const checkBreaches = internalMutation({
         const contactName = contact?.customName ?? contact?.displayName ?? contact?.phone ?? "";
 
         for (const supervisor of supervisors) {
-          await ctx.db.insert("notifications", {
+          await ctx.runMutation(internal.notifications.notifyDispatch, {
             tenantId: channel.tenantId,
             userId: supervisor.userId,
-            type: "sla_breach",
+            eventType: "sla_breach",
             referenceId: conv._id,
             contactName,
             message: `SLA breach: no reply to ${contactName} for over ${channel.slaThresholdMinutes} minutes`,
-            read: false,
-            createdAt: now,
-          });
-
-          await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.slaBreachEmail, {
-            supervisorUserId: supervisor.userId,
-            contactName,
-            channelName: channel.displayName,
-            thresholdMinutes: channel.slaThresholdMinutes ?? 0,
-            conversationId: conv._id,
-            tenantId: channel.tenantId,
+            emailVariables: {
+              contactName,
+              channelName: channel.displayName,
+              thresholdMinutes: String(channel.slaThresholdMinutes ?? 0),
+              conversationId: conv._id,
+            },
           });
         }
       }

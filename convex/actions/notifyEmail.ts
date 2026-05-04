@@ -9,97 +9,6 @@ import {
   type ToggleableEventType,
 } from "../lib/notificationEvents";
 
-export const slaBreachEmail = internalAction({
-  args: {
-    supervisorUserId: v.string(),
-    contactName: v.string(),
-    channelName: v.string(),
-    thresholdMinutes: v.number(),
-    conversationId: v.string(),
-    tenantId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const [email, locale] = await Promise.all([
-      resolveUserEmail(args.supervisorUserId),
-      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
-    ]);
-    if (!email) {
-      console.warn(`[EMAIL] slaBreachEmail: no email for user ${args.supervisorUserId}`);
-      return;
-    }
-    await ctx.runAction(internal.actions.sendEmail.sendEmail, {
-      to: email,
-      templateKey: "sla_breach",
-      locale,
-      variables: {
-        contactName: args.contactName,
-        channelName: args.channelName,
-        thresholdMinutes: String(args.thresholdMinutes),
-        conversationId: args.conversationId,
-      },
-    });
-  },
-});
-
-export const followupDueEmail = internalAction({
-  args: {
-    agentUserId: v.string(),
-    contactName: v.string(),
-    status: v.union(v.literal("sent"), v.literal("failed")),
-    tenantId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const [email, locale] = await Promise.all([
-      resolveUserEmail(args.agentUserId),
-      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
-    ]);
-    if (!email) {
-      console.warn(`[EMAIL] followupDueEmail: no email for user ${args.agentUserId}`);
-      return;
-    }
-    await ctx.runAction(internal.actions.sendEmail.sendEmail, {
-      to: email,
-      templateKey: args.status === "sent" ? "followup_due_sent" : "followup_due_failed",
-      locale,
-      variables: {
-        contactName: args.contactName,
-        status: args.status,
-      },
-    });
-  },
-});
-
-export const newAssignmentEmail = internalAction({
-  args: {
-    agentUserId: v.string(),
-    contactName: v.string(),
-    channelName: v.string(),
-    conversationId: v.string(),
-    tenantId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const [email, locale] = await Promise.all([
-      resolveUserEmail(args.agentUserId),
-      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
-    ]);
-    if (!email) {
-      console.warn(`[EMAIL] newAssignmentEmail: no email for user ${args.agentUserId}`);
-      return;
-    }
-    await ctx.runAction(internal.actions.sendEmail.sendEmail, {
-      to: email,
-      templateKey: "new_assignment",
-      locale,
-      variables: {
-        contactName: args.contactName,
-        channelName: args.channelName,
-        conversationId: args.conversationId,
-        assignedByName: "",
-      },
-    });
-  },
-});
-
 export const agentWelcomeEmail = internalAction({
   args: {
     userId: v.string(),
@@ -223,7 +132,7 @@ export const notifySend = internalAction({
     variables: v.any(),
   },
   handler: async (ctx, args) => {
-    // 1. Resolve email via the canonical helper (matches slaBreachEmail's pattern).
+    // 1. Resolve email via the canonical helper.
     const email = await resolveUserEmail(args.userId);
     if (!email) {
       console.warn("notifySend: user has no primary email", args.userId);

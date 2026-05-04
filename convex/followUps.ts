@@ -245,19 +245,17 @@ export const recordFollowUpResult = internalMutation({
         metadata: { followUpId: args.followUpId },
       });
       if (followUp.assignedTo) {
-        await ctx.runMutation(internal.notifications.internalCreate, {
+        await ctx.runMutation(internal.notifications.notifyDispatch, {
           tenantId: followUp.tenantId,
           userId: followUp.assignedTo,
-          type: "followup_due",
+          eventType: "followup_due",
           referenceId: conversationId as unknown as string,
           contactName,
           message: `تم إرسال المتابعة إلى ${contactName}`,
-        });
-        await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.followupDueEmail, {
-          agentUserId: followUp.assignedTo,
-          contactName,
-          status: "sent",
-          tenantId: followUp.tenantId,
+          emailVariables: {
+            contactName,
+            status: "sent",
+          },
         });
       }
     } else {
@@ -309,19 +307,17 @@ export const recordFollowUpResult = internalMutation({
                 c.channelId === followUp.channelId,
             )
             .sort((a, b) => b.lastMessageAt - a.lastMessageAt)[0]?._id;
-          await ctx.runMutation(internal.notifications.internalCreate, {
+          await ctx.runMutation(internal.notifications.notifyDispatch, {
             tenantId: followUp.tenantId,
             userId: followUp.assignedTo,
-            type: "followup_due",
-            referenceId: (latestConvId as unknown as string) ?? args.followUpId,
+            eventType: "followup_due",
+            referenceId: (latestConvId as unknown as string) ?? (args.followUpId as unknown as string),
             contactName,
             message: `فشل إرسال المتابعة إلى ${contactName} بعد ${MAX_ATTEMPTS} محاولات`,
-          });
-          await ctx.scheduler.runAfter(0, internal.actions.notifyEmail.followupDueEmail, {
-            agentUserId: followUp.assignedTo,
-            contactName,
-            status: "failed",
-            tenantId: followUp.tenantId,
+            emailVariables: {
+              contactName,
+              status: "failed",
+            },
           });
         }
       } else {
@@ -476,7 +472,7 @@ async function notifyTokenExpired(
     await ctx.runMutation(internal.notifications.internalCreate, {
       tenantId: followUp.tenantId,
       userId,
-      type: "channel_expiring_soon",
+      type: "channel_token_expired",
       referenceId: followUp.channelId as unknown as string,
       message:
         "انتهت صلاحية ربط واتساب لهذه القناة — يرجى إعادة الربط لاستئناف إرسال المتابعات.",
