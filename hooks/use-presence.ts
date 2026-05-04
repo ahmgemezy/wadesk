@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useMutation } from "convex/react";
-import { useUser } from "@clerk/nextjs";
+import { useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export function usePresence() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isAuthenticated, isLoading } = useConvexAuth();
   const heartbeat = useMutation(api.presence.heartbeat);
   const setStatus = useMutation(api.presence.setStatus);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Don't run until user is authenticated
-    if (!isLoaded || !isSignedIn) return;
+    // Don't run until Convex's auth identity is fully synced — gates against
+    // the 5-minute inactivity timer firing setStatus after the Clerk JWT for
+    // the "convex" template has lapsed.
+    if (isLoading || !isAuthenticated) return;
 
     const handleActivity = async () => {
       // Clear existing inactivity timer
@@ -62,5 +63,5 @@ export function usePresence() {
         document.removeEventListener(event, handleActivity);
       });
     };
-  }, [heartbeat, setStatus, isLoaded, isSignedIn]);
+  }, [heartbeat, setStatus, isAuthenticated, isLoading]);
 }

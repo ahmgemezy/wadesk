@@ -39,10 +39,13 @@ export const createCheckout = action({
   },
   handler: async (ctx, args): Promise<{ transactionId: string }> => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.orgId || !identity.email) throw new ConvexError("UNAUTHORIZED");
+    const raw = identity as unknown as Record<string, unknown> | null;
+    const orgId = (raw?.orgId as string | undefined) ?? (raw?.o as { id?: string } | undefined)?.id;
+    if (!orgId) throw new ConvexError("UNAUTHORIZED");
 
-    const tenantId = identity.orgId as string;
+    const tenantId = orgId;
     const priceId = priceIdForPlan(args.plan);
+    const email = identity?.email;
 
     const res = await fetch(`${paddleBaseUrl()}/transactions`, {
       method: "POST",
@@ -52,7 +55,7 @@ export const createCheckout = action({
       },
       body: JSON.stringify({
         items: [{ price_id: priceId, quantity: 1 }],
-        customer: { email: identity.email },
+        ...(email ? { customer: { email } } : {}),
         custom_data: { tenantId },
       }),
     });
@@ -74,12 +77,14 @@ export const updateSubscription = action({
   },
   handler: async (ctx, args): Promise<{ ok: boolean }> => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.orgId) throw new ConvexError("UNAUTHORIZED");
+    const raw = identity as unknown as Record<string, unknown> | null;
+    const orgId = (raw?.orgId as string | undefined) ?? (raw?.o as { id?: string } | undefined)?.id;
+    if (!orgId) throw new ConvexError("UNAUTHORIZED");
 
     const role = await getCallerRole(ctx);
     if (role !== "org:admin") throw new ConvexError("FORBIDDEN");
 
-    const tenantId = identity.orgId as string;
+    const tenantId = orgId;
     const tenant = await ctx.runQuery(internal.lib.tenants.getTenantInternal, { tenantId });
 
     if (!tenant?.paddle_subscription_id) {
@@ -117,12 +122,14 @@ export const getCustomerPortalUrl = action({
   args: {},
   handler: async (ctx): Promise<{ url: string }> => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.orgId) throw new ConvexError("UNAUTHORIZED");
+    const raw = identity as unknown as Record<string, unknown> | null;
+    const orgId = (raw?.orgId as string | undefined) ?? (raw?.o as { id?: string } | undefined)?.id;
+    if (!orgId) throw new ConvexError("UNAUTHORIZED");
 
     const role = await getCallerRole(ctx);
     if (role !== "org:admin") throw new ConvexError("FORBIDDEN");
 
-    const tenantId = identity.orgId as string;
+    const tenantId = orgId;
     const tenant = await ctx.runQuery(internal.lib.tenants.getTenantInternal, { tenantId });
 
     if (!tenant?.paddle_customer_id) {

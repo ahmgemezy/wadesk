@@ -8,11 +8,16 @@ import { getCallerIdentity, assertAdmin, type OrgRole } from "./auth";
 export const getCurrentPlan = query({
   args: {},
   handler: async (ctx): Promise<Plan> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.orgId) return "free";
+    let tenantId: string;
+    try {
+      const caller = await getCallerIdentity(ctx);
+      tenantId = caller.tenantId;
+    } catch {
+      return "free";
+    }
     const tenant = await ctx.db
       .query("tenants")
-      .withIndex("by_tenantId", (q) => q.eq("tenantId", identity.orgId as string))
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
       .first();
     return (tenant?.plan as Plan) ?? "free";
   },
@@ -79,11 +84,16 @@ export const getTenantInternal = internalQuery({
 export const getSubscriptionStatus = query({
   args: {},
   handler: async (ctx): Promise<{ plan: Plan; hasSubscription: boolean }> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity?.orgId) return { plan: "free", hasSubscription: false };
+    let tenantId: string;
+    try {
+      const caller = await getCallerIdentity(ctx);
+      tenantId = caller.tenantId;
+    } catch {
+      return { plan: "free", hasSubscription: false };
+    }
     const tenant = await ctx.db
       .query("tenants")
-      .withIndex("by_tenantId", (q) => q.eq("tenantId", identity.orgId as string))
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
       .first();
     return {
       plan: (tenant?.plan as Plan) ?? "free",

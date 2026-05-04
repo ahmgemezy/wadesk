@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "clerk": {
+      "source": "/var/folders/yx/kdk8s_n55png2yf_5k1x47lr0000gn/T/clerk-skill-onyEFR",
+      "sourceType": "local",
+      "computedHash": "e848b7e83b791af39aece9185f733cc663c6b464caf9e1d339524a3bfed3c011"
+    },
     "convex": {
       "source": "get-convex/agent-skills",
       "sourceType": "github",
