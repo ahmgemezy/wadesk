@@ -180,7 +180,7 @@ export const notifySend = internalAction({
     });
     const templateKey = mapEventToTemplateKey(args.eventType);
     if (!templateKey) {
-      // Event has no email template yet (e.g. csat_received before Stage 6).
+      // Event has no email template yet (e.g. csat_received before Stage 5).
       // Silent skip — in-app row already fired.
       return;
     }
@@ -207,7 +207,7 @@ export const notifySend = internalAction({
   handler: async (ctx, args) => {
     const templateKey = mapEventToTemplateKey(args.eventType);
     if (!templateKey) {
-      // Event has no email template yet (e.g. csat_received before Stage 6).
+      // Event has no email template yet (e.g. csat_received before Stage 5).
       // Silent skip — in-app row already fired.
       return;
     }
@@ -447,7 +447,7 @@ Each M-site replaces its existing `ctx.db.insert("notifications", ...)` (or `ctx
 
 - `referenceId: conversationId as unknown as string` — preserve the existing cast verbatim. `conversationId` is a typed Convex Id; the cast is pre-existing tech debt not in scope for this stage (CLAUDE.md §30.6 surgical changes).
 - The Arabic message body is preserved verbatim — see Stage 0 Risk Flag 9 (codebase-wide Arabic-only bell text) is not in Stage 2 scope.
-- `mapEventToTemplateKey("followup_due")` returns `"followup_due_sent"`. The "sent vs failed" distinction at the template level is lost in Stage 2 — both M2 (sent) and M3 (failed) route to the same template. This is a known limitation tracked for Stage 6 (template work). For Stage 2, the in-app row carries the correct Arabic message, so users still see the distinction in the bell.
+- `mapEventToTemplateKey("followup_due")` returns `"followup_due_sent"`. The "sent vs failed" distinction at the template level is lost in Stage 2 — both M2 (sent) and M3 (failed) route to the same template. This is a known limitation tracked for Stage 5 (template work). For Stage 2, the in-app row carries the correct Arabic message, so users still see the distinction in the bell.
 
 ---
 
@@ -457,7 +457,7 @@ Each M-site replaces its existing `ctx.db.insert("notifications", ...)` (or `ctx
 - **Function kind:** mutation context.
 - **Recipient pattern:** single — `followUp.assignedTo`.
 - **eventType:** `followup_due`.
-- **Email behavior:** previously `followupDueEmail` with `status: "failed"` → `templateKey: "followup_due_failed"`. After migration: see M2 notes — `notifySend` returns `"followup_due_sent"` (the only mapping). Stage 6 may add a per-event variant.
+- **Email behavior:** previously `followupDueEmail` with `status: "failed"` → `templateKey: "followup_due_failed"`. After migration: see M2 notes — `notifySend` returns `"followup_due_sent"` (the only mapping). Stage 5 may add a per-event variant.
 
 #### BEFORE — lines 297–326
 
@@ -540,7 +540,7 @@ Each M-site replaces its existing `ctx.db.insert("notifications", ...)` (or `ctx
 - **Function kind:** mutation context.
 - **Recipient pattern:** array fan-out. Currently uses `Promise.all(recipients.map(userId => ctx.db.insert(...)))`. Convert to a sequential `for` loop because `notifyDispatch` includes scheduler calls that may benefit from sequential execution and easier error attribution. (`Promise.all` of `runMutation` works but is harder to debug.)
 - **eventType:** `conversation_transferred`.
-- **Email behavior:** none previously — this site only inserted in-app rows. After migration, the email channel becomes available for users who opt in (default OFF per Stage 1 Section 2). No template mapping yet (`mapEventToTemplateKey("conversation_transferred")` returns `null`), so Stage 6 will fill in the template; until then `notifySend` silent-skips email even when the user has opted in. **This is intentional** — the in-app row still fires.
+- **Email behavior:** none previously — this site only inserted in-app rows. After migration, the email channel becomes available for users who opt in (default OFF per Stage 1 Section 2). No template mapping yet (`mapEventToTemplateKey("conversation_transferred")` returns `null`), so Stage 5 will fill in the template; until then `notifySend` silent-skips email even when the user has opted in. **This is intentional** — the in-app row still fires.
 
 #### BEFORE — lines 636–663
 
@@ -667,7 +667,7 @@ Each M-site replaces its existing `ctx.db.insert("notifications", ...)` (or `ctx
 
 #### Notes
 
-- `eventType: "conversation_assigned"` — note this differs from the pre-existing `type: "new_assignment"` literal. The schema's notifications.type union still accepts `new_assignment`, but `notifyDispatch` writes `type: args.eventType` → `"conversation_assigned"`. This means **new in-app rows for assignments will use the new literal**, while pre-Stage-2 rows in the database keep `"new_assignment"`. The bell UI ([components/settings/notifications-settings.tsx:181-208](components/settings/notifications-settings.tsx#L181-L208)) does not currently render either of these literals — it only renders `sla_breach`, `channel_expiring_soon`, `channel_deleted`, `conversation_transferred`, `conversation_reopened` badges. Stage 5 (UI) will add a `conversation_assigned` badge. Until then, the message body still appears in the bell — only the icon is missing. **See Section 0.5 — both literals (`"new_assignment"` and `"conversation_assigned"`) must be in the schema's `notifications.type` union BEFORE this site is migrated; Section 0.5's schema amendment is a hard prerequisite.**
+- `eventType: "conversation_assigned"` — note this differs from the pre-existing `type: "new_assignment"` literal. The schema's notifications.type union still accepts `new_assignment`, but `notifyDispatch` writes `type: args.eventType` → `"conversation_assigned"`. This means **new in-app rows for assignments will use the new literal**, while pre-Stage-2 rows in the database keep `"new_assignment"`. The bell UI ([components/settings/notifications-settings.tsx:181-208](components/settings/notifications-settings.tsx#L181-L208)) does not currently render either of these literals — it only renders `sla_breach`, `channel_expiring_soon`, `channel_deleted`, `conversation_transferred`, `conversation_reopened` badges. Stage 4 (UI) will add a `conversation_assigned` badge. Until then, the message body still appears in the bell — only the icon is missing. **See Section 0.5 — both literals (`"new_assignment"` and `"conversation_assigned"`) must be in the schema's `notifications.type` union BEFORE this site is migrated; Section 0.5's schema amendment is a hard prerequisite.**
 - The `channel` lookup is needed for the `channelName` email variable. Reuse `conversation.channelId` from the surrounding handler scope (`conversation` was loaded earlier in `transferToDepartment`). **Read the file first** to confirm `conversation` is still in scope at line 665 — it is, per the read above.
 
 ---
@@ -678,7 +678,7 @@ Each M-site replaces its existing `ctx.db.insert("notifications", ...)` (or `ctx
 - **Function kind:** mutation context.
 - **Recipient pattern:** single — `conversation.assignedAgentId`. Block is gated on `if (conversation.assignedAgentId) { ... }`.
 - **eventType:** `conversation_reopened`.
-- **Email behavior:** none previously. After migration, opt-in (default OFF). No template yet (`mapEventToTemplateKey("conversation_reopened")` → null). Email silent-skips even when user opts in until Stage 6.
+- **Email behavior:** none previously. After migration, opt-in (default OFF). No template yet (`mapEventToTemplateKey("conversation_reopened")` → null). Email silent-skips even when user opts in until Stage 5.
 
 #### BEFORE — lines 326–337
 
@@ -951,7 +951,7 @@ Each M-site replaces its existing `ctx.db.insert("notifications", ...)` (or `ctx
 
 - `internal` is already imported at [convex/csat.ts:9](convex/csat.ts#L9).
 - The contact lookup is needed because `checkAndRecordResponse`'s upper scope already loaded `contact` at line 180-186, but that variable shadows would conflict with the existing `contact` binding. Using a new `csatContact` local avoids shadowing and matches the surgical-change rule.
-- `csat_received` has no email template yet (Stage 6). `notifySend` silent-skips when the user has opted in but no template exists. This is the documented behavior — in-app row still fires.
+- `csat_received` has no email template yet (Stage 5). `notifySend` silent-skips when the user has opted in but no template exists. This is the documented behavior — in-app row still fires.
 - This site closes Stage 0 Risk Flag 3.
 
 ---
@@ -1019,7 +1019,7 @@ These sites are NOT migrated to `notifyDispatch`. They are either transactional 
 
 - This is a single-line semantic change. `internalCreate`'s validator includes `channel_token_expired` after Stage 1 Section 5a — confirm by re-reading that section's AFTER block.
 - Pre-existing rows in the `notifications` table with `type: "channel_expiring_soon"` are NOT migrated. They keep their original literal forever. This is the correct behavior — they refer to retention warnings (true semantic for that literal); only future token-expired events get the new literal.
-- The bell UI ([components/settings/notifications-settings.tsx:187-192](components/settings/notifications-settings.tsx#L187-L192)) currently renders a "Channel Expiring" badge for `type === "channel_expiring_soon"`. Stage 5 will add a separate "Token Expired — reconnect required" badge for `channel_token_expired`. Until Stage 5, the new-literal rows render with no badge, only the message body. This is acceptable for v1 (the message is self-explanatory in Arabic).
+- The bell UI ([components/settings/notifications-settings.tsx:187-192](components/settings/notifications-settings.tsx#L187-L192)) currently renders a "Channel Expiring" badge for `type === "channel_expiring_soon"`. Stage 4 will add a separate "Token Expired — reconnect required" badge for `channel_token_expired`. Until Stage 4, the new-literal rows render with no badge, only the message body. This is acceptable for v1 (the message is self-explanatory in Arabic).
 
 ### Site T5 — [convex/billing.ts:248-258](convex/billing.ts#L248-L258) (billing_subscription_expired)
 
@@ -1136,9 +1136,9 @@ Order reminder: **Section 0 → M1 → M2 → M3 → M4 → M5 → M6 → A1 →
 
 4. **The `followUps.ts:476` site (T4) is not user-toggleable** even though its post-rename literal `channel_token_expired` looks like it could be. It is excluded from `TOGGLEABLE_EVENT_TYPES` per Stage 1 Section 2. The change in T4 is purely semantic correctness (right literal for the event), not a routing change.
 
-5. **The bell UI does not render a `conversation_assigned` badge** — only the message body. Stage 5 (UI) adds the badge. Until then, M5 + A1 + A2 produce in-app rows that look slightly less informative than `conversation_transferred` rows. Acceptable for v1.
+5. **The bell UI does not render a `conversation_assigned` badge** — only the message body. Stage 4 (UI) adds the badge. Until then, M5 + A1 + A2 produce in-app rows that look slightly less informative than `conversation_transferred` rows. Acceptable for v1.
 
-6. **`mapEventToTemplateKey` returns `null` for `conversation_transferred`, `conversation_reopened`, `csat_received`.** This means `notifySend` silent-skips email for those events even when the user has opted in via the preferences UI. **This is intentional for Stage 2** — Stage 6 fills in the templates and removes the null returns. Anyone reviewing the deployment behavior should understand: M4, M6, A3 have working in-app notifications and ineffective email toggles until Stage 6.
+6. **`mapEventToTemplateKey` returns `null` for `conversation_transferred`, `conversation_reopened`, `csat_received`.** This means `notifySend` silent-skips email for those events even when the user has opted in via the preferences UI. **This is intentional for Stage 2** — Stage 5 fills in the templates and removes the null returns. Anyone reviewing the deployment behavior should understand: M4, M6, A3 have working in-app notifications and ineffective email toggles until Stage 5.
 
 7. **Stage 0 Risk Flag 9 is not addressed in Stage 2.** Hardcoded Arabic message bodies at M2/M3/T4 remain Arabic-only in the bell. English-locale users see Arabic for these events. Pre-existing tech debt; not in scope (CLAUDE.md §30.3).
 
