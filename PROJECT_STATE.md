@@ -304,15 +304,36 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 
 ### ✅ SLA Monitoring
 
-- **File:** `components/inbox/conversation-header.tsx` (displays breach indicator)
+- **File:** `components/inbox/conversation-list-item.tsx` (renders breach badge via `slaBreachedAt`)
 - **Backend:** `convex/sla.ts`
-- **Status:** ⚠️ Complete but breach clearing logic unclear
+- **Status:** ✅ Complete
 - **Features:**
   - Per-channel SLA threshold configuration (minutes)
-  - 5-minute cron job checking for breaches
+  - 5-minute cron job checking for breaches (`check-sla-breaches`)
   - Breach marked on open conversations where `lastInboundAt` exceeded threshold
-  - Supervisor notifications (in-app) — `convex/notifications.ts`
-  - **Known Issue:** Breach is set but unclear where/when it's cleared (possibly on agent reply in `messages.ts:89`)
+  - Supervisor notifications (in-app + email) — `convex/notifications.ts:notifyDispatch`, event type `sla_breach`
+  - Growth+ plan gate: `sla_breach` is in `GROWTH_PLUS_ONLY_EVENTS`
+
+### ✅ SLA Breach Clearing
+
+- **Backend:** `convex/messages.ts`, `convex/inbox.ts`
+- **Status:** ✅ Complete (verified 2026-05-05)
+- **Where breach is SET:** `convex/sla.ts:checkBreaches` (internalMutation, runs every 5 min via `check-sla-breaches` cron) — sets `conversations.slaBreachedAt = now` when `lastInboundAt` is older than `channel.slaThresholdMinutes`
+- **Where breach is CLEARED (6 paths):**
+  - `convex/messages.ts:sendReply` line 105 — agent text reply
+  - `convex/messages.ts:sendQuotedReply` line 724 — agent quoted reply
+  - `convex/messages.ts:sendLocationReply` line 409 — agent location reply
+  - `convex/messages.ts:insertMediaMessage` line 562 — agent media reply (called by `sendMediaReply` action)
+  - `convex/inbox.ts:sendMessage` line 237 — agent text reply via inbox (reply type only, not notes)
+  - `convex/messages.ts:createInbound` line 284 — when a resolved+breached conversation is reopened by a new customer inbound
+- **Deliberately does NOT clear on:**
+  - `convex/messages.ts:addInternalNote` — internal notes are not visible to the customer; no SLA semantics
+  - `convex/messages.ts:createOutboundForward` — forward is a system-initiated status transition
+  - `convex/automations.ts:fireAutomatedReply` (`authorId: "automation"`) — automation auto-responses are not agent attention
+  - `convex/csat.ts:markCsatSent` — sent after resolution; system-initiated
+  - `convex/actions/processBroadcastBatch.ts` — bulk sends; no conversation row patched
+  - `convex/messageScheduling.ts:processScheduledMessages` — automated dispatch of pre-scheduled messages
+- **Notification on clear:** Silent — original `sla_breach` notification stays in log; no "breach resolved" event fires
 
 ### ✅ Analytics Dashboard
 
@@ -606,34 +627,29 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
    - **Fix Required:** Submit the CSAT button template to Meta for approval; update `sendCSATRequest` to use the approved template ID once approved
    - **Status:** ⚠️ v2 sends button template (correct approach), but Meta approval pending
 
-2. **SLA Breach Clearing Logic Unclear**
-   - **File:** `convex/sla.ts`, `convex/messages.ts:89`
-   - **Issue:** Breach is marked but unclear when/where it's cleared (possibly on agent reply)
-   - **Fix Required:** Explicitly clear `slaBreachedAt` on agent reply + document behavior
-
 ### ⚠️ Medium Priority Issues
 
-3. **Follow-up Auto-Churn Too Aggressive**
+2. **Follow-up Auto-Churn Too Aggressive**
    - **File:** `convex/followUps.ts`
    - **Issue:** `MAX_ATTEMPTS=2` is hardcoded — auto-churn may be too aggressive for some use cases
    - **Fix Required:** Make retry count configurable per tenant or per follow-up
 
-4. **Business Hours Timezone Validation**
+3. **Business Hours Timezone Validation**
    - **File:** `lib/automationHelpers.ts`
    - **Issue:** Uses `Intl.DateTimeFormat` for timezone validation — non-standard for schedule validation
    - **Fix Required:** Consider using a dedicated timezone library (e.g., `date-fns-tz`) for robustness
 
-5. **Round-Robin Empty Members Handling**
+4. **Round-Robin Empty Members Handling**
    - **File:** `convex/actions/roundRobin.ts`
    - **Issue:** If a channel has 0 members, round-robin may fail or leave conversation unassigned
    - **Status:** Needs verification — may already handle gracefully by leaving unassigned
 
-6. **Token Encryption Consistency**
+5. **Token Encryption Consistency**
    - **File:** `convex/lib/encryption.ts`, `convex/channels.ts`
    - **Issue:** Need to verify all places that store/retrieve `accessToken` use encryption helpers consistently
    - **Status:** Spot-check completed (looks good), but full audit recommended before production
 
-7. **Orphaned Channel References in Conversations**
+6. **Orphaned Channel References in Conversations**
    - **File:** `convex/conversations.ts`, `convex/departments.ts`
    - **Issue:** Some conversations may reference channelIds that no longer exist (orphaned data)
    - **Fix Applied:** `departments.listForTransfer` now returns empty array instead of throwing NOT_FOUND
@@ -716,6 +732,17 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 10 Sessions)
+
+### 2026-05-05: SLA Breach Clearing — Verification + Documentation Cleanup
+
+- ✅ SLA breach clearing verified — implementation already complete across 6 paths in `convex/messages.ts` and `convex/inbox.ts`; no code change required
+- ✅ Documentation drift in §5 issue #2 corrected; issue removed (was stale — clearing was already implemented; `PROJECT_STATE.md` reference to `messages.ts:89` was approximate and misleading)
+- ✅ 4 edge-case paths verified as correctly non-clearing: scheduled message dispatch (`messageScheduling.ts:processScheduledMessages`), CSAT auto-send (`csat.ts:markCsatSent`), broadcast batch send (`processBroadcastBatch.ts` — never touches `conversations` table), automation auto-response (`automations.ts:fireAutomatedReply`, `authorId: "automation"`)
+- ✅ `convex/sla.ts` file-level comment updated to list all 6 clearing paths accurately (previously listed 5; missing `createInbound` reopen-of-resolved branch); also documents 6 explicitly non-clearing paths
+- ✅ New `### ✅ SLA Breach Clearing` subsection added to §4 with complete path documentation
+- ✅ `### ✅ SLA Monitoring` §4 entry status corrected from ⚠️ → ✅; Known Issue line removed
+- ✅ §5 Medium Priority items renumbered 2–6 (sequential after Critical item #1)
+- TypeScript: 0 errors (comment-only change to `convex/sla.ts`)
 
 ### 2026-05-04: Notification Preferences System
 

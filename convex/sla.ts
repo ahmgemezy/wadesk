@@ -6,9 +6,13 @@
 // it marks the conversation as breached and sends in-app notifications to
 // channel supervisors.
 //
-// Breach is cleared automatically when an agent sends a reply
-// (handled in messages.ts sendReply, sendQuotedReply, sendLocationReply, insertMediaMessage
-// and inbox.ts sendMessage).
+// Breach is cleared automatically when an agent sends a reply. Clearing paths:
+//   messages.ts  sendReply (line 105), sendQuotedReply (line 724),
+//                sendLocationReply (line 409), insertMediaMessage (line 562)
+//   inbox.ts     sendMessage (line 237) — reply type only, not internal notes
+//   messages.ts  createInbound (line 284) — reopen-of-resolved branch only
+// Does NOT clear on: internal notes, assignment changes, status changes,
+// automation auto-responses, CSAT sends, broadcast sends, scheduled message dispatch.
 
 import { v, ConvexError } from "convex/values";
 import { mutation, internalMutation } from "./_generated/server";

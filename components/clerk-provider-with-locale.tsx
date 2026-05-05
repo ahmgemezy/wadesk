@@ -24,7 +24,11 @@ export function ClerkProviderWithLocale({
   }, []);
 
   return (
-    <ClerkProvider localization={locale === "ar" ? arSA : enUS}>
+    <ClerkProvider
+      localization={locale === "ar" ? arSA : enUS}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+    >
       {children}
     </ClerkProvider>
   );

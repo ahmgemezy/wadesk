@@ -18,6 +18,16 @@
 
 ## ✅ Completed Tasks
 
+### 2026-05-05: SLA Breach Clearing — Verification + Doc Cleanup (No Code Change)
+
+Originally scoped as a bug fix (PROJECT_STATE.md §5 issue #2: "SLA breach clearing logic unclear"). Stage-gated investigation revealed the clearing was already fully implemented — the §5 entry was stale documentation drift, not an unfixed bug. Scope was re-narrowed to verification + docs only.
+
+- Verified 6 clearing paths in `convex/messages.ts` (sendReply:105, sendQuotedReply:724, sendLocationReply:409, insertMediaMessage:562, createInbound:284) and `convex/inbox.ts` (sendMessage:237)
+- Verified 4 edge-case paths correctly do NOT clear: scheduled message dispatch, CSAT auto-send, broadcast batch send, automation auto-response
+- Updated `convex/sla.ts` file-level comment (lines 9–15): now lists all 6 clearing paths + 6 non-clearing paths explicitly; previously listed 5 paths and was missing `createInbound` reopen branch
+- Removed stale §5 issue #2 from PROJECT_STATE.md; added `### ✅ SLA Breach Clearing` documentation section to §4; corrected SLA Monitoring status ⚠️ → ✅; added §8 session entry; renumbered Medium Priority items 2–6
+- TypeScript: 0 errors (comment-only edit)
+
 ### Core Infrastructure
 
 **Multi-Tenant Auth (Clerk + Convex)**

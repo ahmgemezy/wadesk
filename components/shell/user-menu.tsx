@@ -19,7 +19,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
   if (!isSignedIn) return null;
 
   return (
-    <div className="flex flex-col gap-1 p-2 group-data-[collapsible=icon]:items-center">
+    <div className="flex flex-col gap-1 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:items-center">
       {/* Avatar + info row — hidden when collapsed to icon */}
       <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
         {user.imageUrl && (
@@ -41,13 +41,15 @@ export function UserMenu({ user, locale }: UserMenuProps) {
         </div>
       </div>
 
-      {/* Avatar only when collapsed */}
+      {/* Avatar only when collapsed — centered in the icon-width sidebar */}
       {user.imageUrl && (
-        <img
-          src={user.imageUrl}
-          alt={user.name}
-          className="hidden size-8 shrink-0 rounded-full group-data-[collapsible=icon]:block"
-        />
+        <div className="hidden group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:py-1">
+          <img
+            src={user.imageUrl}
+            alt={user.name}
+            className="size-7 rounded-full object-cover ring-1 ring-border"
+          />
+        </div>
       )}
 
       <div className="group-data-[collapsible=icon]:hidden">
@@ -64,7 +66,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
       </div>
 
       <SignOutButton redirectUrl="/">
-        <button className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full group-data-[collapsible=icon]:justify-center">
+        <button className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-full">
           <LogOut className="size-4 shrink-0 rtl:scale-x-[-1]" />
           <span className="group-data-[collapsible=icon]:hidden">
             {locale === "ar" ? "تسجيل الخروج" : "Sign Out"}

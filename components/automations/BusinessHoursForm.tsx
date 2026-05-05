@@ -13,14 +13,14 @@ import { TIMEZONES, getTimezoneLabel, type TimezoneEntry } from "@/lib/timezones
 import type { DayKey, BusinessHoursSchedule, DaySchedule } from "@/lib/automationHelpers";
 import { Clock } from "lucide-react";
 
-const DAYS: { key: DayKey; ar: string }[] = [
-  { key: "sat", ar: "السبت" },
-  { key: "sun", ar: "الأحد" },
-  { key: "mon", ar: "الاثنين" },
-  { key: "tue", ar: "الثلاثاء" },
-  { key: "wed", ar: "الأربعاء" },
-  { key: "thu", ar: "الخميس" },
-  { key: "fri", ar: "الجمعة" },
+const DAYS: { key: DayKey; ar: string; en: string }[] = [
+  { key: "sat", ar: "السبت", en: "Saturday" },
+  { key: "sun", ar: "الأحد", en: "Sunday" },
+  { key: "mon", ar: "الاثنين", en: "Monday" },
+  { key: "tue", ar: "الثلاثاء", en: "Tuesday" },
+  { key: "wed", ar: "الأربعاء", en: "Wednesday" },
+  { key: "thu", ar: "الخميس", en: "Thursday" },
+  { key: "fri", ar: "الجمعة", en: "Friday" },
 ];
 
 const _tzLabelsCache: Map<string, { ar: string; en: string }> = new Map();
@@ -171,7 +171,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
                   disabled={!isAdmin}
                 />
                 <span className="w-20 text-sm font-cairo font-medium">
-                  {day.ar}
+                  {locale === "ar" ? day.ar : day.en}
                 </span>
                 <div className="flex items-center gap-2 ms-auto">
                   {daySchedule.open === "00:00" && daySchedule.close === "23:59" ? (

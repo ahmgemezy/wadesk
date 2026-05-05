@@ -203,3 +203,39 @@
     background-image: linear-gradient(180deg, #1e2030 0%, #14151d 100%);
   }
 }
+
+/* ─── Clerk badge override (Last used / آخر استخدام) ────────── */
+/* Apple light card — badge text uses Apple secondary gray */
+.cl-badge,
+.cl-badge *,
+[class*="cl-badge"],
+[class*="cl-badge"] *,
+[class*="cl-internal-badge"],
+[class*="cl-internal-badge"] *,
+[data-localization-key*="lastUsed"],
+[data-localization-key*="badge"],
+[data-localization-key*="badge"] * {
+  color: #6E6E73 !important;
+}
+
+/* ─── Auth page animations ──────────────────────────────────── */
+@keyframes wab-bubble-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+@keyframes wab-float {
+  0%, 100% { transform: translateY(0);   }
+  50%      { transform: translateY(-7px); }
+}
+.wab-bubble-1 { animation: wab-bubble-in 0.45s cubic-bezier(0.22,1,0.36,1) 0.5s  both; }
+.wab-bubble-2 { animation: wab-bubble-in 0.45s cubic-bezier(0.22,1,0.36,1) 0.85s both; }
+.wab-bubble-3 { animation: wab-bubble-in 0.45s cubic-bezier(0.22,1,0.36,1) 1.2s  both; }
+.wab-bubble-4 { animation: wab-bubble-in 0.45s cubic-bezier(0.22,1,0.36,1) 1.6s  both; }
+.wab-float    { animation: wab-float 7s ease-in-out infinite; }
+
+/* ─── Brand panel: aurora gradient shift ────────────────────── */
+@keyframes wab-aurora-shift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
