@@ -1,6 +1,8 @@
 "use client";
 
 import { useSyncExternalStore, useEffect, useCallback } from "react";
+import { setLocale as setLocaleCookie } from "@/lib/shell/locale-action";
+import { LOCALE_CHANGE_EVENT } from "@/components/clerk-provider-with-locale";
 
 type MarketingLocale = "ar" | "en";
 
@@ -97,6 +99,8 @@ function useMarketingLocale() {
     _locale = newLocale;
     localStorage.setItem(STORAGE_KEY, newLocale);
     _listeners.forEach((l) => l());
+    setLocaleCookie(newLocale);
+    window.dispatchEvent(new CustomEvent(LOCALE_CHANGE_EVENT, { detail: newLocale }));
   }, []);
 
   return { locale, setLocale };

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProviderWithLocale } from "@/components/clerk-provider-with-locale";
 import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { cookies } from "next/headers";
 import Script from "next/script";
@@ -44,7 +44,7 @@ export default async function RootLayout({
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
-    <ClerkProvider>
+    <ClerkProviderWithLocale locale={locale}>
       <html lang={locale} dir={dir} suppressHydrationWarning>
         <head>
           {/* Google Consent Mode v2 — must run before any GTM/GA script. Content is
@@ -65,6 +65,6 @@ export default async function RootLayout({
           </ConvexClientProvider>
         </body>
       </html>
-    </ClerkProvider>
+    </ClerkProviderWithLocale>
   );
 }

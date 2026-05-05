@@ -83,7 +83,7 @@ export const getTenantInternal = internalQuery({
 
 export const getSubscriptionStatus = query({
   args: {},
-  handler: async (ctx): Promise<{ plan: Plan; hasSubscription: boolean }> => {
+  handler: async (ctx): Promise<{ plan: Plan; hasSubscription: boolean; paymentStatus?: "past_due" }> => {
     let tenantId: string;
     try {
       const caller = await getCallerIdentity(ctx);
@@ -98,6 +98,7 @@ export const getSubscriptionStatus = query({
     return {
       plan: (tenant?.plan as Plan) ?? "free",
       hasSubscription: !!tenant?.paddle_subscription_id,
+      paymentStatus: tenant?.paymentStatus as "past_due" | undefined,
     };
   },
 });

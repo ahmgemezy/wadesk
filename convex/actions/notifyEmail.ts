@@ -111,6 +111,28 @@ export const billingSubscriptionExpiredEmail = internalAction({
   },
 });
 
+export const billingRenewalReceiptEmail = internalAction({
+  args: {
+    tenantId: v.string(),
+    planName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const [adminEmails, orgName, locale] = await Promise.all([
+      getAdminEmails(args.tenantId),
+      resolveOrgName(args.tenantId),
+      ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
+    ]);
+    for (const { email } of adminEmails) {
+      await ctx.runAction(internal.actions.sendEmail.sendEmail, {
+        to: email,
+        templateKey: "billing_renewal_receipt",
+        locale,
+        variables: { orgName, planName: args.planName },
+      });
+    }
+  },
+});
+
 /**
  * Generic notification email dispatcher. Resolves the recipient's email from
  * Clerk (via the lib/emailHelpers helper, which uses @clerk/nextjs/server),

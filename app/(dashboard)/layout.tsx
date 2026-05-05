@@ -14,6 +14,7 @@ import { ClientNotificationBell } from "@/components/shell/client-notification-b
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
 import { PaddleProvider } from "@/components/paddle-provider";
+import { PastDueBanner } from "@/components/shell/past-due-banner";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { TeamPresenceDropdown } from "@/components/ui/team-presence-dropdown";
 import { PresenceInitializer } from "@/components/shell/presence-initializer";
@@ -58,9 +59,19 @@ export default async function DashboardLayout({
   if (orgRole !== "org:agent") {
     const token = await getToken({ template: "convex" });
     if (token) {
-      const state = await fetchQuery(api.onboarding.getState, {}, { token });
-      if (!state || !state.completedSteps.includes("onboarding_complete")) {
-        redirect("/onboarding");
+      try {
+        const state = await fetchQuery(api.onboarding.getState, {}, { token });
+        if (!state || !state.completedSteps.includes("onboarding_complete")) {
+          redirect("/onboarding");
+        }
+      } catch (err: unknown) {
+        const data = (err as { data?: string })?.data;
+        if (data === "NO_ORG") {
+          // JWT doesn't carry org claims yet — session and token are out of sync;
+          // force re-activation of the org context.
+          redirect("/select-org");
+        }
+        throw err;
       }
     }
   }
@@ -96,6 +107,7 @@ export default async function DashboardLayout({
         </header>
         <div className="flex-1 overflow-y-auto min-h-0 pb-16 md:pb-0">
           <ConvexAuthGuard>
+            <PastDueBanner />
             <PresenceInitializer />
             {children}
             <PaddleProvider />

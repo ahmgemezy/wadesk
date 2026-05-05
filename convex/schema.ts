@@ -20,6 +20,7 @@ export default defineSchema({
       ar: v.string(),
       en: v.string(),
     })),
+    paymentStatus: v.optional(v.literal("past_due")),
   })
     .index("by_tenantId", ["tenantId"]),
 

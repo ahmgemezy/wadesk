@@ -34,7 +34,7 @@ function resolveOrgRole(identity: Record<string, unknown>): OrgRole {
   return normalizeOrgRole(o?.rol);
 }
 
-export async function getCallerIdentity(ctx: Ctx) {
+export async function getCallerIdentity(ctx: Ctx | GenericActionCtx<DataModel>) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new ConvexError("UNAUTHORIZED");

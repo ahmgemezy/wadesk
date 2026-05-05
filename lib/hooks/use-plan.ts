@@ -10,10 +10,11 @@ export function usePlan() {
   const plan: Plan = status?.plan ?? "free";
   const isPaid = plan !== "free";
   const hasSubscription = status?.hasSubscription ?? false;
+  const isPaymentPastDue = status?.paymentStatus === "past_due";
 
   function atLeast(required: Plan): boolean {
     return PLAN_RANK[plan] >= PLAN_RANK[required];
   }
 
-  return { plan, isPaid, hasSubscription, atLeast };
+  return { plan, isPaid, hasSubscription, isPaymentPastDue, atLeast };
 }

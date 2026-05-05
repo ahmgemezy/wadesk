@@ -12,6 +12,7 @@ import { NewAssignment } from "../emails/templates/newAssignment";
 import { AgentWelcome } from "../emails/templates/agentWelcome";
 import { BillingPaymentFailed } from "../emails/templates/billingPaymentFailed";
 import { BillingSubscriptionExpired } from "../emails/templates/billingSubscriptionExpired";
+import { BillingRenewalReceipt } from "../emails/templates/billingRenewalReceipt";
 import { ConversationTransferred } from "../emails/templates/conversationTransferred";
 import { ConversationReopened } from "../emails/templates/conversationReopened";
 import { CsatReceived } from "../emails/templates/csatReceived";
@@ -52,6 +53,10 @@ const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
   billing_subscription_expired: {
     ar: "انتهت صلاحية الاشتراك",
     en: "Your Subscription Has Expired",
+  },
+  billing_renewal_receipt: {
+    ar: "تم تجديد اشتراكك بنجاح",
+    en: "Your Subscription Has Been Renewed",
   },
   conversation_transferred: {
     ar: "تم تحويل محادثة مع {{contactName}} إلى فريقك",
@@ -104,6 +109,8 @@ function buildElement(
       return React.createElement(BillingPaymentFailed, props);
     case "billing_subscription_expired":
       return React.createElement(BillingSubscriptionExpired, props);
+    case "billing_renewal_receipt":
+      return React.createElement(BillingRenewalReceipt, props);
     case "conversation_transferred":
       return React.createElement(ConversationTransferred, props);
     case "conversation_reopened":
@@ -141,6 +148,7 @@ export const sendEmail = internalAction({
     const BILLING_TEMPLATES = new Set([
       "billing_payment_failed",
       "billing_subscription_expired",
+      "billing_renewal_receipt",
     ]);
     const ALERT_TEMPLATES = new Set([
       "channel_expiring_soon",

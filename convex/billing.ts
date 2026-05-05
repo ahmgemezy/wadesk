@@ -159,6 +159,21 @@ export const getCustomerPortalUrl = action({
   },
 });
 
+export const setPaymentStatus = internalMutation({
+  args: {
+    tenantId: v.string(),
+    paymentStatus: v.optional(v.literal("past_due")),
+  },
+  handler: async (ctx, args) => {
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", args.tenantId))
+      .first();
+    if (!tenant) return;
+    await ctx.db.patch(tenant._id, { paymentStatus: args.paymentStatus });
+  },
+});
+
 export const handlePaddleEvent = internalMutation({
   args: {
     tenantId: v.string(),
@@ -210,8 +225,9 @@ export const paddleWebhook = httpAction(async (ctx, request) => {
     data: {
       id: string;
       customer_id: string;
+      subscription_id?: string | null;
       items?: { price: { id: string } }[];
-      custom_data?: { tenantId?: string };
+      custom_data?: { tenantId?: string } | null;
     };
   };
 
@@ -225,8 +241,11 @@ export const paddleWebhook = httpAction(async (ctx, request) => {
 
   let resolvedTenantId = data.custom_data?.tenantId;
   if (!resolvedTenantId) {
+    // For subscription events data.id is the subscription ID.
+    // For transaction events (billed, completed) data.subscription_id holds it.
+    const subId = data.subscription_id ?? data.id;
     const tenant = await ctx.runQuery(internal.lib.tenants.getTenantBySubscriptionId, {
-      subscriptionId: data.id,
+      subscriptionId: subId,
     });
     resolvedTenantId = tenant?.tenantId;
   }
@@ -236,7 +255,24 @@ export const paddleWebhook = httpAction(async (ctx, request) => {
     return new Response("OK", { status: 200 });
   }
 
-  if (event_type === "subscription.activated" || event_type === "subscription.updated") {
+  if (event_type === "transaction.completed") {
+    // transaction.completed fires first after checkout and always carries
+    // custom_data.tenantId (set in createCheckout). Use it to store the
+    // subscription_id so that subsequent subscription.* events can resolve
+    // the tenant via getTenantBySubscriptionId.
+    const priceId = data.items?.[0]?.price?.id ?? "";
+    const newPlan = planForPriceId(priceId);
+    if (!newPlan) {
+      console.warn("[billing] paddleWebhook: unknown priceId in transaction.completed", priceId);
+      return new Response("OK", { status: 200 });
+    }
+    await ctx.runMutation(internal.billing.handlePaddleEvent, {
+      tenantId: resolvedTenantId,
+      newPlan,
+      paddleCustomerId: data.customer_id,
+      paddleSubscriptionId: data.subscription_id ?? undefined,
+    });
+  } else if (event_type === "subscription.activated" || event_type === "subscription.updated") {
     const priceId = data.items?.[0]?.price?.id ?? "";
     const newPlan = planForPriceId(priceId);
     if (!newPlan) {
@@ -263,6 +299,33 @@ export const paddleWebhook = httpAction(async (ctx, request) => {
     await ctx.runAction(internal.actions.notifyEmail.billingSubscriptionExpiredEmail, {
       tenantId: resolvedTenantId,
       planName: canceledPlanName,
+    });
+  } else if (event_type === "subscription.past_due") {
+    await ctx.runMutation(internal.billing.setPaymentStatus, {
+      tenantId: resolvedTenantId,
+      paymentStatus: "past_due",
+    });
+  } else if (event_type === "subscription.resumed") {
+    const priceId = data.items?.[0]?.price?.id ?? "";
+    const resumedPlan = planForPriceId(priceId);
+    if (resumedPlan) {
+      await ctx.runMutation(internal.billing.handlePaddleEvent, {
+        tenantId: resolvedTenantId,
+        newPlan: resumedPlan,
+        paddleCustomerId: data.customer_id,
+        paddleSubscriptionId: data.id,
+      });
+    }
+    await ctx.runMutation(internal.billing.setPaymentStatus, {
+      tenantId: resolvedTenantId,
+      paymentStatus: undefined,
+    });
+  } else if (event_type === "transaction.billed") {
+    const priceId = data.items?.[0]?.price?.id ?? "";
+    const billedPlanName = planForPriceId(priceId) ?? "المدفوع";
+    await ctx.runAction(internal.actions.notifyEmail.billingRenewalReceiptEmail, {
+      tenantId: resolvedTenantId,
+      planName: billedPlanName,
     });
   } else if (event_type === "transaction.payment_failed") {
     const priceId = data.items?.[0]?.price?.id ?? "";

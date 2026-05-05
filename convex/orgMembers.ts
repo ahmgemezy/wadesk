@@ -4,7 +4,7 @@ import { action, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { clerkClient } from "@clerk/nextjs/server";
-import { getCallerRole, assertAdmin, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
+import { getCallerRole, getCallerIdentity, assertAdmin, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import { assertAgentLimitNotReached, assertSupervisorRoleAllowed } from "./lib/planLimits";
 import { assertNotLastAdmin } from "./lib/lastAdmin";
 import { internal } from "./_generated/api";
@@ -40,10 +40,7 @@ export const inviteByEmail = action({
       assertAdmin(role);
     }
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-    const callerId = identity.subject as string;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     const client = await clerkClient();
 
@@ -81,9 +78,7 @@ export const list = action({
       throw new ConvexError("FORBIDDEN");
     }
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const client = await clerkClient();
 
@@ -137,10 +132,7 @@ export const changeRole = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const callerId = identity.subject;
-    const tenantId = identity.orgId as string;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     if (callerId === args.targetUserId) {
       throw new ConvexError("CANNOT_CHANGE_OWN_ROLE");
@@ -194,9 +186,7 @@ export const inviteByWhatsApp = action({
       throw new ConvexError("INVALID_PHONE");
     }
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     const client = await clerkClient();
     const memberships = await client.organizations.getOrganizationMembershipList({
@@ -216,7 +206,7 @@ export const inviteByWhatsApp = action({
     } else {
       const result = await ctx.runMutation(internal.inviteLinks.ensureActive, {
         tenantId,
-        createdBy: identity.subject as string,
+        createdBy: callerId,
       });
       inviteUrl = result.url;
     }
@@ -274,10 +264,7 @@ export const removeMember = action({
     const role = await getCallerRole(ctx);
     assertAdminOrSupervisor(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const callerId = identity.subject;
-    const tenantId = identity.orgId as string;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     if (callerId === args.targetUserId) {
       throw new ConvexError("CANNOT_REMOVE_SELF");
