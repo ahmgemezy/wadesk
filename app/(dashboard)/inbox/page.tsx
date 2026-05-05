@@ -10,15 +10,13 @@ import { InboxQueueTree } from "@/components/inbox/inbox-queue-tree";
 import { ConversationThread } from "@/components/inbox/conversation-thread";
 import { MessageInput } from "@/components/inbox/message-input";
 import { StatusSelector } from "@/components/inbox/status-selector";
-import { AssignAgentDialog } from "@/components/inbox/assign-agent-dialog";
+import { TransferPicker } from "@/components/inbox/transfer-picker";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
-import { TransferDialog } from "@/components/inbox/transfer-dialog";
 import { ContactPanel } from "@/components/contacts/contact-panel";
 import { SeedButton } from "@/components/dev/seed-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
-import { ClaimButton } from "@/components/inbox/claim-button";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/context";
@@ -79,17 +77,22 @@ function InboxPageInner() {
   const handleSelect = useCallback(
     (id: string) => {
       setSelectedId(id);
-      router.replace(`/inbox?c=${id}`, { scroll: false });
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("c", id);
+      router.replace(`/inbox?${params.toString()}`, { scroll: false });
       markAsRead({ conversationId: id as Id<"conversations"> }).catch(() => {
         // non-critical — ignore
       });
     },
-    [markAsRead, router],
+    [markAsRead, router, searchParams],
   );
 
   const handleBack = () => {
     setSelectedId(null);
-    router.replace("/inbox", { scroll: false });
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("c");
+    const qs = params.toString();
+    router.replace(qs ? `/inbox?${qs}` : "/inbox", { scroll: false });
   };
 
   return (
@@ -176,32 +179,15 @@ function InboxPageInner() {
                 {/* Dev seed button */}
                 <SeedButton />
 
-                {/* Department transfer */}
-                <ClaimButton
-                  conversationId={selectedId}
-                  show={
-                    !!selectedConversation?.departmentId &&
-                    !selectedConversation?.assignedAgentId &&
-                    (!!selectedConversation?.isCurrentUserDeptMember || isPrivileged)
-                  }
-                />
-
                 {/* Controls */}
-                {selectedConversation?.status !== "forwarded" && (
+                {selectedConversation?.status !== "forwarded" && selectedConversation?.channelId && (
                   <>
-                {selectedConversation?.channelId && (
-                  <TransferDialog
-                    conversationId={selectedId}
-                    channelId={selectedConversation.channelId}
-                    currentDepartmentId={selectedConversation.departmentId}
-                  />
-                )}
                     <StatusSelector conversationId={selectedId} />
-                    <AssignAgentDialog
-                      conversationId={selectedId}
-                      currentAssigneeId={
-                        selectedConversation?.assignedAgentId ?? undefined
-                      }
+                    <TransferPicker
+                      conversationId={selectedId as Id<"conversations">}
+                      channelId={selectedConversation.channelId as Id<"channels">}
+                      currentAssigneeId={selectedConversation.assignedAgentId ?? undefined}
+                      currentDepartmentId={selectedConversation.departmentId as Id<"departments"> | undefined}
                     />
                   </>
                 )}
@@ -218,7 +204,10 @@ function InboxPageInner() {
                     onQuickReplyConsumed={() => setQuickReplyContent("")}
                     replyTo={replyTo}
                     onClearReply={() => setReplyTo(null)}
-                    isLocked={!!selectedConversation?.departmentId && !selectedConversation?.assignedAgentId}
+                    isLocked={
+                      !selectedConversation?.assignedAgentId &&
+                      (!!selectedConversation?.departmentId || selectedConversation?.assignmentType === "unassigned")
+                    }
                     isPrivileged={isPrivileged}
                     isForwarded={selectedConversation?.status === "forwarded"}
                   />

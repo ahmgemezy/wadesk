@@ -1,8 +1,14 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { query, mutation, internalMutation, internalQuery, action } from "./_generated/server";
+import type { QueryCtx, MutationCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCallerIdentity, getCallerRole, assertAdmin } from "./lib/auth";
+import {
+  closeActiveParticipantStint,
+  incrementParticipantMessageCount,
+  openParticipantStint,
+} from "./lib/participants";
 import type { Id } from "./_generated/dataModel";
 
 function isAdminOrSupervisor(orgRole: string): boolean {
@@ -10,8 +16,8 @@ function isAdminOrSupervisor(orgRole: string): boolean {
 }
 
 async function callerHasConversationAccess(
-  ctx: any,
-  conversation: { tenantId: string; assignedAgentId?: string; departmentId?: import("./_generated/dataModel").Id<"departments"> },
+  ctx: QueryCtx | MutationCtx,
+  conversation: { tenantId: string; assignedAgentId?: string; departmentId?: Id<"departments"> },
   callerId: string,
   orgRole: string,
 ): Promise<boolean> {
@@ -137,6 +143,7 @@ export const assign = mutation({
     conversationId: v.id("conversations"),
     agentId: v.optional(v.string()),
     agentName: v.optional(v.string()),
+    agentJobTitle: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -152,12 +159,25 @@ export const assign = mutation({
 
     const previousAgentId = conversation.assignedAgentId;
 
+    if (conversation.assignedAgentId) {
+      await closeActiveParticipantStint(ctx, { tenantId, conversationId: args.conversationId });
+    }
+
     await ctx.db.patch(args.conversationId, {
       assignedAgentId: args.agentId,
       assignedAt: args.agentId ? Date.now() : undefined,
       assignmentType: args.agentId ? "manual" : "unassigned",
       lastMessageAt: Date.now(),
     });
+
+    if (args.agentId) {
+      await openParticipantStint(ctx, {
+        tenantId,
+        conversationId: args.conversationId,
+        agentId: args.agentId,
+        departmentId: conversation.departmentId,
+      });
+    }
 
     if (args.agentId && args.agentId !== previousAgentId) {
       const contact = await ctx.db.get(conversation.contactId);
@@ -197,7 +217,7 @@ export const assign = mutation({
         content: "",
         contentType: "system_event",
         eventType: "agent_assigned",
-        eventData: { actorName: assignActorName, agentName: args.agentName ?? args.agentId },
+        eventData: { actorName: assignActorName, agentName: args.agentName ?? args.agentId, agentJobTitle: args.agentJobTitle },
         isInternalNote: false,
         authorId: callerId,
         status: "sent",
@@ -282,6 +302,8 @@ export const setStatus = mutation({
     if (args.status === "resolved") {
       const agentName = args.actorName ?? statusIdentity?.name ?? statusIdentity?.email ?? undefined;
 
+      await closeActiveParticipantStint(ctx, { tenantId, conversationId: args.conversationId });
+
       if (conversation.assignedAgentId) {
         await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordResolution, {
           conversationId: args.conversationId,
@@ -331,6 +353,7 @@ export const unassignAll = internalMutation({
     let count = 0;
     for (const conv of assigned) {
       if (conv.status !== "resolved") {
+        await closeActiveParticipantStint(ctx, { tenantId: args.tenantId, conversationId: conv._id });
         await ctx.db.patch(conv._id, { assignedAgentId: undefined });
         count++;
       }
@@ -475,11 +498,22 @@ export const assignInternal = internalMutation({
 
     const previousAgentId = conversation.assignedAgentId;
 
+    if (previousAgentId) {
+      await closeActiveParticipantStint(ctx, { tenantId: args.tenantId, conversationId: args.conversationId });
+    }
+
     await ctx.db.patch(args.conversationId, {
       assignedAgentId: args.agentId,
       assignedAt: Date.now(),
       assignmentType: args.assignmentType ?? "manual",
       lastMessageAt: Date.now(),
+    });
+
+    await openParticipantStint(ctx, {
+      tenantId: args.tenantId,
+      conversationId: args.conversationId,
+      agentId: args.agentId,
+      departmentId: conversation.departmentId,
     });
 
     if (args.agentId !== previousAgentId) {
@@ -505,6 +539,13 @@ export const assignInternal = internalMutation({
       });
     }
 
+    const agentProfile = await ctx.db
+      .query("memberProfiles")
+      .withIndex("by_tenant_user", (q) =>
+        q.eq("tenantId", args.tenantId).eq("userId", args.agentId),
+      )
+      .first();
+
     const nowInternal = Date.now();
     await ctx.db.insert("messages", {
       conversationId: args.conversationId,
@@ -516,6 +557,7 @@ export const assignInternal = internalMutation({
       eventData: {
         actorName: "System",
         agentName: args.agentName ?? args.agentId,
+        agentJobTitle: agentProfile?.jobTitle,
       },
       isInternalNote: false,
       status: "sent",
@@ -589,6 +631,10 @@ export const transferWithinChannel = mutation({
       ? await ctx.db.get(conversation.departmentId)
       : null;
 
+    if (conversation.assignedAgentId) {
+      await closeActiveParticipantStint(ctx, { tenantId, conversationId: args.conversationId });
+    }
+
     const now = Date.now();
     await ctx.db.patch(args.conversationId, {
       departmentId: args.targetDepartmentId,
@@ -601,8 +647,20 @@ export const transferWithinChannel = mutation({
             assignmentType: "manual" as const,
             previousAgentId: conversation.assignedAgentId,
           }
-        : {}),
+        : {
+            assignedAgentId: undefined,
+            assignmentType: "manual" as const,
+          }),
     });
+
+    if (args.assignAgentId) {
+      await openParticipantStint(ctx, {
+        tenantId,
+        conversationId: args.conversationId,
+        agentId: args.assignAgentId,
+        departmentId: args.targetDepartmentId,
+      });
+    }
 
     const identity = await ctx.auth.getUserIdentity();
     const actorName = identity?.name ?? identity?.email ?? "Someone";
@@ -610,6 +668,7 @@ export const transferWithinChannel = mutation({
     const toName = targetDept.name;
 
     let agentName: string | undefined;
+    let agentJobTitle: string | undefined;
     if (args.assignAgentId) {
       const member = await ctx.db
         .query("departmentMembers")
@@ -618,6 +677,14 @@ export const transferWithinChannel = mutation({
         )
         .first();
       agentName = member?.userName ?? args.assignAgentId;
+
+      const agentProfile = await ctx.db
+        .query("memberProfiles")
+        .withIndex("by_tenant_user", (q) =>
+          q.eq("tenantId", tenantId).eq("userId", args.assignAgentId!),
+        )
+        .first();
+      agentJobTitle = agentProfile?.jobTitle ?? undefined;
     }
 
     await ctx.db.insert("messages", {
@@ -627,7 +694,7 @@ export const transferWithinChannel = mutation({
       content: "",
       contentType: "system_event",
       eventType: "transfer_within_channel",
-      eventData: { actorName, fromDept: fromName, toDept: toName, agentName },
+      eventData: { actorName, fromDept: fromName, toDept: toName, agentName, agentJobTitle },
       isInternalNote: false,
       authorId: callerId,
       status: "sent",
@@ -656,7 +723,7 @@ export const transferWithinChannel = mutation({
       .collect();
 
     const memberIds = deptMembers.map((m) => m.userId);
-    const supervisorIds: string[] = (targetDept as any).supervisors ?? [];
+    const supervisorIds: string[] = targetDept.supervisors ?? [];
     const recipients = [...new Set([...memberIds, ...supervisorIds])].filter(
       (id) => id !== callerId && id !== args.assignAgentId,
     );
@@ -740,6 +807,20 @@ export const claim = mutation({
             lastMessageAt: now,
         });
 
+        await openParticipantStint(ctx, {
+          tenantId,
+          conversationId: args.conversationId,
+          agentId: callerId,
+          departmentId: conversation.departmentId,
+        });
+
+        const callerProfile = await ctx.db
+          .query("memberProfiles")
+          .withIndex("by_tenant_user", (q) =>
+            q.eq("tenantId", tenantId).eq("userId", callerId),
+          )
+          .first();
+
         await ctx.db.insert("messages", {
             conversationId: args.conversationId,
             tenantId,
@@ -747,7 +828,7 @@ export const claim = mutation({
             content: "",
             contentType: "system_event",
             eventType: "agent_assigned",
-            eventData: { actorName: callerName, agentName: callerName },
+            eventData: { actorName: callerName, agentName: callerName, agentJobTitle: callerProfile?.jobTitle },
             isInternalNote: false,
             authorId: callerId,
             status: "sent",
@@ -841,6 +922,11 @@ export const _finalizeForward = internalMutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
+    const conv = await ctx.db.get(args.conversationId);
+    if (!conv) return;
+
+    await closeActiveParticipantStint(ctx, { tenantId: conv.tenantId, conversationId: args.conversationId });
+
     await ctx.db.patch(args.conversationId, {
       status: "forwarded",
       forwardedToChannelId: args.targetChannelId,
@@ -851,11 +937,9 @@ export const _finalizeForward = internalMutation({
       departmentId: undefined,
     });
 
-    const conv = await ctx.db.get(args.conversationId);
-
     await ctx.db.insert("messages", {
       conversationId: args.conversationId,
-      tenantId: conv!.tenantId,
+      tenantId: conv.tenantId,
       direction: "outbound",
       content: "",
       contentType: "system_event",

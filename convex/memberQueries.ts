@@ -1,7 +1,6 @@
 import { query, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
-import { ConvexError } from "convex/values";
-import { getCallerRole, assertAdmin, assertAdminOrSupervisor } from "./lib/auth";
+import { getCallerIdentity, getCallerRole, assertAdmin, assertAdminOrSupervisor } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
 export const getMemberAnalytics = query({
@@ -14,9 +13,7 @@ export const getMemberAnalytics = query({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const metricsStream = ctx.db
       .query("conversationMetrics")
@@ -106,9 +103,7 @@ export const getMemberRecentConversations = query({
     const role = await getCallerRole(ctx);
     assertAdminOrSupervisor(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const limit = args.limit ?? 20;
 
@@ -147,9 +142,7 @@ export const getMemberAuditLog = query({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const limit = args.limit ?? 50;
 
@@ -166,9 +159,7 @@ export const getMemberAuditLog = query({
 export const getMemberChannelAssignments = internalQuery({
   args: { memberId: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const assignments = await ctx.db
       .query("channelMembers")
@@ -191,9 +182,7 @@ export const getMemberChannelAssignments = internalQuery({
 export const getMemberDeptAssignments = internalQuery({
   args: { memberId: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const assignments = await ctx.db
       .query("departmentMembers")
@@ -229,12 +218,10 @@ export const updateMemberProfile = internalMutation({
       )
       .first();
 
-    const updateData: any = {
-      updatedAt: Date.now(),
-    };
-    if (args.phone !== undefined) updateData.phone = args.phone || null;
-    if (args.jobTitle !== undefined) updateData.jobTitle = args.jobTitle || null;
-    if (args.bio !== undefined) updateData.bio = args.bio || null;
+    const updateData: Record<string, unknown> = { updatedAt: Date.now() };
+    if (args.phone !== undefined) updateData.phone = args.phone || undefined;
+    if (args.jobTitle !== undefined) updateData.jobTitle = args.jobTitle || undefined;
+    if (args.bio !== undefined) updateData.bio = args.bio || undefined;
 
     if (existing) {
       await ctx.db.patch(existing._id, updateData);
@@ -301,6 +288,42 @@ export const removeMemberFromDepartments = internalMutation({
   },
 });
 
+export const getAllMemberMetadata = internalQuery({
+  args: { tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const profiles = await ctx.db
+      .query("memberProfiles")
+      .withIndex("by_tenant_user", (q) => q.eq("tenantId", args.tenantId))
+      .collect();
+
+    const profileMap: Record<string, { jobTitle?: string | null }> = {};
+    for (const p of profiles) {
+      profileMap[p.userId] = { jobTitle: p.jobTitle ?? null };
+    }
+
+    const deptMembers = await ctx.db
+      .query("departmentMembers")
+      .withIndex("by_tenant_user", (q) => q.eq("tenantId", args.tenantId))
+      .collect();
+
+    const uniqueDeptIds = [...new Set(deptMembers.map((dm) => dm.departmentId))];
+    const depts = await Promise.all(uniqueDeptIds.map((id) => ctx.db.get(id)));
+    const deptNameMap: Record<string, string> = {};
+    for (const dept of depts) {
+      if (dept) deptNameMap[dept._id] = (dept as { name: string }).name;
+    }
+
+    const userDepts: Record<string, string[]> = {};
+    for (const dm of deptMembers) {
+      if (!userDepts[dm.userId]) userDepts[dm.userId] = [];
+      const name = deptNameMap[dm.departmentId];
+      if (name) userDepts[dm.userId].push(name);
+    }
+
+    return { profiles: profileMap, departments: userDepts };
+  },
+});
+
 export const getMemberProfile = internalQuery({
   args: {
     tenantId: v.string(),
@@ -316,23 +339,42 @@ export const getMemberProfile = internalQuery({
   },
 });
 
+export const getJobTitlesByTenant = query({
+  args: {},
+  handler: async (ctx) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const profiles = await ctx.db
+      .query("memberProfiles")
+      .withIndex("by_tenant_user", (q) => q.eq("tenantId", tenantId))
+      .take(500);
+    const map: Record<string, string | undefined> = {};
+    for (const p of profiles) {
+      map[p.userId] = p.jobTitle ?? undefined;
+    }
+    return map;
+  },
+});
+
+
 export const getAvailableChannels = query({
   args: {},
   handler: async (ctx) => {
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const channels = await ctx.db
       .query("channels")
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .take(100);
 
+    // Include active channels and legacy docs without a status field
     const activeChannels = channels.filter(
-      (ch: any) => ch.status === "active" || ch.isActive === true
+      (ch: any) =>
+        ch.status === "active" ||
+        ch.isActive === true ||
+        (ch.status == null && ch.isActive == null),
     );
 
     return activeChannels.map((ch: any) => ({
@@ -348,9 +390,7 @@ export const getAvailableDepartments = query({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const departments = await ctx.db
       .query("departments")

@@ -44,7 +44,7 @@ export function ConversationList({
   const [labelFilter, setLabelFilter] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
-  const urlScope = searchParams.get("scope") ?? "mine";
+  const urlScope = searchParams.get("scope") ?? "";
 
   const scopeFilter = (() => {
     if (urlScope === "forwarded") return { status: "forwarded" as const };
@@ -75,6 +75,11 @@ export function ConversationList({
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
   const { memberships } = useOrganization({ memberships: true });
+
+  const jobTitles = useQuery(
+    api.memberQueries.getJobTitlesByTenant,
+    isAuthenticated ? {} : "skip",
+  );
 
   // Build a userId → display name map for the assigned agent label
   const memberNames = Object.fromEntries(
@@ -162,7 +167,7 @@ export function ConversationList({
       </div>
 
       {/* Assignment filter tabs */}
-      <div className="flex flex-wrap gap-1 p-2 border-b">
+      <div className="flex gap-1 p-2 border-b overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => (
           <Button
             key={tab.value}
@@ -189,7 +194,7 @@ export function ConversationList({
       </div>
 
       {/* Stage filter tabs */}
-      <div className="flex flex-wrap gap-1 px-2 pt-2 pb-1 border-b">
+      <div className="flex gap-1 px-2 pt-2 pb-1 border-b overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {STAGE_TABS.map((tab) => (
           <button
             key={tab.value}
@@ -197,7 +202,7 @@ export function ConversationList({
             className={cn(
               "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all whitespace-nowrap",
               stageFilter === tab.value
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-[var(--shadow-xs)]"
                 : "bg-muted text-muted-foreground hover:bg-muted/80",
             )}
           >
@@ -208,13 +213,13 @@ export function ConversationList({
 
       {/* Label filter */}
       {allLabels.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-2 py-1.5 border-b">
+        <div className="flex gap-1 px-2 py-1.5 border-b overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <button
             onClick={() => setLabelFilter(null)}
             className={cn(
               "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all",
               labelFilter === null
-                ? "bg-primary text-primary-foreground shadow-sm"
+                ? "bg-primary text-primary-foreground shadow-[var(--shadow-xs)]"
                 : "bg-muted text-muted-foreground hover:bg-muted/80",
             )}
           >
@@ -227,7 +232,7 @@ export function ConversationList({
               className={cn(
                 "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all flex items-center gap-1",
                 labelFilter === label.name
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-primary text-primary-foreground shadow-[var(--shadow-xs)]"
                   : "bg-muted text-muted-foreground hover:bg-muted/80",
               )}
             >
@@ -267,6 +272,9 @@ export function ConversationList({
                 assignedAgentId: conv.assignedAgentId,
                 assignedAgentName: conv.assignedAgentId
                   ? (memberNames[conv.assignedAgentId] ?? undefined)
+                  : undefined,
+                assignedAgentJobTitle: conv.assignedAgentId
+                  ? (jobTitles?.[conv.assignedAgentId] ?? undefined)
                   : undefined,
                 lastMessagePreview: conv.lastMessagePreview,
                 lastMessageAt: conv.lastMessageAt,

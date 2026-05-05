@@ -6,9 +6,9 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization, useUser } from "@clerk/nextjs";
 import { useT, useLocale, useTranslatedLabel } from "@/lib/i18n/context";
-import { MailOpen, MailCheck, AlertTriangle, MoreHorizontal, Trash2 } from "lucide-react";
+import { MailOpen, MailCheck, AlertTriangle, MoreHorizontal, Trash2, Star } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -29,12 +29,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const AVATAR_COLORS: { bg: string; color: string }[] = [
+  { bg: "#dbeafe", color: "#1d4ed8" },
+  { bg: "#ede9fe", color: "#7c3aed" },
+  { bg: "#d1fae5", color: "#047857" },
+  { bg: "#fef3c7", color: "#b45309" },
+  { bg: "#fee2e2", color: "#b91c1c" },
+  { bg: "#e0e7ff", color: "#4338ca" },
+  { bg: "#cffafe", color: "#0e7490" },
+  { bg: "#fae8ff", color: "#a21caf" },
+];
+
+function getAvatarColor(str: string) {
+  let hash = 0;
+  for (const ch of str) hash = (hash * 31 + ch.charCodeAt(0)) & 0xffffff;
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
 interface ConversationItem {
   _id: string;
   contactName?: string;
   contactPhone?: string;
   contactAvatarInitials?: string;
   assignedAgentName?: string;
+  assignedAgentJobTitle?: string;
   lastMessagePreview: string;
   lastMessageAt: number;
   status: string;
@@ -60,6 +78,7 @@ export function ConversationListItem({
   onAssignClick,
 }: ConversationListItemProps) {
   const { membership } = useOrganization();
+  const { user } = useUser();
   const t = useT();
   const translateLabel = useTranslatedLabel();
   const locale = useLocale();
@@ -109,15 +128,14 @@ export function ConversationListItem({
         ? t("Pending", "معلق")
         : t("Resolved", "مغلق");
 
-  const statusColor =
+  const statusDotClass =
     conversation.status === "open"
-      ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
+      ? "bg-primary"
       : conversation.status === "pending"
-        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-        : "bg-muted text-muted-foreground";
+        ? "bg-warning"
+        : "bg-muted-foreground/40";
 
   const displayName = conversation.contactName ?? t("Contact", "عميل");
-  const phone = conversation.contactPhone;
   const initials =
     conversation.contactAvatarInitials ??
     displayName
@@ -126,7 +144,15 @@ export function ConversationListItem({
       .slice(0, 2)
       .join("");
 
+  const avatarColor = getAvatarColor(initials || displayName);
   const timeAgo = formatTimeAgo(conversation.lastMessageAt, locale);
+
+  const borderClass =
+    !conversation.assignedAgentId
+      ? "border-s-2 border-s-amber-500"
+      : conversation.assignedAgentId === user?.id
+        ? "border-s-2 border-s-violet-700"
+        : "border-s-2 border-s-emerald-600";
 
   return (
     <>
@@ -134,21 +160,25 @@ export function ConversationListItem({
       className={cn(
         "group w-full text-start p-3 border-b border-border/60 hover:bg-muted/60 transition-colors cursor-pointer",
         isActive && "bg-accent/40 border-s-2 border-s-primary",
+        !isActive && borderClass,
         !conversation.assignedAgentId && !isActive && "bg-(--unassigned-bg)",
       )}
       onClick={onClick}
     >
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <Avatar className="h-9 w-9 shrink-0">
-          <AvatarFallback className="text-xs font-medium">
+        <Avatar className="h-10 w-10 shrink-0">
+          <AvatarFallback
+            className="text-xs font-semibold"
+            style={{ backgroundColor: avatarColor.bg, color: avatarColor.color }}
+          >
             {initials}
           </AvatarFallback>
         </Avatar>
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Row 1: name + time + unread */}
+          {/* Row 1: name + unread badge + time + actions */}
           <div className="flex items-center justify-between gap-1 mb-0.5">
             <span
               className="text-sm font-semibold truncate"
@@ -160,13 +190,18 @@ export function ConversationListItem({
               {conversation.slaBreachedAt && (
                 <span
                   title={t("SLA breach — no reply yet", "انتهاك SLA — لم يتم الرد بعد")}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 text-[10px] font-semibold shrink-0"
+                  className="inline-flex items-center gap-0.5 rounded-full bg-warning/10 text-warning px-1.5 py-0.5 text-[10px] font-semibold shrink-0"
                 >
                   <AlertTriangle className="size-2.5" />
                   SLA
                 </span>
               )}
-              <span className="text-[10px] text-muted-foreground">{timeAgo}</span>
+              {conversation.unreadCount > 0 && (
+                <Badge className="text-[10px] rounded-full px-1.5 h-4 min-w-4 flex items-center justify-center">
+                  {conversation.unreadCount}
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground">{timeAgo}</span>
               <button
                 onClick={handleToggleRead}
                 title={
@@ -199,25 +234,10 @@ export function ConversationListItem({
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              {conversation.unreadCount > 0 && (
-                <Badge className="text-[10px] rounded-full px-1.5 h-4 min-w-4 flex items-center justify-center">
-                  {conversation.unreadCount}
-                </Badge>
-              )}
             </div>
           </div>
 
-          {/* Row 2: phone (if present) */}
-          {phone && (
-            <span
-              className="text-[10px] text-muted-foreground block mb-0.5"
-              dir="ltr"
-            >
-              {phone}
-            </span>
-          )}
-
-          {/* Row 3: last message preview */}
+          {/* Row 2: last message preview */}
           <p
             className="text-xs text-muted-foreground truncate"
             dir="auto"
@@ -240,23 +260,20 @@ export function ConversationListItem({
 
           {/* Row 4: status + department + assigned agent */}
           <div className="flex items-center gap-2 mt-1">
-            <span
-              className={cn(
-                "text-[10px] rounded-full px-1.5 py-0.5 font-medium",
-                statusColor,
-              )}
-            >
-              {statusLabel}
-            </span>
+            <div className="flex items-center gap-1 shrink-0">
+              <span className={cn("size-1.5 rounded-full shrink-0", statusDotClass)} />
+              <span className="text-[10px] text-muted-foreground">{statusLabel}</span>
+            </div>
             {typeof conversation.csatScore === "number" && (
               <span
                 title={t(
                   `Customer rated ${conversation.csatScore}/5`,
                   `العميل قيّم ${conversation.csatScore}/5`,
                 )}
-                className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-medium"
+                className="inline-flex items-center gap-0.5 text-[10px] font-medium text-warning"
               >
-                ⭐ {conversation.csatScore}/5
+                <Star className="size-2.5 fill-warning" />
+                {conversation.csatScore}/5
               </span>
             )}
             {conversation.departmentName && (
@@ -264,12 +281,26 @@ export function ConversationListItem({
                 {conversation.departmentName}
               </span>
             )}
-            {conversation.assignedAgentName && (
-              <span className="text-[10px] text-muted-foreground truncate">
-                {conversation.assignedAgentName}
+            {conversation.assignedAgentId ? (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                <span className="truncate">
+                  {conversation.assignedAgentId === user?.id
+                    ? t("You", "أنت")
+                    : (conversation.assignedAgentName ?? conversation.assignedAgentId)}
+                </span>
+                {conversation.assignedAgentJobTitle && (
+                  <>
+                    <span className="opacity-40">·</span>
+                    <span className="truncate">{conversation.assignedAgentJobTitle}</span>
+                  </>
+                )}
               </span>
-            )}
-            {!conversation.assignedAgentId && (
+            ) : conversation.departmentName ? (
+              <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 truncate">
+                <span>⚠</span>
+                <span>{t("Unassigned", "غير معين")} · {conversation.departmentName}</span>
+              </span>
+            ) : (
               <span className="text-[10px] text-[--unassigned-dot]">
                 {t("Unassigned", "غير معين")}
               </span>

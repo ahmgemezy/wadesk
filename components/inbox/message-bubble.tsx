@@ -94,6 +94,7 @@ export type Message = {
     fromDept?: string;
     toDept?: string;
     agentName?: string;
+    agentJobTitle?: string;
     csatScore?: number;
     targetBranchName?: string;
     targetDeptName?: string;
@@ -196,8 +197,8 @@ function ConversationEventPill({
       icon: "👤",
     },
     resolved: {
-      pillBg: "bg-green-100 dark:bg-green-950",
-      pillText: "text-green-700 dark:text-green-300",
+      pillBg: "bg-success/10",
+      pillText: "text-success",
       lineBg: "bg-green-200 dark:bg-green-800",
       icon: "✓",
     },
@@ -208,8 +209,8 @@ function ConversationEventPill({
       icon: "↩",
     },
     csat_received: {
-      pillBg: "bg-amber-100 dark:bg-amber-950",
-      pillText: "text-amber-800 dark:text-amber-300",
+      pillBg: "bg-warning/10",
+      pillText: "text-warning",
       lineBg: "bg-amber-200 dark:bg-amber-800",
       icon: "",
     },
@@ -238,29 +239,28 @@ function ConversationEventPill({
   if (isAr) {
     if (eventType === "transfer_department")
       label = `${actor} نقل إلى ${toDept}`;
-    else if (eventType === "agent_assigned")
-      label = `${actor} أسند إلى ${agent}`;
-    else if (eventType === "agent_unassigned")
-      label = "تم إلغاء الإسناد";
+    else if (eventType === "agent_assigned") {
+      const titleSuffix = eventData?.agentJobTitle ? ` · ${eventData.agentJobTitle}` : "";
+      label = `تم تعيين المحادثة لـ ${agent}${titleSuffix}`;
+    } else if (eventType === "agent_unassigned")
+      label = "تم إلغاء تعيين المحادثة";
     else if (eventType === "resolved")
       label = `${actor} أغلق المحادثة`;
     else if (eventType === "reopened")
       label = "أُعيد فتح المحادثة";
     else if (eventType === "csat_received")
       label = `${stars} العميل قيّم ${csatScore}/5`;
-    else if (eventType === "transfer_within_channel") {
-      const dest = eventData?.agentName ? `${toDept} / ${eventData.agentName}` : toDept;
-      label = `${actor} نقل المحادثة إلى ${dest}`;
-    } else if (eventType === "forward_to_branch") {
-      const dest = eventData?.targetDeptName ? `${eventData.targetBranchName} / ${eventData.targetDeptName}` : (eventData?.targetBranchName ?? "");
-      label = `${actor} حول المحادثة إلى ${dest} — تم إغلاقها.`;
-    }
+    else if (eventType === "transfer_within_channel")
+      label = `تم تحويل المحادثة إلى قسم ${toDept}`;
+    else if (eventType === "forward_to_branch")
+      label = "تم إرسال المحادثة إلى رقم آخر — تم إغلاقها.";
   } else {
     if (eventType === "transfer_department")
       label = `${actor} transferred to ${toDept}`;
-    else if (eventType === "agent_assigned")
-      label = `${actor} assigned to ${agent}`;
-    else if (eventType === "agent_unassigned")
+    else if (eventType === "agent_assigned") {
+      const titleSuffix = eventData?.agentJobTitle ? ` · ${eventData.agentJobTitle}` : "";
+      label = `Conversation assigned to ${agent}${titleSuffix}`;
+    } else if (eventType === "agent_unassigned")
       label = "Conversation unassigned";
     else if (eventType === "resolved")
       label = `${actor} resolved this`;
@@ -268,13 +268,10 @@ function ConversationEventPill({
       label = "Conversation reopened";
     else if (eventType === "csat_received")
       label = `${stars} Customer rated ${csatScore}/5`;
-    else if (eventType === "transfer_within_channel") {
-      const dest = eventData?.agentName ? `${toDept} / ${eventData.agentName}` : toDept;
-      label = `${actor} transferred this to ${dest}`;
-    } else if (eventType === "forward_to_branch") {
-      const dest = eventData?.targetDeptName ? `${eventData.targetBranchName} / ${eventData.targetDeptName}` : (eventData?.targetBranchName ?? "");
-      label = `${actor} forwarded this to ${dest} — conversation closed.`;
-    }
+    else if (eventType === "transfer_within_channel")
+      label = `Conversation transferred to ${toDept}`;
+    else if (eventType === "forward_to_branch")
+      label = "Conversation forwarded to another number — closed.";
   }
 
   return (
@@ -364,7 +361,7 @@ export function MessageBubble({
 
   const mobileBadge = isMobileSource && (
     <span
-      className="ms-2 inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300"
+      className="ms-2 inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-xs font-medium text-success"
       title={t("Sent from the WhatsApp mobile app", "هذه الرسالة أُرسلت من تطبيق الواتساب على الهاتف")}
     >
       📱 {t("From mobile", "من الموبايل")}
@@ -442,10 +439,16 @@ export function MessageBubble({
     );
   }
 
+  // Media URL is real (Convex storage) only when it starts with https://
+  // New inbound messages temporarily hold the Meta media ID until resolveInboundMedia runs
+  const isRealMediaUrl = (url: string | undefined): url is string =>
+    !!url && url.startsWith("https://");
+
   if ((message.contentType === "image" || message.contentType === "sticker") && message.mediaUrl) {
+    const resolved = isRealMediaUrl(message.mediaUrl);
     return (
       <>
-        {lightboxSrc && (
+        {resolved && lightboxSrc && (
           <ImageLightbox
             src={lightboxSrc}
             alt={t("Image", "صورة")}
@@ -456,15 +459,21 @@ export function MessageBubble({
           {actionMenu}
           <div className={bubbleBase + " p-1.5"}>
             {quotedPreview}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={message.mediaUrl}
-              alt={t("Image", "صورة")}
-              className="rounded max-w-xs max-h-64 object-cover cursor-zoom-in"
-              loading="lazy"
-              onClick={() => setLightboxSrc(message.mediaUrl!)}
-            />
-            {message.content && message.contentType === "image" && (
+            {resolved ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={message.mediaUrl}
+                alt={t("Image", "صورة")}
+                className="rounded max-w-xs max-h-64 object-cover cursor-zoom-in"
+                loading="lazy"
+                onClick={() => setLightboxSrc(message.mediaUrl!)}
+              />
+            ) : (
+              <div className="rounded w-48 h-40 bg-muted/60 animate-pulse flex items-center justify-center text-xs text-muted-foreground">
+                {t("Loading…", "جارٍ التحميل…")}
+              </div>
+            )}
+            {resolved && message.content && message.contentType === "image" && (
               <p className="text-sm mt-1 px-1.5">{message.content}</p>
             )}
             <div className="px-1.5">{timeRow}</div>
@@ -476,29 +485,41 @@ export function MessageBubble({
   }
 
   if (message.contentType === "video" && message.mediaUrl) {
+    const resolved = isRealMediaUrl(message.mediaUrl);
     return (
       <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
         <div className={bubbleBase + " p-1.5"}>
           {quotedPreview}
-          <video
-            src={message.mediaUrl}
-            controls
-            className="rounded max-w-xs max-h-64"
-          />
-          <div className="px-1.5 flex items-center justify-between">
-            {timeRow}
-            <a
-              href={message.mediaUrl}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground"
-              aria-label={t("Download", "تحميل")}
-            >
-              <DownloadIcon className="size-4" />
-            </a>
-          </div>
+          {resolved ? (
+            <>
+              <video
+                src={message.mediaUrl}
+                controls
+                className="rounded max-w-xs max-h-64"
+              />
+              <div className="px-1.5 flex items-center justify-between">
+                {timeRow}
+                <a
+                  href={message.mediaUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={t("Download", "تحميل")}
+                >
+                  <DownloadIcon className="size-4" />
+                </a>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded w-48 h-40 bg-muted/60 animate-pulse flex items-center justify-center text-xs text-muted-foreground">
+                {t("Loading…", "جارٍ التحميل…")}
+              </div>
+              <div className="px-1.5">{timeRow}</div>
+            </>
+          )}
           {reactionBadges}
         </div>
       </div>
@@ -506,6 +527,7 @@ export function MessageBubble({
   }
 
   if (message.contentType === "audio" && message.mediaUrl) {
+    const resolved = isRealMediaUrl(message.mediaUrl);
     return (
       <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
@@ -513,17 +535,23 @@ export function MessageBubble({
           {quotedPreview}
           <div className="flex items-center gap-2 mb-1">
             <MicIcon className="size-4 text-muted-foreground shrink-0" />
-            <audio src={message.mediaUrl} controls className="h-8 w-48" />
-            <a
-              href={message.mediaUrl}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground shrink-0"
-              aria-label={t("Download", "تحميل")}
-            >
-              <DownloadIcon className="size-4" />
-            </a>
+            {resolved ? (
+              <>
+                <audio src={message.mediaUrl} controls className="h-8 w-48" />
+                <a
+                  href={message.mediaUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground shrink-0"
+                  aria-label={t("Download", "تحميل")}
+                >
+                  <DownloadIcon className="size-4" />
+                </a>
+              </>
+            ) : (
+              <div className="h-8 w-48 bg-muted/60 animate-pulse rounded" />
+            )}
           </div>
           {timeRow}
           {reactionBadges}
@@ -534,56 +562,90 @@ export function MessageBubble({
 
   if (message.contentType === "document") {
     const filename = message.content || t("Document", "مستند");
+    const resolved = isRealMediaUrl(message.mediaUrl);
+    const docInner = (
+      <>
+        {quotedPreview}
+        <div className="flex items-center gap-2">
+          <FileIcon className="size-5 text-muted-foreground shrink-0" />
+          <span className="text-sm flex-1 truncate max-w-40">{filename}</span>
+          <DownloadIcon className={`size-4 shrink-0 ${resolved ? "text-muted-foreground" : "text-muted-foreground/40"}`} />
+        </div>
+        {timeRow}
+        {reactionBadges}
+      </>
+    );
     return (
       <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
-        <div className={bubbleBase}>
-          {quotedPreview}
-          <div className="flex items-center gap-2">
-            <FileIcon className="size-5 text-muted-foreground shrink-0" />
-            <span className="text-sm flex-1 truncate max-w-40">{filename}</span>
-            {message.mediaUrl && (
-              <a
-                href={message.mediaUrl}
-                download={filename}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground"
-                aria-label={t("Download", "تحميل")}
-              >
-                <DownloadIcon className="size-4" />
-              </a>
-            )}
-          </div>
-          {timeRow}
-          {reactionBadges}
-        </div>
+        {resolved ? (
+          <a
+            href={message.mediaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={filename}
+            className={bubbleBase + " cursor-pointer hover:opacity-90 transition-opacity"}
+          >
+            {docInner}
+          </a>
+        ) : (
+          <div className={bubbleBase}>{docInner}</div>
+        )}
       </div>
     );
   }
 
   if (message.contentType === "location") {
-    const parts = message.content.split("|");
-    const coords = parts[0];
-    const name = parts[1] ?? t("Location", "الموقع");
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${coords}`;
+    let coords: string;
+    let locationName: string;
+    if (message.content.includes("|")) {
+      const sep = message.content.indexOf("|");
+      coords = message.content.slice(0, sep);
+      locationName = message.content.slice(sep + 1) || t("Location", "الموقع");
+    } else {
+      coords = message.content.replace(/^\[Location:\s*/, "").replace(/\]$/, "");
+      locationName = t("Location", "الموقع");
+    }
+
+    const parts = coords.split(",");
+    const lat = parseFloat(parts[0] ?? "");
+    const lng = parseFloat(parts[1] ?? "");
+    const hasCoords = !isNaN(lat) && !isNaN(lng);
+
+    const mapsUrl = hasCoords
+      ? `https://maps.google.com/?q=${lat},${lng}`
+      : `https://maps.google.com/?q=${encodeURIComponent(coords)}`;
+
+    const osmSrc = hasCoords
+      ? `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.008},${lat - 0.008},${lng + 0.008},${lat + 0.008}&layer=mapnik&marker=${lat},${lng}`
+      : null;
+
     return (
       <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
         {actionMenu}
-        <div className={bubbleBase}>
+        <div className={bubbleBase + " p-0 overflow-hidden"}>
           {quotedPreview}
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 hover:underline"
-          >
-            <MapPinIcon className="size-4 text-red-500 shrink-0" />
-            <span className="text-sm">{name}</span>
-          </a>
-          <p className="text-xs text-muted-foreground mt-0.5" dir="ltr">{coords}</p>
-          {timeRow}
-          {reactionBadges}
+          {osmSrc && (
+            <iframe
+              src={osmSrc}
+              className="w-full h-40 border-0"
+              loading="lazy"
+              title={locationName}
+            />
+          )}
+          <div className="p-3">
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 underline-offset-2 hover:underline"
+            >
+              <MapPinIcon className="size-4 text-destructive shrink-0" />
+              <span className="text-sm font-medium">{locationName}</span>
+            </a>
+            {timeRow}
+            {reactionBadges}
+          </div>
         </div>
       </div>
     );
@@ -607,11 +669,11 @@ function StatusTick({ status, onRetry }: { status: string; onRetry?: () => void 
   if (status === "failed") {
     return (
       <span className="flex items-center gap-1">
-        <span className="text-red-500 text-xs">✗</span>
+        <span className="text-destructive text-xs">✗</span>
         {onRetry && (
           <button
             onClick={onRetry}
-            className="text-xs text-red-500 underline hover:text-red-600 leading-none"
+            className="text-xs text-destructive underline hover:text-destructive/80 leading-none"
           >
             Retry
           </button>
