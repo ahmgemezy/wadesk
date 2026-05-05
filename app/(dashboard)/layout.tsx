@@ -57,7 +57,15 @@ export default async function DashboardLayout({
   const role = resolveRole(orgRole);
 
   if (orgRole !== "org:agent") {
-    const token = await getToken({ template: "convex" });
+    let token: string | null = null;
+    try {
+      token = await getToken({ template: "convex" });
+    } catch (err: unknown) {
+      // Session expired or destroyed mid-render (e.g. user just signed out).
+      const status = (err as { status?: number })?.status;
+      if (status === 404) redirect("/");
+      throw err;
+    }
     if (token) {
       try {
         const state = await fetchQuery(api.onboarding.getState, {}, { token });
