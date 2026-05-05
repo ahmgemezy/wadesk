@@ -780,11 +780,8 @@ export const claim = mutation({
         if (conversation.assignedAgentId) {
             throw new ConvexError("ALREADY_ASSIGNED");
         }
-        if (!conversation.departmentId) {
-            throw new ConvexError("NOT_IN_DEPARTMENT_QUEUE");
-        }
 
-        if (!isAdminOrSupervisor(orgRole)) {
+        if (!isAdminOrSupervisor(orgRole) && conversation.departmentId) {
             const membership = await ctx.db
                 .query("departmentMembers")
                 .withIndex("by_department_user", (q) =>
