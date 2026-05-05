@@ -4,6 +4,10 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { getCallerIdentity } from "./lib/auth";
 import { enforceRateLimit, makeUserMutationKey } from "./lib/rateLimit";
+import {
+  incrementParticipantMessageCount,
+  openParticipantStint,
+} from "./lib/participants";
 
 export const listForConversation = query({
   args: { conversationId: v.id("conversations") },
@@ -91,11 +95,17 @@ export const sendReply = mutation({
     if (!contact) throw new Error("CONTACT_NOT_FOUND");
 
     let assignedAgentId = conversation.assignedAgentId;
-    if (
-      !assignedAgentId &&
-      channel.assignmentMode === "first_reply"
-    ) {
-      assignedAgentId = callerId;
+    if (!assignedAgentId) {
+      let effectiveMode: string | undefined;
+      if (conversation.departmentId) {
+        const dept = await ctx.db.get(conversation.departmentId);
+        effectiveMode = dept?.assignmentMode ?? "manual";
+      } else {
+        effectiveMode = channel.assignmentMode;
+      }
+      if (effectiveMode === "first_reply") {
+        assignedAgentId = callerId;
+      }
     }
 
     await ctx.db.patch(args.conversationId, {
@@ -105,12 +115,27 @@ export const sendReply = mutation({
       ...(conversation.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
     });
 
+    if (!conversation.assignedAgentId && assignedAgentId === callerId) {
+      await openParticipantStint(ctx, {
+        tenantId,
+        conversationId: args.conversationId,
+        agentId: callerId,
+        departmentId: conversation.departmentId,
+      });
+    }
+
     await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMessage, {
       messageId,
       phoneNumberId: channel.phoneNumberId,
       contactPhone: contact.phone,
       content: args.content,
       tenantId,
+    });
+
+    await incrementParticipantMessageCount(ctx, {
+      tenantId,
+      conversationId: args.conversationId,
+      agentId: callerId,
     });
 
     await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordFirstResponse, {
@@ -448,11 +473,7 @@ export const sendMediaReply = action({
     filename: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.orgId) throw new Error("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-    const callerId = identity.subject;
-    const orgRole = (identity.orgRole as string | undefined) ?? "org:agent";
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
 
     const conversation = await ctx.runQuery(internal.messages.getConversationInternal, {
       conversationId: args.conversationId,
@@ -922,5 +943,15 @@ export const getStatusInternal = internalQuery({
     const m = await ctx.db.get(args.messageId);
     if (!m) return null;
     return { status: m.status, failureReason: m.failureReason };
+  },
+});
+
+export const updateMediaUrl = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    mediaUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, { mediaUrl: args.mediaUrl });
   },
 });
