@@ -32,8 +32,8 @@ export function StatusSelector({
 
   const statuses = [
     { value: "open" as const, label: t("Open", "مفتوح"), color: "bg-slate-500" },
-    { value: "pending" as const, label: t("Pending", "معلق"), color: "bg-amber-500" },
-    { value: "resolved" as const, label: t("Resolved", "مغلق"), color: "bg-emerald-500" },
+    { value: "pending" as const, label: t("Pending", "معلق"), color: "bg-warning" },
+    { value: "resolved" as const, label: t("Resolved", "مغلق"), color: "bg-success" },
   ];
 
   return (

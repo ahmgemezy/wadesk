@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
   const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? "";
   const webhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET ?? "";
 
-  // Fire-and-forget to Convex HTTP action
-  fetch(`${convexSiteUrl}/meta-webhook`, {
+  // Fire-and-forget to Convex HTTP action (V2 — handles echoes + coexistence)
+  fetch(`${convexSiteUrl}/webhooks/meta`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

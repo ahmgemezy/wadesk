@@ -39,7 +39,7 @@ export function MessageActionMenu({
 
   return (
     <div
-      className={`absolute -top-8 flex items-center gap-0.5 bg-background border rounded-lg shadow-md px-0.5 py-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-20 ${
+      className={`absolute -top-8 flex items-center gap-0.5 bg-background border rounded-lg shadow-[var(--shadow-md)] px-0.5 py-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-20 ${
         isOutbound ? "end-0" : "start-0"
       }`}
     >
@@ -65,7 +65,7 @@ export function MessageActionMenu({
         </Button>
         {showEmojiPicker && (
           <div
-            className={`absolute bottom-full mb-1 flex gap-1 bg-background border rounded-lg shadow-md p-1.5 z-30 ${
+            className={`absolute bottom-full mb-1 flex gap-1 bg-background border rounded-lg shadow-[var(--shadow-md)] p-1.5 z-30 ${
               isOutbound ? "end-0" : "start-0"
             }`}
           >

@@ -82,26 +82,41 @@ export const list = action({
 
     const client = await clerkClient();
 
-    const [memberships, invitations] = await Promise.all([
-      client.organizations.getOrganizationMembershipList({
-        organizationId: tenantId,
-        limit: 100,
-      }),
-      client.organizations.getOrganizationInvitationList({
-        organizationId: tenantId,
-        limit: 100,
-      }),
-    ]);
+    type MemberMetadata = {
+      profiles: Record<string, { jobTitle?: string | null }>;
+      departments: Record<string, string[]>;
+    };
 
-    const active = memberships.data.map((m) => ({
-      userId: (m.publicUserData?.userId ?? "") as string,
-      email: (m.publicUserData?.identifier ?? "") as string,
-      name: (m.publicUserData?.firstName ?? null) as string | null,
-      imageUrl: (m.publicUserData?.imageUrl ?? null) as string | null,
-      role: (m.role === "admin" ? "org:admin" : m.role) as OrgRole,
-      status: "active" as const,
-      joinedAt: (m.createdAt ?? null) as number | null,
-    }));
+    const memberships = await client.organizations.getOrganizationMembershipList({
+      organizationId: tenantId,
+      limit: 100,
+    });
+    const invitations = await client.organizations.getOrganizationInvitationList({
+      organizationId: tenantId,
+      limit: 100,
+    });
+    const metadata = (await ctx.runQuery(
+      internal.memberQueries.getAllMemberMetadata,
+      { tenantId },
+    )) as MemberMetadata;
+
+    const active = memberships.data.map((m) => {
+      const userId = (m.publicUserData?.userId ?? "") as string;
+      const firstName = m.publicUserData?.firstName ?? null;
+      const lastName = m.publicUserData?.lastName ?? null;
+      const fullName = [firstName, lastName].filter(Boolean).join(" ") || m.publicUserData?.identifier || null;
+      return {
+        userId,
+        email: (m.publicUserData?.identifier ?? "") as string,
+        name: fullName as string | null,
+        imageUrl: (m.publicUserData?.imageUrl ?? null) as string | null,
+        role: (m.role === "admin" ? "org:admin" : m.role) as OrgRole,
+        status: "active" as const,
+        joinedAt: (m.createdAt ?? null) as number | null,
+        jobTitle: (metadata.profiles[userId]?.jobTitle ?? null) as string | null,
+        departments: (metadata.departments[userId] ?? []) as string[],
+      };
+    });
 
     const pending = invitations.data
       .filter((inv) => inv.status === "pending")

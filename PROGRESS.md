@@ -18,6 +18,30 @@
 
 ## ✅ Completed Tasks
 
+### 2026-05-05: 032-design-tokens-foundation — Status + Shadow token vocabulary added to globals.css
+
+Added the Apple+Stitch design-system token vocabulary (status and shadow) to `app/globals.css` as pure additions — no existing token values were changed. This is Phase 1 of the WABDesk design system foundation; Phase 2 (Inbox pilot component updates) will consume these tokens.
+
+**Files modified:** `app/globals.css` only
+
+**Tokens added:**
+
+- **Status (`:root`):** `--success` `#059669`, `--success-foreground` `#059669`, `--warning` `#d97706` (amber-600, WCAG AA on white ~3.4:1), `--warning-foreground` `#d97706`, `--info` `var(--primary)`, `--info-foreground` `var(--primary)`
+- **Status (`.dark`):** `--success` `#34d399`, `--success-foreground` `#34d399`, `--warning` `#fbbf24`, `--warning-foreground` `#fbbf24`, `--info` `var(--primary)`, `--info-foreground` `var(--primary)`
+- **Status (`@theme inline`):** `--color-success`, `--color-success-foreground`, `--color-warning`, `--color-warning-foreground`, `--color-info`, `--color-info-foreground` — enables `bg-success`, `text-warning`, etc. as Tailwind utilities
+- **Shadows (`:root`):** `--shadow-xs` 4% opacity, `--shadow-sm` 6%/4% two-layer, `--shadow-md` 8%/4% two-layer (Apple-minimal aesthetic)
+- **Shadows (`.dark`):** identical values to light (transparent-black shadows are dark-surface-safe; Phase 2 can tune if needed)
+
+**Explicit non-changes (all preserved verbatim):** `--primary`, `--background`, `--radius`, `--shadow-level-2`, `--shadow-level-3`, all sidebar tokens, all chart tokens, all message-bubble tokens, all Clerk badge overrides, all animation keyframes
+
+**Architectural decision — shadow token placement:** `--shadow-xs`/`--shadow-sm`/`--shadow-md` are in `:root` + `.dark` only, NOT in `@theme inline`. Pre-audit found 11 existing `shadow-sm`/`shadow-md` utility usages across 7 components (`tabs.tsx`, `sidebar.tsx`, `message-bubble.tsx` ×3, `conversation-list.tsx`, `searchable-select.tsx`, `select.tsx`, `message-action-menu.tsx`). Adding these to `@theme inline` would silently override Tailwind's native shadow utilities at those 11 sites. New consumers reference them via `shadow-[var(--shadow-xs)]`, matching the existing `shadow-[var(--shadow-level-2)]` pattern in `card.tsx`.
+
+**Line count:** BEFORE 242 lines → AFTER 274 lines (+32 lines: 8 Change A + 5 Change B + 8 Change C + 5 Change D + 6 Change E; the +2 vs Stage 2's estimate of ~30 comes from the blank-line separators between new sections for visual consistency with the file's existing section pattern)
+
+**TypeScript:** 0 errors
+
+**Forward note:** Phase 2 (Inbox pilot) will migrate hardcoded colors (`text-amber-500`, `text-red-500`, etc.) to `text-warning`, `text-destructive` etc., and swap `shadow-sm` calls in new components to `shadow-[var(--shadow-sm)]` where Apple-minimal depth is appropriate.
+
 ### 2026-05-05: SLA Breach Clearing — Verification + Doc Cleanup (No Code Change)
 
 Originally scoped as a bug fix (PROJECT_STATE.md §5 issue #2: "SLA breach clearing logic unclear"). Stage-gated investigation revealed the clearing was already fully implemented — the §5 entry was stale documentation drift, not an unfixed bug. Scope was re-narrowed to verification + docs only.

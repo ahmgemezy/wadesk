@@ -593,9 +593,16 @@ export const queueCounts = query({
       .collect();
     const myChannelIds = new Set(channelMemberships.map((m) => m.channelId));
 
+    const activeChannels = allChannels.filter(
+      (c) =>
+        c.isActive !== false &&
+        c.status !== "disconnected" &&
+        c.status !== "reconnect_required"
+    );
+
     const visibleChannels = isAdmin
-      ? allChannels
-      : allChannels.filter((c) => myChannelIds.has(c._id));
+      ? activeChannels
+      : activeChannels.filter((c) => myChannelIds.has(c._id));
 
     const allDepts = await ctx.db
       .query("departments")
@@ -647,6 +654,7 @@ export const queueCounts = query({
         return {
           _id: d._id,
           name: d.name,
+          isDefault: d.isDefault ?? false,
           total: inDept.length,
           unassignedInDept: inDept.filter((c) => !c.assignedAgentId).length,
           mineInDept: inDept.filter((c) => c.assignedAgentId === callerId).length,
@@ -703,6 +711,7 @@ export const queueCounts = query({
       channels: channelsResult,
       forwarded,
       resolved,
+      isPrivileged,
     };
   },
 });

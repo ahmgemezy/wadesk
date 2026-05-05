@@ -23,6 +23,8 @@ function getTimeRangeBounds(range: TimeRange) {
 }
 
 type MemberProfile = {
+  firstName: string | null;
+  lastName: string | null;
   name: string | null;
   email: string | null;
   imageUrl: string | null;
@@ -93,6 +95,10 @@ export function useMemberProfileMutations() {
   const updateChannels = useAction(api.members.updateMemberChannels);
   const updateDepartments = useAction(api.members.updateMemberDepartments);
   const updateContact = useAction(api.members.updateMemberContact);
+  const updateDisplayName = useAction(api.members.updateMemberDisplayName);
+  const updateAvatarFromStorage = useAction(api.members.updateMemberAvatarFromStorage);
+  const updateAvatarFromUrl = useAction(api.members.updateMemberAvatarFromUrl);
+  const removeAvatar = useAction(api.members.removeMemberAvatar);
   const disableAccount = useAction(api.members.disableAccount);
   const enableAccount = useAction(api.members.enableAccount);
 
@@ -102,6 +108,10 @@ export function useMemberProfileMutations() {
     updateChannels,
     updateDepartments,
     updateContact,
+    updateDisplayName,
+    updateAvatarFromStorage,
+    updateAvatarFromUrl,
+    removeAvatar,
     disableAccount,
     enableAccount,
   };

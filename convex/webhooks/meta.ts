@@ -58,14 +58,21 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
     // Step 1: read raw body BEFORE any JSON parse — HMAC needs exact bytes
     const rawBody = await request.text();
 
-    // Step 2: verify HMAC-SHA256 signature
-    const signature = request.headers.get("x-hub-signature-256");
-    const appSecret = process.env.META_APP_SECRET ?? "";
+    // Step 2: verify — accept either a shared webhook secret (forwarded from
+    // the Next.js route) or a direct Meta HMAC-SHA256 signature.
+    const webhookSecret = request.headers.get("x-webhook-secret");
+    const isFromNextjs =
+      webhookSecret !== null &&
+      webhookSecret === process.env.WHATSAPP_WEBHOOK_SECRET;
 
-    const isValid = await verifyMetaSignature(rawBody, signature, appSecret);
-    if (!isValid) {
-      warn("signature_verification_failed");
-      return new Response("Unauthorized", { status: 401 });
+    if (!isFromNextjs) {
+      const signature = request.headers.get("x-hub-signature-256");
+      const appSecret = process.env.META_APP_SECRET ?? "";
+      const isValid = await verifyMetaSignature(rawBody, signature, appSecret);
+      if (!isValid) {
+        warn("signature_verification_failed");
+        return new Response("Unauthorized", { status: 401 });
+      }
     }
 
     // Step 3: parse JSON only after signature passes
@@ -98,9 +105,10 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
     for (const entry of payload.entry ?? []) {
       const wabaId = entry.id;
 
-      const channel = await ctx.runQuery(internal.channels.getByWabaId, { wabaId });
+      // WABA-level lookup — used as fallback and for tenant resolution
+      const wabaChannel = await ctx.runQuery(internal.channels.getByWabaId, { wabaId });
 
-      if (!channel) {
+      if (!wabaChannel) {
         warn("unknown_waba_id", { wabaId });
         // Log for debugging but never 404 — Meta must get 200
         await ctx.runMutation(internal.webhookEvents.insert, {
@@ -116,9 +124,23 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
         try {
           const value = change.value;
 
+          // Route to the specific channel by phone_number_id so that tenants
+          // with multiple numbers under the same WABA get messages in the
+          // correct inbox. Falls back to the WABA-level channel if metadata
+          // is absent (e.g. template status updates).
+          const phoneNumberId = value?.metadata?.phone_number_id;
+          let channel = wabaChannel;
+          if (phoneNumberId) {
+            const phoneChannels = await ctx.runQuery(internal.channels.listByPhoneId, { phoneNumberId });
+            const match = phoneChannels.find((ch) => ch.tenantId === wabaChannel.tenantId);
+            if (match) channel = match;
+          }
+
           log("processing_change", {
             tenantId: channel.tenantId,
             wabaId,
+            phoneNumberId: phoneNumberId ?? null,
+            channelId: channel._id,
             field: change.field,
             messageCount: value?.messages?.length ?? 0,
             statusCount: value?.statuses?.length ?? 0,
@@ -134,6 +156,7 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
                 channel,
                 value?.messages ?? [],
                 value?.contacts ?? [],
+                wabaId,
               );
               await processStatuses(
                 ctx,
@@ -191,13 +214,13 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
         } catch (err) {
           // Per-change error isolation — one bad change must not abort the batch
           warn("change_processing_error", {
-            tenantId: channel.tenantId,
+            tenantId: wabaChannel.tenantId,
             wabaId,
             field: change.field,
             error: String(err),
           });
           await ctx.runMutation(internal.webhookEvents.insert, {
-            tenantId: channel.tenantId,
+            tenantId: wabaChannel.tenantId,
             wabaId,
             eventType: change.field ?? "unknown",
             payload: change.value,

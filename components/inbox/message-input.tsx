@@ -77,6 +77,20 @@ export function MessageInput({
   const [showEmoji, setShowEmoji] = useState(false);
   const [locating, setLocating] = useState(false);
   const [templateContent, setTemplateContent] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState(false);
+
+  const claimMutation = useMutation(api.conversations.claim);
+
+  const handleClaim = async () => {
+    setClaiming(true);
+    try {
+      await claimMutation({ conversationId: conversationId as Id<"conversations"> });
+    } catch {
+      // claim failure is non-critical — the isLocked prop will update reactively
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const imageRef = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
@@ -279,7 +293,7 @@ export function MessageInput({
 
   if (isForwarded) {
     return (
-      <div className="border-t bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3 flex items-center justify-center text-sm text-amber-700 dark:text-amber-400">
+      <div className="border-t bg-warning/10 px-4 py-3 flex items-center justify-center text-sm text-warning">
         {t("This conversation was forwarded — replies are disabled.", "تم تحويل هذه المحادثة — الردود معطلة.")}
       </div>
     );
@@ -287,8 +301,24 @@ export function MessageInput({
 
   if (isLocked && !isPrivileged) {
     return (
-      <div className="border-t bg-muted/40 px-4 py-3 flex items-center justify-center text-sm text-muted-foreground">
-        {t("Claim this conversation first to reply", "استلم المحادثة أولاً للرد")}
+      <div className="border-t px-4 py-2.5 flex items-center justify-between gap-3 bg-amber-500/10 border-amber-500/30">
+        <span className="text-sm text-amber-700 dark:text-amber-400">
+          ⚠️{" "}
+          {t(
+            "Conversation unassigned — you cannot reply",
+            "المحادثة غير معينة — لا يمكن الرد",
+          )}
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          className="shrink-0"
+          onClick={handleClaim}
+          disabled={claiming}
+        >
+          {claiming && <Loader2Icon className="size-3 animate-spin me-1" />}
+          {t("Take it", "خذها أنت")}
+        </Button>
       </div>
     );
   }
@@ -325,7 +355,7 @@ export function MessageInput({
       {/* Location preview */}
       {location && (
         <div className="flex items-center gap-2 p-2 rounded-lg bg-muted text-sm">
-          <MapPinIcon className="size-5 text-red-500 shrink-0" />
+          <MapPinIcon className="size-5 text-destructive shrink-0" />
           <span className="flex-1">
             {location.name ?? t("Location", "موقع")}
             <span className="text-xs text-muted-foreground ms-2" dir="ltr">
@@ -383,7 +413,7 @@ export function MessageInput({
       />
 
       {content.length > 3500 && (
-        <div className={`text-xs text-end ${content.length > 4096 ? "text-red-500" : "text-muted-foreground"}`}>
+        <div className={`text-xs text-end ${content.length > 4096 ? "text-destructive" : "text-muted-foreground"}`}>
           {content.length} / 4096
         </div>
       )}

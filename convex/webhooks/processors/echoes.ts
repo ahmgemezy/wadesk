@@ -195,7 +195,7 @@ export const processEcho = internalMutation({
       await ctx.db.patch(conversationId, patch);
     }
 
-    await ctx.db.insert("messages", {
+    const messageId = await ctx.db.insert("messages", {
       conversationId,
       tenantId,
       direction: "outbound",
@@ -205,11 +205,20 @@ export const processEcho = internalMutation({
       authorId: echo.from,
       source: "mobile",
       metaMessageId: wamid,
-      ...(metaMediaId ? { metaMediaId } : {}),
+      ...(metaMediaId ? { mediaUrl: metaMediaId, metaMediaId } : {}),
       status: "sent",
       timestamp,
       createdAt: Date.now(),
     });
+
+    if (metaMediaId) {
+      await ctx.scheduler.runAfter(0, internal.actions.resolveMedia.resolveInboundMedia, {
+        messageId,
+        mediaId: metaMediaId,
+        channelId,
+        tenantId,
+      });
+    }
 
     console.log(JSON.stringify({
       tag: "[WEBHOOK_ECHO]", event: "mobile_message_inserted",

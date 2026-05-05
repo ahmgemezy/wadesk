@@ -1,0 +1,375 @@
+"use client";
+
+import { useState, useRef, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useT } from "@/lib/i18n/context";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { Loader2, Upload, Link as LinkIcon, User } from "lucide-react";
+import type { ResolvedUser } from "@/lib/shell/types";
+
+interface MyProfileModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  clerkUser: ResolvedUser;
+}
+
+export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModalProps) {
+  const t = useT();
+  const { user } = useUser();
+  const profile = useQuery(api.profiles.getMyProfile);
+  const updateMyProfile = useMutation(api.profiles.updateMyProfile);
+
+  // Details form state
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [bio, setBio] = useState("");
+  const [savingDetails, setSavingDetails] = useState(false);
+
+  // Avatar state
+  const [avatarTab, setAvatarTab] = useState<"upload" | "url">("upload");
+  const [urlInput, setUrlInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync form when modal opens or profile loads
+  const initForm = useCallback(() => {
+    setFirstName(user?.firstName ?? "");
+    setLastName(user?.lastName ?? "");
+    setPhone(profile?.phone ?? "");
+    setJobTitle(profile?.jobTitle ?? "");
+    setBio(profile?.bio ?? "");
+    setUrlInput(user?.imageUrl ?? "");
+  }, [user, profile]);
+
+  const [lastOpen, setLastOpen] = useState(false);
+  if (open && !lastOpen) {
+    setLastOpen(true);
+    initForm();
+  }
+  if (!open && lastOpen) {
+    setLastOpen(false);
+  }
+
+  const effectiveAvatar = user?.imageUrl ?? clerkUser.imageUrl;
+  const effectiveName = user?.fullName ?? user?.firstName ?? clerkUser.name;
+  const initials = effectiveName
+    ? effectiveName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
+
+  async function handleSaveDetails() {
+    if (!user) return;
+    setSavingDetails(true);
+    try {
+      await user.update({
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+      });
+      await updateMyProfile({
+        phone: phone.trim() || undefined,
+        jobTitle: jobTitle.trim() || undefined,
+        bio: bio.trim() || undefined,
+      });
+      toast.success(t("Profile updated", "تم تحديث الملف الشخصي"));
+    } catch {
+      toast.error(t("Failed to save", "فشل الحفظ"));
+    } finally {
+      setSavingDetails(false);
+    }
+  }
+
+  function stageFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("Only image files are allowed", "يُسمح بملفات الصور فقط"));
+      return;
+    }
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(file);
+    setPendingPreviewUrl(URL.createObjectURL(file));
+  }
+
+  async function confirmUpload() {
+    if (!pendingFile || !user) return;
+    setUploading(true);
+    try {
+      await user.setProfileImage({ file: pendingFile });
+      setPendingFile(null);
+      setPendingPreviewUrl(null);
+      toast.success(t("Avatar updated", "تم تحديث الصورة الشخصية"));
+    } catch {
+      toast.error(t("Upload failed", "فشل الرفع"));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function cancelUpload() {
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleSaveUrl() {
+    const url = urlInput.trim();
+    if (!url || !user) return;
+    setSavingAvatar(true);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Fetch failed");
+      const blob = await res.blob();
+      const file = new File([blob], "avatar", { type: blob.type });
+      await user.setProfileImage({ file });
+      toast.success(t("Avatar updated", "تم تحديث الصورة الشخصية"));
+    } catch {
+      toast.error(t("Failed to save", "فشل الحفظ"));
+    } finally {
+      setSavingAvatar(false);
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    if (!user) return;
+    setSavingAvatar(true);
+    try {
+      await user.setProfileImage({ file: null });
+      setUrlInput("");
+      toast.success(t("Avatar removed", "تمت إزالة الصورة الشخصية"));
+    } catch {
+      toast.error(t("Failed to remove", "فشل الحذف"));
+    } finally {
+      setSavingAvatar(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("My Profile", "ملفي الشخصي")}</DialogTitle>
+        </DialogHeader>
+
+        {/* Current avatar preview */}
+        <div className="flex items-center gap-3 pb-2 border-b">
+          <Avatar className="size-14">
+            <AvatarImage src={effectiveAvatar} alt={effectiveName} />
+            <AvatarFallback><User className="size-6" /></AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col min-w-0">
+            <span className="font-medium truncate">{effectiveName}</span>
+            <span className="text-xs text-muted-foreground truncate">{clerkUser.email}</span>
+          </div>
+        </div>
+
+        <Tabs defaultValue="details">
+          <TabsList className="w-full">
+            <TabsTrigger value="details" className="flex-1">
+              {t("Details", "البيانات")}
+            </TabsTrigger>
+            <TabsTrigger value="avatar" className="flex-1">
+              {t("Avatar", "الصورة الشخصية")}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ── Details tab ── */}
+          <TabsContent value="details" className="space-y-3 pt-3">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                {t("First Name", "الاسم الأول")}
+              </label>
+              <Input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder={t("First name", "الاسم الأول")}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                {t("Last Name", "اسم العائلة")}
+              </label>
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder={t("Last name", "اسم العائلة")}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                {t("Phone", "رقم الهاتف")}
+              </label>
+              <Input
+                dir="ltr"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+201000000000"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                {t("Job Title", "المسمى الوظيفي")}
+              </label>
+              <Input
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder={t("e.g. Sales Agent", "مثال: مندوب مبيعات")}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">
+                {t("Bio", "نبذة")}
+              </label>
+              <Input
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder={t("A short bio…", "نبذة مختصرة…")}
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleSaveDetails}
+              disabled={savingDetails}
+            >
+              {savingDetails && <Loader2 className="size-3.5 animate-spin" />}
+              {t("Save Details", "حفظ البيانات")}
+            </Button>
+          </TabsContent>
+
+          {/* ── Avatar tab ── */}
+          <TabsContent value="avatar" className="pt-3 space-y-3">
+            <Tabs value={avatarTab} onValueChange={(v) => setAvatarTab(v as "upload" | "url")}>
+              <TabsList className="w-full">
+                <TabsTrigger value="upload" className="flex-1 gap-1.5">
+                  <Upload className="size-3.5" />
+                  {t("Upload File", "رفع ملف")}
+                </TabsTrigger>
+                <TabsTrigger value="url" className="flex-1 gap-1.5">
+                  <LinkIcon className="size-3.5" />
+                  {t("Image URL", "رابط صورة")}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="upload" className="pt-3 space-y-3">
+                {pendingPreviewUrl ? (
+                  <div className="space-y-3">
+                    <div className="flex justify-center">
+                      <img
+                        src={pendingPreviewUrl}
+                        alt="preview"
+                        className="size-24 rounded-full object-cover border-2 border-primary"
+                      />
+                    </div>
+                    <p className="text-center text-xs text-muted-foreground">
+                      {pendingFile?.name}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button className="flex-1" onClick={confirmUpload} disabled={uploading}>
+                        {uploading && <Loader2 className="size-3.5 animate-spin" />}
+                        {t("Save Photo", "حفظ الصورة")}
+                      </Button>
+                      <Button variant="outline" className="flex-1" onClick={cancelUpload} disabled={uploading}>
+                        {t("Cancel", "إلغاء")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                      dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setDragOver(false);
+                      const file = e.dataTransfer.files[0];
+                      if (file) stageFile(file);
+                    }}
+                  >
+                    <Upload className="size-6 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      {t("Click or drag an image here", "انقر أو اسحب صورة هنا")}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG، JPG، WEBP</p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) stageFile(file);
+                    e.target.value = "";
+                  }}
+                />
+              </TabsContent>
+
+              <TabsContent value="url" className="pt-3 space-y-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {t("Paste an image URL", "الصق رابط الصورة")}
+                  </label>
+                  <Input
+                    dir="ltr"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    placeholder="https://example.com/photo.jpg"
+                  />
+                </div>
+                {urlInput && (
+                  <div className="flex justify-center">
+                    <img
+                      src={urlInput}
+                      alt="preview"
+                      className="size-20 rounded-full object-cover border"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  </div>
+                )}
+                <Button
+                  className="w-full"
+                  onClick={handleSaveUrl}
+                  disabled={savingAvatar || !urlInput.trim()}
+                >
+                  {savingAvatar && <Loader2 className="size-3.5 animate-spin" />}
+                  {t("Save Avatar", "حفظ الصورة")}
+                </Button>
+              </TabsContent>
+            </Tabs>
+
+            {user?.imageUrl && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-destructive hover:text-destructive"
+                onClick={handleRemoveAvatar}
+                disabled={savingAvatar}
+              >
+                {t("Remove current avatar", "إزالة الصورة الحالية")}
+              </Button>
+            )}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}

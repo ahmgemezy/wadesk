@@ -267,6 +267,7 @@ export default defineSchema({
       fromDept: v.optional(v.string()),
       toDept: v.optional(v.string()),
       agentName: v.optional(v.string()),
+      agentJobTitle: v.optional(v.string()),
       csatScore: v.optional(v.number()),
       targetBranchName: v.optional(v.string()),
       targetBranchNumber: v.optional(v.string()),
@@ -683,6 +684,8 @@ export default defineSchema({
         email: v.optional(v.boolean()),
         phone: v.optional(v.boolean()),
         jobTitle: v.optional(v.boolean()),
+        displayName: v.optional(v.boolean()),
+        avatarUrl: v.optional(v.boolean()),
         channel: v.optional(v.object({ added: v.array(v.string()), removed: v.array(v.string()) })),
         department: v.optional(v.object({ added: v.array(v.string()), removed: v.array(v.string()) })),
       })),
@@ -723,4 +726,17 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_tenant_user", ["tenantId", "userId"]),
+
+  conversationParticipants: defineTable({
+    tenantId: v.string(),
+    conversationId: v.id("conversations"),
+    agentId: v.string(),
+    departmentId: v.optional(v.id("departments")),
+    startedAt: v.number(),
+    endedAt: v.optional(v.number()),
+    messageCount: v.number(),
+    firstReplyAt: v.optional(v.number()),
+  })
+    .index("by_tenant_agent", ["tenantId", "agentId"])
+    .index("by_tenant_conversation", ["tenantId", "conversationId"]),
 });

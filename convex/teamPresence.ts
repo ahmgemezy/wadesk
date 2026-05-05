@@ -3,6 +3,7 @@
 import { action } from "./_generated/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { internal } from "./_generated/api";
+import { getCallerIdentity } from "./lib/auth";
 
 interface ClerkMemberInfo {
   userId: string;
@@ -24,16 +25,19 @@ export interface TeamMemberResult {
   name: string | null;
   imageUrl: string | null;
   role: string;
+  jobTitle: string | null;
   channelAssignments: ChannelAssignment[];
 }
 
 export const listWithDepartments = action({
   args: {},
   handler: async (ctx): Promise<TeamMemberResult[]> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return [];
-    const tenantId = identity.orgId as string;
-    if (!tenantId) return [];
+    let tenantId: string;
+    try {
+      ({ tenantId } = await getCallerIdentity(ctx));
+    } catch {
+      return [];
+    }
 
     const client = await clerkClient();
     const memberships = await client.organizations.getOrganizationMembershipList({
@@ -62,11 +66,11 @@ export const listWithDepartments = action({
         })
     );
 
-    // Get hierarchical channel→departments data from database
-    const userChannelDepts = await ctx.runQuery(
-      internal.teamPresenceQueries.getUserChannelsAndDepartments,
-      { tenantId }
-    );
+    // Get hierarchical channel→departments data and member profiles from database
+    const [userChannelDepts, metadata] = await Promise.all([
+      ctx.runQuery(internal.teamPresenceQueries.getUserChannelsAndDepartments, { tenantId }),
+      ctx.runQuery(internal.memberQueries.getAllMemberMetadata, { tenantId }),
+    ]);
 
     // Build result
     const allMembers: TeamMemberResult[] = Array.from(clerkMembers.values()).map((clerkInfo) => {
@@ -79,6 +83,7 @@ export const listWithDepartments = action({
         name: clerkInfo.name,
         imageUrl: clerkInfo.imageUrl,
         role: clerkInfo.clerkRole === "admin" ? "org:admin" : (clerkInfo.clerkRole as string) || "org:agent",
+        jobTitle: (metadata as { profiles: Record<string, { jobTitle?: string | null }> }).profiles[userId]?.jobTitle ?? null,
         channelAssignments,
       };
     });

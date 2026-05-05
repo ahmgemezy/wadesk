@@ -29,6 +29,7 @@ interface TeamMember {
   email: string;
   imageUrl: string | null;
   role: string;
+  jobTitle: string | null;
   channelAssignments: ChannelAssignment[];
 }
 
@@ -191,9 +192,11 @@ export function TeamPresenceDropdown() {
                     </div>
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <div>
-                        {member.role === "org:admin" ? t("Admin", "مدير") :
-                         member.role === "org:supervisor" ? t("Supervisor", "مشرف") :
-                         t("Agent", "وكيل")}
+                        {member.jobTitle ?? (
+                          member.role === "org:admin" ? t("Admin", "مدير") :
+                          member.role === "org:supervisor" ? t("Supervisor", "مشرف") :
+                          t("Agent", "وكيل")
+                        )}
                       </div>
                       {member.channelAssignments.length > 0 && (
                         <div className="space-y-0.5">

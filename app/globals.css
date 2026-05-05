@@ -34,8 +34,21 @@
   --destructive:           #ba1a1a;
   --destructive-foreground: #ba1a1a;
 
+  /* ─── Status ────────────────────────────────────────────────── */
+  --success:               #059669;
+  --success-foreground:    #059669;
+  --warning:               #d97706;
+  --warning-foreground:    #d97706;
+  --info:                  var(--primary);
+  --info-foreground:       var(--primary);
+
   /* ─── Radius (Stitch: 8px rounded) ─────────────────────────── */
   --radius:                0.5rem;
+
+  /* ─── Shadows (Apple-minimal) ───────────────────────────────── */
+  --shadow-xs:             0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm:             0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-md:             0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
 
   /* ─── Sidebar ──────────────────────────────────────────────── */
   --sidebar:                    #f3f3fe;
@@ -99,6 +112,14 @@
   --destructive:           #ff897a;
   --destructive-foreground: #ff897a;
 
+  /* ─── Status ────────────────────────────────────────────────── */
+  --success:               #34d399;
+  --success-foreground:    #34d399;
+  --warning:               #fbbf24;
+  --warning-foreground:    #fbbf24;
+  --info:                  var(--primary);
+  --info-foreground:       var(--primary);
+
   /* ─── Sidebar ──────────────────────────────────────────────── */
   --sidebar:                    #14151d;
   --sidebar-background:         #14151d;
@@ -129,6 +150,11 @@
   --unassigned-bg:          #1e2030;
   --online-dot:             #22c55e;
   --unassigned-dot:         #f97316;
+
+  /* ─── Shadows (same values as light — Phase 1 simplification) */
+  --shadow-xs:             0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm:             0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-md:             0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
 }
 
 @theme inline {
@@ -148,6 +174,12 @@
   --color-accent-foreground:        var(--accent-foreground);
   --color-destructive:              var(--destructive);
   --color-destructive-foreground:   var(--destructive-foreground);
+  --color-success:                  var(--success);
+  --color-success-foreground:       var(--success-foreground);
+  --color-warning:                  var(--warning);
+  --color-warning-foreground:       var(--warning-foreground);
+  --color-info:                     var(--info);
+  --color-info-foreground:          var(--info-foreground);
   --color-border:                   var(--border);
   --color-input:                    var(--input);
   --color-ring:                     var(--ring);

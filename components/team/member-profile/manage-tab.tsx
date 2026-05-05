@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useMemberProfileMutations } from "@/hooks/use-member-profile";
+import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectTrigger,
@@ -18,9 +20,11 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Shield, Loader2, TriangleAlert, Mail, Phone, Briefcase } from "lucide-react";
+import { Shield, Loader2, TriangleAlert, Mail, Upload, Link as LinkIcon } from "lucide-react";
 
 type Profile = {
+  firstName: string | null;
+  lastName: string | null;
   name: string | null;
   email: string | null;
   imageUrl: string | null;
@@ -62,9 +66,14 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
     updateChannels,
     updateDepartments,
     updateContact,
+    updateDisplayName,
+    updateAvatarFromStorage,
+    updateAvatarFromUrl,
+    removeAvatar,
     disableAccount,
     enableAccount,
   } = useMemberProfileMutations();
+  const generateUploadUrl = useMutation(api.profiles.generateAvatarUploadUrl);
 
   const availableChannels = useQuery(api.memberQueries.getAvailableChannels, {});
   const availableDepartments = useQuery(api.memberQueries.getAvailableDepartments, {});
@@ -79,6 +88,22 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
     phone: profile.phone || "",
     jobTitle: profile.jobTitle || "",
   });
+
+  // Display name editing
+  const [editingDisplayName, setEditingDisplayName] = useState(false);
+  const [firstNameInput, setFirstNameInput] = useState(profile.firstName || "");
+  const [lastNameInput, setLastNameInput] = useState(profile.lastName || "");
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
+
+  // Avatar upload state (admin editing member avatar)
+  const [avatarTab, setAvatarTab] = useState<"upload" | "url">("upload");
+  const [avatarUrlInput, setAvatarUrlInput] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [savingAvatarUrl, setSavingAvatarUrl] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedChannels, setSelectedChannels] = useState<Set<string>>(
     new Set(profile.channels.map((ch) => ch.id))
   );
@@ -93,6 +118,9 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
   );
 
   useEffect(() => {
+    // Skip while availableDepartments is still loading — an empty array here
+    // would incorrectly wipe pre-selected departments from the profile.
+    if (availableDepartments === undefined) return;
     const validDeptIds = new Set(filteredDepartments.map((d) => d.id));
     setSelectedDepartments((prev) => {
       const next = new Set([...prev].filter((id) => validDeptIds.has(id)));
@@ -124,12 +152,32 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
     }
   };
 
+  const handleUpdateDisplayName = async () => {
+    if (!firstNameInput.trim()) return;
+    setSavingDisplayName(true);
+    try {
+      await updateDisplayName({
+        memberId,
+        firstName: firstNameInput.trim(),
+        lastName: lastNameInput.trim() || undefined,
+      });
+      toast.success(t("Name updated", "تم تحديث الاسم"));
+      setEditingDisplayName(false);
+      onUpdated();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : t("Failed to update name", "فشل تحديث الاسم")
+      );
+    } finally {
+      setSavingDisplayName(false);
+    }
+  };
+
   const handleUpdateContact = async () => {
     setSavingContact(true);
     try {
       await updateContact({
         memberId,
-        email: contactForm.email,
         phone: contactForm.phone,
         jobTitle: contactForm.jobTitle,
       });
@@ -144,6 +192,76 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
       );
     } finally {
       setSavingContact(false);
+    }
+  };
+
+  const stageFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("Only image files are allowed", "يُسمح بملفات الصور فقط"));
+      return;
+    }
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(file);
+    setPendingPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const confirmUpload = async () => {
+    if (!pendingFile) return;
+    setUploadingAvatar(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": pendingFile.type },
+        body: pendingFile,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { storageId } = await res.json();
+      await updateAvatarFromStorage({ memberId, storageId: storageId as Id<"_storage"> });
+      setPendingFile(null);
+      setPendingPreviewUrl(null);
+      toast.success(t("Avatar updated", "تم تحديث الصورة الشخصية"));
+      onUpdated();
+    } catch {
+      toast.error(t("Upload failed", "فشل الرفع"));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const cancelUpload = () => {
+    if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl);
+    setPendingFile(null);
+    setPendingPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSaveAvatarUrl = async () => {
+    const url = avatarUrlInput.trim();
+    if (!url) return;
+    setSavingAvatarUrl(true);
+    try {
+      await updateAvatarFromUrl({ memberId, url });
+      toast.success(t("Avatar updated", "تم تحديث الصورة الشخصية"));
+      onUpdated();
+    } catch {
+      toast.error(t("Failed to save", "فشل الحفظ"));
+    } finally {
+      setSavingAvatarUrl(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setSavingAvatarUrl(true);
+    try {
+      await removeAvatar({ memberId });
+      setAvatarUrlInput("");
+      toast.success(t("Avatar removed", "تمت إزالة الصورة الشخصية"));
+      onUpdated();
+    } catch {
+      toast.error(t("Failed to remove", "فشل الحذف"));
+    } finally {
+      setSavingAvatarUrl(false);
     }
   };
 
@@ -260,6 +378,58 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
           </h3>
         </div>
 
+        {/* Display Name (synced to Clerk) */}
+        <div className="rounded-lg border p-4 mb-3">
+          {!editingDisplayName ? (
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <span className="text-muted-foreground">{t("Name", "الاسم")}: </span>
+                <span>{profile.name || "—"}</span>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => {
+                setFirstNameInput(profile.firstName || "");
+                setLastNameInput(profile.lastName || "");
+                setEditingDisplayName(true);
+              }}>
+                {t("Edit", "تعديل")}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1.5 block text-xs text-muted-foreground">
+                  {t("First Name", "الاسم الأول")}
+                </label>
+                <Input
+                  value={firstNameInput}
+                  onChange={(e) => setFirstNameInput(e.target.value)}
+                  placeholder={t("First name", "الاسم الأول")}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs text-muted-foreground">
+                  {t("Last Name", "اسم العائلة")}
+                </label>
+                <Input
+                  value={lastNameInput}
+                  onChange={(e) => setLastNameInput(e.target.value)}
+                  placeholder={t("Last name", "اسم العائلة")}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" disabled={savingDisplayName || !firstNameInput.trim()} onClick={handleUpdateDisplayName}>
+                  {savingDisplayName && <Loader2 className="size-3.5 animate-spin" />}
+                  {t("Save", "حفظ")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setEditingDisplayName(false)}>
+                  {t("Cancel", "إلغاء")}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Other contact fields */}
         <div className="rounded-lg border p-4">
           {!editingContact ? (
             <div className="space-y-3">
@@ -287,19 +457,6 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
             <div className="space-y-3">
               <div>
                 <label className="mb-1.5 block text-xs text-muted-foreground">
-                  {t("Email", "البريد الإلكتروني")}
-                </label>
-                <Input
-                  value={contactForm.email}
-                  onChange={(e) =>
-                    setContactForm({ ...contactForm, email: e.target.value })
-                  }
-                  type="email"
-                  placeholder={t("email@example.com", "البريد@مثال.com")}
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-xs text-muted-foreground">
                   {t("Phone", "الهاتف")}
                 </label>
                 <Input
@@ -308,7 +465,8 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                     setContactForm({ ...contactForm, phone: e.target.value })
                   }
                   type="tel"
-                  placeholder="+1 (555) 000-0000"
+                  dir="ltr"
+                  placeholder="+20 100 000 0000"
                 />
               </div>
               <div>
@@ -341,6 +499,126 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                 </Button>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* Avatar */}
+        <div className="mb-3 mt-4 flex items-center gap-2">
+          <Upload className="size-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold">
+            {t("Profile Photo", "الصورة الشخصية")}
+          </h3>
+        </div>
+        <div className="rounded-lg border p-4">
+          <Tabs value={avatarTab} onValueChange={(v) => setAvatarTab(v as "upload" | "url")}>
+            <TabsList className="w-full mb-3">
+              <TabsTrigger value="upload" className="flex-1 gap-1.5">
+                <Upload className="size-3.5" />
+                {t("Upload File", "رفع ملف")}
+              </TabsTrigger>
+              <TabsTrigger value="url" className="flex-1 gap-1.5">
+                <LinkIcon className="size-3.5" />
+                {t("Image URL", "رابط صورة")}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="upload" className="space-y-3 pt-1">
+              {pendingPreviewUrl ? (
+                <div className="space-y-3">
+                  <div className="flex justify-center">
+                    <img
+                      src={pendingPreviewUrl}
+                      alt="preview"
+                      className="size-20 rounded-full object-cover border-2 border-primary"
+                    />
+                  </div>
+                  <p className="text-center text-xs text-muted-foreground truncate">
+                    {pendingFile?.name}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1" onClick={confirmUpload} disabled={uploadingAvatar}>
+                      {uploadingAvatar && <Loader2 className="size-3.5 animate-spin" />}
+                      {t("Save Photo", "حفظ الصورة")}
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1" onClick={cancelUpload} disabled={uploadingAvatar}>
+                      {t("Cancel", "إلغاء")}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+                    dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) stageFile(file);
+                  }}
+                >
+                  <Upload className="size-5 mx-auto mb-1.5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    {t("Click or drag an image here", "انقر أو اسحب صورة هنا")}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">PNG، JPG، WEBP</p>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) stageFile(file);
+                  e.target.value = "";
+                }}
+              />
+            </TabsContent>
+
+            <TabsContent value="url" className="space-y-3">
+              <Input
+                dir="ltr"
+                value={avatarUrlInput}
+                onChange={(e) => setAvatarUrlInput(e.target.value)}
+                placeholder="https://example.com/photo.jpg"
+              />
+              {avatarUrlInput && (
+                <div className="flex justify-center">
+                  <img
+                    src={avatarUrlInput}
+                    alt="preview"
+                    className="size-16 rounded-full object-cover border"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              )}
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={handleSaveAvatarUrl}
+                disabled={savingAvatarUrl || !avatarUrlInput.trim()}
+              >
+                {savingAvatarUrl && <Loader2 className="size-3.5 animate-spin" />}
+                {t("Save Photo", "حفظ الصورة")}
+              </Button>
+            </TabsContent>
+          </Tabs>
+
+          {profile.imageUrl && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 w-full text-destructive hover:text-destructive"
+              onClick={handleRemoveAvatar}
+              disabled={savingAvatarUrl}
+            >
+              {t("Remove current photo", "إزالة الصورة الحالية")}
+            </Button>
           )}
         </div>
       </section>

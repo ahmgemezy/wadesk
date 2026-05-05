@@ -88,7 +88,7 @@ function parseMessageContent(msg: MetaMessage): {
         mediaUrl: msg.image?.id,
       };
     case "audio":
-      return { content: "[Voice Message]", contentType: "audio" };
+      return { content: "[Voice Message]", contentType: "audio", mediaUrl: msg.audio?.id };
     case "document":
       return {
         content: msg.document?.filename ?? msg.document?.caption ?? "[Document]",
@@ -102,11 +102,10 @@ function parseMessageContent(msg: MetaMessage): {
         mediaUrl: msg.video?.id,
       };
     case "sticker":
-      return { content: "[Sticker]", contentType: "sticker" };
+      return { content: "[Sticker]", contentType: "sticker", mediaUrl: msg.sticker?.id };
     case "location": {
       const loc = msg.location;
-      const label = loc?.name ?? `${loc?.latitude ?? ""},${loc?.longitude ?? ""}`;
-      return { content: `[Location: ${label}]`, contentType: "location" };
+      return { content: `${loc?.latitude ?? ""},${loc?.longitude ?? ""}|${loc?.name ?? ""}`, contentType: "location" };
     }
     case "interactive": {
       const interactive = msg.interactive;
@@ -296,6 +295,15 @@ export const metaWebhook = httpAction(async (ctx, request) => {
               conversationId: result.conversationId,
               isNewConversation: result.isNewConversation,
             });
+
+            if (mediaUrl) {
+              await ctx.scheduler.runAfter(0, internal.actions.resolveMedia.resolveInboundMedia, {
+                messageId: result.messageId,
+                mediaId: mediaUrl,
+                channelId: channel._id,
+                tenantId: channel.tenantId,
+              });
+            }
 
             if (result.isNewConversation) {
               // Get the conversation to find its department

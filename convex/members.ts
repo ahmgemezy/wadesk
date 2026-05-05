@@ -4,12 +4,15 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { clerkClient } from "@clerk/nextjs/server";
-import { getCallerRole, assertAdmin, type OrgRole } from "./lib/auth";
+import { getCallerIdentity, getCallerRole, assertAdmin, type OrgRole } from "./lib/auth";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 export const getMemberProfile = action({
   args: { memberId: v.string() },
   handler: async (ctx, args): Promise<null | {
+    firstName: string | null;
+    lastName: string | null;
     name: string | null;
     email: string | null;
     imageUrl: string | null;
@@ -24,9 +27,7 @@ export const getMemberProfile = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const client = await clerkClient();
 
@@ -55,11 +56,14 @@ export const getMemberProfile = action({
       }),
     ]);
 
+    const firstName = member.publicUserData?.firstName ?? null;
+    const lastName = member.publicUserData?.lastName ?? null;
+    const fullName = [firstName, lastName].filter(Boolean).join(" ") || member.publicUserData?.identifier || null;
+
     return {
-      name:
-        member.publicUserData?.firstName ??
-        member.publicUserData?.identifier ??
-        null,
+      firstName,
+      lastName,
+      name: fullName,
       email: member.publicUserData?.identifier ?? null,
       imageUrl: member.publicUserData?.imageUrl ?? null,
       role: (member.role === "admin" ? "org:admin" : member.role) as OrgRole,
@@ -86,10 +90,7 @@ export const updateMemberRole = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-    const callerId = identity.subject;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     if (callerId === args.memberId) {
       throw new ConvexError("CANNOT_CHANGE_OWN_ROLE");
@@ -122,10 +123,7 @@ export const removeMemberFromOrganization = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-    const callerId = identity.subject;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     if (callerId === args.memberId) {
       throw new ConvexError("CANNOT_REMOVE_SELF");
@@ -172,10 +170,7 @@ export const updateMemberChannels = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-    const callerId = identity.subject;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     const client = await clerkClient();
     const memberships = await client.organizations.getOrganizationMembershipList({
@@ -239,10 +234,7 @@ export const updateMemberDepartments = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-    const callerId = identity.subject;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     const client = await clerkClient();
     const memberships = await client.organizations.getOrganizationMembershipList({
@@ -299,7 +291,6 @@ export const updateMemberDepartments = action({
 export const updateMemberContact = action({
   args: {
     memberId: v.string(),
-    email: v.optional(v.string()),
     phone: v.optional(v.string()),
     jobTitle: v.optional(v.string()),
   },
@@ -307,22 +298,7 @@ export const updateMemberContact = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-
-    const member = memberships.data.find(
-      (m) => m.publicUserData?.userId === args.memberId,
-    );
-    if (!member) {
-      throw new ConvexError("MEMBER_NOT_FOUND");
-    }
+    const { tenantId } = await getCallerIdentity(ctx);
 
     await ctx.runMutation(internal.memberQueries.updateMemberProfile, {
       tenantId,
@@ -339,9 +315,121 @@ export const updateMemberContact = action({
       tenantId,
       memberId: args.memberId,
       action: "updated_contact",
-      details: {
-        changedFields,
-      },
+      details: { changedFields },
+    });
+
+    return { success: true };
+  },
+});
+
+export const updateMemberDisplayName = action({
+  args: {
+    memberId: v.string(),
+    firstName: v.string(),
+    lastName: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const client = await clerkClient();
+    await client.users.updateUser(args.memberId, {
+      firstName: args.firstName,
+      ...(args.lastName !== undefined && { lastName: args.lastName }),
+    });
+
+    await ctx.runMutation(internal.memberQueries.logMemberAction, {
+      tenantId,
+      memberId: args.memberId,
+      action: "updated_contact",
+      details: { changedFields: { displayName: true } },
+    });
+
+    return { success: true };
+  },
+});
+
+export const updateMemberAvatarFromStorage = action({
+  args: {
+    memberId: v.string(),
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const storageUrl = await ctx.runMutation(internal.profiles.getStorageUrlInternal, {
+      storageId: args.storageId as Id<"_storage">,
+    });
+    if (!storageUrl) throw new ConvexError("STORAGE_URL_FAILED");
+
+    const res = await fetch(storageUrl);
+    if (!res.ok) throw new ConvexError("FETCH_FAILED");
+    const blob = await res.blob();
+
+    const client = await clerkClient();
+    await client.users.updateUserProfileImage(args.memberId, { file: blob });
+
+    await ctx.runMutation(internal.memberQueries.logMemberAction, {
+      tenantId,
+      memberId: args.memberId,
+      action: "updated_contact",
+      details: { changedFields: { avatarUrl: true } },
+    });
+
+    return { success: true };
+  },
+});
+
+export const updateMemberAvatarFromUrl = action({
+  args: {
+    memberId: v.string(),
+    url: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const res = await fetch(args.url);
+    if (!res.ok) throw new ConvexError("FETCH_FAILED");
+    const blob = await res.blob();
+
+    const client = await clerkClient();
+    await client.users.updateUserProfileImage(args.memberId, { file: blob });
+
+    await ctx.runMutation(internal.memberQueries.logMemberAction, {
+      tenantId,
+      memberId: args.memberId,
+      action: "updated_contact",
+      details: { changedFields: { avatarUrl: true } },
+    });
+
+    return { success: true };
+  },
+});
+
+export const removeMemberAvatar = action({
+  args: { memberId: v.string() },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const client = await clerkClient();
+    await client.users.deleteUserProfileImage(args.memberId);
+
+    await ctx.runMutation(internal.memberQueries.logMemberAction, {
+      tenantId,
+      memberId: args.memberId,
+      action: "updated_contact",
+      details: { changedFields: { avatarUrl: true } },
     });
 
     return { success: true };
@@ -354,10 +442,7 @@ export const disableAccount = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
-    const callerId = identity.subject;
+    const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     if (callerId === args.memberId) {
       throw new ConvexError("CANNOT_DISABLE_SELF");
@@ -398,9 +483,7 @@ export const enableAccount = action({
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new ConvexError("UNAUTHORIZED");
-    const tenantId = identity.orgId as string;
+    const { tenantId } = await getCallerIdentity(ctx);
 
     const client = await clerkClient();
     const memberships = await client.organizations.getOrganizationMembershipList({

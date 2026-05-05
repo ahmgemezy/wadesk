@@ -101,7 +101,9 @@ export function MemberProfileModal({
           <>
             <div className="flex items-start gap-4 px-4 pb-4 border-b">
               <Avatar className="size-14">
-                {profile.imageUrl && <AvatarImage src={profile.imageUrl} />}
+                {profile.imageUrl && (
+                  <AvatarImage src={profile.imageUrl} />
+                )}
                 <AvatarFallback className="text-lg">
                   {(profile.name ?? profile.email ?? "?").charAt(0).toUpperCase()}
                 </AvatarFallback>

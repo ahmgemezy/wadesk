@@ -51,7 +51,7 @@ function parseMessageContent(msg: MetaMessage): {
         mediaUrl: msg.image?.id,
       };
     case "audio":
-      return { content: "[Voice Message]", contentType: "audio" };
+      return { content: "[Voice Message]", contentType: "audio", mediaUrl: msg.audio?.id };
     case "document":
       return {
         content: msg.document?.filename ?? msg.document?.caption ?? "[Document]",
@@ -65,11 +65,10 @@ function parseMessageContent(msg: MetaMessage): {
         mediaUrl: msg.video?.id,
       };
     case "sticker":
-      return { content: "[Sticker]", contentType: "sticker" };
+      return { content: "[Sticker]", contentType: "sticker", mediaUrl: msg.sticker?.id };
     case "location": {
       const loc = msg.location;
-      const label = loc?.name ?? `${loc?.latitude ?? ""},${loc?.longitude ?? ""}`;
-      return { content: `[Location: ${label}]`, contentType: "location" };
+      return { content: `${loc?.latitude ?? ""},${loc?.longitude ?? ""}|${loc?.name ?? ""}`, contentType: "location" };
     }
     case "interactive": {
       const interactive = msg.interactive;
@@ -93,6 +92,7 @@ export async function processMessages(
   channel: { _id: Id<"channels">; tenantId: string },
   messages: MetaMessage[],
   contactsFromPayload: { profile: { name: string }; wa_id: string }[],
+  wabaId: string,
 ): Promise<void> {
   for (const msg of messages) {
     // Incoming reactions — handled separately, no conversation message created
@@ -110,7 +110,10 @@ export async function processMessages(
     }
 
     const { content, contentType, mediaUrl } = parseMessageContent(msg);
-    const senderName = contactsFromPayload?.[0]?.profile?.name;
+    // Find the contact matching this message's sender (wa_id matches msg.from)
+    const senderName =
+      contactsFromPayload?.find((c) => c.wa_id === msg.from)?.profile?.name ??
+      contactsFromPayload?.[0]?.profile?.name;
 
     // CSAT response check — single digit 1–5 before creating a conversation message
     if (/^[1-5]$/.test(content.trim()) && contentType === "text") {
@@ -133,7 +136,7 @@ export async function processMessages(
       channelId: channel._id,
       metaMessageId: msg.id,
       senderPhone: msg.from,
-      wabaId: channel._id as unknown as string,
+      wabaId,
       content,
       contentType,
       mediaUrl,
@@ -143,6 +146,15 @@ export async function processMessages(
     });
 
     if (result.isDuplicate) continue;
+
+    if (mediaUrl) {
+      await ctx.scheduler.runAfter(0, internal.actions.resolveMedia.resolveInboundMedia, {
+        messageId: result.messageId,
+        mediaId: mediaUrl,
+        channelId: channel._id,
+        tenantId: channel.tenantId,
+      });
+    }
 
     if (result.isNewConversation) {
       const conversation = await ctx.runQuery(internal.conversations.getInternal, {
