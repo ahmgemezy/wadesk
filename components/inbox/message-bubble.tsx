@@ -241,7 +241,11 @@ function ConversationEventPill({
       label = `${actor} نقل إلى ${toDept}`;
     else if (eventType === "agent_assigned") {
       const titleSuffix = eventData?.agentJobTitle ? ` · ${eventData.agentJobTitle}` : "";
-      label = `تم تعيين المحادثة لـ ${agent}${titleSuffix}`;
+      const isSelfClaim = actor === agent || actor === "شخص ما";
+      const isSystem = eventData?.actorName === "System";
+      label = isSelfClaim || isSystem
+        ? `تم تعيين المحادثة لـ ${agent}${titleSuffix}`
+        : `${actor} عيّن المحادثة لـ ${agent}${titleSuffix}`;
     } else if (eventType === "agent_unassigned")
       label = "تم إلغاء تعيين المحادثة";
     else if (eventType === "resolved")
@@ -251,7 +255,7 @@ function ConversationEventPill({
     else if (eventType === "csat_received")
       label = `${stars} العميل قيّم ${csatScore}/5`;
     else if (eventType === "transfer_within_channel")
-      label = `تم تحويل المحادثة إلى قسم ${toDept}`;
+      label = `${actor} حوّل المحادثة إلى قسم ${toDept}`;
     else if (eventType === "forward_to_branch")
       label = "تم إرسال المحادثة إلى رقم آخر — تم إغلاقها.";
   } else {
@@ -259,7 +263,11 @@ function ConversationEventPill({
       label = `${actor} transferred to ${toDept}`;
     else if (eventType === "agent_assigned") {
       const titleSuffix = eventData?.agentJobTitle ? ` · ${eventData.agentJobTitle}` : "";
-      label = `Conversation assigned to ${agent}${titleSuffix}`;
+      const isSelfClaim = actor === agent || actor === "Someone";
+      const isSystem = eventData?.actorName === "System";
+      label = isSelfClaim || isSystem
+        ? `Conversation assigned to ${agent}${titleSuffix}`
+        : `${actor} assigned conversation to ${agent}${titleSuffix}`;
     } else if (eventType === "agent_unassigned")
       label = "Conversation unassigned";
     else if (eventType === "resolved")
@@ -269,7 +277,7 @@ function ConversationEventPill({
     else if (eventType === "csat_received")
       label = `${stars} Customer rated ${csatScore}/5`;
     else if (eventType === "transfer_within_channel")
-      label = `Conversation transferred to ${toDept}`;
+      label = `${actor} transferred conversation to ${toDept}`;
     else if (eventType === "forward_to_branch")
       label = "Conversation forwarded to another number — closed.";
   }
