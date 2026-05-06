@@ -24,7 +24,7 @@ A team inbox built on WhatsApp — multiple agents handle customer conversations
 | ------------- | -------------------------------------------------- |
 | Frontend      | Next.js 15 (App Router)                            |
 | Backend / DB  | Convex (real-time database + serverless functions) |
-| Auth          | Clerk                                              |
+| Auth          | Better Auth                                        |
 | UI Components | shadcn/ui                                          |
 | Styling       | Tailwind CSS                                       |
 | WhatsApp API  | Meta WhatsApp Business Cloud API                   |
@@ -45,7 +45,7 @@ A team inbox built on WhatsApp — multiple agents handle customer conversations
 ### Key Architectural Rules
 
 - All Convex mutations must be tenant-scoped (never query without `tenantId`)
-- Clerk `orgId` = `tenantId` throughout the system
+- Better Auth `orgId` = `tenantId` throughout the system
 - Real-time updates via Convex subscriptions (not polling)
 - All API calls to Meta go through server-side Convex actions (never client-side)
 - Webhook verification for all incoming Meta webhooks
@@ -174,7 +174,7 @@ Display name changes go through Meta review — **not instant**. The UI must cle
 
 Steps:
 
-1. Sign up (Clerk) → create org
+1. Sign up (Better Auth) → create org
 2. Connect WhatsApp via Meta Embedded Signup
 3. Send test message to verify connection
 4. Invite first agent (optional)
@@ -288,7 +288,7 @@ Additional 20% off all paid plans when billed annually.
 - Never expose Meta API tokens client-side
 - All webhook payloads must be signature-verified before processing
 - Convex queries must always include `tenantId` filter — no cross-tenant data leakage
-- Clerk JWT used for all authenticated requests
+- Better Auth JWT used for all authenticated requests
 - Rate limiting on all public-facing webhook endpoints
 - Never log full message content in production (privacy)
 - Phone numbers stored in E.164 format always
@@ -328,9 +328,9 @@ Additional 20% off all paid plans when billed annually.
 ## 14. Environment Variables
 
 ```env
-# Clerk
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
+# Better Auth
+NEXT_PUBLIC_Better Auth_PUBLISHABLE_KEY=
+Better Auth_SECRET_KEY=
 
 # Convex
 NEXT_PUBLIC_CONVEX_URL=
@@ -366,7 +366,7 @@ PADDLE_SELLER_ID=
 | Decision                            | Rationale                                                                   |
 | ----------------------------------- | --------------------------------------------------------------------------- |
 | Convex over Supabase                | Real-time first, no SQL complexity, faster to build                         |
-| Clerk over NextAuth                 | Multi-tenant orgs built-in, saves weeks of work                             |
+| Better Auth over NextAuth           | Multi-tenant orgs built-in, saves weeks of work                             |
 | Paddle over Stripe                  | MoR = handles MENA VAT + global tax automatically; account approval pending |
 | Shared WABA model (Embedded Signup) | Client owns their number, WABDesk can't be shut down                        |
 | Freemium over free trial only       | Lower barrier for Arab SMB market                                           |
@@ -485,7 +485,7 @@ Admin can add agents via:
 
 **A. Invite by Email**
 Admin enters email → agent receives invite link → creates account → auto-joined to tenant.
-Handled natively by Clerk Organizations.
+Handled natively by Better Auth Organizations.
 
 **B. Invite by WhatsApp**
 Admin enters agent's phone number → WABDesk sends them an invite link via WhatsApp → they click and create account.
@@ -631,7 +631,7 @@ A feature is "done" when:
 
 ### Tenant Member Roles
 
-Each Clerk Organization (tenant) has 3 roles: **Admin**, **Supervisor**, **Agent**
+Each Better Auth Organization (tenant) has 3 roles: **Admin**, **Supervisor**, **Agent**
 
 ### Permissions Table
 
@@ -676,7 +676,7 @@ Enforce these rules throughout the entire codebase:
 ### Implementation Notes
 
 - Role checks **must be enforced server-side** in Convex functions — never trust client-side checks alone.
-- Use Clerk `organizationMembership.role` to gate all role-sensitive actions.
+- Use Better Auth `organizationMembership.role` to gate all role-sensitive actions.
 - When a Supervisor attempts to invite or remove a member, validate that the target member's role is `agent` before proceeding — reject with a clear error if the target is `admin` or `supervisor`.
 
 ---
@@ -1035,7 +1035,7 @@ _Last updated: manually — update this file whenever a major architectural or p
 
 ## Active Technologies
 
-- TypeScript (strict, no `any`) — enforced project-wide + Next.js 15 (App Router), Convex (backend + realtime), Clerk (auth + multi-tenancy), shadcn/ui, Tailwind CSS v4
+- TypeScript (strict, no `any`) — enforced project-wide + Next.js 15 (App Router), Convex (backend + realtime), Better Auth (auth + multi-tenancy), shadcn/ui, Tailwind CSS v4
 
 <!-- convex-ai-start -->
 

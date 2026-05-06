@@ -15,6 +15,10 @@ convex/_generated/
 .idea/
 .vscode/
 coverage/
+.env.local
+.env*.local
+.env.development.local
+.env.production.local
 
 # clerk configuration (can include secrets)
 /.clerk/

@@ -18,6 +18,154 @@
 
 ## ✅ Completed Tasks
 
+### 2026-05-06: Clerk → Better Auth Migration — Stage 2d Phase 2 Planning (Auth Pages Rebuild + Org Components + Accept-Invite)
+
+**Planning only — no source files modified. All diffs applied in Stage 3.**
+
+Produced `docs/migration/clerk-to-better-auth/STAGE_2D_PHASE_2.md` (comprehensive planning doc, ~2200 lines).
+
+**Phase 2 scope: 7 files (6 rewrites + 1 new)**
+- `app/(auth)/sign-in/[[...sign-in]]/page.tsx` — REWRITE custom form replacing `<SignIn>` component
+- `app/(auth)/sign-up/[[...sign-up]]/page.tsx` — REWRITE custom form replacing `<SignUp>` component
+- `app/select-org/page.tsx` — REWRITE minimal `<OrganizationList>` rebuild (D5=B: no avatars/role/activity)
+- `app/join/[token]/page.tsx` — REWRITE (replace `<SignIn>` JSX with redirect to unified sign-in)
+- `app/accept-invite/[invitationId]/page.tsx` — CREATE (NEW file for Better Auth invitation acceptance, state machine: loading → unauthenticated → ready → accepting → accepted/error)
+- `components/shell/user-menu.tsx` — REWRITE (`<SignOutButton>` + `<OrganizationSwitcher>` custom rebuilds)
+- `components/onboarding/step-workspace-name.tsx` — REWRITE (`<CreateOrganization>` → custom form)
+
+**Discovery findings (§1):**
+- **§1.1 Verbatim reads:** All 6 existing files read; 1 new file confirmed as non-existent
+- **§1.2 Design tokens extracted:** 40+ tokens from current `appearance` props (primary color #0071E3, card glassmorphism rgba(255,255,255,0.88) with backdrop-blur-24, button rounded-full, shadows, typography)
+- **§1.3 Per-page authClient methods:** Mapped all 7 files to their Better Auth client methods (signIn.email, signIn.social, signUp.email, useListOrganizations, organization.create, organization.setActive, useSession, acceptInvitation, rejectInvitation, signOut)
+- **§1.4 Post-action redirects:** Confirmed all success paths (sign-in → /inbox or ?redirectTo, sign-up → /onboarding, org select → /inbox, org create → /onboarding, accept-invite → /inbox, sign-out → /)
+- **§1.5 i18n + RTL:** Current codebase uses inline bilingual strings (Arabic-first, slash-separated); no `lib/i18n.ts` exists; no locale provider visible; Phase 2 preserves inline pattern
+- **§1.6 OAuth config:** Stage 2a planned `convex/auth.ts` with Google/Facebook social providers; file doesn't exist yet (planning-only); Phase 2 pages call authClient methods, no page-level config needed
+- **§1.7 Scope confirmed:** 7 files in scope; Phase 3 files (provider swap, dashboard guard, role-utils Q8, UI deletion) explicitly deferred
+
+**Design tokens synthesized (§2):**
+- Colors: primary #0071E3 + variants, text #1D1D1F/#6E6E73, surfaces (card rgba(255,255,255,0.88), input rgba(0,0,0,0.04)), social buttons (Google light, Facebook #1877F2)
+- Typography: font-family "-apple-system, BlinkMacSystemFont, 'SF Pro Display'..." for English; Cairo/Tajawal for Arabic (per CLAUDE.md)
+- Sizing: card border-radius 22px, input border-radius 12px, button border-radius full, card max-width ~420px
+- Effects: backdrop-filter blur(24px) saturate(180%), box-shadow 0 2px 6px rgba(0,0,0,0.04), ... 0 30px 60px rgba(0,0,0,0.06)
+
+**Per-page structural outlines (§3):**
+- **§3.1 sign-in:** Form with email + password inputs, Google/Facebook social buttons, "Forgot password?" link (no handler v1), error display, link to sign-up
+- **§3.2 sign-up:** Form with name + email + password, same social buttons, link to sign-in, 8-char min password requirement
+- **§3.3 select-org:** List of existing orgs (click to setActive + /inbox), separator, create new workspace section (name input + create button), empty state (if no orgs)
+- **§3.4 accept-invite (NEW):** State machine (loading → unauthenticated → ready → accepting → accepted/error); unauthenticated redirects to /sign-in?redirectTo=/accept-invite/[id]; ready shows "{inviter} invited you to {org}" with Accept/Reject buttons; error states for expired, not-found, email-mismatch
+- **§3.5 join:** Redirect to /sign-in?redirectTo=/join/[token] when not signed in; preserve existing validateAndJoin logic + error states (INVITE_INVALID, PLAN_LIMIT, ALREADY_MEMBER)
+- **§3.6 user-menu:** Keep avatar + profile modal trigger; replace `<OrganizationSwitcher>` with custom dropdown (org list + click to setActive + create new workspace link); replace `<SignOutButton>` with custom button calling authClient.signOut()
+- **§3.7 step-workspace-name:** Replace `<CreateOrganization>` with custom form (name input + create button); preserve useEffect that calls ensureCreated() on orgId change
+
+**Dependency chain (§5):**
+- Phase 2 assumes Stage 2a creates `lib/auth-client.ts`, `convex/auth.ts` (not yet created — planning-only)
+- Phase 2 assumes Phase 1 creates `lib/auth-hooks.ts` shim (not yet created — planning-only)
+- Phase 2 assumes Stage 2c.1 adds `lib/utils.ts:slugify` (not yet created — planning-only)
+- None of these prerequisites exist; all created in Stage 3 apply
+
+**Open questions (10 flagged in §6):**
+- OQ-2d1: Better Auth's `getInvitation()` method signature (needed for accept-invite page)
+- OQ-2d2: Better Auth's `rejectInvitation()` method (if exists)
+- OQ-2d3: Post-reject navigation target (/sign-in vs /select-org)
+- OQ-2d4: `signOut()` redirect parameter (callbackURL vs manual router.push)
+- OQ-2d5: OAuth redirect error handling + error URL pattern
+- OQ-2d6: Locale detection mechanism (cookie, path, header, or default Arabic)
+- OQ-2d7: Stage 2a's `lib/auth-client.ts` file content (expected export pattern)
+- OQ-2d8: Phase 1's shim hook name (useAuth vs useSession)
+- OQ-2d9: `useListOrganizations()` exact return type
+- OQ-2d10: `organization.create()` return shape (id extraction for setActive)
+
+**Files NOT in scope (§4):** Provider swap, clerk-provider delete, dashboard guard, role-utils Q8, avatar/ban UI deletion — all Phase 3
+
+**Phase 2 ready for Phase 3 apply after OQ resolution.**
+
+**Revised 2026-05-06 (after Phase 2 planning review):**
+- **B1 resolved:** `lib/i18n/context.tsx` confirmed (`useT()`, `useLocale()`, `LocaleProvider`). `LocaleProvider` mounted in `app/layout.tsx` wrapping all routes including `app/(auth)/...`. Locale from cookie `"locale"` (defaults to `"ar"`). Arabic font is IBM Plex Sans Arabic via `--font-arabic` CSS var (not Cairo/Tajawal). All Phase 2 pages corrected to use `useT()` not legacy slash-separated strings. OQ-2d6 closed.
+- **B2/B4 resolved:** Verified in `better-auth` dist types (`dist/plugins/organization/routes/crud-invites.d.mts`). `getInvitation({ id })` returns `{ ..., organizationName, organizationSlug, inviterEmail }` — no `inviterName` field (UI uses `inviterEmail` instead). `acceptInvitation({ invitationId })` and `rejectInvitation({ invitationId })` both exist. OQ-2d1 and OQ-2d2 closed. §3.4.3 updated with verified shapes.
+- **B3 resolved:** 4 inferred tokens removed or flagged. `cardBorderLight` dropped (not in `appearance` props). `cardPadding`, `cardMaxWidth`, `inputBorderDefault` flagged as Clerk-internal defaults with planned values; marked `[verify Phase 3]`.
+- **A1 applied:** "Forgot password?" link removed from sign-in form for v1. Better Auth has `requestPasswordReset` endpoint; post-launch addition only.
+- **A2 applied:** "Settings" link removed from OrganizationSwitcher dropdown (`/settings/org` route unconfirmed).
+- **A3 applied:** §2.2 now commits to Tailwind-only (no `style=` props). Token objects are Tailwind class strings. Long shadow value → `globals.css` CSS var + `shadow-[var(...)]`.
+- **A4 applied:** §9 Phase 3 preview now includes audit note for `validateAndJoin`'s `ctx.auth.getUserIdentity()` under Better Auth.
+- **OQ-2d4 closed:** `signOut` uses `fetchOptions.onSuccess` callback for redirect.
+- **Remaining hard blockers:** OQ-2d7 (lib/auth-client.ts create pattern — `better-auth/react` vs `@convex-dev/better-auth/client`), OQ-2d8 (Phase 1 shim export name). Both need cross-referencing Phase 1 doc before Phase 3 apply.
+
+**Revised 2026-05-06 (after final approval — OQ-2d7 + OQ-2d8 closures):**
+- **OQ-2d7 CLOSED:** Stage 2a §5.4 (lines 1058–1095) specifies `lib/auth-client.ts` uses `createAuthClient` from `"better-auth/react"` with `convexClient()` + `organizationClient()` plugins. All Phase 2 calls to `authClient.useSession()` are correct against this client.
+- **OQ-2d8 CLOSED:** Phase 1 §2.5 (lines 331–412) specifies `lib/auth-hooks.ts` exports `useAuth()`, `useUser()`, `useOrganization()` in Clerk-compatible shape. All three internally call `authClient.useSession()` + `authClient.useActiveOrganization()` and translate the shape. No `useSession` is exported from the shim.
+- **§1.8 added:** New canonical "Hook Source Per Phase 2 File" table added to doc. Per-file mapping: 4 files use native `authClient` (sign-in, sign-up, select-org, accept-invite); 1 uses shim only (join); 2 use a mix (user-menu, step-workspace-name). Rule documented: shim for Phase 1-touched code paths; native `authClient` for net-new code.
+- **§3.5, §3.6, §3.7 updated:** Explicit imports blocks added. `join/[token]` uses shim only. `user-menu` shows both `useAuth, useUser` from `@/lib/auth-hooks` + `authClient` from `@/lib/auth-client`. `step-workspace-name` shows `useAuth` from shim + `authClient` from native.
+- **§5 prerequisite table updated:** `lib/auth-hooks.ts` row corrected — `accept-invite` removed (uses native, not shim); `step-workspace-name` added. Stage 2a §5.4 line range (1058–1095) and Phase 1 §2.5 line range (331–412) cited.
+- **§6 OQ table updated:** OQ-2d7 and OQ-2d8 moved to CLOSED table. "OPEN: Hard blockers" section removed (no remaining hard blockers). All 8 OQs are now accounted for: 6 closed, 4 soft flags.
+- **No remaining hard blockers. Phase 2 planning complete. Ready for Phase 3 apply.**
+
+### 2026-05-06: Clerk → Better Auth Migration — Stage 2c.1 Gap Closer
+
+**Planning only — no source files modified. All diffs applied in Stage 3.**
+
+Produced `docs/migration/clerk-to-better-auth/STAGE_2C1_GAP_CLOSER.md`. Closes three gaps from Stage 2c:
+
+- **`convex/onboarding.ts` BEFORE/AFTER**: Verdict **(A) zero-line diff** — file has no Clerk imports, no `^org_` format checks, no tenantId length validation, no external API calls; auth-library-agnostic; tenantId is an opaque string stored directly in Convex tables.
+- **`lib/utils.ts:slugify` added**: File exists (6 lines, `cn` only). `slugify` appended at line 8. Uses global `crypto.randomUUID()` fallback for Arabic/non-Latin org names that produce empty slug after stripping. No `import { randomUUID } from "node:crypto"` — browser-safe. Five test-case traces included in doc.
+- **`sendInvitationEmail` wiring resolved**: Callback signature confirmed single-argument (no `ctx`). Option (b) chosen — direct Resend `fetch` call inside the callback. Inline HTML bilingual template (AR primary, EN secondary) via `buildInvitationEmailHtml` helper defined at module scope in `convex/auth.ts`. No React Email — callback runs in Convex edge runtime (no `"use node"`).
+- **`auth.api.inviteMember` pattern established**: `inviteByEmail` corrected — `adapter.create` → `auth.api.inviteMember({ body: { organizationId, email, role }, headers })`. OQ-C3.2 flagged: synthetic headers construction from Convex action ctx is uncertain; three candidate approaches documented; fallback (`adapter.create` + `ctx.scheduler.runAfter`) provided.
+- **`inviteByWhatsApp` corrected**: Stage 2c §8.4 OQ-C3 concern was unfounded — `inviteByWhatsApp` does not create email invitations in the current source code (uses shareable link tokens via `inviteLinks` table). Only change: member-count `adapter.findMany` replaces `getOrganizationMembershipList`.
+- **`validateAndJoin` confirmed**: `adapter.create({ model: "member" })` in Stage 2c §11 is correct — no member lifecycle hooks in `convex/auth.ts`; manual `agentWelcomeEmail` dispatch unchanged.
+- **Stage 2c §14 OQ-C3 closed**: Adapter writes bypass hooks by design. API layer owns all side effects. New OQ-C3.2 raised for synthetic-headers pattern.
+- **Two product decisions logged**: D1 (`assertAgentLimitNotReached` signature `{ data: unknown[] }` → `number`) approved. D2 (Q2 avatar = Option B rewrite — keep backend functions, remove UI buttons) confirmed.
+
+Stage 2d ready to open after review.
+
+- task/038-auth-migration-stage-2c-2: Stage 2c.1 Gap C resolution — Path B implementation plan. Planning only; no installs, no source modifications. Produced docs/migration/clerk-to-better-auth/STAGE_2C2_PATH_B.md with: §1 discovery output (existing email infrastructure verified — actual send-action at convex/actions/sendEmail.ts, templates directory at convex/emails/templates/, signature table from real file content: templateKey=v.string() open, variables=Record<string,string>, locale=union("ar"|"en"), from-address routing by template category), §2 convex/auth.ts:sendInvitationEmail reverted to no-op stub with explanatory comment (Stage 2c.1 §4.1 buildInvitationEmailHtml helper deleted — not added to Stage 3 apply), §3 convex/actions/sendEmail.ts adds "invitation" template key (1 import + 4 lines to SUBJECTS + 2 lines to buildElement switch — additive only; no validator change needed since templateKey is v.string()), §4 convex/emails/templates/invitation.tsx NEW bilingual AR/EN React Email template mirroring existing conventions (inline styles, WaEmailLayout+WaSection+Button, Apple-blue #0071E3 CTA, always renders both language sections in one email), §5 convex/orgMembers.ts:inviteByEmail third revision (adapter.create + ctx.scheduler.runAfter — deterministic, no synthetic headers gamble). Stage 2c §8.1 + Stage 2c.1 §4.1 §4.4 superseded. Stage 2c.1 §4.5 §4.6 §4.7 stand. Four new OQs logged (2c2-A: adapter.create return shape/id field; 2c2-B: accept-invite route path; 2c2-C: inviter.name reliability; 2c2-D: hardcoded locale "ar" for invitation email). Stage 2d ready to open after review.
+
+- task/037-auth-migration-stage-2c-1: Stage 2c gap closer for Clerk → Better Auth migration. Planning only; no installs, no source modifications. Produced docs/migration/clerk-to-better-auth/STAGE_2C1_GAP_CLOSER.md with: convex/onboarding.ts BEFORE/AFTER (verdict: zero-line diff), lib/utils.ts:slugify added with Arabic-empty crypto.randomUUID fallback, sendInvitationEmail wiring resolved—auth.api.inviteMember pattern established for invitation creation (supersedes Stage 2c §8.1 adapter.create approach; §8.4 corrected — no invitation creation in inviteByWhatsApp), direct Resend call used for email send (inline HTML, no React Email — edge runtime constraint), no invitation email template file created (inline HTML in auth.ts callback), Stage 2c §14 OQ-C3 closed (partial — OQ-C3.2 new open question on synthetic headers). Two product decisions logged (D1: assertAgentLimitNotReached signature change approved; D2: Q2 avatar = Option B rewrite — no avatar function deletions). Stage 2d ready to open after review.
+
+---
+
+### 2026-05-06: Clerk → Better Auth Migration — Stage 2c Planning (clerkClient() call sites)
+
+**Planning only — no source files modified. All diffs applied in Stage 3.**
+
+Produced `docs/migration/clerk-to-better-auth/STAGE_2C_CLERK_CLIENT_SITES.md` (1037 lines). Covers the complete replacement plan for all 22 `clerkClient()` call sites across 6 Convex files.
+
+**Files inventoried (in scope for Stage 3 diffs):**
+
+- `convex/orgMembers.ts` — 5 actions: `inviteByEmail`, `list`, `changeRole`, `inviteByWhatsApp`, `removeMember`
+- `convex/members.ts` — 11 actions: `getMemberProfile`, `updateMemberRole`, `removeMemberFromOrganization`, `updateMemberChannels`, `updateMemberDepartments`, `updateMemberDisplayName`, `updateMemberAvatarFromStorage`, `updateMemberAvatarFromUrl`, `removeMemberAvatar`, `disableAccount`, `enableAccount`
+- `convex/teamPresence.ts` — `listWithDepartments` (missed from Stage 2b's scope list)
+- `convex/lib/emailHelpers.ts` — all 3 exported functions gain `ctx` parameter; callers in `notifyEmail.ts` and `channelRetentionAction.ts` updated
+- `convex/actions/validateInvite.ts` — `validateAndJoin`
+- `convex/actions/roundRobin.ts` — fallback branch in `assignRoundRobin`
+
+**Helper type changes required:**
+
+- `convex/lib/planLimits.ts:assertAgentLimitNotReached` — input type `{ data: unknown[] }` → `number` (**requires Ahmed approval** — §30.3 protected file)
+- `convex/lib/lastAdmin.ts:assertNotLastAdmin` — input type changes from Clerk membership shape to `Array<{ role: string; userId: string }>`
+
+**Key behavioral changes documented:**
+
+- Member names: Clerk's `firstName`+`lastName` split → single Better Auth `user.name` string
+- Avatar upload: Clerk CDN binary re-upload → Convex Storage URL or direct URL stored
+- Role normalization: `"admin"` → `"org:admin"` normalization removed (Better Auth emits full colon form already)
+- Invitation emails: Clerk-hosted email → Better Auth `sendInvitationEmail` hook → WabDesk React Email system
+
+**Open questions blocking Stage 3 apply:**
+
+- **OQ-C3 (critical):** Whether direct `adapter.create({ model: "invitation" })` triggers Better Auth's `sendInvitationEmail` hook. If not, `inviteByEmail` must call `auth.api.organization.inviteMember` (HTTP path) instead.
+- **OQ-C4:** Whether frontend components destructure `firstName`/`lastName` from `getMemberProfile` separately.
+- **OQ-C5:** Whether `adapter.create` is idempotent on duplicate member (userId+organizationId).
+
+**Migration stage summary:**
+| Stage | Doc | Status |
+|---|---|---|
+| Stage 0 — Inventory | `STAGE_0_INVENTORY.md` | ✅ Done |
+| Stage 1 — Architecture | `STAGE_1_ARCHITECTURE.md` | ✅ Done |
+| Stage 2a — Foundation files | `STAGE_2A_FOUNDATION.md` | ✅ Done |
+| Stage 2b — Auth helpers + middleware | `STAGE_2B_LIB_AUTH.md` | ✅ Done |
+| Stage 2c — clerkClient() sites | `STAGE_2C_CLERK_CLIENT_SITES.md` | ✅ Done |
+| Stage 2d — Frontend | Not started | ⬜ |
+| Stage 3 — Apply all diffs | — | ⬜ |
+
 ### 2026-05-05: 032-design-tokens-foundation — Status + Shadow token vocabulary added to globals.css
 
 Added the Apple+Stitch design-system token vocabulary (status and shadow) to `app/globals.css` as pure additions — no existing token values were changed. This is Phase 1 of the WABDesk design system foundation; Phase 2 (Inbox pilot component updates) will consume these tokens.
@@ -847,21 +995,26 @@ All tables are real, indexed, and used by live queries:
 
 **Bug 1 — Locale system mismatch**
 `KlaroProvider` was using `LocaleContext` (cookie-driven, sets `<html dir>`) to determine the current locale. The marketing pages use a separate `useMarketingLocale()` hook (localStorage-driven). The two systems are not synchronized — the cookie value can lag behind the localStorage toggle, causing Klaro to render in the wrong language. Fixed by switching `KlaroProvider` to read locale from `useMarketingLocale()`, aligning it with the rest of the marketing site.
+
 - **File modified:** `components/consent/klaro-provider.tsx`
 
 **Bug 2 — Missing `purposeItem` translation keys + `poweredBy` footer link**
 Klaro rendered `[missing translation]` placeholders for service-count labels (e.g. "1 service", "2 services") because the `purposeItem.service` and `purposeItem.services` keys were absent from both the AR and EN translation objects. Separately, the "Powered by Klaro" footer link was still visible despite the intent to hide it — `poweredBy: ""` (empty string) in per-locale `consentNotice` does not suppress the link; the correct fix is `disablePoweredBy: true` at the top level of the Klaro config object.
+
 - **File modified:** `lib/klaro/config.ts`
 
 **Bug 3 — RTL CSS applied to `<html>` instead of `#klaro` wrapper**
 `styles/klaro.css` used `[dir="rtl"]` as the ancestor selector for all RTL overrides. Because `<html dir="rtl">` is set permanently by the cookie-driven locale system (even in EN mode — see architectural note below), this selector matched in all page states, applying RTL layout universally. The fix was to change the selector root from `[dir="rtl"]` to `#klaro[dir="rtl"]`, which matches only the Klaro wrapper element (Klaro sets `dir` on `#klaro` independently from the locale toggle). Additionally, four CSS rules were missing from the original RTL overrides: close button physical position, toggle switch anchor, service row padding, and footer button alignment. All four were added under the corrected selector.
+
 - **File modified:** `styles/klaro.css`
 
 **Bug 4 — Modal background color override not applying**
 Klaro's own stylesheet uses `.cm-klaro` as part of its base selector, giving it higher specificity than WABDesk's overrides which targeted only `#klaro`. Fixed by prepending `.cm-klaro` to the override selector chain to match Klaro's base specificity.
+
 - **File modified:** `styles/klaro.css`
 
 **Files modified (complete list):**
+
 - `components/consent/klaro-provider.tsx` — Stages A + B (locale fix + re-init on nav)
 - `components/consent/cookie-settings-button.tsx` — Stage B (locale-aware re-open)
 - `lib/klaro/config.ts` — Stage B (missing translation keys + `disablePoweredBy: true`)
@@ -1002,15 +1155,18 @@ The codebase has two separate locale systems that are not synchronized: (1) a co
 Removes 10 schema tables that were either schema-only (no callers anywhere) or wired-but-empty (UI rendered, write path had zero callers). All 10 were verified empty in the local Convex deployment — no destructive migration required, no behavior change to any live feature.
 
 **Schema removed (10 tables):**
+
 - Schema-only (no callers): `notificationPreferences`, `knowledgeBaseCategories`, `knowledgeBaseArticles`, `sentimentLogs`, `agentDailyStats`, `agentWorkloads`, `visualAutomations`, `automationNodes`, `automationEdges`
 - Wired-but-empty: `customerJourneys` (UI always rendered the empty state — no insert path existed)
 
 **Code removed:**
+
 - `convex/customerInsights.ts` — dropped `listJourneys` query and `logJourneyEvent` mutation; surviving `getContactInsights` / `updateContactInsights` are unaffected
 - `components/contacts/customer-journey-map.tsx` — full file delete
 - `app/(dashboard)/contacts/[id]/page.tsx` — dropped `CustomerJourneyMap` usage; collapsed the now-degenerate two-tab `<Tabs>` shell on the right column to a single Card with `CardHeader` + `CardContent` (the surviving "Detailed Activity" tab promoted to a `CardTitle`)
 
 **Docs:**
+
 - `docs/superpowers/plans/2026-04-09-customer-journey.md` and `docs/superpowers/specs/2026-04-09-customer-journey-design.md` moved to `paused/` subdirectories (preserved for future revival, not deleted)
 - Stale narrative references to `notificationPreferences` cleaned from `PROJECT_STATE.md` (3 lines) and `AUDIT_REPORT.md` (1 row)
 
@@ -1025,6 +1181,7 @@ Files: `convex/schema.ts`, `convex/customerInsights.ts`, `app/(dashboard)/contac
 Replaces the department-only transfer dialog with a tabbed flow covering both **within-branch routing** (department + optional agent + internal note) and **cross-branch forwarding** (sends a tenant-editable templated message to the customer through the source channel's number, then closes the conversation as `status: "forwarded"`).
 
 **Schema delta:**
+
 - `conversations.status` union extended with `"forwarded"`
 - `conversations`: new `forwardedToChannelId`, `forwardedToDepartmentId`, `forwardedAt`, `forwardedBy` audit fields
 - `messages.eventType` union extended with `transfer_within_channel` and `forward_to_branch` (legacy `transfer_department` retained for read compat)
@@ -1032,6 +1189,7 @@ Replaces the department-only transfer dialog with a tabbed flow covering both **
 - `tenants.forwardMessageTemplates` (optional, `ar` / `en`)
 
 **Server:**
+
 - `conversations.transferWithinChannel` (replaces `transferToDepartment`; agent-accessible; supports optional agent + internal note)
 - `conversations.forwardToBranch` action with paired `_validateForward` / `_finalizeForward` helpers — reads message status after Meta send and bails before finalizing if Meta rejected the send
 - `conversations.previewForwardMessage` (server-rendered preview)
@@ -1043,6 +1201,7 @@ Replaces the department-only transfer dialog with a tabbed flow covering both **
 - Inbound 24h-reopen rule skips `status: "forwarded"` — forwarded conversations always start a fresh inbound
 
 **UI:**
+
 - New `components/inbox/transfer-dialog.tsx` (355 lines, tabbed) replaces deleted `transfer-department-dialog.tsx`
 - New `components/inbox/inbox-queue-tree.tsx` (175 lines) — role-scoped queue tree in inbox sidebar
 - New `components/settings/forward-template-card.tsx` (111 lines) — admin edits AR/EN forward templates from `/settings/general`
@@ -1056,15 +1215,18 @@ Files: `app/(dashboard)/inbox/page.tsx`, `components/inbox/{transfer-dialog,inbo
 CSAT was silently broken: `conversations.setStatus` (the only mutation the UI calls) never scheduled the CSAT action — only the unused `inbox.updateStatus` did. Even when CSAT did run, `markCsatSent` no-op'd if the `conversationMetrics` row was missing, so `csatSentAt` was never recorded and customer 1–5 replies were treated as regular messages, reopening the conversation.
 
 **Fixes (`ed413c8`):**
+
 - `conversations.setStatus` now schedules `sendCsatMessage` when CSAT is enabled
 - `markCsatSent` upserts the `conversationMetrics` row instead of failing on missing data
 - `markCsatSent` inserts the rendered CSAT body as an outbound text message in the thread so agents can see what was sent
 - `checkAndRecordResponse` inserts a `csat_received` system event with `eventData.csatScore` after recording the score
 
 **Cycle-matching fix (`5ff394b`):**
+
 - Previous logic took the most-recent conversation and checked its metric — but a contact can have multiple conversations and the open CSAT cycle may live on an older one. New logic scans all of the contact's conversations, filters to those with an open CSAT cycle (`csatSentAt` set, no later customer response), and picks the most recently-sent.
 
 **Surfacing:**
+
 - New amber thread pill: `⭐⭐⭐⭐⭐ Customer rated 5/5` via the new `csat_received` `eventType` (schema + MessageBubble)
 - New `⭐ N/5` badge on each conversation card in the inbox list (`inbox.listForUser` joins `conversationMetrics`)
 - New "Satisfaction" section in the contact panel: average, count, and last score (new `csat.getContactCsat` query)
@@ -1081,6 +1243,7 @@ Files: `convex/{csat,conversations,inbox,schema}.ts`, `components/inbox/{message
 - Per-channel admin UI to configure the reopen window (1–720h) at `/settings/channels/[channelId]`
 
 **Bundled in the same commit (in-progress work from prior sessions):**
+
 - **Follow-ups precise scheduling**: `runAt` set to the exact dispatch time; sent follow-ups recorded back into the inbox conversation thread (`convex/followUps.ts` +341/-87 lines)
 - **Notifications settings page**: `app/(dashboard)/settings/notifications/page.tsx` + `components/settings/notifications-settings.tsx` (240 lines)
 - **Email template polish** across `agentWelcome`, `billingPaymentFailed`, `billingSubscriptionExpired`, `channelDeleted`, `channelExpiringSoon`, `followupDue`, `newAssignment`, `slaBreach`, and `base.tsx`
@@ -1131,10 +1294,12 @@ in-app notifications only; Starter+ plans unlock the email channel. Two events
 (sla_breach, csat_received) are Growth+-only.
 
 **New schema:**
+
 - `notificationPreferences` table — per-user × event-type × channel preferences (~14 rows per user max)
 - New literals: `conversation_assigned` and `channel_token_expired` added to `notifications.type` union (alongside the legacy `new_assignment` and `channel_expiring_soon`)
 
 **New code:**
+
 - `convex/notifications.ts` — `notifyDispatch` (central mutation; reads prefs, gates by plan, writes in-app, schedules email), `notifySend` (action; resolves email via Clerk Node, dispatches to Resend), `getPreferences` + `updatePreference` (CRUD)
 - `convex/lib/notificationEvents.ts` — single source of truth for event types, defaults, plan-gating, and the daily-email-cap key builder
 - `convex/lib/rateLimit.ts` — `tryConsumeQuota` helper (soft cap, never throws — counterpart to `enforceRateLimit`)
@@ -1146,12 +1311,14 @@ in-app notifications only; Starter+ plans unlock the email channel. Two events
 - `lib/notifications/eventLabels.ts` — UI-side event labels with en/ar translations
 
 **Refactored:**
+
 - 9 existing notification call sites migrated from direct `ctx.db.insert("notifications", ...)` to `notifyDispatch`
 - 3 new call sites added to close gaps: `assign` and `assignInternal` now write in-app rows; `csat.ts checkAndRecordResponse` now dispatches a notification
 - 3 unused `*Email` internalAction exports removed from `notifyEmail.ts`: `slaBreachEmail`, `followupDueEmail`, `newAssignmentEmail`
 - `followUps.ts` literal corrected from `channel_expiring_soon` (semantic mismatch — was actually a token-expiry event) to `channel_token_expired`
 
 **Cost economics:**
+
 - Resend free tier (3000/mo, 100/day) supports the launch phase; conservative email defaults keep ~30 emails/day per active tenant
 - Per-plan daily cap: Starter 50, Growth 200, Business 1000; soft cap silently drops over-cap emails (in-app still fires)
 - Upgrade Resend Pro at ~5 paying tenants
@@ -1159,6 +1326,26 @@ in-app notifications only; Starter+ plans unlock the email channel. Two events
 **Files: 23 files changed across 5 implementation commits + 1 PROGRESS.md commit (this commit).**
 
 Implementer: GLM 5.1 (cheaper coding model). Reviewer: Claude Code. Approver: Ahmed. Planning artifacts at `docs/superpowers/plans/notification-prefs/01-foundation.md` through `06-execution.md`.
+
+---
+
+### task/032-auth-migration-stage-0 — Clerk → Better Auth Discovery Inventory (2026-05-06)
+
+- task/032-auth-migration-stage-0: Discovery inventory for Clerk → Better Auth migration. Read-only audit; no source files modified. Produced docs/migration/clerk-to-better-auth/STAGE_0_INVENTORY.md cataloging: package.json deps, middleware.ts, convex/auth.config.ts, convex/lib/auth.ts helpers, all ctx.auth.getUserIdentity() call sites with file:line, all assertAdmin/assertAdminOrSupervisor/getCallerRole call sites, all useUser/useAuth/useOrganization usages, all <SignedIn/>/<UserButton/>/<OrganizationSwitcher/> usages, app/(auth)/\* page designs, /select-org, /accept-invite, /join/[token] flows, Clerk webhook handlers (none found), and Clerk Node SDK call sites. Baseline `npx tsc --noEmit` clean.
+  - Verification round: confirmed @better-auth/infra is a real published package ("Dashboard and analytics plugin for Better Auth" by the Better Auth core team, unused in source), inventoried lib/shell/role-utils.ts (10 import sites; HIGH-risk supervisor bare-string fallback gap identified), verified <SignedIn/>/<SignedOut/>/<Protect/> are not used — protection is via clerkMiddleware only. STAGE_0_INVENTORY.md §9 appended. §3.2 addendum added.
+
+### task/033-auth-migration-stage-1 — Clerk → Better Auth Architecture Mapping (2026-05-06)
+
+- task/033-auth-migration-stage-1: Architecture mapping for Clerk → Better Auth migration. Planning only; no code, no installs, no source edits. Produced docs/migration/clerk-to-better-auth/STAGE_1_ARCHITECTURE.md (600 lines) mapping every Clerk concept from Stage 0 inventory to Better Auth equivalent, with citations. Locked Option A (preserved "org:" role prefix). Defined JWT definePayload strategy (orgId + orgRole via session additionalField + databaseHooks). Documented local install decision (required for org plugin + schema customization). Produced 5-section migration scope table (30 files + 8 new), Stage 3 verification checklist, Better Auth schema tables inventory. Surfaced 10 open questions for Ahmed (see §4): Q1 active-org auto-set, Q2 avatar storage, Q3 ban/unban, Q4 member data source, Q5 tenants table relationship, Q6 shareable invite link, Q7 audit logs, Q8 role-utils supervisor fix, Q9 social auth providers, Q10 org slug generation. Stage 2 (BEFORE/AFTER diffs against pinned library versions) blocked on Q9 (social auth confirm) and Ahmed's review of all 10 questions.
+  - Stage 1 closeout: locked Q1–Q10 answers (Q9 = Option B with Google + Facebook OAuth). Resolved 6 review flags: tenants-row timing (Pattern A — lazy), new-user-no-org verification step (#6 added to §6), middleware.ts decision (delete), cookie/CORS strategy documented, Q2/Q3 UI deletion scope made explicit, OAuth redirect URI operational checklist added. STAGE_1_ARCHITECTURE.md §9 appended; §5.2 numbering bug fixed. Stage 2a ready to open.
+
+### task/034-auth-migration-stage-2a — Clerk → Better Auth Foundation Files Diff (2026-05-06)
+
+- task/034-auth-migration-stage-2a: Foundation files diff for Clerk → Better Auth migration. Planning only; no installs, no source modifications. Produced docs/migration/clerk-to-better-auth/STAGE_2A_FOUNDATION.md with: pinned versions (@convex-dev/better-auth@0.12.2, better-auth@~1.6.9), 3 architecture corrections from doc research (Better Auth instance lives in Convex not Vercel; all 6 auth env vars go on Convex not Vercel; no crossDomain plugin for Next.js), 6-variable Convex env setup + 1 Vercel env addition, BEFORE/AFTER diffs for 4 modified files (package.json, convex/convex.config.ts, convex/auth.config.ts, convex/http.ts), full content for 7 new files (convex/auth.ts, convex/betterAuth/convex.config.ts, convex/betterAuth/auth.ts, lib/auth-client.ts, lib/auth-server.ts, app/api/auth/[...all]/route.ts) plus CLI step for convex/betterAuth/schema.ts, Stage 3 ordered 16-step application list, 6 verification gate mappings, and explicit out-of-scope list. Flagged colon role name risk (OQ-4, Stage 3 day-one verification) and session.additionalFields uncertainty (OQ-1). Stage 2b ready to open after review.
+
+### task/035-auth-migration-stage-2b — Clerk → Better Auth Auth Helpers + Middleware Plan (2026-05-06)
+
+- task/035-auth-migration-stage-2b: Auth helpers + middleware plan for Clerk → Better Auth migration. Planning only; no installs, no source modifications. Produced docs/migration/clerk-to-better-auth/STAGE_2B_LIB_AUTH.md with: convex/lib/auth.ts simplification (24 lines deleted, NO_ROLE guard added to both getCallerIdentity and getCallerRole, all four exported signatures and OrgRole type preserved byte-for-byte, FORBIDDEN guard in getCallerRole made reachable where it was previously dead code), middleware.ts deletion plan with Stage 2d sequencing dependency (deletion must not precede app/(dashboard)/layout.tsx gaining isAuthenticated() guard), convex/lib/tenants.ts cleanup abandoned—both getEmailLocalePublic and getForwardTemplatesPublic return graceful defaults on missing identity at lines 135 and 170; routing through getCallerIdentity would convert silent returns to thrown errors, breaking the intentional public-query pattern; field name identity.orgId continues to work post-Stage-2a because definePayload emits orgId under that exact key. Stage 2c ready to open after review.
 
 ---
 
@@ -1303,3 +1490,22 @@ Implementer: GLM 5.1 (cheaper coding model). Reviewer: Claude Code. Approver: Ah
 | 3   | **Invite by WhatsApp**                   | CLAUDE.md §19: send invite link via WhatsApp when admin enters agent phone number                                                                  | Low priority — email + link cover most cases |
 | 4   | **CSAT Meta Template Approval**          | Submit CSAT button template to Meta for pre-approval; currently unverified                                                                         | Required before production CSAT use          |
 | 5   | **Production Hardening**                 | Webhook signature verification, SLA breach clearing audit, CSAT template approval                                                                  | Required before launch                       |
+
+---
+
+## Auth Migration: Stage 2d Phase 1
+
+- **task/039-auth-migration-stage-2d-phase-1**: Stage 2d Phase 1 — auth hooks shim + call site updates. Planning only; no installs, no source modifications. Produced `docs/migration/clerk-to-better-auth/STAGE_2D_PHASE_1.md` with: §1 discovery (Stage 0 §3.1 reconciliation — 33 files with `@clerk/nextjs` imports confirmed, 6 new files found since Stage 0, 0 files removed; 28 hook-using files in Phase 1 scope, 5 JSX-only files deferred to Phase 2, 1 provider file deferred to Phase 3), §2 `lib/auth-hooks.ts` shim design (118 lines, exposes 5 `useAuth()` fields, 7 `useUser()` fields, 10 `useOrganization()` fields per §1.3 matrix; memberships handled via Option A — Convex query `api.orgMembers.listActive`; non-goals documented; deletion path for post-launch cleanup), §3 28 call site BEFORE/AFTER diffs (27 files = 1 line import change, 1 file = 2 lines to split combined import; `user-menu.tsx` keeps JSX component imports on `@clerk/nextjs` for Phase 2). No `useClerk()`, `auth.has()`, or `<SignedIn>` found in codebase. Phase 1.5 follow-ups: none. Phase 2 (auth page rebuilds, select-org, accept-invite, join, user-menu JSX, step-workspace-name CreateOrganization) and Phase 3 (provider swap, dashboard layout guard, middleware, role-utils Q8, UI deletion) still ahead.
+
+---
+
+## Auth Migration: Stage 2c.3
+
+- **task/040-auth-migration-stage-2c-3**: Add `convex/orgMembers.ts:listActive` query — closes Stage 2d Phase 1 missing-query gap. Planning only; no installs, no source modifications. Produced `docs/migration/clerk-to-better-auth/STAGE_2C3_LIST_ACTIVE_QUERY.md` with: §2 discovery (current `convex/orgMembers.ts` verbatim — 322 lines, 5 exports all wrapped as `action`; naming collision check confirmed empty; existing `list` wrapping declaration confirmed `action` with admin/supervisor gating; helper imports `getCallerIdentity` and `authComponent` confirmed present post-Stage-2c; 1 new import needed — `query` added to existing `import { action, internalQuery }` line), §3 new `listActive` query (34 lines, `query` wrapping, returns flat `{ memberId, userId, name, email, image, role }[]` for shim consumers; mirrors Stage 2c §8.2 adapter `findMany` + `Promise.all` + `findOne` pattern; appended at line 323 after `removeMember`), §4 behavioral verification (no admin gating — all roles can read; returns `[]` on empty; current user included in results), 4 open questions logged (member PK field name `_id` vs `id`; `findMany` `operator: "in"` support; `"use node"` coexistence with `query`; adapter `findOne` null handling). Stage 2d Phase 2 unblocked once Stage 3 applies this alongside `lib/auth-hooks.ts`.
+
+---
+
+- **task/041-auth-migration-stage-2c-3-revision**:
+  Stage 2c.3 corrected to Path X — listActive query placed in new file convex/orgMembersQueries.ts (not convex/orgMembers.ts) due to Convex runtime rule prohibiting query/mutation declarations in "use node" files (per docs.convex.dev/functions/runtimes). Prior Stage 2c.3 deliverable replaced by corrected version. Stage 2d Phase 1 amended via STAGE_2D_PHASE_1_AMENDMENT.md — one-line shim correction: api.orgMembers.listActive → api.orgMembersQueries.listActive. Source code surface area unchanged from prior Stage 2c.3 plan (same listActive implementation, same return shape, same shim consumers); architectural placement corrected. OQ-3 from prior version (use node coexistence) is RESOLVED via Path X. Stage 2d Phase 2 unblocked.
+
+---
