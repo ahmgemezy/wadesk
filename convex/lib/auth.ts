@@ -6,49 +6,23 @@ type Ctx = GenericQueryCtx<DataModel> | GenericMutationCtx<DataModel>;
 
 export type OrgRole = "org:admin" | "org:supervisor" | "org:agent";
 
-// Clerk v2 session tokens store org info in a compact nested object:
-//   { o: { id: "org_...", rol: "admin", slg: "..." } }
-// Older JWT template tokens used top-level camelCase claims:
-//   { orgId: "org_...", orgRole: "org:admin" }
-// We support both formats.
-
-function resolveOrgId(identity: Record<string, unknown>): string | undefined {
-  const direct = identity.orgId as string | undefined;
-  if (direct) return direct;
-  const o = identity.o as { id?: string } | undefined;
-  return o?.id;
-}
-
-// Clerk v2 compact format omits the "org:" prefix from role names.
-// Normalise to the full "org:…" form used throughout the codebase.
-function normalizeOrgRole(raw: string | null | undefined): OrgRole {
-  if (!raw) return "org:agent";
-  if (raw.startsWith("org:")) return raw as OrgRole;
-  return `org:${raw}` as OrgRole;
-}
-
-function resolveOrgRole(identity: Record<string, unknown>): OrgRole {
-  const direct = identity.orgRole as string | undefined;
-  if (direct) return normalizeOrgRole(direct);
-  const o = identity.o as { rol?: string } | undefined;
-  return normalizeOrgRole(o?.rol);
-}
-
 export async function getCallerIdentity(ctx: Ctx | GenericActionCtx<DataModel>) {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new ConvexError("UNAUTHORIZED");
   }
-  const orgId = resolveOrgId(identity as Record<string, unknown>);
+  const orgId = identity.orgId as string | undefined;
   if (!orgId) {
     throw new ConvexError("NO_ORG");
+  }
+  const orgRole = identity.orgRole as string | undefined;
+  if (!orgRole) {
+    throw new ConvexError("NO_ROLE");
   }
   return {
     tenantId: orgId,
     callerId: identity.subject,
-    // Cast to string to preserve the type callers expect (they do their own
-    // "admin" / "org:admin" checks against this value).
-    orgRole: resolveOrgRole(identity as Record<string, unknown>) as string,
+    orgRole,
   };
 }
 
@@ -57,15 +31,18 @@ export async function getCallerRole(ctx: Ctx | GenericActionCtx<DataModel>): Pro
   if (!identity) {
     throw new ConvexError("UNAUTHORIZED");
   }
-  const orgId = resolveOrgId(identity as Record<string, unknown>);
+  const orgId = identity.orgId as string | undefined;
   if (!orgId) {
     throw new ConvexError("NO_ORG");
   }
-  const role = resolveOrgRole(identity as Record<string, unknown>);
-  if (role !== "org:admin" && role !== "org:supervisor" && role !== "org:agent") {
+  const orgRole = identity.orgRole as string | undefined;
+  if (!orgRole) {
+    throw new ConvexError("NO_ROLE");
+  }
+  if (orgRole !== "org:admin" && orgRole !== "org:supervisor" && orgRole !== "org:agent") {
     throw new ConvexError("FORBIDDEN");
   }
-  return role;
+  return orgRole;
 }
 
 export function assertAdmin(role: OrgRole): void {
