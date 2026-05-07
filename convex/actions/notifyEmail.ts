@@ -74,8 +74,8 @@ export const billingPaymentFailedEmail = internalAction({
   },
   handler: async (ctx, args) => {
     const [adminEmails, orgName, locale] = await Promise.all([
-      getAdminEmails(args.tenantId),
-      resolveOrgName(args.tenantId),
+      getAdminEmails(ctx, args.tenantId),
+      resolveOrgName(ctx, args.tenantId),
       ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
     ]);
     for (const { email } of adminEmails) {
@@ -96,8 +96,8 @@ export const billingSubscriptionExpiredEmail = internalAction({
   },
   handler: async (ctx, args) => {
     const [adminEmails, orgName, locale] = await Promise.all([
-      getAdminEmails(args.tenantId),
-      resolveOrgName(args.tenantId),
+      getAdminEmails(ctx, args.tenantId),
+      resolveOrgName(ctx, args.tenantId),
       ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
     ]);
     for (const { email } of adminEmails) {
@@ -118,8 +118,8 @@ export const billingRenewalReceiptEmail = internalAction({
   },
   handler: async (ctx, args) => {
     const [adminEmails, orgName, locale] = await Promise.all([
-      getAdminEmails(args.tenantId),
-      resolveOrgName(args.tenantId),
+      getAdminEmails(ctx, args.tenantId),
+      resolveOrgName(ctx, args.tenantId),
       ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: args.tenantId }),
     ]);
     for (const { email } of adminEmails) {
@@ -155,7 +155,7 @@ export const notifySend = internalAction({
   },
   handler: async (ctx, args) => {
     // 1. Resolve email via the canonical helper.
-    const email = await resolveUserEmail(args.userId);
+    const email = await resolveUserEmail(ctx, args.userId);
     if (!email) {
       console.warn("notifySend: user has no primary email", args.userId);
       return;

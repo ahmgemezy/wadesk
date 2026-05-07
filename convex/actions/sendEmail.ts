@@ -16,6 +16,7 @@ import { BillingRenewalReceipt } from "../emails/templates/billingRenewalReceipt
 import { ConversationTransferred } from "../emails/templates/conversationTransferred";
 import { ConversationReopened } from "../emails/templates/conversationReopened";
 import { CsatReceived } from "../emails/templates/csatReceived";
+import { InvitationEmail } from "../emails/templates/invitation";
 
 const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
   channel_expiring_soon: {
@@ -70,6 +71,10 @@ const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
     ar: "تم استلام تقييم العميل",
     en: "Customer rating received",
   },
+  invitation: {
+    ar: "دعوة للانضمام إلى {{orgName}} على WABDesk",
+    en: "Invitation to join {{orgName}} on WABDesk",
+  },
 };
 
 function resolveSubject(
@@ -117,6 +122,8 @@ function buildElement(
       return React.createElement(ConversationReopened, props);
     case "csat_received":
       return React.createElement(CsatReceived, props);
+    case "invitation":
+      return React.createElement(InvitationEmail, props);
     default:
       throw new ConvexError(`TEMPLATE_NOT_FOUND: ${templateKey}`);
   }

@@ -3,10 +3,8 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { action } from "../_generated/server";
-import { internal } from "../_generated/api";
-import { clerkClient } from "@clerk/nextjs/server";
+import { internal, components } from "../_generated/api";
 import { assertAgentLimitNotReached } from "../lib/planLimits";
-import type { OrgRole } from "../lib/auth";
 
 export const validateAndJoin = action({
   args: { token: v.string() },
@@ -25,36 +23,33 @@ export const validateAndJoin = action({
 
     const tenantId = link.tenantId as string;
 
-    const client = await clerkClient();
-
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
+    const members = await ctx.runQuery(
+      components.betterAuth.orgQueries.listOrgMembers,
+      { organizationId: tenantId },
+    );
     const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
-    assertAgentLimitNotReached(memberships, plan);
+    assertAgentLimitNotReached(members.length, plan);
 
-    try {
-      await client.organizations.createOrganizationMembership({
-        organizationId: tenantId,
-        userId,
-        role: link.defaultRole as OrgRole,
-      });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("already") || msg.includes("member")) {
-        const org = await client.organizations.getOrganization({
-          organizationId: tenantId,
-        });
-        return { orgId: tenantId, orgName: org.name ?? "Organization" };
-      }
-      throw e;
+    // Check if already a member — same user-facing result as BEFORE's try/catch on duplicate
+    const alreadyMember = members.find((m) => m.userId === userId);
+    const org = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrg,
+      { orgId: tenantId },
+    );
+    const orgName = org?.name ?? "Organization";
+    if (alreadyMember) {
+      return { orgId: tenantId, orgName };
     }
 
-    const org = await client.organizations.getOrganization({
-      organizationId: tenantId,
-    });
-    const orgName = org.name ?? "Organization";
+    await ctx.runMutation(
+      components.betterAuth.orgMutations.createMember,
+      {
+        userId,
+        organizationId: tenantId,
+        role: link.defaultRole as string,
+        createdAt: Date.now(),
+      },
+    );
 
     const userEmail = identity.email ?? "";
     const agentName =

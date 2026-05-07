@@ -2,8 +2,7 @@
 
 import { v } from "convex/values";
 import { internalAction } from "../_generated/server";
-import { internal } from "../_generated/api";
-import { clerkClient } from "@clerk/nextjs/server";
+import { internal, components } from "../_generated/api";
 
 export const assignRoundRobin = internalAction({
   args: {
@@ -40,27 +39,22 @@ export const assignRoundRobin = internalAction({
 
     if (agentIds.length === 0) {
       // Fallback: use all org members
-      const client = await clerkClient();
-      const memberships = await client.organizations.getOrganizationMembershipList({
-        organizationId: args.tenantId,
-        limit: 100,
+      const allMembers = await ctx.runQuery(
+        components.betterAuth.orgQueries.listOrgMembers,
+        { organizationId: args.tenantId },
+      );
+      const sortedMembers = allMembers.sort((a, b) => a.userId.localeCompare(b.userId));
+
+      if (sortedMembers.length === 0) return;
+
+      const idx = (department.roundRobinIndex ?? 0) % sortedMembers.length;
+      const agentMember = sortedMembers[idx];
+      const assignedAgentId = agentMember.userId as string;
+      const user = await ctx.runQuery(components.betterAuth.adapter.findOne, {
+        model: "user",
+        where: [{ field: "id", value: assignedAgentId }],
       });
-      const activeMembers = memberships.data
-        .filter((m) => m.role !== undefined)
-        .sort((a, b) =>
-          (a.publicUserData?.userId ?? "").localeCompare(b.publicUserData?.userId ?? ""),
-        );
-
-      if (activeMembers.length === 0) return;
-
-      const idx = (department.roundRobinIndex ?? 0) % activeMembers.length;
-      const agentMember = activeMembers[idx];
-      const assignedAgentId = agentMember.publicUserData?.userId;
-      const agentName =
-        agentMember.publicUserData?.firstName ??
-        agentMember.publicUserData?.identifier ??
-        assignedAgentId ??
-        undefined;
+      const agentName = (user?.name as string | null) ?? assignedAgentId;
 
       if (assignedAgentId) {
         await ctx.runMutation(internal.conversations.assignInternal, {

@@ -27,7 +27,7 @@ export const processChannelRetention = internalAction({
         });
 
         const [adminEmails, locale] = await Promise.all([
-          getAdminEmails(channel.tenantId),
+          getAdminEmails(ctx, channel.tenantId),
           ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: channel.tenantId }),
         ]);
 
@@ -65,7 +65,7 @@ export const processChannelRetention = internalAction({
           });
 
           const [adminEmails, locale] = await Promise.all([
-            getAdminEmails(channel.tenantId),
+            getAdminEmails(ctx, channel.tenantId),
             ctx.runQuery(internal.lib.tenants.getEmailLocale, { tenantId: channel.tenantId }),
           ]);
 
