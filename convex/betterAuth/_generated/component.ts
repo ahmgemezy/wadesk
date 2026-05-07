@@ -1562,6 +1562,27 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         any,
         Name
       >;
+      deleteOrgById: FunctionReference<
+        "mutation",
+        "internal",
+        { organizationId: string },
+        any,
+        Name
+      >;
+      deleteOrgInvitations: FunctionReference<
+        "mutation",
+        "internal",
+        { organizationId: string },
+        any,
+        Name
+      >;
+      deleteOrgMembers: FunctionReference<
+        "mutation",
+        "internal",
+        { organizationId: string },
+        any,
+        Name
+      >;
       updateMemberRole: FunctionReference<
         "mutation",
         "internal",

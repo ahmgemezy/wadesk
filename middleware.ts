@@ -5,6 +5,8 @@ import type { NextRequest } from "next/server";
 const PUBLIC_PREFIXES = [
   "/sign-in",
   "/sign-up",
+  "/forgot-password",
+  "/reset-password",
   "/select-org",
   "/privacy",
   "/terms",

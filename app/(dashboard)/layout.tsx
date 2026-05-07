@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 import { fetchAuthQuery } from "@/lib/auth-server";
 import { api } from "@/convex/_generated/api";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -12,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { ClientNotificationBell } from "@/components/shell/client-notification-bell";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ConvexAuthGuard } from "@/components/shell/convex-auth-guard";
+import { WelcomeConfetti } from "@/components/shell/welcome-confetti";
 import { PaddleProvider } from "@/components/paddle-provider";
 import { PastDueBanner } from "@/components/shell/past-due-banner";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
@@ -43,7 +45,7 @@ export default async function DashboardLayout({
   if (orgRole !== "org:agent") {
     try {
       const state = await fetchAuthQuery(api.onboarding.getState);
-      if (!state || !state.completedSteps.includes("onboarding_complete")) {
+      if (!state || !state.completedSteps.includes("workspace_named")) {
         redirect("/onboarding");
       }
     } catch (err: unknown) {
@@ -83,6 +85,7 @@ export default async function DashboardLayout({
           </div>
         </header>
         <div className="flex-1 overflow-y-auto min-h-0 pb-16 md:pb-0">
+          <Suspense><WelcomeConfetti /></Suspense>
           <ConvexAuthGuard>
             <PastDueBanner />
             <PresenceInitializer />

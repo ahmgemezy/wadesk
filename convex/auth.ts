@@ -52,12 +52,107 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
       ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
       : [],
     database: authComponent.adapter(ctx),
+    emailVerification: {
+      // Sends a single-language verification email matching the user's locale cookie.
+      // The verify link points to the Convex HTTP endpoint (SITE_URL) with an
+      // absolute callbackURL back to the Next.js app so the redirect lands
+      // on the correct domain after token verification.
+      // NOTE: invited members also go through this flow — they receive a
+      // verification email in addition to the invitation email. If this proves
+      // too much friction, add a databaseHook on user.create to skip
+      // verification for users whose email matches a pending invitation.
+      sendVerificationEmail: async ({ user, token }, request) => {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+          console.log("[EMAIL_VERIFY_SKIP] RESEND_API_KEY not configured");
+          return;
+        }
+
+        // Detect locale from the `locale` cookie on the signup request.
+        const cookieHeader = request?.headers.get("cookie") ?? "";
+        const localeCookie = cookieHeader.split(";").find((c) => c.trim().startsWith("locale="));
+        const locale: "ar" | "en" = localeCookie?.split("=")[1]?.trim() === "en" ? "en" : "ar";
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+        const siteUrl = process.env.SITE_URL ?? appUrl;
+        const callbackUrl = encodeURIComponent(`${appUrl}/onboarding`);
+        const verifyUrl = `${siteUrl}/api/auth/verify-email?token=${token}&callbackURL=${callbackUrl}`;
+
+        const isAr = locale === "ar";
+        const dir = isAr ? "rtl" : "ltr";
+        const align = isAr ? "right" : "left";
+        const greeting = isAr ? "مرحباً،" : "Hi,";
+        const body = isAr
+          ? "اضغط على الزر أدناه لتأكيد بريدك الإلكتروني والبدء باستخدام WABDesk."
+          : "Click the button below to verify your email address and get started with WABDesk.";
+        const btnLabel = isAr ? "تأكيد البريد الإلكتروني" : "Verify Email Address";
+        const footer = isAr
+          ? "إذا لم تقم بإنشاء حساب WABDesk، يمكنك تجاهل هذه الرسالة."
+          : "If you didn't create a WABDesk account, you can safely ignore this email.";
+        const subject = isAr
+          ? "تأكيد بريدك الإلكتروني في WABDesk"
+          : "Verify your WABDesk email";
+
+        const html = `<!DOCTYPE html><html dir="${dir}"><head><meta charset="UTF-8"></head><body style="background:#f8fafc;font-family:Arial,sans-serif;padding:40px 20px;margin:0"><div style="max-width:500px;margin:0 auto;background:#fff;border-radius:12px;padding:40px;border:1px solid #e2e8f0"><h1 style="color:#0071e3;font-size:20px;text-align:center;margin-bottom:24px">WABDesk</h1><p style="color:#334155;font-size:15px;text-align:${align};direction:${dir};margin-bottom:8px">${greeting}</p><p style="color:#334155;font-size:15px;text-align:${align};direction:${dir};margin-bottom:20px">${body}</p><div style="text-align:center;margin-bottom:24px"><a href="${verifyUrl}" style="background:#0071e3;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;display:inline-block;font-family:Arial,sans-serif">${btnLabel}</a></div><p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px">${footer}</p></div></body></html>`;
+
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "WABDesk <noreply@wabdesk.com>",
+            to: user.email,
+            subject,
+            html,
+          }),
+        });
+      },
+    },
     emailAndPassword: {
       enabled: true,
-      // false: invitation acceptance must not require prior email verification
-      // (Stage 1 §7 risk #11). Stage 3: confirm this setting does not block
-      // the email+password signup flow.
-      requireEmailVerification: false,
+      requireEmailVerification: true,
+      sendResetPassword: async ({ user, url }, request) => {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+          console.log("[PASSWORD_RESET_SKIP] RESEND_API_KEY not configured");
+          return;
+        }
+
+        const cookieHeader = request?.headers.get("cookie") ?? "";
+        const localeCookie = cookieHeader.split(";").find((c) => c.trim().startsWith("locale="));
+        const locale: "ar" | "en" = localeCookie?.split("=")[1]?.trim() === "en" ? "en" : "ar";
+
+        const isAr = locale === "ar";
+        const dir = isAr ? "rtl" : "ltr";
+        const align = isAr ? "right" : "left";
+        const subject = isAr ? "إعادة تعيين كلمة المرور - WABDesk" : "Reset your WABDesk password";
+        const greeting = isAr ? "مرحباً،" : "Hi,";
+        const body = isAr
+          ? "تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك. اضغط على الزر أدناه لاختيار كلمة مرور جديدة."
+          : "We received a request to reset your WABDesk account password. Click the button below to choose a new password.";
+        const btnLabel = isAr ? "إعادة تعيين كلمة المرور" : "Reset Password";
+        const footer = isAr
+          ? "إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذه الرسالة بأمان. ينتهي صلاحية هذا الرابط خلال ساعة واحدة."
+          : "If you didn't request a password reset, you can safely ignore this email. This link expires in 1 hour.";
+
+        const html = `<!DOCTYPE html><html dir="${dir}"><head><meta charset="UTF-8"></head><body style="background:#f8fafc;font-family:Arial,sans-serif;padding:40px 20px;margin:0"><div style="max-width:500px;margin:0 auto;background:#fff;border-radius:12px;padding:40px;border:1px solid #e2e8f0"><h1 style="color:#0071e3;font-size:20px;text-align:center;margin-bottom:24px">WABDesk</h1><p style="color:#334155;font-size:15px;text-align:${align};direction:${dir};margin-bottom:8px">${greeting}</p><p style="color:#334155;font-size:15px;text-align:${align};direction:${dir};margin-bottom:20px">${body}</p><div style="text-align:center;margin-bottom:24px"><a href="${url}" style="background:#0071e3;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:15px;font-weight:600;display:inline-block;font-family:Arial,sans-serif">${btnLabel}</a></div><p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px">${footer}</p></div></body></html>`;
+
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "WABDesk <noreply@wabdesk.com>",
+            to: user.email,
+            subject,
+            html,
+          }),
+        });
+      },
     },
     socialProviders: {
       google: {
@@ -101,6 +196,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
                 data: {
                   ...session,
                   activeOrganizationId: members[0].organizationId,
+                  activeOrganizationRole: (members[0].role as string | undefined) ?? "org:agent",
                 },
               };
             }

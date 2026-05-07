@@ -39,8 +39,13 @@ export function OnboardingWizard({ locale }: OnboardingWizardProps) {
   // a short delay (Convex JWT refresh lags behind the Better Auth session).
   const [retryTick, setRetryTick] = useState(0);
 
+  const needsEnsure =
+    isLoaded &&
+    !!orgId &&
+    (state === null || (state !== undefined && !state.completedSteps.includes("workspace_named")));
+
   useEffect(() => {
-    if (isLoaded && !!orgId && state === null) {
+    if (needsEnsure) {
       ensureCreated({}).catch((err) => {
         if (err instanceof ConvexError && err.data === "NO_ORG") {
           setTimeout(() => setRetryTick((n) => n + 1), 400);
@@ -49,10 +54,12 @@ export function OnboardingWizard({ locale }: OnboardingWizardProps) {
         }
       });
     }
-  }, [isLoaded, orgId, state, ensureCreated, retryTick]);
+  }, [needsEnsure, ensureCreated, retryTick]);
 
   const noOrgYet = isLoaded && !orgId;
-  const loading = !isLoaded || (!!orgId && state === undefined);
+  // Show skeleton while ensureCreated is patching workspace_named in,
+  // so step 1 never flashes for orgs that already have a name.
+  const loading = !isLoaded || (!!orgId && (state == null || needsEnsure));
 
   const completedSteps = loading || noOrgYet ? [] : (state?.completedSteps ?? []);
   const currentStep = deriveCurrentStep(completedSteps);

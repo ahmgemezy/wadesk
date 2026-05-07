@@ -17,6 +17,7 @@ import { ConversationTransferred } from "../emails/templates/conversationTransfe
 import { ConversationReopened } from "../emails/templates/conversationReopened";
 import { CsatReceived } from "../emails/templates/csatReceived";
 import { InvitationEmail } from "../emails/templates/invitation";
+import { OnboardingReminder } from "../emails/templates/onboardingReminder";
 
 const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
   channel_expiring_soon: {
@@ -75,6 +76,10 @@ const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
     ar: "دعوة للانضمام إلى {{orgName}} على WABDesk",
     en: "Invitation to join {{orgName}} on WABDesk",
   },
+  onboarding_reminder: {
+    ar: "إجراء مطلوب: أكمل إعداد مساحة العمل قبل الحذف",
+    en: "Action Required: Complete your workspace setup before deletion",
+  },
 };
 
 function resolveSubject(
@@ -124,6 +129,8 @@ function buildElement(
       return React.createElement(CsatReceived, props);
     case "invitation":
       return React.createElement(InvitationEmail, props);
+    case "onboarding_reminder":
+      return React.createElement(OnboardingReminder, props);
     default:
       throw new ConvexError(`TEMPLATE_NOT_FOUND: ${templateKey}`);
   }

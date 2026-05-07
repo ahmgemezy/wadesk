@@ -423,6 +423,7 @@ export default defineSchema({
     createdBy: v.string(),
     createdAt: v.number(),
     completedAt: v.optional(v.number()),
+    warningSentAt: v.optional(v.number()),
   })
     .index("by_tenant", ["tenantId"]),
 

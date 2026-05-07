@@ -45,4 +45,10 @@ crons.interval(
   internal.notifications.purgeOld,
 );
 
+crons.interval(
+  "cleanup-incomplete-onboarding",
+  { hours: 24 },
+  internal.onboarding.cleanupIncompleteOrgs,
+);
+
 export default crons;

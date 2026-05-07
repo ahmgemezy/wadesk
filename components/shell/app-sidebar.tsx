@@ -22,7 +22,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Building2, ChevronsUpDown } from "lucide-react";
 import { UserMenu } from "./user-menu";
 import { LocaleSwitcher } from "./locale-switcher";
 import { resolveIcon } from "./resolve-icon";
@@ -96,9 +96,17 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
       dir={locale === "ar" ? "rtl" : "ltr"}
     >
       <SidebarHeader className="p-3 flex flex-row items-center gap-2">
-        <span className="text-base font-semibold flex-1 tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
-          WABDesk
-        </span>
+        <div className="flex-1 flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
+          <span className="text-base font-semibold tracking-tight text-foreground">WABDesk</span>
+          <Link
+            href="/select-org"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Building2 className="size-3 shrink-0" />
+            <span className="truncate">{user.orgName}</span>
+            <ChevronsUpDown className="size-3 shrink-0" />
+          </Link>
+        </div>
         <LocaleSwitcher locale={locale} />
       </SidebarHeader>
 

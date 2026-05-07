@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, SkipForward, ChevronRight } from "lucide-react";
+import { CheckCircle2, SkipForward, ChevronRight, Loader2, X } from "lucide-react";
 import { EmbeddedSignupButton } from "./embedded-signup-button";
 import { useT } from "@/lib/i18n/context";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 interface StepConnectWhatsAppProps {
   onComplete: () => void;
@@ -15,15 +16,24 @@ interface StepConnectWhatsAppProps {
 export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
   const markStep = useMutation(api.onboarding.markStep);
   const unmarkStep = useMutation(api.onboarding.unmarkStep);
+  const abandonAndDelete = useAction(api.onboarding.abandonAndDelete);
   const t = useT();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const [displayPhone, setDisplayPhone] = useState<string | null>(null);
   const [skipping, setSkipping] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    await abandonAndDelete({}).catch(() => {});
+    await authClient.signOut();
+    router.push("/");
+  };
 
   const handleBack = async () => {
     await unmarkStep({ step: "workspace_named" });
-    // wizard re-derives currentStep reactively
   };
 
   const handleSkip = async () => {
@@ -40,28 +50,31 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
     setDisplayPhone(phone);
     setConnected(true);
     setError(null);
-    // completeEmbeddedSignup already marks whatsapp_connected in onboardingState server-side.
-    // We also call markStep here to keep the wizard completedSteps in sync.
     try {
       await markStep({ step: "whatsapp_connected" });
     } catch {
-      // ignore — already marked server-side by the action
+      // already marked server-side
     }
     setTimeout(() => onComplete(), 2000);
   };
 
   if (connected) {
     return (
-      <div className="flex flex-col items-center gap-6 text-center" dir="rtl">
-        <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
-          <CheckCircle2 className="w-8 h-8 text-green-600" />
+      <div className="flex flex-col items-center gap-5 text-center py-2">
+        <div
+          className="size-16 rounded-2xl flex items-center justify-center"
+          style={{ background: "rgba(52,199,89,0.10)" }}
+        >
+          <CheckCircle2 className="size-8 text-[#34C759]" />
         </div>
-        <div>
-          <h2 className="text-xl font-semibold font-cairo">{t("Connected!", "تم الربط بنجاح!")}</h2>
+        <div className="space-y-1">
+          <h2 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+            {t("Connected!", "تم الربط بنجاح!")}
+          </h2>
           {displayPhone && (
-            <p className="text-muted-foreground mt-1" dir="ltr">{displayPhone}</p>
+            <p className="text-[15px] text-[#6E6E73]" dir="ltr">{displayPhone}</p>
           )}
-          <p className="text-sm text-muted-foreground mt-1 font-cairo">
+          <p className="text-[14px] text-[#6E6E73]">
             {t("Moving to the next step…", "جارٍ الانتقال للخطوة التالية…")}
           </p>
         </div>
@@ -70,46 +83,64 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6" dir="rtl">
-      <div>
-        <h2 className="text-xl font-semibold font-cairo">{t("Connect WhatsApp Business", "ربط حساب واتساب بيزنس")}</h2>
-        <p className="text-muted-foreground mt-1 text-sm font-cairo">
-          {t("You own the WABA directly — WABDesk never locks you in.", "ستمتلك حساب WABA مباشرة — WABDesk لا يقيدك أبداً.")}
+    <div className="flex flex-col gap-6">
+      <div className="text-center space-y-1">
+        <h2 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+          {t("Connect WhatsApp Business", "ربط حساب واتساب بيزنس")}
+        </h2>
+        <p className="text-[15px] text-[#6E6E73]">
+          {t(
+            "You own the WABA directly — WABDesk never locks you in.",
+            "ستمتلك حساب WABA مباشرة — WABDesk لا يقيدك أبداً."
+          )}
         </p>
       </div>
 
       {error && (
-        <Alert variant="destructive">
-          <AlertDescription className="font-cairo">{error}</AlertDescription>
-        </Alert>
+        <p className="text-[13px] text-[#FF3B30] bg-[#FF3B30]/10 rounded-lg px-3 py-2 text-center">
+          {error}
+        </p>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         <EmbeddedSignupButton
           onSuccess={handleSuccess}
           onError={(err) => setError(err)}
         />
-        <p className="text-xs text-muted-foreground font-cairo">
-          ستُفتح نافذة من ميتا لاختيار حساب واتساب بيزنس الخاص بك
+        <p className="text-[12px] text-[#6E6E73] text-center">
+          {t(
+            "A Meta window will open to link your WhatsApp Business account.",
+            "ستُفتح نافذة من ميتا لاختيار حساب واتساب بيزنس الخاص بك."
+          )}
         </p>
       </div>
 
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between pt-1 border-t border-black/8">
         <button
           onClick={handleBack}
-          className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
         >
-          <ChevronRight className="w-4 h-4" />
-          رجوع
+          <ChevronRight className="size-4 rtl:rotate-180" />
+          {t("Back", "رجوع")}
         </button>
-        <button
-          onClick={handleSkip}
-          disabled={skipping}
-          className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground disabled:opacity-50 transition-colors"
-        >
-          <SkipForward className="w-4 h-4" />
-          تخطي الآن
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleSkip}
+            disabled={skipping || cancelling}
+            className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] hover:text-[#1D1D1F] transition-colors disabled:opacity-40"
+          >
+            {skipping ? <Loader2 className="size-3.5 animate-spin" /> : <SkipForward className="size-3.5" />}
+            {t("Skip for now", "تخطي الآن")}
+          </button>
+          <button
+            onClick={handleCancel}
+            disabled={cancelling || skipping}
+            className="flex items-center gap-1.5 text-[13px] text-[#FF3B30] hover:text-[#CC2A20] transition-colors disabled:opacity-40"
+          >
+            {cancelling ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}
+            {t("Cancel setup", "إلغاء الإعداد")}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -62,3 +62,32 @@ export const createMember = internalMutation({
     });
   },
 });
+
+export const deleteOrgById = internalMutation({
+  args: { organizationId: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.organizationId as Id<"organization">);
+  },
+});
+
+export const deleteOrgMembers = internalMutation({
+  args: { organizationId: v.string() },
+  handler: async (ctx, args) => {
+    const members = await ctx.db
+      .query("member")
+      .withIndex("organizationId", (q) => q.eq("organizationId", args.organizationId))
+      .collect();
+    await Promise.all(members.map((m) => ctx.db.delete(m._id)));
+  },
+});
+
+export const deleteOrgInvitations = internalMutation({
+  args: { organizationId: v.string() },
+  handler: async (ctx, args) => {
+    const invitations = await ctx.db
+      .query("invitation")
+      .withIndex("organizationId", (q) => q.eq("organizationId", args.organizationId))
+      .collect();
+    await Promise.all(invitations.map((i) => ctx.db.delete(i._id)));
+  },
+});

@@ -30,14 +30,14 @@ export default function SignInPage() {
       setError(err.message ?? t("Sign-in failed", "فشل تسجيل الدخول"));
       setLoading(false);
     } else {
-      router.push(redirectTo);
+      router.push("/select-org");
     }
   };
 
   const handleSocial = async (provider: "google" | "facebook") => {
     setSocialLoading(provider);
     setError(null);
-    const { error: err } = await authClient.signIn.social({ provider, callbackURL: redirectTo });
+    const { error: err } = await authClient.signIn.social({ provider, callbackURL: "/select-org" });
     if (err) {
       setError(err.message ?? t("Sign-in failed", "فشل تسجيل الدخول"));
       setSocialLoading(null);
@@ -142,6 +142,12 @@ export default function SignInPage() {
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-[13px] text-[#0071E3] hover:text-[#0077ED] transition-colors">
+              {t("Forgot password?", "نسيت كلمة المرور؟")}
+            </Link>
           </div>
 
           {error && (

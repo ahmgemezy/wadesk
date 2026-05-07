@@ -1,32 +1,89 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useCallback } from "react";
 import { authClient } from "@/lib/auth-client";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Check, X, Mail } from "lucide-react";
 import Link from "next/link";
 import { useT, useLocale } from "@/lib/i18n/context";
+import { isDisposableEmail } from "@/lib/disposable-email-domains";
+
+function checkPassword(pw: string) {
+  return {
+    length: pw.length >= 8,
+    upper: /[A-Z]/.test(pw),
+    digit: /[0-9]/.test(pw),
+    special: /[^A-Za-z0-9]/.test(pw),
+  };
+}
+
+// Returns true (has MX), false (no MX / NXDOMAIN), or null (DNS check failed — treat as neutral).
+async function checkMxRecords(email: string): Promise<boolean | null> {
+  const domain = email.split("@")[1];
+  if (!domain) return false;
+  try {
+    // Google's DoH returns JSON by default — no custom Accept header needed,
+    // so no CORS preflight is triggered and browser requests work reliably.
+    const res = await fetch(
+      `https://dns.google/resolve?name=${encodeURIComponent(domain)}&type=MX`
+    );
+    if (!res.ok) return null;
+    const data = await res.json() as { Status: number; Answer?: unknown[] };
+    if (data.Status === 3) return false; // NXDOMAIN — domain does not exist
+    return Array.isArray(data.Answer) && data.Answer.length > 0;
+  } catch {
+    return null; // network error — fail neutral, don't block the user
+  }
+}
 
 export default function SignUpPage() {
-  const router = useRouter();
   const t = useT();
   const locale = useLocale();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailMx, setEmailMx] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
   const [consent, setConsent] = useState(false);
   const [consentWarning, setConsentWarning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const pwChecks = useMemo(() => checkPassword(password), [password]);
+  const pwValid = pwChecks.length && pwChecks.upper && pwChecks.digit && pwChecks.special;
+
+  const handleEmailBlur = useCallback(async () => {
+    const trimmed = email.trim();
+    if (!trimmed || !trimmed.includes("@")) return;
+    if (isDisposableEmail(trimmed)) {
+      setEmailMx("invalid");
+      return;
+    }
+    setEmailMx("checking");
+    const hasMx = await checkMxRecords(trimmed);
+    // null = DNS check failed (network error) — show neutral, don't block
+    setEmailMx(hasMx === null ? "idle" : hasMx ? "valid" : "invalid");
+  }, [email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!consent) {
       setConsentWarning(true);
+      return;
+    }
+    if (emailMx === "invalid") {
+      setError(t(
+        "Please use a real email address — disposable or invalid emails are not accepted.",
+        "يرجى استخدام بريد إلكتروني حقيقي — لا يُقبل البريد المؤقت أو غير الصحيح."
+      ));
+      return;
+    }
+    if (!pwValid) {
+      setPasswordTouched(true);
       return;
     }
     setConsentWarning(false);
@@ -38,7 +95,7 @@ export default function SignUpPage() {
       setError(err.message ?? t("Sign-up failed", "فشل إنشاء الحساب"));
       setLoading(false);
     } else {
-      router.push("/onboarding");
+      setSubmitted(true);
     }
   };
 
@@ -54,9 +111,50 @@ export default function SignUpPage() {
 
   const anyLoading = loading || socialLoading !== null;
 
+  const pwRules = [
+    { key: "length", label: t("At least 8 characters", "8 أحرف على الأقل"), met: pwChecks.length },
+    { key: "upper", label: t("One uppercase letter", "حرف كبير واحد"), met: pwChecks.upper },
+    { key: "digit", label: t("One number", "رقم واحد"), met: pwChecks.digit },
+    { key: "special", label: t("One special character", "رمز خاص واحد"), met: pwChecks.special },
+  ];
+
+  if (submitted) {
+    return (
+      <div className="w-full max-w-sm" dir={locale === "ar" ? "rtl" : "ltr"}>
+        <div className="bg-white/90 backdrop-blur-xl border border-black/8 rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 space-y-5 text-center">
+          <div className="flex justify-center">
+            <div className="size-14 rounded-full bg-[#0071E3]/10 flex items-center justify-center">
+              <Mail className="size-7 text-[#0071E3]" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+              {t("Check your email", "تحقق من بريدك")}
+            </h1>
+            <p className="text-[15px] text-[#6E6E73]">
+              {t(
+                `We sent a verification link to ${email}. Click it to activate your account.`,
+                `أرسلنا رابط التحقق إلى ${email}. اضغط عليه لتفعيل حسابك.`
+              )}
+            </p>
+          </div>
+          <p className="text-[13px] text-[#6E6E73]">
+            {t("Didn't receive it? Check your spam folder.", "لم يصل؟ تحقق من مجلد البريد المزعج.")}
+          </p>
+          <p className="text-[13px] text-[#6E6E73]">
+            {t("Already verified?", "تم التحقق بالفعل؟")}{" "}
+            <Link href="/sign-in" className="text-[#0071E3] hover:text-[#0077ED]">
+              {t("Sign In", "تسجيل الدخول")}
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-sm" dir={locale === "ar" ? "rtl" : "ltr"}>
-      <div className="bg-white/90 backdrop-blur-xl border border-black/[0.08] rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 space-y-6">
+      <div className="bg-white/90 backdrop-blur-xl border border-black/8 rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
             {t("Create Account", "إنشاء حساب")}
@@ -147,17 +245,33 @@ export default function SignUpPage() {
             <label className="text-[13px] font-medium text-[#1D1D1F]" htmlFor="email">
               {t("Email", "البريد الإلكتروني")}
             </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              dir="ltr"
-              className="w-full rounded-xl border border-black/12 bg-black/4 px-3.5 py-2.5 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
-              placeholder="you@example.com"
-            />
+            <div className="relative">
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setEmailMx("idle"); setError(null); }}
+                onBlur={handleEmailBlur}
+                dir="ltr"
+                className="w-full rounded-xl border border-black/12 bg-black/4 px-3.5 py-2.5 pe-10 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
+                placeholder="you@example.com"
+              />
+              <span className="absolute inset-y-0 inset-e-3 flex items-center pointer-events-none">
+                {emailMx === "checking" && <Loader2 className="size-4 text-[#6E6E73] animate-spin" />}
+                {emailMx === "valid" && <Check className="size-4 text-[#34C759]" />}
+                {emailMx === "invalid" && <X className="size-4 text-[#FF3B30]" />}
+              </span>
+            </div>
+            {emailMx === "invalid" && (
+              <p className="text-[12px] text-[#FF3B30]">
+                {t(
+                  "This email address doesn't appear to be valid. Please use a real email.",
+                  "يبدو أن هذا البريد الإلكتروني غير صحيح. يرجى استخدام بريد حقيقي."
+                )}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -170,9 +284,9 @@ export default function SignUpPage() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 required
-                minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setPasswordTouched(true)}
                 dir="ltr"
                 className="w-full rounded-xl border border-black/12 bg-black/4 px-3.5 py-2.5 pe-10 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
                 placeholder="••••••••"
@@ -180,15 +294,28 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 end-3 flex items-center text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
+                className="absolute inset-y-0 inset-e-3 flex items-center text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
-            <p className="text-[12px] text-[#6E6E73]">
-              {t("Minimum 8 characters", "8 أحرف على الأقل")}
-            </p>
+            {(passwordTouched || password.length > 0) && (
+              <ul className="space-y-1 pt-1">
+                {pwRules.map((rule) => (
+                  <li key={rule.key} className="flex items-center gap-1.5 text-[12px]">
+                    {rule.met ? (
+                      <Check className="size-3 text-[#34C759] shrink-0" />
+                    ) : (
+                      <X className="size-3 text-[#FF3B30] shrink-0" />
+                    )}
+                    <span className={rule.met ? "text-[#34C759]" : "text-[#6E6E73]"}>
+                      {rule.label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {error && (
