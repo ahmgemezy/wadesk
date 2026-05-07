@@ -46,11 +46,11 @@ export function getChannelLimit(plan: Plan): number {
 }
 
 export function assertAgentLimitNotReached(
-  clerkOrgMemberships: { data: unknown[] },
+  currentMemberCount: number,
   plan: Plan,
 ): void {
   const limit = AGENT_LIMITS[plan] ?? AGENT_LIMITS.free;
-  if (clerkOrgMemberships.data.length >= limit) {
+  if (currentMemberCount >= limit) {
     throw new ConvexError({
       message: "PLAN_LIMIT_REACHED",
       data: { currentPlan: plan, limit },
