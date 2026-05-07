@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, MailWarning, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useT, useLocale } from "@/lib/i18n/context";
 
@@ -20,18 +20,36 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [emailUnverified, setEmailUnverified] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setEmailUnverified(false);
     const { error: err } = await authClient.signIn.email({ email, password });
     if (err) {
-      setError(err.message ?? t("Sign-in failed", "فشل تسجيل الدخول"));
+      if (err.code === "EMAIL_NOT_VERIFIED" || err.message?.toLowerCase().includes("not verified")) {
+        setEmailUnverified(true);
+      } else {
+        setError(err.message ?? t("Sign-in failed", "فشل تسجيل الدخول"));
+      }
       setLoading(false);
     } else {
       router.push("/select-org");
     }
+  };
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    await authClient.sendVerificationEmail({
+      email,
+      callbackURL: "/onboarding",
+    });
+    setResendLoading(false);
+    setResendSent(true);
   };
 
   const handleSocial = async (provider: "google" | "facebook") => {
@@ -149,6 +167,38 @@ export default function SignInPage() {
               {t("Forgot password?", "نسيت كلمة المرور؟")}
             </Link>
           </div>
+
+          {emailUnverified && (
+            <div className="rounded-xl border border-[#FF9500]/30 bg-[#FF9500]/08 px-4 py-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <MailWarning className="size-4 text-[#FF9500] shrink-0 mt-0.5" />
+                <p className="text-[13px] text-[#1D1D1F] leading-relaxed">
+                  {t(
+                    "Your email address is not verified. Please check your inbox for the verification link.",
+                    "بريدك الإلكتروني غير مؤكد. يرجى التحقق من صندوق الوارد للعثور على رابط التحقق."
+                  )}
+                </p>
+              </div>
+              {resendSent ? (
+                <div className="flex items-center gap-1.5 ps-6">
+                  <CheckCircle2 className="size-3.5 text-[#34C759]" />
+                  <span className="text-[12px] text-[#34C759]">
+                    {t("Verification email sent — check your inbox.", "تم إرسال بريد التحقق — تحقق من صندوقك.")}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={resendLoading}
+                  className="ps-6 flex items-center gap-1.5 text-[13px] text-[#0071E3] hover:text-[#0077ED] transition-colors disabled:opacity-60"
+                >
+                  {resendLoading && <Loader2 className="size-3.5 animate-spin" />}
+                  {t("Resend verification email", "إعادة إرسال بريد التحقق")}
+                </button>
+              )}
+            </div>
+          )}
 
           {error && (
             <p className="text-[13px] text-[#FF3B30] bg-[#FF3B30]/10 rounded-lg px-3 py-2">
