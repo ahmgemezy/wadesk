@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "convex/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
@@ -28,7 +28,7 @@ export function StatusSelector({
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     null;
   const actorName =
-    fullName ?? user?.primaryEmailAddress?.emailAddress ?? undefined;
+    fullName ?? user?.emailAddresses[0]?.emailAddress ?? undefined;
 
   const statuses = [
     { value: "open" as const, label: t("Open", "مفتوح"), color: "bg-slate-500" },

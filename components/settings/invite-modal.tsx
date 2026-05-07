@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
-import { useOrganization, useAuth } from "@clerk/nextjs";
+import { useOrganization, useAuth } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import {
   Dialog,

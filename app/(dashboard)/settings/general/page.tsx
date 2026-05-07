@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerAuth } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { SettingsPageLayout } from "@/components/settings/settings-page-layout";
 import { GeneralSettings } from "@/components/settings/general-settings";
@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 export const dynamic = "force-dynamic";
 
 export default async function GeneralSettingsPage() {
-  const { userId, orgId, orgRole } = await auth();
+  const { userId, orgId, orgRole } = await getServerAuth();
   if (!userId || !orgId) redirect("/sign-in");
   if (orgRole !== "org:admin") redirect("/settings/team");
 

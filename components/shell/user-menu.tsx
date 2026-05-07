@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { SignOutButton, OrganizationSwitcher, useAuth, useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { useAuth, useUser } from "@/lib/auth-hooks";
 import { RoleBadge } from "./role-badge";
 import { PresenceIndicator } from "@/components/ui/presence-indicator";
 import { MyProfileModal } from "./my-profile-modal";
@@ -15,16 +17,24 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user, locale }: UserMenuProps) {
+  const router = useRouter();
   const { isSignedIn, userId: currentUserId } = useAuth();
   const { user: liveUser } = useUser();
   const role = resolveRole(user.role);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
-  // Use live Clerk data for reactive name/avatar after profile edits
+  // Use live Better Auth data for reactive name/avatar after profile edits
   const effectiveName = liveUser?.fullName ?? liveUser?.firstName ?? user.name;
   const effectiveAvatar = liveUser?.imageUrl ?? user.imageUrl;
 
   if (!isSignedIn) return null;
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    await authClient.signOut();
+    router.push("/");
+  };
 
   return (
     <>
@@ -81,27 +91,16 @@ export function UserMenu({ user, locale }: UserMenuProps) {
           )}
         </button>
 
-        <div className="group-data-[collapsible=icon]:hidden">
-          <OrganizationSwitcher
-            afterSelectOrganizationUrl="/inbox"
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                organizationSwitcherTrigger:
-                  "w-full justify-start rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
-              },
-            }}
-          />
-        </div>
-
-        <SignOutButton redirectUrl="/">
-          <button className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-full">
-            <LogOut className="size-4 shrink-0 rtl:scale-x-[-1]" />
-            <span className="group-data-[collapsible=icon]:hidden">
-              {locale === "ar" ? "تسجيل الخروج" : "Sign Out"}
-            </span>
-          </button>
-        </SignOutButton>
+        <button
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-full disabled:opacity-60"
+        >
+          <LogOut className="size-4 shrink-0 rtl:scale-x-[-1]" />
+          <span className="group-data-[collapsible=icon]:hidden">
+            {locale === "ar" ? "تسجيل الخروج" : "Sign Out"}
+          </span>
+        </button>
       </div>
     </>
   );

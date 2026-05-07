@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization } from "@/lib/auth-hooks";
 import { Lock, RefreshCw, CheckCircle2, Clock, XCircle, Wifi } from "lucide-react";
 
 type TemplateStatus = "APPROVED" | "PENDING" | "REJECTED" | "PAUSED" | null;

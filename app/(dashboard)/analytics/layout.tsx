@@ -1,6 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerAuth, fetchAuthQuery } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
-import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { resolveRole, hasMinRole } from "@/lib/shell/role-utils";
 import { AnalyticsUpsellTeaser } from "@/components/analytics/analytics-upsell-teaser";
@@ -13,7 +12,7 @@ export default async function AnalyticsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, orgRole, getToken } = await auth();
+  const { userId, orgId, orgRole } = await getServerAuth();
   if (!userId || !orgId) redirect("/sign-in");
 
   const role = resolveRole(orgRole ?? undefined);
@@ -26,11 +25,9 @@ export default async function AnalyticsLayout({
     redirect("/inbox");
   }
 
-  let plan: Plan = "free";
-  const token = await getToken({ template: "convex" });
-  if (token) {
-    plan = await fetchQuery(api.lib.tenants.getCurrentPlan, {}, { token });
-  }
+  const plan: Plan = await fetchAuthQuery(api.lib.tenants.getCurrentPlan).catch(
+    () => "free" as Plan,
+  );
 
   if (plan === "free" || plan === "starter") {
     return (

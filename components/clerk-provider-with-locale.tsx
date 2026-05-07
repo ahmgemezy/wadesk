@@ -1,35 +1,17 @@
 "use client";
 
-import { ClerkProvider } from "@clerk/nextjs";
-import { arSA, enUS } from "@clerk/localizations";
-import { useState, useEffect } from "react";
+// This file previously wrapped the app in Clerk's <ClerkProvider> with locale
+// support. After migrating to Better Auth, the Clerk dependency is removed.
+// The component is preserved as a passthrough so app/layout.tsx doesn't need
+// restructuring; locale is handled entirely by lib/i18n/context.tsx now.
 
 export const LOCALE_CHANGE_EVENT = "wabdesk:locale-change";
 
 export function ClerkProviderWithLocale({
-  locale: serverLocale,
   children,
 }: {
   locale: "ar" | "en";
   children: React.ReactNode;
 }) {
-  const [locale, setLocale] = useState<"ar" | "en">(serverLocale);
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      setLocale((e as CustomEvent<"ar" | "en">).detail);
-    };
-    window.addEventListener(LOCALE_CHANGE_EVENT, handler);
-    return () => window.removeEventListener(LOCALE_CHANGE_EVENT, handler);
-  }, []);
-
-  return (
-    <ClerkProvider
-      localization={locale === "ar" ? arSA : enUS}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
-    >
-      {children}
-    </ClerkProvider>
-  );
+  return <>{children}</>;
 }

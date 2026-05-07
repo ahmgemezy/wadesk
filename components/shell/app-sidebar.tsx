@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import {
   Sidebar,
@@ -82,10 +82,10 @@ interface AppSidebarProps {
 export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useConvexAuth();
-  const { isLoaded: clerkLoaded, orgId } = useAuth();
+  const { isLoaded, orgId } = useAuth();
   const conversations = useQuery(
     api.inbox.listConversations,
-    !isLoading && isAuthenticated && clerkLoaded && !!orgId ? { filter: "all" } : "skip",
+    !isLoading && isAuthenticated && isLoaded && !!orgId ? { filter: "all" } : "skip",
   );
   const totalUnread = conversations?.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0) ?? 0;
 

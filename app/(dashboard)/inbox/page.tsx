@@ -20,7 +20,7 @@ import { ChevronRight } from "lucide-react";
 import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/context";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization } from "@/lib/auth-hooks";
 
 export default function InboxPage() {
   return (

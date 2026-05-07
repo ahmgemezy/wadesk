@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -422,7 +422,7 @@ function LinkCard({ link, isAdminOrSupervisor, memberNameMap }: LinkCardProps) {
 
 export function InviteLinks() {
   const t = useT();
-  const { membership, memberships } = useOrganization({ memberships: { pageSize: 500, keepPreviousData: true } });
+  const { membership, memberships } = useOrganization();
   const orgRole = ((membership as unknown) as Record<string, unknown>)?.role as string | undefined;
   const isAdmin = orgRole === "org:admin" || orgRole === "admin";
   const isSupervisor = orgRole === "org:supervisor";

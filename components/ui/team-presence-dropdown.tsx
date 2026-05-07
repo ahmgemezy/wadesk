@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useAction } from "convex/react";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import {
   DropdownMenu,

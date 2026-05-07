@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "next/navigation";
 import { api } from "../../convex/_generated/api";
 import { StepProgress } from "./step-progress";

@@ -1,18 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { SignIn } from "@clerk/nextjs";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "@/lib/auth-hooks";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 export default function JoinPage() {
   const params = useParams();
   const router = useRouter();
-  const { isLoaded, isSignedIn, orgId } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const token = params.token as string;
 
   const validateAndJoin = useAction(api.actions.validateInvite.validateAndJoin);
@@ -21,11 +20,19 @@ export default function JoinPage() {
   const [error, setError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
 
+  // Redirect unauthenticated users to sign-in, preserving this URL as the
+  // post-login destination so they come back to complete the join flow.
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.replace(`/sign-in?redirectTo=/join/${token}`);
+    }
+  }, [isLoaded, isSignedIn, router, token]);
+
   const handleJoin = async () => {
     setJoining(true);
     setError(null);
     try {
-      const result = await validateAndJoin({ token });
+      await validateAndJoin({ token });
       setJoined(true);
       setTimeout(() => router.push("/inbox"), 1500);
     } catch (e: unknown) {
@@ -69,32 +76,31 @@ export default function JoinPage() {
     );
   }
 
-  if (isLoaded && isSignedIn) {
+  if (!isLoaded || !isSignedIn) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-sm w-full text-center space-y-4">
-          <h1 className="text-xl font-bold">انضم إلى الفريق / Join Team</h1>
-          <p className="text-sm text-muted-foreground">
-            اضغط للانضمام / Click to join
-          </p>
-          <Button onClick={handleJoin} disabled={joining} className="w-full">
-            {joining ? "جارٍ الانضمام... / Joining..." : "انضمام / Join"}
-          </Button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-sm w-full space-y-4">
-        <h1 className="text-xl font-bold text-center">
-          انضم إلى الفريق / Join the Team
-        </h1>
-        <p className="text-sm text-muted-foreground text-center">
-          سجّل أو سجّل دخولك للانضمام / Sign up or sign in to join
+      <div className="max-w-sm w-full text-center space-y-4">
+        <h1 className="text-xl font-bold">انضم إلى الفريق / Join Team</h1>
+        <p className="text-sm text-muted-foreground">
+          اضغط للانضمام / Click to join
         </p>
-        <SignIn />
+        <Button onClick={handleJoin} disabled={joining} className="w-full">
+          {joining ? (
+            <>
+              <Loader2 className="size-4 animate-spin me-2" />
+              جارٍ الانضمام... / Joining...
+            </>
+          ) : (
+            "انضمام / Join"
+          )}
+        </Button>
       </div>
     </div>
   );

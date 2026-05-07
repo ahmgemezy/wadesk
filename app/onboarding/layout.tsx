@@ -1,7 +1,6 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerAuth, fetchAuthQuery } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 
 export const dynamic = "force-dynamic";
@@ -17,18 +16,15 @@ export default async function OnboardingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, getToken } = await auth();
+  const { userId, orgId } = await getServerAuth();
   if (!userId) {
     redirect("/sign-in");
   }
 
   if (orgId) {
-    const token = await getToken({ template: "convex" });
-    if (token) {
-      const state = await fetchQuery(api.onboarding.getState, {}, { token });
-      if (state && state.completedSteps.includes("onboarding_complete")) {
-        redirect("/inbox");
-      }
+    const state = await fetchAuthQuery(api.onboarding.getState).catch(() => null);
+    if (state && state.completedSteps.includes("onboarding_complete")) {
+      redirect("/inbox");
     }
   }
 

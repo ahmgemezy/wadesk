@@ -1,7 +1,6 @@
-import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { headers, cookies } from "next/headers";
-import { fetchQuery } from "convex/nextjs";
+import { cookies } from "next/headers";
+import { fetchAuthQuery } from "@/lib/auth-server";
 import { api } from "@/convex/_generated/api";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/shell/app-sidebar";
@@ -31,65 +30,35 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, orgRole: clerkOrgRole, getToken } = await auth();
-  if (!userId) {
-    redirect("/sign-in");
-  }
-  if (!orgId) {
-    // User is signed in but no active org in session — returning member whose
-    // session hasn't activated an org yet. Show org selector.
-    redirect("/select-org");
-  }
+  const profile = await fetchAuthQuery(
+    api.orgMembersQueries.getCurrentUserProfile,
+  ).catch(() => null);
 
-  const user = await currentUser();
-  if (!user) redirect("/sign-in");
+  if (!profile) redirect("/sign-in");
+  if (!profile.orgId) redirect("/select-org");
 
-  let orgName = "Organization";
-  try {
-    const client = await clerkClient();
-    const org = await client.organizations.getOrganization({ organizationId: orgId! });
-    orgName = org.name || "Organization";
-  } catch {
-    // fallback to generic name if Clerk API fails
-  }
-
-  const orgRole = clerkOrgRole ?? "org:agent";
+  const orgRole = profile.orgRole ?? "org:agent";
   const role = resolveRole(orgRole);
 
   if (orgRole !== "org:agent") {
-    let token: string | null = null;
     try {
-      token = await getToken({ template: "convex" });
-    } catch (err: unknown) {
-      // Session expired or destroyed mid-render (e.g. user just signed out).
-      const status = (err as { status?: number })?.status;
-      if (status === 404) redirect("/");
-      throw err;
-    }
-    if (token) {
-      try {
-        const state = await fetchQuery(api.onboarding.getState, {}, { token });
-        if (!state || !state.completedSteps.includes("onboarding_complete")) {
-          redirect("/onboarding");
-        }
-      } catch (err: unknown) {
-        const data = (err as { data?: string })?.data;
-        if (data === "NO_ORG") {
-          // JWT doesn't carry org claims yet — session and token are out of sync;
-          // force re-activation of the org context.
-          redirect("/select-org");
-        }
-        throw err;
+      const state = await fetchAuthQuery(api.onboarding.getState);
+      if (!state || !state.completedSteps.includes("onboarding_complete")) {
+        redirect("/onboarding");
       }
+    } catch (err: unknown) {
+      const data = (err as { data?: string })?.data;
+      if (data === "NO_ORG") redirect("/select-org");
+      if (data !== "NO_ORG") throw err;
     }
   }
 
   const resolvedUser: ResolvedUser = {
-    name: user.fullName ?? user.emailAddresses[0]?.emailAddress ?? "User",
-    email: user.emailAddresses[0]?.emailAddress ?? "",
-    imageUrl: user.imageUrl,
+    name: profile.name ?? profile.email ?? "User",
+    email: profile.email ?? "",
+    imageUrl: profile.image ?? "",
     role: orgRole as ResolvedUser["role"],
-    orgName,
+    orgName: profile.orgName ?? "Organization",
   };
 
   const navItems = filterNavItems(role);

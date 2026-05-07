@@ -5,7 +5,7 @@ import { usePaginatedQuery, useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
-import { useOrganization, useAuth } from "@clerk/nextjs";
+import { useOrganization, useAuth } from "@/lib/auth-hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";

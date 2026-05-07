@@ -6,7 +6,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useOrganization, useUser } from "@clerk/nextjs";
+import { useOrganization, useUser } from "@/lib/auth-hooks";
 import { useT, useLocale, useTranslatedLabel } from "@/lib/i18n/context";
 import { MailOpen, MailCheck, AlertTriangle, MoreHorizontal, Trash2, Star } from "lucide-react";
 import { useState } from "react";
@@ -113,9 +113,7 @@ export function ConversationListItem({
     }
   }
 
-  const isAdmin =
-    membership?.role === "org:admin" ||
-    membership?.role === "admin";
+  const isAdmin = membership?.role === "org:admin";
 
   const isAdminOrSupervisor =
     isAdmin ||

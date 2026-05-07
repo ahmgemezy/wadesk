@@ -10,7 +10,7 @@ import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useT, useTranslatedLabel } from "@/lib/i18n/context";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization } from "@/lib/auth-hooks";
 import { cn } from "@/lib/utils";
 
 const COLORS = [

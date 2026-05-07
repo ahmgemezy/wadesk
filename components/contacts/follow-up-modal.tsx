@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useMutation } from "convex/react";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";

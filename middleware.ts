@@ -1,20 +1,48 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
+// Routes that don't require authentication.
+const PUBLIC_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
   "/select-org",
-  "/privacy(.*)",
-  "/terms(.*)",
-  "/dpa(.*)",
-]);
+  "/privacy",
+  "/terms",
+  "/dpa",
+  "/accept-invite",
+  "/join",
+  "/api/auth",
+  "/onboarding",
+];
 
-export default clerkMiddleware((auth, request) => {
-  if (!isPublicRoute(request)) {
-    auth.protect();
+function isPublicRoute(pathname: string): boolean {
+  if (pathname === "/") return true;
+  return PUBLIC_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/"),
+  );
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (isPublicRoute(pathname)) {
+    return NextResponse.next();
   }
-});
+
+  // Better Auth stores the session as a cookie. If it's absent the user is
+  // unauthenticated — redirect to sign-in preserving the original URL.
+  const sessionCookie =
+    request.cookies.get("better-auth.session_token") ??
+    request.cookies.get("__Secure-better-auth.session_token");
+
+  if (!sessionCookie) {
+    const signInUrl = new URL("/sign-in", request.url);
+    signInUrl.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
   matcher: [

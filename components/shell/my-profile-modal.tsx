@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/auth-hooks";
+import { authClient } from "@/lib/auth-client";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useT } from "@/lib/i18n/context";
@@ -30,6 +31,8 @@ export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModal
   const { user } = useUser();
   const profile = useQuery(api.profiles.getMyProfile);
   const updateMyProfile = useMutation(api.profiles.updateMyProfile);
+  const generateAvatarUploadUrl = useMutation(api.profiles.generateAvatarUploadUrl);
+  const getStorageUrl = useMutation(api.profiles.getStorageUrl);
 
   // Details form state
   const [firstName, setFirstName] = useState("");
@@ -75,13 +78,12 @@ export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModal
     : "?";
 
   async function handleSaveDetails() {
-    if (!user) return;
     setSavingDetails(true);
     try {
-      await user.update({
-        firstName: firstName.trim() || undefined,
-        lastName: lastName.trim() || undefined,
-      });
+      const nameParts = [firstName.trim(), lastName.trim()].filter(Boolean);
+      if (nameParts.length > 0) {
+        await authClient.updateUser({ name: nameParts.join(" ") });
+      }
       await updateMyProfile({
         phone: phone.trim() || undefined,
         jobTitle: jobTitle.trim() || undefined,
@@ -106,10 +108,16 @@ export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModal
   }
 
   async function confirmUpload() {
-    if (!pendingFile || !user) return;
+    if (!pendingFile) return;
     setUploading(true);
     try {
-      await user.setProfileImage({ file: pendingFile });
+      const uploadUrl = await generateAvatarUploadUrl();
+      const res = await fetch(uploadUrl, { method: "POST", body: pendingFile, headers: { "Content-Type": pendingFile.type } });
+      const { storageId } = await res.json() as { storageId: string };
+      const imageUrl = await getStorageUrl({ storageId: storageId as Parameters<typeof getStorageUrl>[0]["storageId"] });
+      if (imageUrl) {
+        await authClient.updateUser({ image: imageUrl });
+      }
       setPendingFile(null);
       setPendingPreviewUrl(null);
       toast.success(t("Avatar updated", "تم تحديث الصورة الشخصية"));
@@ -129,14 +137,10 @@ export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModal
 
   async function handleSaveUrl() {
     const url = urlInput.trim();
-    if (!url || !user) return;
+    if (!url) return;
     setSavingAvatar(true);
     try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Fetch failed");
-      const blob = await res.blob();
-      const file = new File([blob], "avatar", { type: blob.type });
-      await user.setProfileImage({ file });
+      await authClient.updateUser({ image: url });
       toast.success(t("Avatar updated", "تم تحديث الصورة الشخصية"));
     } catch {
       toast.error(t("Failed to save", "فشل الحفظ"));
@@ -146,10 +150,9 @@ export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModal
   }
 
   async function handleRemoveAvatar() {
-    if (!user) return;
     setSavingAvatar(true);
     try {
-      await user.setProfileImage({ file: null });
+      await authClient.updateUser({ image: null });
       setUrlInput("");
       toast.success(t("Avatar removed", "تمت إزالة الصورة الشخصية"));
     } catch {

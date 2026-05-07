@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerAuth } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { resolveRole, hasMinRole } from "@/lib/shell/role-utils";
@@ -13,7 +13,7 @@ export default async function SettingsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, orgId, orgRole } = await auth();
+  const { userId, orgId, orgRole } = await getServerAuth();
   if (!userId || !orgId) {
     redirect("/sign-in");
   }

@@ -65,3 +65,11 @@ export const getStorageUrlInternal = internalMutation({
     return await ctx.storage.getUrl(args.storageId);
   },
 });
+
+export const getStorageUrl = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    await getCallerIdentity(ctx);
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerAuth } from "@/lib/auth-server";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AgentMyStats } from "@/components/analytics/agent-my-stats";
@@ -6,7 +6,7 @@ import { AgentMyStats } from "@/components/analytics/agent-my-stats";
 export const dynamic = "force-dynamic";
 
 export default async function MyStatsPage() {
-  const { userId, orgId } = await auth();
+  const { userId, orgId } = await getServerAuth();
   if (!userId || !orgId) redirect("/sign-in");
 
   const headersList = await headers();

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { auth, clerkClient } from "@clerk/nextjs/server";
+import { isAuthenticated, fetchAuthQuery } from "@/lib/auth-server";
+import { api } from "@/convex/_generated/api";
 import { redirect } from "next/navigation";
 import { MarketingPage } from "@/components/marketing/marketing-page";
 
@@ -17,23 +18,14 @@ export const metadata: Metadata = {
 };
 
 export default async function RootPage() {
-  const { userId, orgId } = await auth();
+  const authed = await isAuthenticated();
 
-  if (userId && orgId) {
-    redirect("/inbox");
-  }
-
-  if (userId && !orgId) {
-    // Check if user already belongs to an org — if so, they're a returning
-    // member whose session hasn't activated an org yet. Send them to /inbox
-    // where Clerk's <OrganizationSwitcher> / dashboard logic will handle it.
-    // Only send to /onboarding for brand-new users with zero org memberships.
-    const client = await clerkClient();
-    const memberships = await client.users.getOrganizationMembershipList({ userId });
-    if (memberships.totalCount > 0) {
-      redirect("/inbox");
-    }
-    redirect("/onboarding");
+  if (authed) {
+    const profile = await fetchAuthQuery(
+      api.orgMembersQueries.getCurrentUserProfile,
+    ).catch(() => null);
+    if (profile?.orgId) redirect("/inbox");
+    redirect("/select-org");
   }
 
   return <MarketingPage isAuthenticated={false} />;

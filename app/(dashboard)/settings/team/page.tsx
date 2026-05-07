@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getServerAuth } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { resolveRole } from "@/lib/shell/role-utils";
@@ -9,7 +9,7 @@ import { SettingsPageLayout } from "@/components/settings/settings-page-layout";
 export const dynamic = "force-dynamic";
 
 export default async function TeamSettingsPage() {
-  const { userId, orgId, orgRole } = await auth();
+  const { userId, orgId, orgRole } = await getServerAuth();
   if (!userId || !orgId) {
     redirect("/sign-in");
   }

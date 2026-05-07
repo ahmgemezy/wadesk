@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useConvexAuth } from "convex/react";
-import { useAuth, useOrganization } from "@clerk/nextjs";
+import { useAuth, useOrganization } from "@/lib/auth-hooks";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";

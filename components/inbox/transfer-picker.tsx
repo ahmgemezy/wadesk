@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useOrganization, useUser } from "@clerk/nextjs";
+import { useOrganization, useUser } from "@/lib/auth-hooks";
 import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";

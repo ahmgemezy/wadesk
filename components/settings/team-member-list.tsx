@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAction } from "convex/react";
-import { useOrganization, useUser } from "@clerk/nextjs";
+import { useOrganization, useUser } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

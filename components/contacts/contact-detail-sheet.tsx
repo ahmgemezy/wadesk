@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization } from "@/lib/auth-hooks";
 import { getCountryFromPhone } from "@/lib/phoneGeo";
 import { getCitiesForCountry, OTHER_CITY_VALUE } from "@/lib/cityData";
 import { Badge } from "@/components/ui/badge";

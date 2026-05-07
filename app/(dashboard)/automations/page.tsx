@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "next/navigation";
 import { AutomationRulesClient } from "@/components/automations/AutomationRulesClient";
 
