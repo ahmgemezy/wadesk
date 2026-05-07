@@ -6,10 +6,15 @@ import type { Id } from "./_generated/dataModel";
 export const getState = query({
   args: {},
   handler: async (ctx) => {
-    const { tenantId } = await getCallerIdentity(ctx);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+    const orgId = identity.orgId as string | undefined;
+    // Return null (not an error) when the JWT hasn't picked up the new org yet —
+    // this happens briefly after organization.setActive while Convex refreshes the token.
+    if (!orgId) return null;
     const state = await ctx.db
       .query("onboardingState")
-      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId as string))
+      .withIndex("by_tenant", (q) => q.eq("tenantId", orgId))
       .first();
     return state ?? null;
   },

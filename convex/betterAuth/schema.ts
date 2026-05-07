@@ -10,6 +10,30 @@
  * https://labs.convex.dev/better-auth/features/local-install#adding-custom-indexes.
  */
 
+/**
+ * MANUAL PATCHES REQUIRED AFTER `npx auth generate`:
+ *
+ * 1. Remove the auto-generated `.index("userId", ["userId"])` from the `user`
+ *    table (line ~27). The `user` table has no `userId` field; Better Auth's
+ *    schema generator emits this for all tables but it's invalid for `user`.
+ *    Convex codegen rejects it at schema validation. See PROGRESS.md
+ *    Stage 2c.C.2 entry.
+ *
+ * 2. Add the `jwks` table definition (after `invitation:`):
+ *
+ *    jwks: defineTable({
+ *      publicKey: v.string(),
+ *      privateKey: v.string(),
+ *      createdAt: v.number(),
+ *      expiresAt: v.optional(v.union(v.null(), v.number())),
+ *    }),
+ *
+ *    Required by the convex() plugin (configured in convex/auth.ts) for
+ *    storing JWT signing key pairs. The schema-gen-time config in
+ *    convex/betterAuth/auth.ts doesn't declare convex(), so the generator
+ *    omits the table. See PROGRESS.md Phase 3 Block 2.1 entry.
+ */
+
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
@@ -98,6 +122,12 @@ export const tables = {
     .index("role", ["role"])
     .index("status", ["status"])
     .index("inviterId", ["inviterId"]),
+  jwks: defineTable({
+    publicKey: v.string(),
+    privateKey: v.string(),
+    createdAt: v.number(),
+    expiresAt: v.optional(v.union(v.null(), v.number())),
+  }),
 };
 
 const schema = defineSchema(tables);

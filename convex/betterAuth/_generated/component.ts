@@ -111,6 +111,15 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                   status: string;
                 };
                 model: "invitation";
+              }
+            | {
+                data: {
+                  createdAt: number;
+                  expiresAt?: null | number;
+                  privateKey: string;
+                  publicKey: string;
+                };
+                model: "jwks";
               };
           onCreateHandle?: string;
           select?: Array<string>;
@@ -344,6 +353,38 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "expiresAt"
                     | "createdAt"
                     | "inviterId"
+                    | "_id";
+                  mode?: "sensitive" | "insensitive";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "jwks";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "publicKey"
+                    | "privateKey"
+                    | "createdAt"
+                    | "expiresAt"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:
@@ -628,6 +669,38 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | Array<number>
                     | null;
                 }>;
+              }
+            | {
+                model: "jwks";
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "publicKey"
+                    | "privateKey"
+                    | "createdAt"
+                    | "expiresAt"
+                    | "_id";
+                  mode?: "sensitive" | "insensitive";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
               };
           onDeleteHandle?: string;
         },
@@ -647,7 +720,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "verification"
             | "organization"
             | "member"
-            | "invitation";
+            | "invitation"
+            | "jwks";
           offset?: number;
           paginationOpts: {
             cursor: string | null;
@@ -699,7 +773,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             | "verification"
             | "organization"
             | "member"
-            | "invitation";
+            | "invitation"
+            | "jwks";
           select?: Array<string>;
           where?: Array<{
             connector?: "AND" | "OR";
@@ -1039,6 +1114,44 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | Array<number>
                     | null;
                 }>;
+              }
+            | {
+                model: "jwks";
+                update: {
+                  createdAt?: number;
+                  expiresAt?: null | number;
+                  privateKey?: string;
+                  publicKey?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "publicKey"
+                    | "privateKey"
+                    | "createdAt"
+                    | "expiresAt"
+                    | "_id";
+                  mode?: "sensitive" | "insensitive";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
               };
           onUpdateHandle?: string;
           paginationOpts: {
@@ -1341,6 +1454,44 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                     | "expiresAt"
                     | "createdAt"
                     | "inviterId"
+                    | "_id";
+                  mode?: "sensitive" | "insensitive";
+                  operator?:
+                    | "lt"
+                    | "lte"
+                    | "gt"
+                    | "gte"
+                    | "eq"
+                    | "in"
+                    | "not_in"
+                    | "ne"
+                    | "contains"
+                    | "starts_with"
+                    | "ends_with";
+                  value:
+                    | string
+                    | number
+                    | boolean
+                    | Array<string>
+                    | Array<number>
+                    | null;
+                }>;
+              }
+            | {
+                model: "jwks";
+                update: {
+                  createdAt?: number;
+                  expiresAt?: null | number;
+                  privateKey?: string;
+                  publicKey?: string;
+                };
+                where?: Array<{
+                  connector?: "AND" | "OR";
+                  field:
+                    | "publicKey"
+                    | "privateKey"
+                    | "createdAt"
+                    | "expiresAt"
                     | "_id";
                   mode?: "sensitive" | "insensitive";
                   operator?:

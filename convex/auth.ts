@@ -109,10 +109,10 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
           // activeOrganizationId changes. definePayload is sync, so it cannot
           // query the DB — this hook is the only place the role can be written.
           //
-          // hookCtx shape is Better Auth's internal hook context. The access
-          // pattern `hookCtx?.context?.session?.userId` is inferred from the
-          // docs example for user.update.before. Stage 3: verify this path
-          // against @convex-dev/better-auth 0.12.2. See §9 OQ-2.
+          // hookCtx shape verified empirically in Phase 3 Block 2.2 against
+          // @convex-dev/better-auth 0.12.2: hCtx.context.session is the
+          // session+user wrapper { session: Session, user: User }, not Session
+          // directly. The userId we need is at .session.session.userId.
           before: async (
             data: Record<string, unknown>,
             hookCtx: unknown,
@@ -123,9 +123,9 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
               | undefined;
             if (!activeOrgId) return { data };
             const hCtx = hookCtx as
-              | { context?: { session?: { userId?: string } } }
+              | { context?: { session?: { session?: { userId?: string } } } }
               | undefined;
-            const sessionUserId = hCtx?.context?.session?.userId;
+            const sessionUserId = hCtx?.context?.session?.session?.userId;
             if (!sessionUserId) return { data };
             const member = await ctx.runQuery(
               components.betterAuth.orgQueries.findOrgMember,

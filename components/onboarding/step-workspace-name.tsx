@@ -1,26 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { useAuth } from "@/lib/auth-hooks";
 import { useMutation } from "convex/react";
+import { ConvexError } from "convex/values";
 import { api } from "../../convex/_generated/api";
 import { Loader2 } from "lucide-react";
 
 export function StepWorkspaceName() {
-  const { orgId } = useAuth();
   const ensureCreated = useMutation(api.onboarding.ensureCreated);
 
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Whenever orgId becomes available (after creation), seed the onboarding doc.
-  useEffect(() => {
-    if (orgId) {
-      ensureCreated({}).catch(() => {});
-    }
-  }, [orgId, ensureCreated]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +29,20 @@ export function StepWorkspaceName() {
       }
       if (data?.id) {
         await authClient.organization.setActive({ organizationId: data.id });
-        await ensureCreated({});
+        // After setActive, the Convex JWT may still carry the old (org-less) token
+        // for a short window while it refreshes. Retry until the JWT has the new org.
+        for (let i = 0; i < 10; i++) {
+          try {
+            await ensureCreated({});
+            break;
+          } catch (err) {
+            if (err instanceof ConvexError && err.data === "NO_ORG" && i < 9) {
+              await new Promise(r => setTimeout(r, 200));
+            } else {
+              throw err;
+            }
+          }
+        }
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "فشل إنشاء مساحة العمل");
