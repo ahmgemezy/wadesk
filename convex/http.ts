@@ -4,6 +4,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { paddleWebhook } from "./billing";
 import { metaWebhookV2 } from "./webhooks/meta";
+import { authComponent, createAuth } from "./auth";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -405,5 +406,7 @@ http.route({ path: "/meta-webhook", method: "POST", handler: metaWebhook });
 http.route({ path: "/webhooks/meta", method: "GET", handler: metaWebhookV2 });
 http.route({ path: "/webhooks/meta", method: "POST", handler: metaWebhookV2 });
 http.route({ path: "/paddle-webhook", method: "POST", handler: paddleWebhook });
+
+authComponent.registerRoutes(http, createAuth);
 
 export default http;
