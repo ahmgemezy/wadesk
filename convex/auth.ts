@@ -48,6 +48,9 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     appName: "WabDesk",
     baseURL: process.env.SITE_URL!,
     secret: process.env.BETTER_AUTH_SECRET!,
+    trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS
+      ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
+      : [],
     database: authComponent.adapter(ctx),
     emailAndPassword: {
       enabled: true,

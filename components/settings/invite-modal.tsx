@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { useOrganization, useAuth } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
@@ -34,7 +34,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState<OrgRole>("org:agent");
   const effectiveRole = isSupervisor ? "org:agent" : role;
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ReactNode>(null);
   const [linkFallback, setLinkFallback] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
@@ -52,6 +52,38 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     setCopied(false);
   };
 
+  const upgradeLink = (
+    <a href="/settings/billing" className="underline font-medium whitespace-nowrap">
+      {t("Upgrade now →", "ارقَّ الآن ←")}
+    </a>
+  );
+
+  const makePlanLimitError = (convexData: unknown): ReactNode => {
+    const d = convexData as { message?: string; data?: { reason?: string } } | undefined;
+    if (d?.data?.reason) {
+      // Supervisor role not available on current plan
+      return (
+        <span>
+          {t(
+            "Supervisor roles are only available on Starter and above — upgrade to unlock team management, performance analytics, and more.",
+            "دور المشرف متاح من خطة Starter فأعلى فقط — ارقَّ لتفعيل إدارة الفريق والتحليلات والمزيد."
+          )}{" "}
+          {upgradeLink}
+        </span>
+      );
+    }
+    // Agent count limit reached
+    return (
+      <span>
+        {t(
+          "You've reached your plan's agent limit. Upgrade to add more team members and scale your support operations.",
+          "وصلت للحد الأقصى من الوكلاء في خطتك الحالية — ارقَّ لإضافة المزيد وتنمية فريقك."
+        )}{" "}
+        {upgradeLink}
+      </span>
+    );
+  };
+
   const handleInviteEmail = async () => {
     if (!email.trim()) return;
     clearState();
@@ -63,8 +95,9 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
       onClose();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
+      const convexData = (e as { data?: unknown })?.data;
       if (msg.includes("PLAN_LIMIT")) {
-        setError(t("Plan limit reached", "تم بلوغ الحد الأقصى"));
+        setError(makePlanLimitError(convexData));
       } else if (msg.includes("ALREADY_MEMBER")) {
         setError(t("Already a member", "عضو بالفعل"));
       } else if (msg.includes("LAST_ADMIN")) {
@@ -72,7 +105,10 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
       } else if (msg.includes("FORBIDDEN")) {
         setError(t("Forbidden", "غير مصرح"));
       } else if (msg.includes("SUPERVISOR_CAN_ONLY_INVITE_AGENTS")) {
-        setError(t("Supervisors can only invite agents", "المشرف يمكنه دعوة وكلاء فقط"));
+        setError(t(
+          "As a Supervisor, you can only invite Agents — contact your Admin to add other Supervisors.",
+          "كمشرف، يمكنك دعوة الوكلاء فقط — تواصل مع المدير لإضافة مشرفين جدد."
+        ));
       } else {
         setError(msg);
       }
@@ -97,14 +133,18 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
+      const convexData = (e as { data?: unknown })?.data;
       if (msg.includes("INVALID_PHONE")) {
         setError(t("Invalid phone number (E.164: +201012345678)", "رقم هاتف غير صالح (مثال: +201012345678)"));
       } else if (msg.includes("PLAN_LIMIT")) {
-        setError(t("Plan limit reached", "تم بلوغ الحد الأقصى"));
+        setError(makePlanLimitError(convexData));
       } else if (msg.includes("FORBIDDEN")) {
         setError(t("Forbidden", "غير مصرح"));
       } else if (msg.includes("SUPERVISOR_CAN_ONLY_INVITE_AGENTS")) {
-        setError(t("Supervisors can only invite agents", "المشرف يمكنه دعوة وكلاء فقط"));
+        setError(t(
+          "As a Supervisor, you can only invite Agents — contact your Admin to add other Supervisors.",
+          "كمشرف، يمكنك دعوة الوكلاء فقط — تواصل مع المدير لإضافة مشرفين جدد."
+        ));
       } else {
         setError(msg);
       }

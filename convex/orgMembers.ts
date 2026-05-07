@@ -8,6 +8,7 @@ import { assertAgentLimitNotReached, assertSupervisorRoleAllowed } from "./lib/p
 import { assertNotLastAdmin } from "./lib/lastAdmin";
 import { internal, components } from "./_generated/api";
 import { resolveOrgName } from "./lib/emailHelpers";
+import { getAppUrl } from "./lib/appUrl";
 
 function assertSupervisorCanManageTarget(
   callerRole: OrgRole,
@@ -71,15 +72,14 @@ export const inviteByEmail = action({
       },
     );
 
-    const inviter = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
-      model: "user",
-      where: [{ field: "id", value: callerId }],
-    })) as { id: string; name: string | null } | null;
+    const inviter = await ctx.runQuery(components.betterAuth.orgQueries.findUserById, {
+      userId: callerId,
+    });
     const inviterName = inviter?.name ?? "WABDesk";
     const orgName = await resolveOrgName(ctx, tenantId);
 
     const invitationId = invitation.id;
-    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/accept-invite/${invitationId}`;
+    const inviteUrl = `${getAppUrl()}/accept-invite/${invitationId}`;
 
     await ctx.scheduler.runAfter(0, internal.actions.sendEmail.sendEmail, {
       to: args.email,
@@ -121,10 +121,7 @@ export const list = action({
     const [memberUsers, metadata] = await Promise.all([
       Promise.all(
         members.map((m) =>
-          ctx.runQuery(components.betterAuth.adapter.findOne, {
-            model: "user",
-            where: [{ field: "id", value: m.userId }],
-          }),
+          ctx.runQuery(components.betterAuth.orgQueries.findUserById, { userId: m.userId }),
         ),
       ),
       ctx.runQuery(internal.memberQueries.getAllMemberMetadata, { tenantId }),
@@ -246,8 +243,7 @@ export const inviteByWhatsApp = action({
     let inviteUrl: string;
 
     if (existingLinks && !existingLinks.revoked && existingLinks.expiresAt > Date.now()) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-      inviteUrl = `${baseUrl}/join/${existingLinks.token}`;
+      inviteUrl = `${getAppUrl()}/join/${existingLinks.token}`;
     } else {
       const result = await ctx.runMutation(internal.inviteLinks.ensureActive, {
         tenantId,

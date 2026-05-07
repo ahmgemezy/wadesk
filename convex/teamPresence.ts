@@ -45,13 +45,12 @@ export const listWithDepartments = action({
 
     const userResults = await Promise.all(
       rawMembers.map((m) =>
-        ctx.runQuery(components.betterAuth.adapter.findOne, {
-          model: "user",
-          where: [{ field: "id", value: m.userId }],
+        ctx.runQuery(components.betterAuth.orgQueries.findUserById, {
+          userId: m.userId,
         }),
       ),
     );
-    const users = userResults as Array<{ email?: string; name?: string | null; image?: string | null } | null>;
+    const users = userResults as Array<{ email: string; name: string; image?: string | null } | null>;
 
     const memberMap = new Map<string, MemberInfo>(
       rawMembers.map((m, i) => [

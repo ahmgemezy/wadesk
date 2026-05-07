@@ -1,11 +1,29 @@
 import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { components } from "./_generated/api";
 import { getCallerIdentity } from "./lib/auth";
 
 export const heartbeat = mutation({
   args: {},
   handler: async (ctx) => {
-    const { tenantId, callerId } = await getCallerIdentity(ctx);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError("UNAUTHORIZED");
+
+    const callerId = identity.subject;
+    let tenantId = (identity.orgId as string | undefined) || undefined;
+
+    // The Convex JWT orgId can be empty briefly after Better Auth setActive
+    // while the token is refreshing. Fall back to the member table so the
+    // heartbeat works regardless of JWT state.
+    if (!tenantId) {
+      const members = await ctx.runQuery(
+        components.betterAuth.orgQueries.listMembersByUserId,
+        { userId: callerId },
+      );
+      if (members.length > 0) tenantId = members[0].organizationId;
+    }
+
+    if (!tenantId) return { ok: false }; // user has no org yet
 
     const existing = await ctx.db
       .query("presence")

@@ -9,7 +9,7 @@ export default async function BillingPage() {
   const t = (en: string, ar: string) => locale === "en" ? en : ar;
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-2">
         {t("Billing", "الفوترة")}
       </h1>

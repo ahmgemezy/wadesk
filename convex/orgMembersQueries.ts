@@ -52,9 +52,8 @@ export const listActive = query({
 
     const users = await Promise.all(
       members.map((m) =>
-        ctx.runQuery(components.betterAuth.adapter.findOne, {
-          model: "user",
-          where: [{ field: "id", value: m.userId }],
+        ctx.runQuery(components.betterAuth.orgQueries.findUserById, {
+          userId: m.userId,
         }),
       ),
     );
@@ -63,9 +62,9 @@ export const listActive = query({
       (m, i: number) => ({
         memberId: m.id,
         userId: m.userId,
-        name: (users[i] as { name?: string | null } | null)?.name ?? null,
-        email: (users[i] as { email?: string | null } | null)?.email ?? null,
-        image: (users[i] as { image?: string | null } | null)?.image ?? null,
+        name: users[i]?.name ?? null,
+        email: users[i]?.email ?? null,
+        image: users[i]?.image ?? null,
         role: m.role,
       }),
     );
@@ -97,10 +96,9 @@ export const getCurrentUserProfile = query({
     const orgId = (identity.orgId as string | undefined) || null;
     const orgRole = (identity.orgRole as string | undefined) || null;
 
-    const user = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
-      model: "user",
-      where: [{ field: "id", value: userId }],
-    })) as { name?: string | null; email?: string | null; image?: string | null } | null;
+    const user = await ctx.runQuery(components.betterAuth.orgQueries.findUserById, {
+      userId,
+    });
 
     let orgName: string | null = null;
     if (orgId) {

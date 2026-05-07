@@ -15,10 +15,10 @@ export function ConvexAuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoaded && !orgId) {
+    if (isLoaded && !orgId && isAuthenticated) {
       router.replace("/select-org");
     }
-  }, [isLoaded, orgId, router]);
+  }, [isLoaded, orgId, isAuthenticated, router]);
 
   if (isLoading || !isAuthenticated || !isLoaded || !orgId) {
     return (

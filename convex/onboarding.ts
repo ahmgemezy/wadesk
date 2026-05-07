@@ -55,6 +55,33 @@ export const ensureCreated = mutation({
   },
 });
 
+export const unmarkStep = mutation({
+  args: {
+    step: v.union(
+      v.literal("workspace_named"),
+      v.literal("whatsapp_connected"),
+      v.literal("team_invited_or_skipped"),
+      v.literal("onboarding_complete"),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as OrgRole);
+
+    const state = await ctx.db
+      .query("onboardingState")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId as string))
+      .first();
+
+    if (!state) return null;
+
+    await ctx.db.patch(state._id, {
+      completedSteps: state.completedSteps.filter((s) => s !== args.step),
+    });
+    return null;
+  },
+});
+
 export const markStep = mutation({
   args: {
     step: v.union(

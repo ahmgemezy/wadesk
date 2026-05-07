@@ -1620,6 +1620,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         }>,
         Name
       >;
+      findUserById: FunctionReference<
+        "query",
+        "internal",
+        { userId: string },
+        null | {
+          email: string;
+          id: string;
+          image?: null | string;
+          name: string;
+        },
+        Name
+      >;
       listMembersByUserId: FunctionReference<
         "query",
         "internal",

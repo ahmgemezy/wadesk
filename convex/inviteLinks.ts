@@ -2,10 +2,10 @@ import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { getCallerRole, getCallerIdentity, assertAdmin, assertAdminOrSupervisor } from "./lib/auth";
+import { getAppUrl } from "./lib/appUrl";
 
 function buildUrl(token: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  return `${baseUrl}/join/${token}`;
+  return `${getAppUrl()}/join/${token}`;
 }
 
 function generateToken(): string {

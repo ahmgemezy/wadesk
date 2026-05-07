@@ -33,7 +33,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
   const handleSignOut = async () => {
     setSigningOut(true);
     await authClient.signOut();
-    router.push("/");
+    window.location.href = "/";
   };
 
   return (

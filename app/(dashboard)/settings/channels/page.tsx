@@ -135,12 +135,12 @@ export default function ChannelsListPage() {
             </Alert>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
             <EmbeddedSignupButton
               onSuccess={handleSignupSuccess}
               onError={handleSignupError}
             />
-            <Button variant="ghost" size="sm" onClick={() => setShowSignup(false)}>
+            <Button variant="outline" onClick={() => setShowSignup(false)}>
               {t("Cancel", "إلغاء")}
             </Button>
           </div>

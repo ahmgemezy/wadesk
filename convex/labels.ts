@@ -71,6 +71,54 @@ export const remove = mutation({
   },
 });
 
+export const update = mutation({
+  args: {
+    labelId: v.id("conversationLabels"),
+    name: v.string(),
+    color: v.string(),
+    emoji: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdminOrSupervisor(orgRole as OrgRole);
+
+    const label = await ctx.db.get(args.labelId);
+    if (!label || label.tenantId !== tenantId) throw new ConvexError("NOT_FOUND");
+
+    if (!args.name.trim()) throw new ConvexError("NAME_REQUIRED");
+
+    const nameChanged = label.name.toLowerCase() !== args.name.trim().toLowerCase();
+    if (nameChanged) {
+      const existing = await ctx.db
+        .query("conversationLabels")
+        .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+        .collect();
+      if (existing.some((l) => l._id !== args.labelId && l.name.toLowerCase() === args.name.trim().toLowerCase())) {
+        throw new ConvexError("LABEL_EXISTS");
+      }
+
+      // Rename label reference in all conversations
+      const conversations = await ctx.db
+        .query("conversations")
+        .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+        .collect();
+      for (const conv of conversations) {
+        if ((conv.labels ?? []).includes(label.name)) {
+          await ctx.db.patch(conv._id, {
+            labels: (conv.labels ?? []).map((n) => (n === label.name ? args.name.trim() : n)),
+          });
+        }
+      }
+    }
+
+    await ctx.db.patch(args.labelId, {
+      name: args.name.trim(),
+      color: args.color,
+      emoji: args.emoji ?? undefined,
+    });
+  },
+});
+
 export const addToConversation = mutation({
   args: {
     conversationId: v.id("conversations"),

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "next/navigation";
 import { api } from "../../convex/_generated/api";
+import { ConvexError } from "convex/values";
 import { StepProgress } from "./step-progress";
 import { StepWorkspaceName } from "./step-workspace-name";
 import { StepConnectWhatsApp } from "./step-connect-whatsapp";
@@ -32,7 +33,23 @@ interface OnboardingWizardProps {
 export function OnboardingWizard({ locale }: OnboardingWizardProps) {
   const { isLoaded, orgId } = useAuth();
   const state = useQuery(api.onboarding.getState, isLoaded && orgId ? {} : "skip");
+  const ensureCreated = useMutation(api.onboarding.ensureCreated);
   const router = useRouter();
+  // Incremented when ensureCreated returns NO_ORG so the effect retries after
+  // a short delay (Convex JWT refresh lags behind the Better Auth session).
+  const [retryTick, setRetryTick] = useState(0);
+
+  useEffect(() => {
+    if (isLoaded && !!orgId && state === null) {
+      ensureCreated({}).catch((err) => {
+        if (err instanceof ConvexError && err.data === "NO_ORG") {
+          setTimeout(() => setRetryTick((n) => n + 1), 400);
+        } else {
+          console.error("[Onboarding] ensureCreated failed:", err);
+        }
+      });
+    }
+  }, [isLoaded, orgId, state, ensureCreated, retryTick]);
 
   const noOrgYet = isLoaded && !orgId;
   const loading = !isLoaded || (!!orgId && state === undefined);

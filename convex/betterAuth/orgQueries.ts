@@ -2,6 +2,24 @@ import { query as internalQuery } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 
+export const findUserById = internalQuery({
+  args: { userId: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      id: v.string(),
+      name: v.string(),
+      email: v.string(),
+      image: v.optional(v.union(v.null(), v.string())),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId as Id<"user">);
+    if (!user) return null;
+    return { id: args.userId, name: user.name, email: user.email, image: user.image ?? null };
+  },
+});
+
 const memberShape = v.object({
   id: v.string(),
   _id: v.id("member"),
