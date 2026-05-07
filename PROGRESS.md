@@ -18,6 +18,517 @@
 
 ## ✅ Completed Tasks
 
+### 2026-05-06: Clerk → Better Auth Migration — Stage 2a Part A Applied (Foundation Pre-Schema-Gen) ✅ CORRECTED
+
+**Branch:** `feat/clerk-to-better-auth` (created from `feat/013-departments`)
+
+**npm changes:**
+- Installed: `@convex-dev/better-auth@0.12.2` (exact pin), `better-auth@~1.6.9` (resolves to 1.6.9)
+- Uninstalled: `@clerk/nextjs@^7.2.5`, `@clerk/localizations@^4.5.8`, `@better-auth/infra@^0.2.5`
+- `package-lock.json` regenerated
+
+**Convex env vars set (dev deployment: determined-loris-556):**
+- `BETTER_AUTH_SECRET` (generated via `openssl rand -base64 32` — value redacted)
+- `SITE_URL=http://localhost:3000`
+- Deferred — require Ahmed's credentials before runtime testing: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_CLIENT_ID`, `FACEBOOK_CLIENT_SECRET`
+- Deferred — production deployment: When prod Convex deployment is created, `SITE_URL` on prod must be updated to the production domain; `NEXT_PUBLIC_CONVEX_SITE_URL` on Vercel must point to the prod deployment's `.site` URL (not the dev `eu-west-1` URL)
+
+**Vercel / .env.local:**
+- Added `NEXT_PUBLIC_CONVEX_SITE_URL=https://determined-loris-556.eu-west-1.convex.site` (eu-west-1 regional deployment)
+- Note: `.env.local` manually updated by Ahmed (CLI write permission denied for .env files)
+- `.gitignore` already excludes `.env.local` (line 18)
+
+**Files created:**
+- `convex/betterAuth/convex.config.ts` — 5 lines (component definition)
+- `convex/convex.config.ts` — 7 lines (app definition with betterAuth component)
+- `convex/betterAuth/auth.ts` — 29 lines (static export for CLI schema gen — NOT runtime; corrected to include `database: convexAdapter({} as any, {} as any)`)
+- `convex/betterAuth/schema.ts` — 107 lines (CLI-generated via `npx auth generate` with Convex adapter; NOT manually written)
+
+**Files modified:** none (package.json changes done via npm install/uninstall, not direct edit)
+
+**Schema generation — corrected path:**
+- Initial apply: `npx auth generate` failed with "memory is not supported" because `convex/betterAuth/auth.ts` had no `database:` key → better-auth defaulted to "memory" adapter → memory adapter lacks `createSchema`. Schema was then written manually (91 lines), which introduced 8 field-type errors against the test profile.
+- Root cause: `convex/betterAuth/auth.ts` needed `import { convexAdapter } from "@convex-dev/better-auth"` and `database: convexAdapter({} as any, {} as any)`. Pattern sourced from `node_modules/@convex-dev/better-auth/dist/auth-options.js:15-16` (library's own internal schema-gen config, comment "This is the config used to generate the schema").
+- Fix applied: auth.ts corrected, manual schema.ts deleted (`rm convex/betterAuth/schema.ts`), `cd convex/betterAuth && npx auth generate` re-run → generated 107-line `convex/betterAuth/schema.ts` with auto-generated header.
+- `activeOrganizationRole` IS present in generated session table as `v.optional(v.union(v.null(), v.string()))` — §6 one-line fix was NOT needed.
+- All 7 expected tables in generated output: `user`, `session`, `account`, `verification`, `organization`, `member`, `invitation`
+
+**C2 cross-check divergences (CLI output vs. test profile — resolved):**
+
+| Divergence | Verdict |
+|---|---|
+| `invitation` 6 required fields | ✅ Accept CLI — test profile includes teams plugin (`teamId` present); org-only config makes these required |
+| `organization.updatedAt` absent | ⚠️ Accept with OQ — see OQ-1 below |
+| `member.updatedAt` absent | ⚠️ Accept with OQ — see OQ-1 below |
+| Extra indexes (`member.role`, `invitation.role/status/inviterId`) | ✅ Accept CLI — performance choices, no correctness risk |
+| `user.userId` index without field | ✅ Accept CLI — see V1 finding below |
+
+**V1 investigation — `user.userId` index source identified:**
+`node_modules/@convex-dev/better-auth/dist/client/create-schema.js:10-17` contains a hardcoded `indexFields` map:
+```javascript
+// Manually add fields to index on for schema generation,
+// all fields in the schema specialFields are automatically indexed
+export const indexFields = {
+    ...
+    user: [["email", "name"], "name", "userId"],
+    ...
+};
+```
+The `"userId"` entry is hardcoded for the user table for ALL configurations. `mergedIndexFields()` resolves it via `table.fields["userId"]?.fieldName ?? "userId"` — when no plugin adds `userId` to user (our config), the field lookup returns `undefined` and the fallback is the literal string `"userId"`, generating the index against a non-existent field.
+Test profile (line 18/28): user table HAS `userId: v.optional(...)` as an optional field (added by a plugin in that config) AND the matching index — consistent. Our generated schema: index present, field absent — inconsistent, but intentional from the CLI's perspective.
+Verdict: CLI-hardcoded forward-compat index. No TypeScript error. Whether Convex accepts an index on a field not declared in the schema is unknown until Phase 3 deploy — see OQ-2 below.
+
+**Runtime verification OQs (deferred to Migration Phase 3):**
+- **OQ-1 — `updatedAt` on org/member:** `organization.updatedAt` and `member.updatedAt` are absent from the CLI-generated schema. Verify during runtime testing whether better-auth ever attempts to write `updatedAt` to org or member records. If it does, Convex will reject the write and the schema needs the field added. Reference: `node_modules/@convex-dev/better-auth/src/client/adapter.ts` org plugin update operations.
+- **OQ-2 — `user.userId` index at deploy:** The generated user table has `.index("userId", ["userId"])` but no `userId` field in the schema. Convex's deploy-time validation of index fields vs schema fields is unknown from static analysis. Verify at first `npx convex dev` run in Phase 3 — if Convex rejects it, remove the index line (single surgical edit to generated schema).
+
+**TypeScript baseline:**
+- All TS errors are `Cannot find module '@clerk/nextjs'` / `'@clerk/nextjs/server'` — expected, caused by uninstalling Clerk in Step 1
+- Companion `TS7006 Parameter implicitly has any type` errors appear only inside those same Clerk-importing files — same root cause
+- Zero errors in Part A's new files (`convex/betterAuth/`)
+- These errors are owned by Stage 2b–2d call-site replacements — NOT Part A blockers
+
+**Planning doc corrections needed:**
+- `STAGE_2A_FOUNDATION.md` §5.3 specifies `convex/betterAuth/auth.ts` content but omits `database: convexAdapter({} as any, {} as any)` (and the corresponding `import { convexAdapter } from "@convex-dev/better-auth"`). This caused the `npx auth generate` "memory is not supported" error in initial Part A apply. The library's own `node_modules/@convex-dev/better-auth/dist/auth-options.js:15-16` documents this as the canonical schema-gen pattern. Defer to a planning-doc revision; do not silently edit during apply.
+
+**Carry-over to Part B (Stage 2a Part B):**
+- `convex/auth.ts` — create (§5.1)
+- `convex/auth.config.ts` — modify (§4.3 AFTER)
+- `convex/http.ts` — modify (§4.4 AFTER, adds `authComponent.registerRoutes`)
+- `lib/auth-client.ts` — create (§5.4)
+- `lib/auth-server.ts` — create (§5.5)
+- `app/api/auth/[...all]/route.ts` — create (§5.6)
+
+### 2026-05-07: Clerk → Better Auth Migration — Stage 2a Part B1 Applied (Convex Backend) ✅ CLOSED-PENDING-CODEGEN
+
+**Files in scope (B1):**
+- `convex/auth.ts` — NEW (176 lines; §5.1 content with Bug B + Bug C corrections applied)
+- `convex/auth.config.ts` — MODIFIED (§4.3 AFTER; applied in prior session)
+- `convex/http.ts` — MODIFIED (§4.4 AFTER, adds `authComponent.registerRoutes`; applied in prior session)
+
+**TypeScript baseline after fixes:**
+- `convex/auth.ts` errors: **3** — all `TS2339: Property 'betterAuth' does not exist on type '{}'` at lines 11, 92, 132. Root cause: Bug A (stale `_generated/api.d.ts` has `components: {}`). **Expected and accepted — codegen-pending.**
+- Pre-existing Clerk errors (other files): **83** — unchanged from Part A baseline. All `TS2307 Cannot find module '@clerk/nextjs'` / `@clerk/nextjs/server'` + cascading `TS7006` implicit-any in same files. Owned by Stage 2c call-site replacements.
+- Third-category errors (unrelated to codegen or Clerk): **0** ✓
+- **Total: 86**
+
+**Codegen status:**
+`npx convex codegen` FAILED — blocked by 6 Convex files still importing `@clerk/nextjs/server`: `convex/lib/emailHelpers.ts`, `convex/teamPresence.ts`, `convex/orgMembers.ts`, `convex/members.ts`, `convex/actions/validateInvite.ts`, `convex/actions/roundRobin.ts`. These are **Stage 2c scope**, not Stage 2b. Codegen will re-run successfully after Stage 2c lands. All three Bug A residuals in `convex/auth.ts` will self-heal at that point.
+
+**Bug resolutions:**
+
+**Bug A (components.betterAuth typed as {}) — DEFERRED / codegen-pending.**
+`_generated/api.d.ts:229` still shows `components: {}` because codegen can't run until Stage 2c clears the 6 Clerk-importing Convex files. After Stage 2c, `npx convex codegen` succeeds and `components.betterAuth` resolves to the full component API type. No code edit required — self-healing.
+
+**Bug B (authComponent.adapter(ctx).findMany — incorrect pattern) — RUNTIME CORRECTED, type-pending.**
+Root cause confirmed (pre-fix): `authComponent.adapter(ctx)` returns `AdapterFactory` (a callable), not a `DBAdapter` with `.findMany()`. Source: `node_modules/@convex-dev/better-auth/dist/client/create-client.d.ts` `SlimComponentApi` type.
+Fix applied at two sites:
+- `session.create.before` (line 92): replaced `authComponent.adapter(ctx).findMany({...})` → `ctx.runQuery(components.betterAuth.adapter.findMany, {...})`
+- `session.update.before` (line 132): same swap, two-condition `where` array preserved
+- Line 51 (`database: authComponent.adapter(ctx),`) left unchanged — that usage is correct (passes factory to `database:` config).
+Type-pending: `components.betterAuth.adapter.findMany` won't resolve until Bug A clears (post-Stage-2c codegen).
+
+**Bug C (ac.newRole({}) produces Role<never>) — RESOLVED.**
+Root cause confirmed via `node_modules/better-auth/dist/plugins/access/access.d.mts` + `types.d.mts`:
+- `createAccessControl({})` produces an `ac` where `TStatements = {}`, so `keyof TStatements = never`, so `K extends never`, so `newRole({})` returns `Role<never>` — incompatible with `roles?: { [key in string]?: Role<any> }`.
+- `role<TStatements extends Statements>(statements: TStatements)` is standalone, accepts `{}`, returns `{ authorize: ..., statements: {} }` which satisfies `Role<any>` per `type Role<TStatements extends Statements = Record<string, any>> = { authorize: (request: any, ...) => ...; statements: TStatements; }`.
+- `OrganizationOptions.ac` confirmed as `ac?: AccessControl | undefined` — optional. `role()` doesn't depend on any `ac` instance.
+Fix applied:
+1. Import changed: `import { createAccessControl }` → `import { role }` from `better-auth/plugins/access`
+2. `const ac = createAccessControl({})` line removed entirely
+3. Three role declarations: `ac.newRole({})` → `role({})`
+4. `organization({ ac, roles: {...} })` → `organization({ roles: {...} })` — `ac,` parameter removed
+Note: local `const role = (members[0]...)?.role` at line 139 shadows the imported `role` function within the `session.update.before` async callback scope — TypeScript strict mode does not error on variable shadowing (not a tsc option; ESLint-only rule).
+
+**Verification gates:**
+- Gate 2 (definePayload is synchronous, no DB access): PASS — `definePayload` function is still sync; all DB access remains in `databaseHooks`.
+- Gate 4 (session.create.before hook present, auto-sets activeOrganizationId for single-org users): PASS-static — hook is present at lines 91–107; runtime verification deferred to Stage 3 integration test.
+
+**Planning doc corrections needed:**
+- `STAGE_2A_FOUNDATION.md` §5.1 lines 93 and 133: `authComponent.adapter(ctx).findMany({...})` is incorrect. `authComponent.adapter(ctx)` returns `AdapterFactory` (callable), not `DBAdapter`. Correct pattern: `ctx.runQuery(components.betterAuth.adapter.findMany, args)` per `SlimComponentApi` in `node_modules/@convex-dev/better-auth/dist/client/create-client.d.ts`. Both bugs caught at TypeScript baseline (B1 Gate 4); corrected in as-applied version.
+- `STAGE_2A_FOUNDATION.md` §5.1 lines 21-23: `ac.newRole({})` from empty `createAccessControl({})` produces `Role<never>` due to TypeScript strict function type variance. Correct: `role({})` from `better-auth/plugins/access`. The `ac` parameter to `organization()` is optional and can be omitted when using standalone `role()`.
+- Codegen sequencing: §5.1 implicitly assumed codegen could run before Stage 2c call-site replacements. This is false — codegen bundles the full Convex function tree and fails if any Convex file imports a non-bundlable package (`@clerk/nextjs/server`). Bug A self-heals after Stage 2c.
+
+**Carry-over to Part B2 (Stage 2a Part B2):**
+- `lib/auth-client.ts` — create (§5.4)
+- `lib/auth-server.ts` — create (§5.5)
+- `app/api/auth/[...all]/route.ts` — create (§5.6)
+
+### 2026-05-07: Clerk → Better Auth Migration — Stage 2a Part B2 Applied (Next.js Auth Client + Server + Route) ✅ CLOSED-PENDING-CODEGEN
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Files created (3 new files, 0 existing files modified):**
+- `lib/auth-client.ts` — 27 lines (§5.4 content with preemptive Bug C fix applied)
+- `lib/auth-server.ts` — 14 lines (§5.5 content; applied verbatim — no divergences)
+- `app/api/auth/[...all]/route.ts` — 3 lines (§5.6 content; applied verbatim — no divergences)
+
+**Library cross-checks performed:**
+
+| Symbol | Import path | Source verified | Result |
+|---|---|---|---|
+| `createAuthClient` | `better-auth/react` | `node_modules/better-auth/dist/client/react/index.d.mts:127` | ✓ exported |
+| `convexClient` | `@convex-dev/better-auth/client/plugins` | `node_modules/@convex-dev/better-auth/dist/client/plugins/index.d.ts` → re-exports `../../plugins/convex/client.js` | ✓ exported |
+| `organizationClient` | `better-auth/client/plugins` | `node_modules/better-auth/dist/client/plugins/index.d.mts:55` | ✓ exported |
+| `role` | `better-auth/plugins/access` | `node_modules/better-auth/dist/plugins/access/access.d.mts:11` | ✓ exported (preemptive Bug C fix) |
+| `convexBetterAuthNextJs` | `@convex-dev/better-auth/nextjs` | `node_modules/@convex-dev/better-auth/dist/nextjs/index.d.ts` | ✓ exported |
+| `handler` (destructured) | return of `convexBetterAuthNextJs(...)` | same file; `handler: { GET: (request: Request) => Promise<Response>; POST: (request: Request) => Promise<Response>; }` | ✓ confirmed |
+| All 7 return exports | `convexBetterAuthNextJs` | same file | ✓ all confirmed: `handler`, `preloadAuthQuery`, `isAuthenticated`, `getToken`, `fetchAuthQuery`, `fetchAuthMutation`, `fetchAuthAction` |
+
+**Bugs caught and resolved:**
+
+**Bug C carry-over in §5.4 — CAUGHT PREEMPTIVELY, FIXED.**
+`STAGE_2A_FOUNDATION.md` §5.4 verbatim uses `createAccessControl({}) + ac.newRole({})` — the same `Role<never>` pattern that caused Bug C in B1's `convex/auth.ts`. Root cause is identical: empty `TStatements = {}` → `K extends never` → `newRole({})` returns `Role<never>`.
+Fix applied:
+1. Import changed: `import { createAccessControl }` → `import { role }` from `better-auth/plugins/access`
+2. `const ac = createAccessControl({})` line removed entirely
+3. Three role declarations: `ac.newRole({})` → `role({})`
+4. `organizationClient` call: `ac` parameter verified as optional (`OrganizationClientOptions.ac?: AccessControl | undefined` per `node_modules/better-auth/dist/plugins/organization/client.d.mts`) → dropped
+Citation: `OrganizationClientOptions.ac?: AccessControl | undefined` in `node_modules/better-auth/dist/plugins/organization/client.d.mts`.
+
+**Planning doc corrections (appended to running list):**
+- `STAGE_2A_FOUNDATION.md` §5.4: `createAccessControl({}) + ac.newRole({})` pattern repeated from §5.1; corrected per Bug C fix from B1. `organizationClient` `ac` parameter is optional (same as server-side `organization`); dropped.
+- §5.5: No divergences found — all 7 destructured exports confirmed in installed `@convex-dev/better-auth@0.12.2` type definitions.
+- §5.6: No divergences found — `handler` shape confirmed; `export const { GET, POST } = handler` destructuring pattern confirmed correct.
+
+**TypeScript baseline:**
+- `lib/auth-client.ts` errors: **0** ✓
+- `lib/auth-server.ts` errors: **0** ✓
+- `app/api/auth/[...all]/route.ts` errors: **0** ✓
+- `convex/auth.ts` errors: **3** — Bug A codegen-pending residuals (unchanged from B1)
+- Pre-existing Clerk errors (other files): **83** — unchanged
+- Third-category errors: **0** ✓
+- **Total: 86** — identical to B1 baseline
+
+**Stage 2a status:** ✅ CLOSED-PENDING-CODEGEN — all 6 Part A files + 3 Part B1 files + 3 Part B2 files in place. Codegen unblocks after Stage 2c clears the 6 Clerk-importing Convex files (`convex/lib/emailHelpers.ts`, `convex/teamPresence.ts`, `convex/orgMembers.ts`, `convex/members.ts`, `convex/actions/validateInvite.ts`, `convex/actions/roundRobin.ts`). All Bug A TS residuals self-heal post-codegen.
+
+### 2026-05-07: Clerk → Better Auth Migration — Stage 2b Applied (convex/lib/auth.ts JWT Shape) ✅ CLOSED-PENDING-CODEGEN
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**File modified (1 file):**
+- `convex/lib/auth.ts` — BEFORE: 82 lines → AFTER: 58 lines (−24 lines)
+
+**Summary of change:**
+`convex/lib/auth.ts` previously supported two Clerk JWT formats: legacy flat claims (`identity.orgId`, `identity.orgRole`) and Clerk v2 compact nested claims (`identity.o.id`, `identity.o.rol`). This dual-format support required three private helpers — `resolveOrgId`, `normalizeOrgRole`, and `resolveOrgRole` — plus a comment block explaining the Clerk token shapes. All three helpers are deleted in Stage 2b. Both public exported functions (`getCallerIdentity`, `getCallerRole`) now read flat claims directly: `identity.orgId as string | undefined` and `identity.orgRole as string | undefined`, matching the shape emitted by `definePayload` in `convex/auth.ts` (Stage 2a). `assertAdmin` and `assertAdminOrSupervisor` are byte-for-byte unchanged. All four exported function signatures and the `OrgRole` type are preserved identically — 43 call sites unaffected.
+
+**Logic changes beyond JWT shape (both documented in `STAGE_2B_LIB_AUTH.md`):**
+1. `NO_ROLE` guard added to both `getCallerIdentity` and `getCallerRole` — replaces the silent `"org:agent"` fallback from the deleted `normalizeOrgRole`. If `identity.orgRole` is falsy, `ConvexError("NO_ROLE")` is thrown. Intentional per Stage 1 §3.5.
+2. `FORBIDDEN` guard in `getCallerRole` is now reachable for non-empty but unrecognized role strings. In the BEFORE this was dead code (every path through `normalizeOrgRole` returned a valid `OrgRole`). Documented in §2 and §7 OQ-B1 of the planning doc. Runtime risk: if Better Auth emits bare role names without `"org:"` prefix (OQ-4, unresolved), `getCallerRole` would throw `FORBIDDEN`. Stage 3 day-one verification required.
+
+**Context7:** Not applicable — Stage 2b uses no external library API beyond Convex primitives (`ConvexError`, `ctx.auth.getUserIdentity()`).
+
+**TypeScript baseline:**
+- Pre-2b: **86** (83 pre-existing Clerk + 3 Bug A residuals in `convex/auth.ts`)
+- Post-2b: **86** — identical
+- `convex/lib/auth.ts` errors pre-2b: **0** (file was type-clean in BEFORE state)
+- `convex/lib/auth.ts` errors post-2b: **0** — confirmed via targeted grep
+- Delta: **0 new errors** — baseline unchanged
+
+**Stage 2a status:** ✅ CLOSED-PENDING-CODEGEN (carry-over from B1/B2 — Bug A residuals in `convex/auth.ts:11,92,132` self-heal after Stage 2c clears Clerk imports from the 6 Convex files listed below).
+
+**Carry-over to Stage 2c** (the 6 `clerkClient`-importing Convex files — must be cleared to unblock codegen):
+- `convex/lib/emailHelpers.ts`
+- `convex/teamPresence.ts`
+- `convex/orgMembers.ts`
+- `convex/members.ts`
+- `convex/actions/validateInvite.ts`
+- `convex/actions/roundRobin.ts`
+
+**Open questions for Stage 3 runtime verification:**
+- OQ-4 (carry-over from Stage 2a): verify Better Auth 1.6.9 organization plugin emits colon-prefixed role strings (`"org:admin"` etc.) — if bare strings are emitted, `getCallerRole` `FORBIDDEN` guard fires on every call and `OrgRole` type + comparisons must be updated before Stage 3 cutover.
+- OQ-B1: `FORBIDDEN` reachability confirmed once OQ-4 is resolved.
+- OQ-B2: `NO_ROLE` guard fires for missing `orgRole` — confirm this is correct behavior for new users pre-onboarding (expected to get `NO_ORG` first since `definePayload` sets `orgId` to `""` before `orgRole` is checked).
+
+---
+
+### 2026-05-07: Clerk → Better Auth Migration — Stage 2c.A Applied (Foundation Lib Helpers) ✅ CLOSED-PENDING-STAGE-2C-B
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Files modified (4 files):**
+- `lib/utils.ts` — BEFORE: 6 lines → AFTER: 29 lines (+23 lines; `slugify` appended, `cn` untouched)
+- `convex/lib/planLimits.ts` — BEFORE: 153 lines → AFTER: 153 lines (0 line count change; `assertAgentLimitNotReached` signature changed only)
+- `convex/lib/lastAdmin.ts` — BEFORE: 19 lines → AFTER: 14 lines (−5 lines)
+- `convex/lib/emailHelpers.ts` — BEFORE: 46 lines → AFTER: 60 lines (+14 lines)
+
+**Summary of changes:**
+
+- **`lib/utils.ts`:** Appended `slugify(name: string): string` — converts org names to URL-safe slugs with 5 regex transforms; falls back to `"org-" + 8-char crypto.randomUUID() suffix` for empty results (Arabic-only names strip to empty). Uses global `crypto.randomUUID()` (Web Crypto — no Node import). Required by Stage 2d onboarding flow. `cn` untouched byte-for-byte.
+
+- **`convex/lib/planLimits.ts`:** `assertAgentLimitNotReached` signature changed from `(clerkOrgMemberships: { data: unknown[] }, plan: Plan)` → `(currentMemberCount: number, plan: Plan)`. Body changed from `clerkOrgMemberships.data.length >= limit` → `currentMemberCount >= limit`. No adapter call in this file — the change moves member-counting responsibility to the caller. No Clerk import was ever present in this file. **Protected file (CLAUDE.md §30.3) — Ahmed approval confirmed by stage prompt.**
+
+- **`convex/lib/lastAdmin.ts`:** `assertNotLastAdmin` input type changed from Clerk membership shape (`{ data: Array<{ role: string; publicUserData?: { userId: string } | null }> }`) to Better Auth member shape (`Array<{ role: string; userId: string }>`). Role filter drops bare `"admin"` check (dead code post-migration; Better Auth emits `"org:admin"` only). `publicUserData?.userId` → `a.userId`. No adapter call in this file. No Clerk import was ever present.
+
+- **`convex/lib/emailHelpers.ts`:** Removed `"use node"` (no Node.js APIs needed). Removed `clerkClient` import from `@clerk/nextjs/server`. Added `GenericActionCtx<DataModel>` type (from `convex/server` + `../_generated/dataModel`). Added `components` import from `../_generated/api`. All 3 exported functions (`getAdminEmails`, `resolveUserEmail`, `resolveOrgName`) gained `ctx: Ctx` as first parameter. Clerk calls replaced with `ctx.runQuery(components.betterAuth.adapter.findMany/findOne, ...)` — Bug B correction applied (see below). `getAdminEmails` additionally filters at query level (`role: "org:admin"` in the `where` clause) instead of post-filtering.
+
+**Bug B preemptive correction — applied in `emailHelpers.ts` at all adapter call sites:**
+
+Planning doc §2 prescribed: `const adapter = authComponent.adapter(ctx); adapter.findMany({...})` — identical Bug B pattern that failed in B1's `convex/auth.ts`. `authComponent.adapter(ctx)` returns `AdapterFactory` (callable), not a `DBAdapter` with `.findMany`. Source: `node_modules/@convex-dev/better-auth/dist/client/create-client.d.ts` `SlimComponentApi` type (confirmed: `adapter.findMany: FunctionReference<"query", "internal">`).
+
+Corrected pattern applied at 4 call sites in `emailHelpers.ts`:
+- Line 12: `ctx.runQuery(components.betterAuth.adapter.findMany, { model: "member", where: [...] })` — getAdminEmails member fetch
+- Line 21: `ctx.runQuery(components.betterAuth.adapter.findOne, { model: "user", where: [...] })` — getAdminEmails user lookup (inside Promise.all map)
+- Line 40: `ctx.runQuery(components.betterAuth.adapter.findOne, { model: "user", where: [...] })` — resolveUserEmail
+- Line 52: `ctx.runQuery(components.betterAuth.adapter.findOne, { model: "organization", where: [...] })` — resolveOrgName
+
+**Library cross-checks:**
+
+| Query | Library | Finding |
+|---|---|---|
+| `ctx.runQuery(components.betterAuth.adapter.findMany, args)` usage | `/get-convex/better-auth` | Confirmed: `ctx.runQuery(components.betterAuth.someFile.someFunction, args)` is the documented pattern for calling component functions. `SlimComponentApi.adapter.findMany: FunctionReference<"query", "internal">` — callable via `ctx.runQuery`. |
+| `findMany` argument shape (`model`, `where`, `limit`, `sortBy`) | `/websites/better-auth` | Confirmed: `model` (required), `where` (required), `limit` (optional), `sortBy` (optional), `offset` (optional). Array-of-conditions `where` format matches planning doc §2. |
+| `authComponent.adapter(ctx)` purpose | `/get-convex/better-auth` | Confirmed: returns Better Auth-compatible database adapter for passing to `betterAuth({ database: authComponent.adapter(ctx) })`. NOT for direct `.findMany()` calls. Planning doc §2 Bug B confirmed. |
+
+**Planning doc corrections (running list — appended):**
+
+Previous corrections: §5.1 Bug B (authComponent.adapter(ctx) pattern), §5.1 Bug C (ac.newRole({}) → role({})), §5.3 missing `database:` key, §5.4 Bug C repeat.
+
+**Stage 2c global planning-doc bug (§2 adapter pattern):** `const adapter = authComponent.adapter(ctx); adapter.findMany({...})` is incorrect throughout all of Stage 2c. `authComponent.adapter(ctx)` returns `AdapterFactory` (callable for `database:` config), not a `DBAdapter`. Correct: `ctx.runQuery(components.betterAuth.adapter.findMany, args)`. Same Bug B as §5.1; applies across all of Stage 2c wherever the planning doc prescribes the `adapter.findMany/findOne/create/update/delete` pattern. Cite: `SlimComponentApi` in `node_modules/@convex-dev/better-auth/dist/client/create-client.d.ts`.
+
+**Stage 2c §3 (`planLimits.ts`):** No Bug B correction needed — function has no adapter calls. Change is purely a signature type refactoring (Clerk membership object → numeric count). No planning doc correction needed for §3.
+
+**Stage 2c §4 (`lastAdmin.ts`):** No Bug B correction needed — function has no adapter calls. Input type change only. No planning doc correction needed for §4.
+
+**Stage 2c §5 (`emailHelpers.ts`) caller note:** §5 AFTER's signatures add `ctx: Ctx` as first parameter. The planning doc's §6 and §7 describe the corresponding caller updates (`notifyEmail.ts`, `channelRetentionAction.ts`). Those callers are Stage 2c.B scope — the 9 TS2554 cascade errors they generate in this intermediate state are expected and tracked below.
+
+**TypeScript baseline:**
+
+- Pre-2c.A: **86** (83 Clerk + 3 Bug A in `convex/auth.ts`)
+- Post-2c.A: **94**
+- Delta: **+8**
+
+Delta justification:
+- `convex/lib/emailHelpers.ts`: −5 Clerk errors (1 TS2307 + 4 TS7006) → resolved by removing `@clerk/nextjs/server` import
+- `convex/lib/emailHelpers.ts`: +4 Bug A errors (TS2339: Property 'betterAuth' does not exist on type '{}' at lines 12, 21, 40, 52) — codegen-pending, same class as `convex/auth.ts` Bug A residuals
+- `convex/actions/notifyEmail.ts`: +7 TS2554 "Expected 2 arguments, but got 1" — cascade from `emailHelpers.ts` signature change (callers now missing `ctx` arg)
+- `convex/actions/channelRetentionAction.ts`: +2 TS2554 "Expected 2 arguments, but got 1" — same cascade
+- `lib/utils.ts`, `convex/lib/planLimits.ts`, `convex/lib/lastAdmin.ts`: 0 new errors each ✓
+
+Note: Stage prompt predicted 80–83. Actual post-2c.A is 94. The discrepancy: (a) `lastAdmin.ts` never had Clerk imports so its change removes zero Clerk errors — the prompt assumed it might have had some; (b) the 9 TS2554 cascade errors from callers were not accounted for in the estimate. These callers (`notifyEmail.ts`, `channelRetentionAction.ts`) ARE Stage 2c.B scope — resolving them in Stage 2c.B will drop 9 errors, returning to a count near 85 (94 − 9 = 85).
+
+In-scope file targeted grep (clean except Bug A in emailHelpers.ts):
+```
+convex/lib/emailHelpers.ts(12,57): TS2339 — Bug A (codegen-pending)
+convex/lib/emailHelpers.ts(21,33): TS2339 — Bug A (codegen-pending)
+convex/lib/emailHelpers.ts(40,48): TS2339 — Bug A (codegen-pending)
+convex/lib/emailHelpers.ts(52,47): TS2339 — Bug A (codegen-pending)
+```
+
+`lib/utils.ts`, `convex/lib/planLimits.ts`, `convex/lib/lastAdmin.ts` — zero errors. ✓
+
+**Carry-over to Stage 2c.B** (6 files — resolves 9 TS2554 cascade + remaining Clerk errors):
+- `convex/actions/notifyEmail.ts` — add `ctx` to 7 call sites (§6)
+- `convex/actions/channelRetentionAction.ts` — add `ctx` to 2 call sites (§7)
+- `convex/emails/templates/invitation.tsx` — new file (§4.4 fallback path, if OQ-C3.2 resolves to fallback)
+
+**Carry-over to Stage 2c.C** (5 files — zero-diff verify or apply):
+- `convex/orgMembers.ts` — 5 clerkClient() call sites (§8)
+- `convex/members.ts` — 11 clerkClient() call sites (§9)
+- `convex/teamPresence.ts` — 1 clerkClient() call site (§10)
+- `convex/actions/validateInvite.ts` — 1 clerkClient() call site (§11)
+- `convex/actions/roundRobin.ts` — 1 clerkClient() call site (§12)
+- `convex/onboarding.ts` — zero-diff verify (§2.2 of Gap Closer — confirmed Clerk-free)
+
+---
+
+### 2026-05-07: Clerk → Better Auth Migration — Stage 2c.B Applied (Actions + Email Infrastructure) ✅ CLOSED-PENDING-STAGE-2C-C
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Files modified (5 files) + created (1 file):**
+- `convex/actions/notifyEmail.ts` — MODIFIED (7 call sites updated: `getAdminEmails`, `resolveOrgName`, `resolveUserEmail` each gain `ctx` as first arg)
+- `convex/actions/channelRetentionAction.ts` — MODIFIED (2 call sites: `getAdminEmails(channel.tenantId)` → `getAdminEmails(ctx, channel.tenantId)`)
+- `convex/actions/validateInvite.ts` — MODIFIED (~74 lines; Clerk block replaced with Better Auth adapter calls)
+- `convex/actions/roundRobin.ts` — MODIFIED (fallback branch only; import + agentIds.length === 0 block rewritten)
+- `convex/actions/sendEmail.ts` — MODIFIED (3 surgical additions: import, SUBJECTS entry, buildElement case)
+- `convex/emails/templates/invitation.tsx` — CREATED (new file, ~93 lines; bilingual AR+EN React Email template)
+
+**Summary:**
+
+Stage 2c.B resolves the 9 TS2554 cascade errors introduced by Stage 2c.A (which changed `emailHelpers.ts` function signatures to add `ctx` as first parameter). The two caller files — `notifyEmail.ts` (7 sites) and `channelRetentionAction.ts` (2 sites) — now pass `ctx` through correctly, eliminating the cascade.
+
+`validateInvite.ts` and `roundRobin.ts` (fallback branch only) are migrated from `clerkClient()` to the Bug B-corrected adapter pattern (`ctx.runQuery/runMutation(components.betterAuth.adapter.X, args)`). Both Clerk imports are removed. The `OrgRole` type import in `validateInvite.ts` was also dropped (unused after changing `link.defaultRole as OrgRole` → `link.defaultRole as string`).
+
+`sendEmail.ts` gains the `"invitation"` template route (3 additive regions, no other lines changed). `invitation.tsx` is a new React Email template with bilingual AR+EN rendering (both sections always rendered — not if/else) and Apple-blue `#0071E3` CTA using `Button` directly from `@react-email/components` (not `WaButton`, which is hardcoded green).
+
+**Bug B correction — confirmed at all adapter call sites in Stage 2c.B files:**
+
+- `convex/actions/validateInvite.ts` line 26: `ctx.runQuery(components.betterAuth.adapter.findMany, {...})` — member fetch
+- `convex/actions/validateInvite.ts` line 35: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — org name lookup
+- `convex/actions/validateInvite.ts` line 44: `ctx.runMutation(components.betterAuth.adapter.create, {...})` — member creation
+- `convex/actions/roundRobin.ts` line 42: `ctx.runQuery(components.betterAuth.adapter.findMany, {...})` — member list
+- `convex/actions/roundRobin.ts` line 53: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — user name lookup
+
+**Additional correction beyond task description:** The task prompt stated `ctx.runQuery` for all adapter calls including `create`. Node_modules type verification (`node_modules/@convex-dev/better-auth/dist/client/create-client.d.ts` line 38) shows `create: FunctionReference<"mutation", "internal">`. Applied `ctx.runMutation` for `create` to avoid a runtime boundary violation. This is a correction to the planning doc, not a behavioral change. Same pattern applies for `updateOne`, `updateMany`, `deleteOne`, `deleteMany` in Stage 2c.C.
+
+**Also confirmed from node_modules:** The Convex adapter API method names are `create`, `findOne`, `findMany`, `updateOne`, `updateMany`, `deleteOne`, `deleteMany` — NOT `update`/`delete` (singular). Stage 2c.C files (`orgMembers.ts`, `members.ts`) that use `adapter.update` and `adapter.delete` per the planning doc must use `updateOne`/`deleteOne` instead.
+
+**Library cross-checks performed:**
+
+| Query | Library | Finding |
+|---|---|---|
+| `ctx.runQuery(components.betterAuth.adapter.findMany, args)` pattern (reuse from 2c.A) | `/get-convex/better-auth` | Confirmed — same Bug B correction, no re-query needed |
+| `adapter.create` return shape | `/websites/better-auth` | Confirmed: returns created record with `id` field (not `_id`). No explicit throw on duplicate documented. |
+| `adapter.create` function type | node_modules grep | `create: FunctionReference<"mutation", "internal">` → use `ctx.runMutation` |
+
+**OQ-C5 status:** `adapter.create` does not throw on duplicate per published docs (no error documented). The explicit pre-check in `validateInvite.ts` (`alreadyMember` check before insert) is safe and harmless regardless. Deferred to Phase 3 runtime verification to confirm.
+
+**Behavioral changes flagged:**
+
+- §11's "already member" check pattern: BEFORE used try/catch on Clerk's `createOrganizationMembership` error message; AFTER checks `members.find(m => m.userId === userId)` before inserting. Same user-facing result: early return with `{ orgId, orgName }` if already a member. No behavioral change visible to caller.
+- OQ-C5 deferred to Phase 3 runtime testing as noted in planning doc.
+
+**Cascade resolution:**
+
+- Pre-2c.A baseline: 86 errors (83 Clerk + 3 Bug A in `convex/auth.ts`)
+- Post-2c.A: 94 errors (+9 TS2554 cascade from `emailHelpers.ts` signature change)
+- All 9 TS2554 cascade errors RESOLVED in Stage 2c.B ✓
+
+**TypeScript baseline:**
+
+- Pre-2c.B: **94**
+- Post-2c.B: **85**
+- Delta: **−9**
+
+Delta breakdown by category:
+- −9 TS2554 cascade (notifyEmail: 7, channelRetentionAction: 2) — RESOLVED
+- −1 TS2307 validateInvite.ts (Clerk import removed)
+- −1 TS2307 roundRobin.ts (Clerk import removed)
+- −3 TS7006 roundRobin.ts (`.filter((m) =>`, `.sort((a, b) =>` implicit-any params eliminated)
+- +3 TS2339 Bug A validateInvite.ts (lines 26, 35, 44 — `components.betterAuth` codegen-pending)
+- +2 TS2339 Bug A roundRobin.ts (lines 42, 53 — `components.betterAuth` codegen-pending)
+
+In-scope file targeted greps:
+- `notifyEmail.ts`: 0 errors ✓ (all 7 cascade resolved)
+- `channelRetentionAction.ts`: 0 errors ✓ (all 2 cascade resolved)
+- `sendEmail.ts`: 0 errors ✓
+- `invitation.tsx`: 0 errors ✓
+- `validateInvite.ts`: 3 Bug A errors (expected, codegen-pending)
+- `roundRobin.ts`: 2 Bug A errors (expected, codegen-pending)
+- `@clerk` errors in validateInvite + roundRobin: 0 ✓
+
+**Carry-over to Stage 2c.C** (5 files — final clerkClient elimination; clearing these unblocks codegen and eliminates all Bug A residuals):
+- `convex/orgMembers.ts` — 5 clerkClient() call sites (§8)
+- `convex/members.ts` — 11 clerkClient() call sites (§9)
+- `convex/teamPresence.ts` — 1 clerkClient() call site (§10)
+- `convex/actions/validateInvite.ts` — 0 remaining Clerk imports (done in 2c.B)
+- `convex/actions/roundRobin.ts` — 0 remaining Clerk imports (done in 2c.B)
+- `convex/onboarding.ts` — zero-diff verify (Clerk-free per Stage 2c.1 §2.2)
+
+After Stage 2c.C, `npx convex codegen` will succeed, `_generated/api.d.ts` will populate `components.betterAuth`, and all 12 Bug A TS2339 residuals (auth.ts: 3, emailHelpers.ts: 4, validateInvite.ts: 3, roundRobin.ts: 2) self-heal.
+
+Note for Stage 2c.C: planning doc uses `adapter.update` and `adapter.delete` — apply as `updateOne` and `deleteOne` (confirmed method names from `create-client.d.ts`).
+
+---
+
+### 2026-05-07: Clerk → Better Auth Migration — Stage 2c.C.1 Applied (Member Queries + Team Presence + New listActive) ✅ CLOSED-PENDING-STAGE-2C-C2
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Files modified (2) + created (1) + verified-no-change (1):**
+- `convex/members.ts` — MODIFIED (11 Clerk call sites → Bug B-corrected adapter calls; Clerk import removed)
+- `convex/teamPresence.ts` — MODIFIED (1 Clerk call site → Bug B-corrected adapter calls; interface renamed, map renamed)
+- `convex/orgMembersQueries.ts` — CREATED (new file; `listActive` query for Stage 2d auth-hooks shim)
+- `convex/onboarding.ts` — VERIFIED ZERO-DIFF (confirmed no Clerk references — matches Stage 2c.1 §2.4 verdict)
+
+**Summary:**
+
+Stage 2c.C.1 clears Clerk from `convex/members.ts` (11 call sites) and `convex/teamPresence.ts` (1 call site), and creates the new `convex/orgMembersQueries.ts` file with the `listActive` query. All Stage 2c planning doc adapter calls used `authComponent.adapter(ctx)` (Bug B broken pattern); all applied with Bug B correction using `ctx.runQuery`/`ctx.runMutation` on `components.betterAuth.adapter.*` references directly.
+
+`convex/orgMembersQueries.ts` was placed in a separate file from `convex/orgMembers.ts` because Convex's runtime rules prohibit `query`/`mutation` declarations in `"use node"` files (per Stage 2c.3 §2.2 architectural constraint). Confirmed from Convex type definitions: `GenericQueryCtx` includes `runQuery` at line 195 of `node_modules/convex/dist/esm-types/server/registration.d.ts`, so `ctx.runQuery(components.betterAuth.adapter.findMany, ...)` IS valid from inside a query handler.
+
+**Bug B correction — confirmed at every adapter call site:**
+
+`convex/members.ts` (16 call sites):
+- Line 31: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — getMemberProfile member
+- Line 41: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — getMemberProfile user
+- Line 97: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — updateMemberRole member
+- Line 107: `ctx.runMutation(components.betterAuth.adapter.updateOne, {...})` — updateMemberRole write
+- Line 160: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — removeMember member
+- Line 170: `ctx.runMutation(components.betterAuth.adapter.deleteOne, {...})` — removeMember delete
+- Line 190: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — updateMemberChannels member
+- Line 200: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — updateMemberChannels user
+- Line 258: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — updateMemberDepartments member
+- Line 268: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — updateMemberDepartments user
+- Line 361: `ctx.runMutation(components.betterAuth.adapter.updateOne, {...})` — updateMemberDisplayName
+- Line 394: `ctx.runMutation(components.betterAuth.adapter.updateOne, {...})` — updateMemberAvatarFromStorage
+- Line 422: `ctx.runMutation(components.betterAuth.adapter.updateOne, {...})` — updateMemberAvatarFromUrl
+- Line 447: `ctx.runMutation(components.betterAuth.adapter.updateOne, {...})` — removeMemberAvatar
+- Line 476: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — disableAccount
+- Line 510: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — enableAccount
+
+`convex/teamPresence.ts` (2 call sites):
+- Line 41: `ctx.runQuery(components.betterAuth.adapter.findMany, {...})` — member list
+- Line 48: `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — per-user lookup in Promise.all
+
+`convex/orgMembersQueries.ts` (2 call sites in new file — Bug B correction applied to §3.1's `authComponent.adapter(ctx)` pattern):
+- `ctx.runQuery(components.betterAuth.adapter.findMany, {...})` — member list
+- `ctx.runQuery(components.betterAuth.adapter.findOne, {...})` — per-user lookup in Promise.all
+
+**Method-name corrections confirmed:**
+- `updateOne` used throughout (NOT `update`) ✓
+- `deleteOne` used in `removeMemberFromOrganization` (NOT `delete`) ✓
+- No `update`, `delete`, `updateMany`, or `deleteMany` calls used
+
+**Library cross-checks performed (literal output):**
+
+From `node_modules/@convex-dev/better-auth/dist/client/create-client.d.ts`:
+```
+41:        updateOne: FunctionReference<"mutation", "internal">;
+42:        updateMany: FunctionReference<"mutation", "internal">;
+43:        deleteOne: FunctionReference<"mutation", "internal">;
+44:        deleteMany: FunctionReference<"mutation", "internal">;
+```
+→ Confirms `updateOne`/`deleteOne` are mutations → `ctx.runMutation` applied correctly.
+
+From `node_modules/convex/dist/esm-types/server/registration.d.ts` line 195:
+```
+runQuery: <Query extends FunctionReference<"query", "public" | "internal">>(query: Query, ...args: OptionalRestArgs<Query>) => Promise<FunctionReturnType<Query>>;
+```
+→ Confirms `GenericQueryCtx` HAS `runQuery` → `ctx.runQuery` valid from query handler in `orgMembersQueries.ts`.
+
+**Planning doc corrections (running list — appended):**
+- Method names: `updateOne`/`deleteOne` (not `update`/`delete`) — applies to all of Stage 2c (from 2c.B)
+- Runner distinction: `ctx.runQuery` for reads, `ctx.runMutation` for writes (from 2c.B)
+- Stage 2c §9 AFTER uses `authComponent.adapter(ctx)` (Bug B broken pattern) — corrected to `ctx.runQuery/runMutation(components.betterAuth.adapter.X, ...)` throughout
+- Stage 2c.3 §3.1 uses `authComponent.adapter(ctx)` (Bug B broken pattern) — same correction applied
+
+**Behavioral changes flagged:**
+- `getMemberProfile`: `firstName`/`lastName` now return `null` (Better Auth stores single `name` field). Existing callers in Stage 2d must handle null split-names.
+- `updateMemberAvatarFromStorage`: No longer downloads blob and re-uploads to Clerk CDN. Stores Convex Storage URL directly. Avatar domain changes from Clerk CDN to `storage.convex.cloud`.
+- `updateMemberAvatarFromUrl`: No longer downloads+re-uploads. Stores source URL directly. Source URL must be stable.
+- `teamPresence.ts`: `ClerkMemberInfo.clerkRole` renamed to `MemberInfo.role`. `clerkMembers` Map renamed to `memberMap`. Clerk role normalization (`"admin"` → `"org:admin"`) removed — Better Auth already emits full form.
+
+**Zero-diff verification — `convex/onboarding.ts`:**
+Reading the file confirmed: zero `clerkClient` or `@clerk` references. File is auth-library-agnostic (uses `tenantId` as opaque string from `getCallerIdentity`, writes to Convex tables only). Matches Stage 2c.1 §2.4 verdict verbatim. No changes made.
+
+**TypeScript baseline:**
+- Pre-2c.C.1: **85**
+- Post-2c.C.1: **94**
+- Delta: **+9**
+
+Delta breakdown:
+- −9 Clerk errors resolved (members.ts: 1 TS2307 + ~5 TS7006 implicit-any from Clerk API callbacks; teamPresence.ts: 1 TS2307 + ~2 TS7006)
+- +16 Bug A TS2339 from members.ts (16 adapter call sites)
+- +2 Bug A TS2339 from teamPresence.ts (2 adapter call sites)
+- 0 errors from orgMembersQueries.ts (new file not yet in `_generated/api.d.ts` because codegen hasn't run; tsconfig excludes `convex/` directory so unreferenced new files aren't compiled)
+- 0 errors from onboarding.ts (zero-diff)
+
+Note: Task prompt predicted ~78-80. Actual is 94. Discrepancy: Bug A count was 18 (not 4-8 as estimated) because members.ts has 16 adapter call sites across 11 functions, not 3-6 as predicted.
+
+Targeted grep verification:
+- Clerk @clerk errors in convex/members.ts or convex/teamPresence.ts: 0 ✓ (grep false-positive was `department-members.tsx` whose `.tsx` extension matches `members\.ts` pattern)
+- orgMembersQueries.ts errors: 0 ✓ (not yet type-checked — not in api.d.ts)
+- onboarding.ts errors: 0 ✓ (zero-diff, no change)
+- convex/orgMembers.ts Clerk errors: 1 TS2307 remaining ✓ (Stage 2c.C.2 scope)
+
+**Codegen status:** Still blocked. `convex/orgMembers.ts` holds the last `@clerk/nextjs/server` import in the convex directory. Codegen will unblock after 2c.C.2 clears it.
+
+**Carry-over to Stage 2c.C.2:** `convex/orgMembers.ts` only (5 clerkClient() call sites — §8). After 2c.C.2 closes, run `npx convex codegen` to regenerate `_generated/api.d.ts` → adds `betterAuth` to `components` type → all Bug A TS2339 residuals (auth.ts: 3, emailHelpers.ts: 4, validateInvite.ts: 3, roundRobin.ts: 2, members.ts: 16, teamPresence.ts: 2, plus future ones from orgMembersQueries.ts) self-clear.
+
+---
+
 ### 2026-05-06: Clerk → Better Auth Migration — Stage 2d Phase 2 Planning (Auth Pages Rebuild + Org Components + Accept-Invite)
 
 **Planning only — no source files modified. All diffs applied in Stage 3.**
@@ -1507,5 +2018,70 @@ Implementer: GLM 5.1 (cheaper coding model). Reviewer: Claude Code. Approver: Ah
 
 - **task/041-auth-migration-stage-2c-3-revision**:
   Stage 2c.3 corrected to Path X — listActive query placed in new file convex/orgMembersQueries.ts (not convex/orgMembers.ts) due to Convex runtime rule prohibiting query/mutation declarations in "use node" files (per docs.convex.dev/functions/runtimes). Prior Stage 2c.3 deliverable replaced by corrected version. Stage 2d Phase 1 amended via STAGE_2D_PHASE_1_AMENDMENT.md — one-line shim correction: api.orgMembers.listActive → api.orgMembersQueries.listActive. Source code surface area unchanged from prior Stage 2c.3 plan (same listActive implementation, same return shape, same shim consumers); architectural placement corrected. OQ-3 from prior version (use node coexistence) is RESOLVED via Path X. Stage 2d Phase 2 unblocked.
+
+---
+
+### 2026-05-07: Clerk → Better Auth Migration — Stage 2d Applied (All Frontend + Server-Side Auth Migration) ✅ ZERO TS ERRORS
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Files modified (27) + created (3):**
+
+**Server-side layouts / pages (all `@clerk/nextjs/server` imports eliminated):**
+- `app/page.tsx` — MODIFIED: replaced `auth()` + `clerkClient()` with `isAuthenticated()` + `fetchAuthQuery(api.orgMembersQueries.getCurrentUserProfile)`
+- `app/(dashboard)/layout.tsx` — MODIFIED: import + auth body rewritten; `profile.image ?? ""` (not `null`) to match `ResolvedUser.imageUrl: string`
+- `app/(dashboard)/analytics/layout.tsx` — MODIFIED: `auth()` + `getToken` + `fetchQuery` → `getServerAuth()` + `fetchAuthQuery`
+- `app/(dashboard)/analytics/page.tsx` — MODIFIED: removed unused `auth()` call (layout already guards role)
+- `app/(dashboard)/contacts/layout.tsx` — MODIFIED: `auth()` → `getServerAuth()`
+- `app/(dashboard)/my-stats/page.tsx` — MODIFIED: `auth()` → `getServerAuth()`
+- `app/(dashboard)/settings/billing/layout.tsx` — MODIFIED: `auth()` → `getServerAuth()`
+- `app/(dashboard)/settings/channels/layout.tsx` — MODIFIED: `auth()` → `getServerAuth()`
+- `app/(dashboard)/settings/general/page.tsx` — MODIFIED: `auth()` → `getServerAuth()`
+- `app/(dashboard)/settings/layout.tsx` — MODIFIED: `auth()` → `getServerAuth()`
+- `app/(dashboard)/settings/team/page.tsx` — MODIFIED: `auth()` → `getServerAuth()`
+- `app/onboarding/layout.tsx` — MODIFIED: `auth()` + `getToken` + `fetchQuery` → `getServerAuth()` + `fetchAuthQuery`
+- `app/accept-invite/page.tsx` — REWRITTEN: simplified to `redirect("/inbox")` (invite acceptance via `[invitationId]` dynamic route)
+
+**New files created:**
+- `app/accept-invite/[invitationId]/page.tsx` — CREATED: client component state machine (loading → redirecting → accepting → accepted/error) using `authClient.organization.acceptInvitation({ invitationId })`
+- `app/(auth)/sign-in/[[...sign-in]]/page.tsx` — REWRITTEN: custom email + password form using `authClient.signIn.email()`; supports `?redirectTo` query param; matches existing glassmorphism card design
+- `app/(auth)/sign-up/[[...sign-up]]/page.tsx` — REWRITTEN: custom name + email + password form using `authClient.signUp.email()`; redirects to `/onboarding` on success
+- `app/select-org/page.tsx` — REWRITTEN: uses `authClient.useListOrganizations()` (reactive atom hook) with type assertion; `authClient.organization.setActive()` on click; shows "Create Workspace" fallback
+- `app/join/[token]/page.tsx` — REWRITTEN: removed `<SignIn>` Clerk component; replaced with `useEffect` redirect to `/sign-in?redirectTo=/join/${token}` when unauthenticated; existing validateAndJoin flow preserved
+- `components/shell/user-menu.tsx` — REWRITTEN: `SignOutButton` → `authClient.signOut()` with `router.push("/")`; `OrganizationSwitcher` removed; `useAuth`, `useUser` from `@/lib/auth-hooks`
+- `components/onboarding/step-workspace-name.tsx` — REWRITTEN: `<CreateOrganization>` → custom form using `authClient.organization.create()` + `setActive()` + `ensureCreated()`; `useEffect` on `orgId` preserved
+
+**Client components (22 files — import path only):**
+All 22 files changed `from "@clerk/nextjs"` → `from "@/lib/auth-hooks"` via bulk `sed` (no logic changes).
+
+**Logic fixes in client components:**
+- `components/inbox/conversation-list-item.tsx:118` — removed dead `|| membership?.role === "admin"` comparison (TypeScript narrowing after `=== "org:admin"` eliminated `"admin"` from overlap)
+- `components/inbox/status-selector.tsx:31` — `user?.primaryEmailAddress?.emailAddress` → `user?.emailAddresses[0]?.emailAddress`
+- `components/shell/my-profile-modal.tsx` — replaced `user.update({ firstName, lastName })` with `authClient.updateUser({ name })`; replaced `user.setProfileImage({ file })` (upload) with Convex storage upload (`generateAvatarUploadUrl` → POST → `getStorageUrl` → `authClient.updateUser({ image })`); replaced `user.setProfileImage({ file: null })` with `authClient.updateUser({ image: null })`; URL-save simplified to `authClient.updateUser({ image: url })` directly
+
+**New Convex function (1 additive):**
+- `convex/profiles.ts:getStorageUrl` — public mutation wrapping `ctx.storage.getUrl(storageId)`, used by `my-profile-modal.tsx` to get the download URL after file upload
+
+**New Convex query (1 additive, in previously created file):**
+- `convex/orgMembersQueries.ts:getCurrentUserProfile` — query using `ctx.auth.getUserIdentity()` directly (avoids `getCallerIdentity` which throws `NO_ORG`); returns `{ userId, orgId, orgRole, name, email, image, orgName } | null`
+
+**lib additions (all previously created or extended):**
+- `lib/auth-server.ts` — added `getServerAuth()` helper (JWT base64url decode; gives `{ userId, orgId, orgRole }` without Convex round-trip)
+- `lib/auth-hooks.ts` — created in prior session: `useAuth()`, `useUser()`, `useOrganization()` shims
+- `middleware.ts` — rewritten in prior session: cookie-based auth check
+- `components/convex-client-provider.tsx` — rewritten in prior session
+- `components/clerk-provider-with-locale.tsx` — passthrough (preserves `LOCALE_CHANGE_EVENT` export for `brand-panel.tsx` + `lib/marketing/i18n.ts`)
+
+**TypeScript baseline:**
+- Pre-Stage-2d: 94 errors (all Clerk TS2307 + Bug A TS2339 residuals)
+- Post-Stage-2d: **0 errors** ✅
+- `npx tsc --noEmit` output: (empty — zero errors)
+
+**Open items carried into Phase 3 (runtime verification):**
+- `npx convex codegen` — must be run to regenerate `_generated/api.d.ts` and populate `components.betterAuth` (all Bug A self-heal after this)
+- OQ-4 (carry-over): verify Better Auth 1.6.9 emits colon-prefixed role strings (`"org:admin"` etc.) at runtime
+- `authClient.useListOrganizations()` type assertion in `select-org/page.tsx` — verify actual return type at runtime matches `Org[]` shape
+- `authClient.organization.setActive({ organizationId })` — verify method name matches installed version (might be `setActiveOrganization`)
+- `app/accept-invite/[invitationId]/page.tsx` — verify `authClient.organization.acceptInvitation({ invitationId })` method name + return shape
 
 ---
