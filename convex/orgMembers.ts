@@ -3,11 +3,11 @@
 import { action, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
-import { clerkClient } from "@clerk/nextjs/server";
 import { getCallerRole, getCallerIdentity, assertAdmin, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import { assertAgentLimitNotReached, assertSupervisorRoleAllowed } from "./lib/planLimits";
 import { assertNotLastAdmin } from "./lib/lastAdmin";
-import { internal } from "./_generated/api";
+import { internal, components } from "./_generated/api";
+import { resolveOrgName } from "./lib/emailHelpers";
 
 function assertSupervisorCanManageTarget(
   callerRole: OrgRole,
@@ -42,31 +42,55 @@ export const inviteByEmail = action({
 
     const { tenantId, callerId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
+    const members = await ctx.runQuery(
+      components.betterAuth.orgQueries.listOrgMembers,
+      { organizationId: tenantId },
+    );
 
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
     const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
-    assertAgentLimitNotReached(memberships, plan);
+    assertAgentLimitNotReached(members.length, plan);
     if (args.role === "org:supervisor") assertSupervisorRoleAllowed(plan);
 
-    try {
-      await client.organizations.createOrganizationInvitation({
-        organizationId: tenantId,
-        inviterUserId: callerId,
-        emailAddress: args.email,
-        role: args.role,
-        redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/accept-invite`,
-      });
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes("already") || msg.includes("member")) {
-        throw new ConvexError("ALREADY_MEMBER");
-      }
-      throw e;
+    const existingInvites = await ctx.runQuery(
+      components.betterAuth.orgQueries.findPendingInvitationByEmail,
+      { organizationId: tenantId, email: args.email },
+    );
+    if (existingInvites.length > 0) {
+      throw new ConvexError("ALREADY_MEMBER");
     }
+
+    const invitation = await ctx.runMutation(
+      components.betterAuth.orgMutations.createInvitation,
+      {
+        organizationId: tenantId,
+        email: args.email,
+        role: args.role,
+        status: "pending",
+        inviterId: callerId,
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      },
+    );
+
+    const inviter = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+      model: "user",
+      where: [{ field: "id", value: callerId }],
+    })) as { id: string; name: string | null } | null;
+    const inviterName = inviter?.name ?? "WABDesk";
+    const orgName = await resolveOrgName(ctx, tenantId);
+
+    const invitationId = invitation.id;
+    const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/accept-invite/${invitationId}`;
+
+    await ctx.scheduler.runAfter(0, internal.actions.sendEmail.sendEmail, {
+      to: args.email,
+      templateKey: "invitation",
+      locale: "ar",
+      variables: {
+        orgName,
+        inviterName,
+        inviteUrl,
+      },
+    });
   },
 });
 
@@ -80,55 +104,59 @@ export const list = action({
 
     const { tenantId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-
     type MemberMetadata = {
       profiles: Record<string, { jobTitle?: string | null }>;
       departments: Record<string, string[]>;
     };
 
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-    const invitations = await client.organizations.getOrganizationInvitationList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-    const metadata = (await ctx.runQuery(
-      internal.memberQueries.getAllMemberMetadata,
-      { tenantId },
-    )) as MemberMetadata;
+    const [members, invitations] = await Promise.all([
+      ctx.runQuery(components.betterAuth.orgQueries.listOrgMembers, {
+        organizationId: tenantId,
+      }),
+      ctx.runQuery(components.betterAuth.orgQueries.listPendingInvitations, {
+        organizationId: tenantId,
+      }),
+    ]);
 
-    const active = memberships.data.map((m) => {
-      const userId = (m.publicUserData?.userId ?? "") as string;
-      const firstName = m.publicUserData?.firstName ?? null;
-      const lastName = m.publicUserData?.lastName ?? null;
-      const fullName = [firstName, lastName].filter(Boolean).join(" ") || m.publicUserData?.identifier || null;
+    const [memberUsers, metadata] = await Promise.all([
+      Promise.all(
+        members.map((m) =>
+          ctx.runQuery(components.betterAuth.adapter.findOne, {
+            model: "user",
+            where: [{ field: "id", value: m.userId }],
+          }),
+        ),
+      ),
+      ctx.runQuery(internal.memberQueries.getAllMemberMetadata, { tenantId }),
+    ]);
+
+    const meta = metadata as MemberMetadata;
+
+    const active = members.map((m, i) => {
+      const user = memberUsers[i] as { name?: string | null; email?: string | null; image?: string | null } | null;
+      const userId = m.userId;
       return {
         userId,
-        email: (m.publicUserData?.identifier ?? "") as string,
-        name: fullName as string | null,
-        imageUrl: (m.publicUserData?.imageUrl ?? null) as string | null,
-        role: (m.role === "admin" ? "org:admin" : m.role) as OrgRole,
+        email: (user?.email as string | null) ?? "",
+        name: (user?.name as string | null) ?? null,
+        imageUrl: (user?.image as string | null) ?? null,
+        role: m.role as OrgRole,
         status: "active" as const,
-        joinedAt: (m.createdAt ?? null) as number | null,
-        jobTitle: (metadata.profiles[userId]?.jobTitle ?? null) as string | null,
-        departments: (metadata.departments[userId] ?? []) as string[],
+        joinedAt: new Date(m.createdAt as Date | number).getTime(),
+        jobTitle: (meta.profiles[userId]?.jobTitle ?? null) as string | null,
+        departments: (meta.departments[userId] ?? []) as string[],
       };
     });
 
-    const pending = invitations.data
-      .filter((inv) => inv.status === "pending")
-      .map((inv) => ({
-        userId: inv.id as string,
-        email: inv.emailAddress as string,
-        name: null as string | null,
-        imageUrl: null as string | null,
-        role: (inv.role === "admin" ? "org:admin" : inv.role) as OrgRole,
-        status: "pending" as const,
-        joinedAt: null as number | null,
-      }));
+    const pending = invitations.map((inv) => ({
+      userId: inv.id,
+      email: inv.email,
+      name: null as string | null,
+      imageUrl: null as string | null,
+      role: inv.role as OrgRole,
+      status: "pending" as const,
+      joinedAt: null as number | null,
+    }));
 
     return [...active, ...pending];
   },
@@ -158,21 +186,24 @@ export const changeRole = action({
       assertSupervisorRoleAllowed(plan);
     }
 
-    const client = await clerkClient();
-
     if (args.newRole !== "org:admin") {
-      const memberships = await client.organizations.getOrganizationMembershipList({
-        organizationId: tenantId,
-        limit: 100,
-      });
-      await assertNotLastAdmin(memberships, args.targetUserId);
+      const members = await ctx.runQuery(
+        components.betterAuth.orgQueries.listOrgMembers,
+        { organizationId: tenantId },
+      );
+      await assertNotLastAdmin(members, args.targetUserId);
     }
 
-    await client.organizations.updateOrganizationMembership({
-      organizationId: tenantId,
-      userId: args.targetUserId,
-      role: args.newRole,
-    });
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.targetUserId, organizationId: tenantId },
+    );
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
+
+    await ctx.runMutation(
+      components.betterAuth.orgMutations.updateMemberRole,
+      { memberId: targetMember.id, role: args.newRole },
+    );
   },
 });
 
@@ -203,13 +234,12 @@ export const inviteByWhatsApp = action({
 
     const { tenantId, callerId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
+    const members = await ctx.runQuery(
+      components.betterAuth.orgQueries.listOrgMembers,
+      { organizationId: tenantId },
+    );
     const plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
-    assertAgentLimitNotReached(memberships, plan);
+    assertAgentLimitNotReached(members.length, plan);
     if (args.role === "org:supervisor") assertSupervisorRoleAllowed(plan);
 
     const existingLinks = await ctx.runQuery(internal.inviteLinks.getActiveForTenant, { tenantId });
@@ -285,34 +315,32 @@ export const removeMember = action({
       throw new ConvexError("CANNOT_REMOVE_SELF");
     }
 
-    const client = await clerkClient();
-
     if (args.status === "pending") {
-      await client.organizations.revokeOrganizationInvitation({
-        organizationId: tenantId,
-        invitationId: args.targetUserId,
-      });
+      await ctx.runMutation(
+        components.betterAuth.orgMutations.cancelInvitation,
+        { invitationId: args.targetUserId },
+      );
       return;
     }
 
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-    await assertNotLastAdmin(memberships, args.targetUserId);
+    const members = await ctx.runQuery(
+      components.betterAuth.orgQueries.listOrgMembers,
+      { organizationId: tenantId },
+    );
+    await assertNotLastAdmin(members, args.targetUserId);
 
     if (role === "org:supervisor") {
-      const target = memberships.data.find(
-        (m) => m.publicUserData?.userId === args.targetUserId,
-      );
-      const targetRole = target?.role === "admin" ? "org:admin" : target?.role;
-      assertSupervisorCanManageTarget(role, targetRole);
+      const target = members.find((m) => m.userId === args.targetUserId);
+      assertSupervisorCanManageTarget(role, target?.role);
     }
 
-    await client.organizations.deleteOrganizationMembership({
-      organizationId: tenantId,
-      userId: args.targetUserId,
-    });
+    const targetMember = members.find((m) => m.userId === args.targetUserId);
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
+
+    await ctx.runMutation(
+      components.betterAuth.orgMutations.deleteMember,
+      { memberId: targetMember.id },
+    );
 
     await ctx.runMutation(internal.conversations.unassignAll, {
       agentId: args.targetUserId,

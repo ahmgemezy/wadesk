@@ -1,16 +1,15 @@
 "use node";
 
 import { action } from "./_generated/server";
-import { clerkClient } from "@clerk/nextjs/server";
-import { internal } from "./_generated/api";
+import { internal, components } from "./_generated/api";
 import { getCallerIdentity } from "./lib/auth";
 
-interface ClerkMemberInfo {
+interface MemberInfo {
   userId: string;
   email: string;
   name: string | null;
   imageUrl: string | null;
-  clerkRole: string;
+  role: string;
 }
 
 interface ChannelAssignment {
@@ -39,50 +38,49 @@ export const listWithDepartments = action({
       return [];
     }
 
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-
-    // Build map of all Clerk members
-    const clerkMembers = new Map<string, ClerkMemberInfo>(
-      memberships.data
-        .filter((m) => m.publicUserData?.userId)
-        .map((m) => {
-          const userId = m.publicUserData!.userId!;
-          return [
-            userId,
-            {
-              userId,
-              email: (m.publicUserData?.identifier ?? "") as string,
-              name: [m.publicUserData?.firstName, m.publicUserData?.lastName]
-                .filter(Boolean)
-                .join(" ") || null,
-              imageUrl: (m.publicUserData?.imageUrl ?? null) as string | null,
-              clerkRole: m.role,
-            },
-          ];
-        })
+    const rawMembers = await ctx.runQuery(
+      components.betterAuth.orgQueries.listOrgMembers,
+      { organizationId: tenantId },
     );
 
-    // Get hierarchical channel→departments data and member profiles from database
+    const userResults = await Promise.all(
+      rawMembers.map((m) =>
+        ctx.runQuery(components.betterAuth.adapter.findOne, {
+          model: "user",
+          where: [{ field: "id", value: m.userId }],
+        }),
+      ),
+    );
+    const users = userResults as Array<{ email?: string; name?: string | null; image?: string | null } | null>;
+
+    const memberMap = new Map<string, MemberInfo>(
+      rawMembers.map((m, i) => [
+        m.userId,
+        {
+          userId: m.userId,
+          email: (users[i]?.email as string) ?? "",
+          name: (users[i]?.name as string | null) ?? null,
+          imageUrl: (users[i]?.image as string | null) ?? null,
+          role: m.role,
+        },
+      ])
+    );
+
     const [userChannelDepts, metadata] = await Promise.all([
       ctx.runQuery(internal.teamPresenceQueries.getUserChannelsAndDepartments, { tenantId }),
       ctx.runQuery(internal.memberQueries.getAllMemberMetadata, { tenantId }),
     ]);
 
-    // Build result
-    const allMembers: TeamMemberResult[] = Array.from(clerkMembers.values()).map((clerkInfo) => {
-      const userId = clerkInfo.userId;
-      const channelAssignments = userChannelDepts[userId] || [];
+    const allMembers: TeamMemberResult[] = Array.from(memberMap.values()).map((info) => {
+      const userId = info.userId;
+      const channelAssignments = (userChannelDepts as Record<string, ChannelAssignment[]>)[userId] || [];
 
       return {
         userId,
-        email: clerkInfo.email,
-        name: clerkInfo.name,
-        imageUrl: clerkInfo.imageUrl,
-        role: clerkInfo.clerkRole === "admin" ? "org:admin" : (clerkInfo.clerkRole as string) || "org:agent",
+        email: info.email,
+        name: info.name,
+        imageUrl: info.imageUrl,
+        role: info.role,
         jobTitle: (metadata as { profiles: Record<string, { jobTitle?: string | null }> }).profiles[userId]?.jobTitle ?? null,
         channelAssignments,
       };

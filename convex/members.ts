@@ -3,9 +3,8 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
-import { clerkClient } from "@clerk/nextjs/server";
 import { getCallerIdentity, getCallerRole, assertAdmin, type OrgRole } from "./lib/auth";
-import { internal } from "./_generated/api";
+import { internal, components } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
 export const getMemberProfile = action({
@@ -29,19 +28,19 @@ export const getMemberProfile = action({
 
     const { tenantId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-
-    const member = memberships.data.find(
-      (m) => m.publicUserData?.userId === args.memberId,
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.memberId, organizationId: tenantId },
     );
-    if (!member) {
-      return null;
-    }
+
+    if (!targetMember) return null;
+
+    const user = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+      model: "user",
+      where: [{ field: "_id", value: args.memberId }],
+    })) as { id: string; name: string | null; email: string | null; image: string | null } | null;
+
+    if (!user) return null;
 
     const [channels, departments, memberProfile] = await Promise.all([
       ctx.runQuery(internal.memberQueries.getMemberChannelAssignments, {
@@ -56,18 +55,14 @@ export const getMemberProfile = action({
       }),
     ]);
 
-    const firstName = member.publicUserData?.firstName ?? null;
-    const lastName = member.publicUserData?.lastName ?? null;
-    const fullName = [firstName, lastName].filter(Boolean).join(" ") || member.publicUserData?.identifier || null;
-
     return {
-      firstName,
-      lastName,
-      name: fullName,
-      email: member.publicUserData?.identifier ?? null,
-      imageUrl: member.publicUserData?.imageUrl ?? null,
-      role: (member.role === "admin" ? "org:admin" : member.role) as OrgRole,
-      joinedAt: member.createdAt ?? null,
+      firstName: null,
+      lastName: null,
+      name: user.name,
+      email: user.email,
+      imageUrl: user.image,
+      role: targetMember.role as OrgRole,
+      joinedAt: new Date(targetMember.createdAt as Date | number).getTime(),
       phone: memberProfile?.phone ?? null,
       jobTitle: memberProfile?.jobTitle ?? null,
       bio: memberProfile?.bio ?? null,
@@ -96,13 +91,17 @@ export const updateMemberRole = action({
       throw new ConvexError("CANNOT_CHANGE_OWN_ROLE");
     }
 
-    const client = await clerkClient();
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.memberId, organizationId: tenantId },
+    );
 
-    await client.organizations.updateOrganizationMembership({
-      organizationId: tenantId,
-      userId: args.memberId,
-      role: args.newRole,
-    });
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
+
+    await ctx.runMutation(
+      components.betterAuth.orgMutations.updateMemberRole,
+      { memberId: targetMember.id, role: args.newRole },
+    );
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
       tenantId,
@@ -151,11 +150,17 @@ export const removeMemberFromOrganization = action({
       details: { targetMemberId: args.memberId },
     });
 
-    const client = await clerkClient();
-    await client.organizations.deleteOrganizationMembership({
-      organizationId: tenantId,
-      userId: args.memberId,
-    });
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.memberId, organizationId: tenantId },
+    );
+
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
+
+    await ctx.runMutation(
+      components.betterAuth.orgMutations.deleteMember,
+      { memberId: targetMember.id },
+    );
 
     return { success: true };
   },
@@ -172,16 +177,20 @@ export const updateMemberChannels = action({
 
     const { tenantId, callerId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.memberId, organizationId: tenantId },
+    );
 
-    const member = memberships.data.find((m) => m.publicUserData?.userId === args.memberId);
-    if (!member) {
-      throw new ConvexError("MEMBER_NOT_FOUND");
-    }
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
+
+    const user = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+      model: "user",
+      where: [{ field: "_id", value: args.memberId }],
+    })) as { name?: string | null; email?: string | null; image?: string | null } | null;
+
+    const memberRole = targetMember.role as OrgRole;
+    const nonAdminRole = memberRole === "org:admin" ? "org:supervisor" : (memberRole as "org:supervisor" | "org:agent");
 
     const oldChannels = await ctx.runQuery(internal.memberQueries.getMemberChannelAssignments, {
       memberId: args.memberId,
@@ -193,16 +202,13 @@ export const updateMemberChannels = action({
       userId: args.memberId,
     });
 
-    const memberRole = (member.role === "admin" ? "org:admin" : member.role) as OrgRole;
-    const nonAdminRole = memberRole === "org:admin" ? "org:supervisor" : (memberRole as "org:supervisor" | "org:agent");
-
     await ctx.runMutation(internal.memberQueries.addMemberToChannels, {
       tenantId,
       userId: args.memberId,
       channelIds: args.channelIds,
-      userName: member.publicUserData?.firstName || member.publicUserData?.identifier || "Unknown",
-      userEmail: member.publicUserData?.identifier || "",
-      userImageUrl: member.publicUserData?.imageUrl,
+      userName: (user?.name as string | null) ?? args.memberId,
+      userEmail: (user?.email as string) ?? "",
+      userImageUrl: (user?.image as string | null) ?? undefined,
       role: nonAdminRole,
       addedBy: callerId,
     });
@@ -236,16 +242,20 @@ export const updateMemberDepartments = action({
 
     const { tenantId, callerId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.memberId, organizationId: tenantId },
+    );
 
-    const member = memberships.data.find((m) => m.publicUserData?.userId === args.memberId);
-    if (!member) {
-      throw new ConvexError("MEMBER_NOT_FOUND");
-    }
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
+
+    const user = (await ctx.runQuery(components.betterAuth.adapter.findOne, {
+      model: "user",
+      where: [{ field: "_id", value: args.memberId }],
+    })) as { name?: string | null; email?: string | null } | null;
+
+    const memberRole = targetMember.role as OrgRole;
+    const nonAdminRole = memberRole === "org:admin" ? "org:supervisor" : (memberRole as "org:supervisor" | "org:agent");
 
     const oldDepartments = await ctx.runQuery(internal.memberQueries.getMemberDeptAssignments, {
       memberId: args.memberId,
@@ -257,15 +267,12 @@ export const updateMemberDepartments = action({
       userId: args.memberId,
     });
 
-    const memberRole = (member.role === "admin" ? "org:admin" : member.role) as OrgRole;
-    const nonAdminRole = memberRole === "org:admin" ? "org:supervisor" : (memberRole as "org:supervisor" | "org:agent");
-
     await ctx.runMutation(internal.memberQueries.addMemberToDepartments, {
       tenantId,
       userId: args.memberId,
       departmentIds: args.departmentIds,
-      userName: member.publicUserData?.firstName || member.publicUserData?.identifier || "Unknown",
-      userEmail: member.publicUserData?.identifier || "",
+      userName: (user?.name as string | null) ?? args.memberId,
+      userEmail: (user?.email as string) ?? "",
       role: nonAdminRole,
       addedBy: callerId,
     });
@@ -334,10 +341,13 @@ export const updateMemberDisplayName = action({
 
     const { tenantId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-    await client.users.updateUser(args.memberId, {
-      firstName: args.firstName,
-      ...(args.lastName !== undefined && { lastName: args.lastName }),
+    const fullName = [args.firstName, args.lastName].filter(Boolean).join(" ");
+    await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+      input: {
+        model: "user",
+        where: [{ field: "_id", value: args.memberId }],
+        update: { name: fullName },
+      },
     });
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
@@ -367,12 +377,13 @@ export const updateMemberAvatarFromStorage = action({
     });
     if (!storageUrl) throw new ConvexError("STORAGE_URL_FAILED");
 
-    const res = await fetch(storageUrl);
-    if (!res.ok) throw new ConvexError("FETCH_FAILED");
-    const blob = await res.blob();
-
-    const client = await clerkClient();
-    await client.users.updateUserProfileImage(args.memberId, { file: blob });
+    await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+      input: {
+        model: "user",
+        where: [{ field: "_id", value: args.memberId }],
+        update: { image: storageUrl },
+      },
+    });
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
       tenantId,
@@ -396,12 +407,13 @@ export const updateMemberAvatarFromUrl = action({
 
     const { tenantId } = await getCallerIdentity(ctx);
 
-    const res = await fetch(args.url);
-    if (!res.ok) throw new ConvexError("FETCH_FAILED");
-    const blob = await res.blob();
-
-    const client = await clerkClient();
-    await client.users.updateUserProfileImage(args.memberId, { file: blob });
+    await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+      input: {
+        model: "user",
+        where: [{ field: "_id", value: args.memberId }],
+        update: { image: args.url },
+      },
+    });
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
       tenantId,
@@ -422,8 +434,13 @@ export const removeMemberAvatar = action({
 
     const { tenantId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-    await client.users.deleteUserProfileImage(args.memberId);
+    await ctx.runMutation(components.betterAuth.adapter.updateOne, {
+      input: {
+        model: "user",
+        where: [{ field: "_id", value: args.memberId }],
+        update: { image: null },
+      },
+    });
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
       tenantId,
@@ -448,18 +465,12 @@ export const disableAccount = action({
       throw new ConvexError("CANNOT_DISABLE_SELF");
     }
 
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-
-    const member = memberships.data.find(
-      (m) => m.publicUserData?.userId === args.memberId,
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.memberId, organizationId: tenantId },
     );
-    if (!member) {
-      throw new ConvexError("MEMBER_NOT_FOUND");
-    }
+
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
 
     await ctx.runMutation(internal.conversations.unassignAll, {
       agentId: args.memberId,
@@ -485,18 +496,12 @@ export const enableAccount = action({
 
     const { tenantId } = await getCallerIdentity(ctx);
 
-    const client = await clerkClient();
-    const memberships = await client.organizations.getOrganizationMembershipList({
-      organizationId: tenantId,
-      limit: 100,
-    });
-
-    const member = memberships.data.find(
-      (m) => m.publicUserData?.userId === args.memberId,
+    const targetMember = await ctx.runQuery(
+      components.betterAuth.orgQueries.findOrgMember,
+      { userId: args.memberId, organizationId: tenantId },
     );
-    if (!member) {
-      throw new ConvexError("MEMBER_NOT_FOUND");
-    }
+
+    if (!targetMember) throw new ConvexError("MEMBER_NOT_FOUND");
 
     await ctx.runMutation(internal.memberQueries.logMemberAction, {
       tenantId,
