@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { BrandPanel } from "@/components/auth/brand-panel";
+import { LocaleProvider } from "@/lib/i18n/context";
 
 // Form-side logo — Apple blue icon + dark wordmark
 function FormLogo() {
@@ -67,7 +68,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
         }}
       >
         <FormLogo />
-        {children}
+        <LocaleProvider locale={defaultLocale}>{children}</LocaleProvider>
       </div>
 
       {/* Brand panel — locale-aware client component */}

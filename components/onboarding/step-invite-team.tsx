@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Send, SkipForward, Loader2 } from "lucide-react";
+import { Send, SkipForward, Loader2, ChevronRight } from "lucide-react";
+import { useT } from "@/lib/i18n/context";
 
 interface StepInviteTeamProps {
   onComplete: () => void;
@@ -11,11 +12,13 @@ interface StepInviteTeamProps {
 }
 
 export function StepInviteTeam({ onComplete, onSkip }: StepInviteTeamProps) {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const markStep = useMutation(api.onboarding.markStep);
+  const unmarkStep = useMutation(api.onboarding.unmarkStep);
   const generateInvite = useMutation(api.inviteLinks.generate);
 
   const handleSendInvite = async () => {
@@ -34,6 +37,10 @@ export function StepInviteTeam({ onComplete, onSkip }: StepInviteTeamProps) {
     }
   };
 
+  const handleBack = async () => {
+    await unmarkStep({ step: "whatsapp_connected" });
+  };
+
   const handleSkip = async () => {
     await markStep({ step: "team_invited_or_skipped" });
     onSkip();
@@ -42,9 +49,9 @@ export function StepInviteTeam({ onComplete, onSkip }: StepInviteTeamProps) {
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-foreground">دعوة الفريق</h2>
+        <h2 className="text-xl font-semibold text-foreground">{t("Invite Team", "دعوة الفريق")}</h2>
         <p className="text-muted-foreground mt-1">
-          Invite team members to join your workspace
+          {t("Invite team members to join your workspace", "ادعُ أعضاء الفريق للانضمام إلى مساحة العمل")}
         </p>
       </div>
 
@@ -96,6 +103,14 @@ export function StepInviteTeam({ onComplete, onSkip }: StepInviteTeamProps) {
         >
           <SkipForward className="w-4 h-4" />
           تخطي الآن
+        </button>
+
+        <button
+          onClick={handleBack}
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+        >
+          <ChevronRight className="w-4 h-4" />
+          رجوع للخطوة السابقة
         </button>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { useAuth } from "@/lib/auth-hooks";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { useT } from "@/lib/i18n/context";
 
 export default function JoinPage() {
   const params = useParams();
@@ -15,6 +16,7 @@ export default function JoinPage() {
   const token = params.token as string;
 
   const validateAndJoin = useAction(api.actions.validateInvite.validateAndJoin);
+  const t = useT();
 
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +40,9 @@ export default function JoinPage() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes("INVITE_INVALID")) {
-        setError("الدعوة منتهية أو غير صالحة / Invite expired or invalid");
+        setError(t("Invite expired or invalid", "الدعوة منتهية أو غير صالحة"));
       } else if (msg.includes("PLAN_LIMIT")) {
-        setError("تم بلوغ الحد الأقصى لعدد الأعضاء / Plan member limit reached");
+        setError(t("Plan member limit reached", "تم بلوغ الحد الأقصى لعدد الأعضاء"));
       } else if (msg.includes("ALREADY_MEMBER")) {
         router.push("/inbox");
       } else {
@@ -58,7 +60,7 @@ export default function JoinPage() {
           <AlertTriangle className="size-12 text-destructive mx-auto" />
           <h1 className="text-xl font-bold">{error}</h1>
           <p className="text-sm text-muted-foreground">
-            تواصل مع المسؤول / Contact your organization admin
+            {t("Contact your organization admin", "تواصل مع المسؤول")}
           </p>
         </div>
       </div>
@@ -69,8 +71,8 @@ export default function JoinPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-sm w-full text-center space-y-4">
-          <h1 className="text-xl font-bold">تم الانضمام! / Joined!</h1>
-          <p className="text-sm text-muted-foreground">جارٍ التحويل... / Redirecting...</p>
+          <h1 className="text-xl font-bold">{t("Joined!", "تم الانضمام!")}</h1>
+          <p className="text-sm text-muted-foreground">{t("Redirecting…", "جارٍ التحويل…")}</p>
         </div>
       </div>
     );
@@ -87,18 +89,18 @@ export default function JoinPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-sm w-full text-center space-y-4">
-        <h1 className="text-xl font-bold">انضم إلى الفريق / Join Team</h1>
+        <h1 className="text-xl font-bold">{t("Join Team", "انضم إلى الفريق")}</h1>
         <p className="text-sm text-muted-foreground">
-          اضغط للانضمام / Click to join
+          {t("Click the button below to join", "اضغط للانضمام")}
         </p>
         <Button onClick={handleJoin} disabled={joining} className="w-full">
           {joining ? (
             <>
               <Loader2 className="size-4 animate-spin me-2" />
-              جارٍ الانضمام... / Joining...
+              {t("Joining…", "جارٍ الانضمام…")}
             </>
           ) : (
-            "انضمام / Join"
+            t("Join", "انضمام")
           )}
         </Button>
       </div>

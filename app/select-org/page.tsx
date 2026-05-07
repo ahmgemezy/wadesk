@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Building2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n/context";
 
 interface Org {
   id: string;
@@ -15,6 +16,7 @@ interface Org {
 
 export default function SelectOrgPage() {
   const router = useRouter();
+  const t = useT();
   const { data: orgs, isPending } = authClient.useListOrganizations() as {
     data: Org[] | null;
     isPending: boolean;
@@ -24,15 +26,19 @@ export default function SelectOrgPage() {
   const handleSelect = async (organizationId: string) => {
     setSelecting(organizationId);
     await authClient.organization.setActive({ organizationId });
-    router.push("/inbox");
+    // Full page reload instead of client-side navigation: ConvexBetterAuthProvider
+    // only refreshes its JWT when session.id changes, but setActive mutates the
+    // same session (updating activeOrganizationId). A hard reload forces a fresh
+    // token fetch from the server, which now reads the correct activeOrganizationId.
+    window.location.href = "/inbox";
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
-          <h1 className="text-xl font-semibold">اختر مساحة العمل</h1>
-          <p className="text-sm text-muted-foreground">Select a workspace to continue</p>
+          <h1 className="text-xl font-semibold">{t("Select Workspace", "اختر مساحة العمل")}</h1>
+          <p className="text-sm text-muted-foreground">{t("Select a workspace to continue", "اختر مساحة عمل للمتابعة")}</p>
         </div>
 
         {isPending ? (
@@ -41,9 +47,9 @@ export default function SelectOrgPage() {
           </div>
         ) : !orgs || orgs.length === 0 ? (
           <div className="text-center space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">لا توجد مساحات عمل / No workspaces found</p>
+            <p className="text-sm text-muted-foreground">{t("No workspaces found", "لا توجد مساحات عمل")}</p>
             <Button onClick={() => router.push("/onboarding")} className="w-full">
-              إنشاء مساحة عمل / Create Workspace
+              {t("Create Workspace", "إنشاء مساحة عمل")}
             </Button>
           </div>
         ) : (
@@ -78,7 +84,7 @@ export default function SelectOrgPage() {
                 onClick={() => router.push("/onboarding")}
                 className="w-full text-sm"
               >
-                + إنشاء مساحة عمل جديدة / Create New Workspace
+                {t("+ Create New Workspace", "+ إنشاء مساحة عمل جديدة")}
               </Button>
             </div>
           </div>

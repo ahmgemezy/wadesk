@@ -1,12 +1,11 @@
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
-  const headersList = await headers();
-  const lang = headersList.get("accept-language") ?? "";
-  const locale: "ar" | "en" = lang.includes("ar") ? "ar" : "en";
+  const cookieStore = await cookies();
+  const locale: "ar" | "en" = cookieStore.get("locale")?.value === "en" ? "en" : "ar";
 
   return <OnboardingWizard locale={locale} />;
 }

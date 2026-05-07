@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import type { Metadata } from "next";
-import { Eye, EyeOff, Loader2, Facebook } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useT, useLocale } from "@/lib/i18n/context";
 
 export default function SignInPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? "/inbox";
+  const t = useT();
+  const locale = useLocale();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +27,7 @@ export default function SignInPage() {
     setError(null);
     const { error: err } = await authClient.signIn.email({ email, password });
     if (err) {
-      setError(err.message ?? "فشل تسجيل الدخول / Sign-in failed");
+      setError(err.message ?? t("Sign-in failed", "فشل تسجيل الدخول"));
       setLoading(false);
     } else {
       router.push(redirectTo);
@@ -37,19 +39,21 @@ export default function SignInPage() {
     setError(null);
     const { error: err } = await authClient.signIn.social({ provider, callbackURL: redirectTo });
     if (err) {
-      setError(err.message ?? "فشل تسجيل الدخول / Sign-in failed");
+      setError(err.message ?? t("Sign-in failed", "فشل تسجيل الدخول"));
       setSocialLoading(null);
     }
   };
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-sm" dir={locale === "ar" ? "rtl" : "ltr"}>
       <div className="bg-white/90 backdrop-blur-xl border border-black/[0.08] rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
-            تسجيل الدخول
+            {t("Sign In", "تسجيل الدخول")}
           </h1>
-          <p className="text-[15px] text-[#6E6E73]">Sign in to your account</p>
+          <p className="text-[15px] text-[#6E6E73]">
+            {t("Sign in to your account", "أدخل بريدك وكلمة المرور للمتابعة")}
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -69,7 +73,7 @@ export default function SignInPage() {
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
               </svg>
             )}
-            متابعة بـ Google / Continue with Google
+            {t("Continue with Google", "متابعة بـ Google")}
           </button>
 
           <button
@@ -81,14 +85,16 @@ export default function SignInPage() {
             {socialLoading === "facebook" ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Facebook className="size-[18px]" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M13.397 20.997v-8.196h2.765l.411-3.209h-3.176V7.548c0-.926.258-1.56 1.587-1.56h1.684V3.127A22.336 22.336 0 0 0 14.201 3c-2.444 0-4.122 1.492-4.122 4.231v2.355H7.332v3.209h2.753v8.202h3.312z"/>
+              </svg>
             )}
-            متابعة بـ Facebook / Continue with Facebook
+            {t("Continue with Facebook", "متابعة بـ Facebook")}
           </button>
 
           <div className="flex items-center gap-3">
             <div className="flex-1 border-t border-black/[0.12]" />
-            <span className="text-[13px] text-[#6E6E73]">أو / or</span>
+            <span className="text-[13px] text-[#6E6E73]">{t("or", "أو")}</span>
             <div className="flex-1 border-t border-black/[0.12]" />
           </div>
         </div>
@@ -96,7 +102,7 @@ export default function SignInPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-[#1D1D1F]" htmlFor="email">
-              البريد الإلكتروني / Email
+              {t("Email", "البريد الإلكتروني")}
             </label>
             <input
               id="email"
@@ -113,7 +119,7 @@ export default function SignInPage() {
 
           <div className="space-y-1.5">
             <label className="text-[13px] font-medium text-[#1D1D1F]" htmlFor="password">
-              كلمة المرور / Password
+              {t("Password", "كلمة المرور")}
             </label>
             <div className="relative">
               <input
@@ -150,14 +156,14 @@ export default function SignInPage() {
             className="w-full rounded-full bg-[#0071E3] hover:bg-[#0077ED] active:bg-[#006CD1] text-white font-normal py-2.5 text-[15px] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="size-4 animate-spin" />}
-            {loading ? "جارٍ الدخول..." : "دخول / Sign In"}
+            {loading ? t("Signing in…", "جارٍ الدخول…") : t("Sign In", "دخول")}
           </button>
         </form>
 
         <p className="text-center text-[13px] text-[#6E6E73]">
-          ليس لديك حساب؟{" "}
+          {t("Don't have an account?", "ليس لديك حساب؟")}{" "}
           <Link href="/sign-up" className="text-[#0071E3] hover:text-[#0077ED] font-normal">
-            إنشاء حساب / Sign Up
+            {t("Sign Up", "إنشاء حساب")}
           </Link>
         </p>
       </div>

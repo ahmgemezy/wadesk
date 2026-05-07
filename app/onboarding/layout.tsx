@@ -1,15 +1,9 @@
 import { getServerAuth, fetchAuthQuery } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { api } from "@/convex/_generated/api";
 
 export const dynamic = "force-dynamic";
-
-function detectLocale(headersList: Headers): "ar" | "en" {
-  const lang = headersList.get("accept-language") ?? "";
-  if (lang.includes("ar")) return "ar";
-  return "en";
-}
 
 export default async function OnboardingLayout({
   children,
@@ -28,8 +22,8 @@ export default async function OnboardingLayout({
     }
   }
 
-  const headersList = await headers();
-  const locale = detectLocale(headersList);
+  const cookieStore = await cookies();
+  const locale: "ar" | "en" = cookieStore.get("locale")?.value === "en" ? "en" : "ar";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background" dir={locale === "ar" ? "rtl" : "ltr"}>
