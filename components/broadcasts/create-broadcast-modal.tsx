@@ -54,7 +54,7 @@ function renderPreviewBody(body: string): React.ReactNode {
   );
 }
 
-// ─── WhatsApp phone mockup ─────────────────────────────────────────────────────
+// ─── iPhone 17 Pro Max–style WhatsApp mockup ──────────────────────────────────
 
 function WaPhoneMockup({
   channelName,
@@ -71,47 +71,187 @@ function WaPhoneMockup({
   const displayName = channelName ?? "WABDesk";
   const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+  // Phone dimensions — 260 px wide, ~2.1:1 aspect ratio (iPhone 17 Pro Max)
+  const W = 260;
+  const frameR = 52;   // outer frame border-radius
+  const pad = 12;      // frame padding (bezel thickness)
+  const screenR = 42;  // inner screen border-radius
+
   return (
-    <div className="w-[240px] rounded-[28px] border-[6px] border-gray-800 bg-gray-800 shadow-2xl overflow-hidden mx-auto">
-      {/* Chat header */}
-      <div className="flex items-center gap-2 px-3 py-2.5" style={{ backgroundColor: "#075E54" }}>
-        <div className="size-8 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
-          {channelPictureUrl ? (
-            <img src={channelPictureUrl} alt={displayName} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-xs font-bold text-white">{initials}</span>
-          )}
-        </div>
-        <div className="min-w-0">
-          <p className="text-white text-xs font-semibold truncate leading-tight">{displayName}</p>
-          <p className="text-white/60 text-[9px] leading-tight">Business Account</p>
-        </div>
-      </div>
+    <div className="relative mx-auto select-none" style={{ width: `${W}px` }}>
 
-      {/* Chat body */}
-      <div
-        className="min-h-[280px] px-2 py-3 flex flex-col justify-end gap-2"
-        style={{ backgroundColor: "#ECE5DD" }}
-      >
-        {/* Date chip */}
-        <div className="flex justify-center mb-1">
-          <span className="text-[9px] bg-white/80 text-gray-500 rounded-full px-2 py-0.5">TODAY</span>
-        </div>
+      {/* ── Side buttons ─────────────────────────────────────────────────── */}
+      {/* Action button (left, top) */}
+      <div className="absolute" style={{ left: "-5px", top: "96px",  width: "5px", height: "30px", background: "linear-gradient(to right,#5a5a5c,#3a3a3c)", borderRadius: "3px 0 0 3px" }} />
+      {/* Volume up */}
+      <div className="absolute" style={{ left: "-5px", top: "138px", width: "5px", height: "44px", background: "linear-gradient(to right,#5a5a5c,#3a3a3c)", borderRadius: "3px 0 0 3px" }} />
+      {/* Volume down */}
+      <div className="absolute" style={{ left: "-5px", top: "190px", width: "5px", height: "44px", background: "linear-gradient(to right,#5a5a5c,#3a3a3c)", borderRadius: "3px 0 0 3px" }} />
+      {/* Power / sleep-wake */}
+      <div className="absolute" style={{ right: "-5px", top: "158px", width: "5px", height: "72px", background: "linear-gradient(to left,#5a5a5c,#3a3a3c)", borderRadius: "0 3px 3px 0" }} />
 
-        {/* Message bubble */}
-        <div className="self-start max-w-[90%]">
-          <div className="bg-white rounded-lg rounded-tl-none shadow-sm px-2.5 py-2 text-[11px] leading-relaxed text-gray-800">
-            {mediaPreview && (
-              <div className="mb-2 rounded overflow-hidden">
-                <img src={mediaPreview} alt="attachment" className="w-full object-cover max-h-24" />
+      {/* ── Phone frame ──────────────────────────────────────────────────── */}
+      <div style={{
+        borderRadius: `${frameR}px`,
+        padding: `${pad}px`,
+        background: "linear-gradient(145deg, #636366 0%, #48484a 30%, #2c2c2e 70%, #1c1c1e 100%)",
+        boxShadow: [
+          "0 0 0 1px rgba(255,255,255,0.15)",
+          "inset 0 1px 0 rgba(255,255,255,0.18)",
+          "inset 0 -1px 0 rgba(0,0,0,0.5)",
+          "0 40px 80px rgba(0,0,0,0.55)",
+          "0 8px 24px rgba(0,0,0,0.4)",
+        ].join(","),
+      }}>
+
+        {/* ── Screen ───────────────────────────────────────────────────── */}
+        <div className="overflow-hidden flex flex-col" style={{
+          borderRadius: `${screenR}px`,
+          height: "488px",
+          background: "#000",
+        }}>
+
+          {/* Status bar — Dynamic Island centered, time left, icons right */}
+          <div className="relative flex items-center shrink-0" style={{
+            height: "50px",
+            background: "#075E54",
+            paddingLeft: "20px",
+            paddingRight: "16px",
+          }}>
+            {/* Time — left of DI */}
+            <span className="text-white font-semibold z-10" style={{ fontSize: "11px", letterSpacing: "-0.2px" }}>
+              {now}
+            </span>
+
+            {/* Dynamic Island — absolutely centered */}
+            <div className="absolute left-1/2 top-1/2" style={{
+              transform: "translate(-50%, -58%)",
+              width: "88px",
+              height: "28px",
+              background: "#000",
+              borderRadius: "20px",
+              boxShadow: "0 0 0 1.5px rgba(255,255,255,0.06)",
+              zIndex: 10,
+            }} />
+
+            {/* Status icons — right of DI */}
+            <div className="ms-auto flex items-center gap-1 z-10">
+              {/* Signal bars */}
+              <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
+                <rect x="0"  y="7" width="3" height="4" rx="0.6" fill="white" fillOpacity="0.4"/>
+                <rect x="4"  y="5" width="3" height="6" rx="0.6" fill="white" fillOpacity="0.6"/>
+                <rect x="8"  y="2" width="3" height="9" rx="0.6" fill="white" fillOpacity="0.8"/>
+                <rect x="12" y="0" width="3" height="11" rx="0.6" fill="white"/>
+              </svg>
+              {/* WiFi */}
+              <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+                <circle cx="7" cy="9.5" r="1.3" fill="white"/>
+                <path d="M3.5 6.5a5 5 0 0 1 7 0" stroke="white" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
+                <path d="M0.5 3.5a9 9 0 0 1 13 0" stroke="white" strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.5"/>
+              </svg>
+              {/* Battery */}
+              <div className="flex items-center">
+                <div style={{ width: "22px", height: "11px", border: "1.5px solid rgba(255,255,255,0.55)", borderRadius: "3px", padding: "1.5px", position: "relative" }}>
+                  <div style={{ width: "75%", height: "100%", background: "white", borderRadius: "1px" }} />
+                </div>
+                <div style={{ width: "2px", height: "5px", background: "rgba(255,255,255,0.4)", marginLeft: "1px", borderRadius: "0 1px 1px 0" }} />
               </div>
-            )}
-            {body ? renderPreviewBody(body) : (
-              <span className="text-gray-400 italic">Your message will appear here…</span>
-            )}
-            <div className="flex justify-end mt-1">
-              <span className="text-[9px] text-gray-400">{now} ✓✓</span>
             </div>
+          </div>
+
+          {/* WhatsApp chat header */}
+          <div className="flex items-center gap-2 shrink-0" style={{
+            backgroundColor: "#075E54",
+            paddingInline: "12px",
+            paddingBottom: "10px",
+          }}>
+            {/* Back arrow */}
+            <svg width="10" height="16" viewBox="0 0 10 16" fill="none" style={{ opacity: 0.9 }}>
+              <path d="M8 2L2 8l6 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+
+            {/* Avatar */}
+            <div style={{ width: "34px", height: "34px", borderRadius: "50%", overflow: "hidden", background: "rgba(255,255,255,0.2)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {channelPictureUrl
+                ? <img src={channelPictureUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : <span style={{ fontSize: "12px", fontWeight: 700, color: "white" }}>{initials}</span>
+              }
+            </div>
+
+            {/* Name + status */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ color: "white", fontSize: "12px", fontWeight: 600, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</p>
+              <p style={{ color: "rgba(255,255,255,0.65)", fontSize: "9px", lineHeight: 1.3 }}>Business Account</p>
+            </div>
+
+            {/* Action icons */}
+            <div className="flex items-center gap-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.37 2 2 0 0 1 3.6 1.17h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.77a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85">
+                <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+              </svg>
+            </div>
+          </div>
+
+          {/* Chat wallpaper */}
+          <div className="flex-1 flex flex-col justify-end gap-2 overflow-hidden" style={{
+            backgroundColor: "#ECE5DD",
+            backgroundImage: "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)",
+            backgroundSize: "16px 16px",
+            padding: "10px 10px 8px",
+          }}>
+            {/* Date pill */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "6px" }}>
+              <span style={{ fontSize: "9px", background: "rgba(255,255,255,0.75)", color: "#667781", borderRadius: "100px", padding: "2px 8px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }}>
+                TODAY
+              </span>
+            </div>
+
+            {/* Message bubble */}
+            <div style={{ alignSelf: "flex-start", maxWidth: "88%" }}>
+              <div style={{
+                background: "white",
+                borderRadius: "8px 8px 8px 0px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+                padding: "7px 9px 5px",
+                fontSize: "10px",
+                lineHeight: "1.5",
+                color: "#111b21",
+              }}>
+                {mediaPreview && (
+                  <div style={{ marginBottom: "6px", borderRadius: "6px", overflow: "hidden" }}>
+                    <img src={mediaPreview} alt="attachment" style={{ width: "100%", objectFit: "cover", maxHeight: "80px", display: "block" }} />
+                  </div>
+                )}
+                {body ? renderPreviewBody(body) : (
+                  <span style={{ color: "#aaa", fontStyle: "italic" }}>Your message will appear here…</span>
+                )}
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "3px" }}>
+                  <span style={{ fontSize: "8px", color: "#8696a0" }}>{now} ✓✓</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Input bar */}
+          <div style={{
+            backgroundColor: "#f0f2f5",
+            padding: "6px 8px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            flexShrink: 0,
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#54656f" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg>
+            <div style={{ flex: 1, background: "white", borderRadius: "24px", height: "28px", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }} />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#54656f" strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+          </div>
+
+          {/* Home indicator */}
+          <div style={{ backgroundColor: "#f0f2f5", display: "flex", justifyContent: "center", paddingBottom: "8px", paddingTop: "4px", flexShrink: 0 }}>
+            <div style={{ width: "80px", height: "4px", background: "rgba(0,0,0,0.18)", borderRadius: "4px" }} />
           </div>
         </div>
       </div>

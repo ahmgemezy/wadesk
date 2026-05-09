@@ -3,12 +3,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClipboardCopyIcon, LockIcon, SparklesIcon, CheckCircle2Icon, AlertTriangleIcon } from "lucide-react";
@@ -74,15 +73,15 @@ export function LibraryTemplatePreview({
   const isMeta = template.type === "meta";
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* ── Header ──────────────────────────────────────────── */}
-        <SheetHeader className="border-b border-border/60 bg-muted/20">
-          <SheetTitle className="flex items-center gap-2">
+        <DialogHeader className="border-b border-border/60 bg-muted/20 px-6 py-4 shrink-0">
+          <DialogTitle className="flex items-center gap-2">
             <SparklesIcon className="size-4 text-primary shrink-0" />
             {template.title}
-          </SheetTitle>
+          </DialogTitle>
 
           <div className="flex flex-wrap gap-1.5 pt-1">
             {isMeta ? (
@@ -103,7 +102,7 @@ export function LibraryTemplatePreview({
               {template.language}
             </Badge>
           </div>
-        </SheetHeader>
+        </DialogHeader>
 
         {/* ── Scrollable body ─────────────────────────────────── */}
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -115,7 +114,6 @@ export function LibraryTemplatePreview({
                 {t("Preview", "معاينة")}
               </p>
               <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 shadow-inner">
-                {/* Subtle WhatsApp-style chat wallpaper dots */}
                 <div className="relative">
                   <div
                     className="inline-block rounded-xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed max-w-full shadow-md"
@@ -181,7 +179,7 @@ export function LibraryTemplatePreview({
         </div>
 
         {/* ── Footer actions ──────────────────────────────────── */}
-        <SheetFooter>
+        <div className="border-t px-6 py-4 shrink-0 space-y-3">
           <div className="flex gap-2 w-full">
             {isFree ? (
               <Button className="flex-1" disabled variant="outline">
@@ -215,9 +213,9 @@ export function LibraryTemplatePreview({
               {t("to save templates or submit to Meta.", "لحفظ القوالب أو إرسالها لميتا.")}
             </p>
           )}
-        </SheetFooter>
+        </div>
 
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
