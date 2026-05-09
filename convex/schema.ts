@@ -11,6 +11,7 @@ export default defineSchema({
       v.literal("business"),
     ),
     orgName: v.optional(v.string()),
+    logoUrl: v.optional(v.string()),
     createdAt: v.number(),
     paddle_customer_id: v.optional(v.string()),
     paddle_subscription_id: v.optional(v.string()),
@@ -57,6 +58,7 @@ export default defineSchema({
     pendingDisplayName: v.optional(v.string()),
     displayNameStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
     displayNameSubmittedAt: v.optional(v.number()),
+    profilePictureUrl: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])

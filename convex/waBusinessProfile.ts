@@ -60,6 +60,17 @@ export const getProfile = action({
         message: errorMessage,
       });
     }
+
+    // Cache the profile picture URL on the channel document so the broadcast
+    // modal preview can show it without a live Meta API call.
+    const profilePictureUrl = (data as Record<string, unknown>)?.profile_picture_url;
+    if (typeof profilePictureUrl === "string" && profilePictureUrl) {
+      await ctx.runMutation(internal.channels.setProfilePictureUrl, {
+        channelId: args.channelId,
+        profilePictureUrl,
+      });
+    }
+
     return data;
   },
 });

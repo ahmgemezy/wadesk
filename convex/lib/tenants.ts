@@ -211,6 +211,47 @@ export const updateForwardTemplate = mutation({
   },
 });
 
+export const getTenantProfile = query({
+  args: {},
+  handler: async (ctx): Promise<{ orgName: string | null; logoUrl: string | null }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity?.orgId) return { orgName: null, logoUrl: null };
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", identity.orgId as string))
+      .first();
+    return {
+      orgName: tenant?.orgName ?? null,
+      logoUrl: tenant?.logoUrl ?? null,
+    };
+  },
+});
+
+export const generateLogoUploadUrl = mutation({
+  args: {},
+  handler: async (ctx): Promise<string> => {
+    const { orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as OrgRole);
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const updateTenantLogo = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as OrgRole);
+    const url = await ctx.storage.getUrl(args.storageId);
+    if (!url) throw new ConvexError("STORAGE_URL_NOT_FOUND");
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", (q) => q.eq("tenantId", tenantId))
+      .first();
+    if (!tenant) throw new ConvexError("TENANT_NOT_FOUND");
+    await ctx.db.patch(tenant._id, { logoUrl: url });
+  },
+});
+
 /**
  * Read the tenant's plan from inside a mutation context (where ctx.runQuery
  * is unavailable). Returns "free" if the tenant row is missing.

@@ -550,6 +550,13 @@ export const discoverWabaFromCode = action({
 
 // ─── Internal Helpers ─────────────────────────────────────────────────────────
 
+export const setProfilePictureUrl = internalMutation({
+  args: { channelId: v.id("channels"), profilePictureUrl: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.channelId, { profilePictureUrl: args.profilePictureUrl });
+  },
+});
+
 export const upsertChannel = internalMutation({
   args: {
     tenantId: v.string(),
