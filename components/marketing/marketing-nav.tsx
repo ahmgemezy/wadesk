@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { type MarketingLocale, t } from "@/lib/marketing/i18n";
 import { Button } from "@/components/ui/button";
 import { MobileNavSheet } from "@/components/marketing/mobile-nav-sheet";
@@ -24,7 +25,8 @@ function MarketingNav({
       className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm"
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="text-lg font-bold">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
+          <Image src="/logo.png" alt="WABDesk" width={28} height={28} className="rounded-md" />
           {locale === "ar" ? "واب ديسك" : "WABDesk"}
         </Link>
 
