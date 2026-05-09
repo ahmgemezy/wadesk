@@ -13,8 +13,53 @@ import "./globals.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "WABDesk",
-  description: "صندوق بريد WhatsApp للفرق — تعاون فريقك على محادثات واحدة",
+  title: {
+    default: "WABDesk | WhatsApp Business for Teams",
+    template: "%s | WABDesk",
+  },
+  description:
+    "WABDesk is the WhatsApp team inbox built for Arabic-speaking businesses. Manage customer conversations with your entire team from one shared dashboard — no customer ever knows.",
+  keywords: [
+    "WhatsApp Business",
+    "WhatsApp team inbox",
+    "customer support WhatsApp",
+    "multi-agent WhatsApp",
+    "WhatsApp CRM Arabic",
+    "MENA customer support",
+    "Arabic WhatsApp platform",
+    "واتساب للشركات",
+    "صندوق بريد واتساب",
+  ],
+  authors: [{ name: "WABDesk" }],
+  creator: "WABDesk",
+  publisher: "WABDesk",
+  metadataBase: new URL("https://wabdesk.com"),
+  openGraph: {
+    type: "website",
+    locale: "ar_EG",
+    alternateLocale: ["en_US", "ar_SA", "ar_AE"],
+    title: "WABDesk | WhatsApp Business for Teams",
+    description:
+      "The WhatsApp team inbox for Arabic-speaking businesses. Multiple agents, one shared inbox — pay Meta for messages, pay WABDesk for your team.",
+    siteName: "WABDesk",
+    images: [{ url: "/logo.png", width: 1024, height: 1024, alt: "WABDesk Logo" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "WABDesk | WhatsApp Business for Teams",
+    description:
+      "WhatsApp team inbox for Arabic-speaking SMBs. Multiple agents, one number, zero markup on Meta messages.",
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
