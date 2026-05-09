@@ -135,7 +135,7 @@ export const billingRenewalReceiptEmail = internalAction({
 
 /**
  * Generic notification email dispatcher. Resolves the recipient's email from
- * Clerk (via the lib/emailHelpers helper, which uses @clerk/nextjs/server),
+ * Better Auth (via the lib/emailHelpers helper),
  * then forwards to internal.actions.sendEmail with the appropriate template.
  * Called only by notifyDispatch via ctx.scheduler.runAfter.
  *

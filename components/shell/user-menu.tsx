@@ -41,7 +41,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
       <MyProfileModal
         open={profileOpen}
         onOpenChange={setProfileOpen}
-        clerkUser={user}
+        currentUser={user}
       />
 
       <div className="flex flex-col gap-1 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:items-center">

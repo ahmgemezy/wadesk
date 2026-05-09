@@ -248,16 +248,6 @@ function CookiesAr() {
                 سياسة خصوصية Meta (فيسبوك) ←
               </a>
             </li>
-            <li>
-              <a
-                href="https://clerk.com/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                سياسة خصوصية Clerk ←
-              </a>
-            </li>
           </ul>
         </section>
 
@@ -528,16 +518,6 @@ function CookiesEn() {
                 className="text-primary underline-offset-4 hover:underline"
               >
                 Meta (Facebook) Privacy Policy →
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://clerk.com/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline-offset-4 hover:underline"
-              >
-                Clerk Privacy Policy →
               </a>
             </li>
           </ul>

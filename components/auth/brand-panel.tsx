@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LOCALE_CHANGE_EVENT } from "@/components/clerk-provider-with-locale";
+import { LOCALE_CHANGE_EVENT } from "@/lib/events";
 
 type Locale = "ar" | "en";
 type MessageSender = "customer" | "system" | "agent";

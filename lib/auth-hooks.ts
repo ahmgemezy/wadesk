@@ -1,9 +1,7 @@
 "use client";
 
-// Auth hooks shim — provides Clerk-compatible hook shapes backed by Better Auth.
-// All client components that previously imported from "@clerk/nextjs" now
-// import from "@/lib/auth-hooks" instead. The exported API surface mirrors
-// Clerk's useAuth, useUser, and useOrganization hooks.
+// Auth hooks — Better Auth hook shapes for use across client components.
+// Exports useAuth, useUser, and useOrganization with a consistent API surface.
 
 import { authClient } from "@/lib/auth-client";
 import { useQuery } from "convex/react";

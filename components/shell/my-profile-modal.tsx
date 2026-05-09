@@ -23,10 +23,10 @@ import type { ResolvedUser } from "@/lib/shell/types";
 interface MyProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clerkUser: ResolvedUser;
+  currentUser: ResolvedUser;
 }
 
-export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModalProps) {
+export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileModalProps) {
   const t = useT();
   const { user } = useUser();
   const profile = useQuery(api.profiles.getMyProfile);
@@ -71,8 +71,8 @@ export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModal
     setLastOpen(false);
   }
 
-  const effectiveAvatar = user?.imageUrl ?? clerkUser.imageUrl;
-  const effectiveName = user?.fullName ?? user?.firstName ?? clerkUser.name;
+  const effectiveAvatar = user?.imageUrl ?? currentUser.imageUrl;
+  const effectiveName = user?.fullName ?? user?.firstName ?? currentUser.name;
   const initials = effectiveName
     ? effectiveName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
     : "?";
@@ -177,7 +177,7 @@ export function MyProfileModal({ open, onOpenChange, clerkUser }: MyProfileModal
           </Avatar>
           <div className="flex flex-col min-w-0">
             <span className="font-medium truncate">{effectiveName}</span>
-            <span className="text-xs text-muted-foreground truncate">{clerkUser.email}</span>
+            <span className="text-xs text-muted-foreground truncate">{currentUser.email}</span>
           </div>
         </div>
 

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { ClerkProviderWithLocale } from "@/components/clerk-provider-with-locale";
 import { Inter, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { cookies } from "next/headers";
 import Script from "next/script";
@@ -88,27 +87,25 @@ export default async function RootLayout({
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
-    <ClerkProviderWithLocale locale={locale}>
-      <html lang={locale} dir={dir} suppressHydrationWarning>
-        <head>
-          {/* Google Consent Mode v2 — must run before any GTM/GA script. Content is
-              a hardcoded constant from lib/klaro/consent-mode.ts, not user input. */}
-          <Script
-            id="google-consent-mode-default"
-            strategy="beforeInteractive"
-            // nosec: content is a hardcoded constant, not user-controlled
-            dangerouslySetInnerHTML={{ __html: CONSENT_MODE_DEFAULT_SCRIPT }}
-          />
-        </head>
-        <body className={`${inter.variable} ${ibmPlexArabic.variable} antialiased`} suppressHydrationWarning>
-          <ConvexClientProvider>
-            <LocaleProvider locale={locale}>
-              <ThemeProvider>{children}</ThemeProvider>
-              <KlaroProvider />
-            </LocaleProvider>
-          </ConvexClientProvider>
-        </body>
-      </html>
-    </ClerkProviderWithLocale>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
+      <head>
+        {/* Google Consent Mode v2 — must run before any GTM/GA script. Content is
+            a hardcoded constant from lib/klaro/consent-mode.ts, not user input. */}
+        <Script
+          id="google-consent-mode-default"
+          strategy="beforeInteractive"
+          // nosec: content is a hardcoded constant, not user-controlled
+          dangerouslySetInnerHTML={{ __html: CONSENT_MODE_DEFAULT_SCRIPT }}
+        />
+      </head>
+      <body className={`${inter.variable} ${ibmPlexArabic.variable} antialiased`} suppressHydrationWarning>
+        <ConvexClientProvider>
+          <LocaleProvider locale={locale}>
+            <ThemeProvider>{children}</ThemeProvider>
+            <KlaroProvider />
+          </LocaleProvider>
+        </ConvexClientProvider>
+      </body>
+    </html>
   );
 }

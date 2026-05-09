@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, useEffect, useCallback } from "react";
 import { setLocale as setLocaleCookie } from "@/lib/shell/locale-action";
-import { LOCALE_CHANGE_EVENT } from "@/components/clerk-provider-with-locale";
+import { LOCALE_CHANGE_EVENT } from "@/lib/events";
 
 type MarketingLocale = "ar" | "en";
 

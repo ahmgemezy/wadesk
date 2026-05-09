@@ -177,13 +177,6 @@ function PrivacyAr() {
               note: "تتحكم Paddle باستقلالية في بيانات بطاقات الدفع وفق معايير PCI-DSS. لا نتلقى أرقام البطاقات ولا نخزّنها.",
             },
             {
-              name: "Clerk, Inc.",
-              data: "الاسم، البريد الإلكتروني، بيانات اعتماد الحساب (مجزّأة)، رموز الجلسة، بيانات عضوية المؤسسة",
-              purpose: "مصادقة المستخدمين وإدارة المؤسسات متعددة المستأجرين",
-              privacy: "https://clerk.com/privacy",
-              note: null,
-            },
-            {
               name: "Convex, Inc.",
               data: "جميع بيانات التطبيق: المحادثات، جهات الاتصال، بيانات الوكلاء، الإعدادات، القوالب",
               purpose: "قاعدة البيانات في الوقت الفعلي والبنية التحتية للخلفية بدون خادم (البيانات مخزّنة على خوادم Convex)",
@@ -602,7 +595,6 @@ function PrivacyEn() {
           {[
             { name: "Meta Platforms, Inc. (WhatsApp Business Cloud API)", data: "Message content, message metadata, WABA ID, phone number IDs, Contact phone numbers", purpose: "Delivery and receipt of WhatsApp messages — core service functionality", privacy: "https://www.whatsapp.com/legal/privacy-policy/", note: "Meta is an independent data controller for WhatsApp platform data. By using WABDesk, you and your customers are also subject to Meta's policies." },
             { name: "Paddle.com Market Limited", data: "Name, email, billing address, subscription details", purpose: "Payment processing and subscription management (Merchant of Record)", privacy: "https://www.paddle.com/legal/privacy", note: "Paddle independently controls payment card data under PCI-DSS. We do not receive or store card numbers." },
-            { name: "Clerk, Inc.", data: "Name, email address, account credentials (hashed), session tokens, organization membership data", purpose: "User authentication and multi-tenant organization management", privacy: "https://clerk.com/privacy", note: null },
             { name: "Convex, Inc.", data: "All application data: conversations, contacts, agent data, settings, templates", purpose: "Real-time database and serverless backend infrastructure", privacy: "https://www.convex.dev/privacy", note: null },
             { name: "Vercel, Inc.", data: "Web traffic logs, request metadata, IP addresses", purpose: "Hosting and deployment of the WABDesk web application", privacy: "https://vercel.com/legal/privacy-policy", note: null },
             { name: "Resend", data: "Name, email address, email content (transactional only)", purpose: "Transactional email delivery: agent invitations, password resets, billing notifications", privacy: "https://resend.com/legal/privacy-policy", note: null },

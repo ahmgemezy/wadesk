@@ -6,6 +6,6 @@ test('homepage has correct title', async ({ page }) => {
   await page.goto('/');
 
   // This is a basic check. Update it according to your app's actual title/heading
-  // For a clerk-protected app, it might redirect to /sign-in
+  // Unauthenticated access redirects to /sign-in
   expect(page).toBeDefined();
 });
