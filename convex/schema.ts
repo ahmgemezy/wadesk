@@ -141,10 +141,15 @@ export default defineSchema({
     templateLanguage: v.string(),
     status: v.union(
       v.literal("draft"),
+      v.literal("scheduled"),
       v.literal("sending"),
       v.literal("sent"),
       v.literal("failed"),
     ),
+    scheduledAt: v.optional(v.number()),
+    deliveryRate: v.optional(v.number()),
+    openRate: v.optional(v.number()),
+    ctr: v.optional(v.number()),
     recipientSnapshot: v.array(v.object({
       contactId: v.id("contacts"),
       phone: v.string(),
@@ -159,7 +164,8 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
-    .index("by_tenant_status", ["tenantId", "status"]),
+    .index("by_tenant_status", ["tenantId", "status"])
+    .index("by_status_scheduled", ["status", "scheduledAt"]),
 
   conversations: defineTable({
     tenantId: v.string(),

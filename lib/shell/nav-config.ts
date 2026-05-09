@@ -52,6 +52,13 @@ export const NAV_ITEMS: NavItem[] = [
     minRole: "supervisor",
   },
   {
+    href: "/ai-assistant",
+    labelAr: "المساعد الذكي",
+    labelEn: "AI Assistant",
+    icon: "Bot",
+    minRole: "supervisor",
+  },
+  {
     href: "/settings",
     labelAr: "الإعدادات",
     labelEn: "Settings",

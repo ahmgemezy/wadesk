@@ -17,6 +17,7 @@ import {
   Database,
   SlidersHorizontal,
   Bell,
+  Bot,
 } from "lucide-react";
 import type { IconName } from "@/lib/shell/types";
 import type { LucideIcon } from "lucide-react";
@@ -40,6 +41,7 @@ const ICON_MAP: Record<IconName, LucideIcon> = {
   Database,
   SlidersHorizontal,
   Bell,
+  Bot,
 };
 
 export function resolveIcon(name: IconName): LucideIcon {

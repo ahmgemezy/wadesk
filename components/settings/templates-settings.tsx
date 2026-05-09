@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -8,36 +8,73 @@ import { useT } from "@/lib/i18n/context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { PlusIcon, PencilIcon, Trash2Icon, Loader2Icon } from "lucide-react";
+import {
+  PlusIcon,
+  SearchIcon,
+  DownloadIcon,
+  FileTextIcon,
+  Trash2Icon,
+  Loader2Icon,
+} from "lucide-react";
 import { extractVariables } from "@/lib/templateHelpers";
 import { TemplateLibraryTab } from "@/components/templates/template-library-tab";
 import { BroadcastTemplatesTab } from "@/components/broadcasts/broadcast-templates-tab";
 import { BroadcastTemplateBuilder } from "@/components/broadcasts/broadcast-template-builder";
 import type { LibraryTemplate } from "@/lib/templateLibrary";
 
+type Template = {
+  _id: string;
+  title: string;
+  body: string;
+  category?: string;
+  language: "ar" | "en";
+  variables: string[];
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  marketing: "bg-purple-100 text-purple-700",
+  utility: "bg-emerald-100 text-emerald-700",
+  authentication: "bg-blue-100 text-blue-700",
+  onboarding: "bg-indigo-100 text-indigo-700",
+  support: "bg-amber-100 text-amber-700",
+  orders: "bg-orange-100 text-orange-700",
+  greeting: "bg-sky-100 text-sky-700",
+  followup: "bg-teal-100 text-teal-700",
+  complaint: "bg-rose-100 text-rose-700",
+};
+
+function getCategoryColor(cat?: string): string {
+  if (!cat) return "bg-slate-100 text-slate-600";
+  return CATEGORY_COLORS[cat.toLowerCase()] ?? "bg-slate-100 text-slate-600";
+}
+
+function renderBody(text: string): React.ReactNode {
+  return text.split(/(\{\{[^}]+\}\})/g).map((part, i) =>
+    /^\{\{[^}]+\}\}$/.test(part) ? (
+      <span key={i} className="text-blue-600 font-medium">
+        {part}
+      </span>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
 export function TemplatesSettings() {
   const t = useT();
 
   const templates = useQuery(api.messageTemplates.list, {}) as
-    | {
-        _id: string;
-        title: string;
-        body: string;
-        category?: string;
-        language: "ar" | "en";
-        variables: string[];
-      }[]
+    | Template[]
     | undefined;
 
   const createTemplate = useMutation(api.messageTemplates.create);
@@ -51,12 +88,35 @@ export function TemplatesSettings() {
   const [category, setCategory] = useState("");
   const [language, setLanguage] = useState<"ar" | "en">("ar");
   const [saving, setSaving] = useState(false);
+  const [activeCategory, setActiveCategory] = useState("All");
+
   const [broadcastBuilderOpen, setBroadcastBuilderOpen] = useState(false);
-  const [broadcastEditingId, setBroadcastEditingId] = useState<string | null>(null);
+  const [broadcastEditingId, setBroadcastEditingId] = useState<string | null>(
+    null,
+  );
 
   const detectedVars = extractVariables(body);
 
-  function openForCreate(prefill?: Pick<LibraryTemplate, "title" | "body" | "category" | "language">) {
+  // Derive category pills from data
+  const categoryPills = useMemo(() => {
+    const unique = new Set(
+      (templates ?? []).map((tpl) => tpl.category).filter(Boolean) as string[],
+    );
+    return ["All", ...Array.from(unique)];
+  }, [templates]);
+
+  const filteredTemplates = useMemo(() => {
+    if (!templates) return [];
+    if (activeCategory === "All") return templates;
+    return templates.filter(
+      (tpl) =>
+        tpl.category?.toLowerCase() === activeCategory.toLowerCase(),
+    );
+  }, [templates, activeCategory]);
+
+  function openForCreate(
+    prefill?: Pick<LibraryTemplate, "title" | "body" | "category" | "language">,
+  ) {
     setEditingId(null);
     setTitle(prefill?.title ?? "");
     setBody(prefill?.body ?? "");
@@ -65,15 +125,28 @@ export function TemplatesSettings() {
     setDialogOpen(true);
   }
 
-  function openForEdit(
-    tpl: { _id: string; title: string; body: string; category?: string; language?: "ar" | "en" },
-  ) {
+  function openForEdit(tpl: Template) {
     setEditingId(tpl._id);
     setTitle(tpl.title);
     setBody(tpl.body);
-    setCategory(tpl.category || "");
+    setCategory(tpl.category ?? "");
     setLanguage(tpl.language ?? "ar");
     setDialogOpen(true);
+  }
+
+  async function handleSelect(tpl: Template) {
+    try {
+      await navigator.clipboard.writeText(tpl.body);
+      toast.success(t("Copied to clipboard!", "تم النسخ!"));
+    } catch {
+      // clipboard may fail in non-HTTPS; still open the copy dialog
+    }
+    openForCreate({
+      title: `Copy of ${tpl.title}`,
+      body: tpl.body,
+      category: tpl.category ?? "",
+      language: tpl.language,
+    });
   }
 
   async function handleSave() {
@@ -117,8 +190,39 @@ export function TemplatesSettings() {
 
   return (
     <>
+      {/* ── Page header ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="relative hidden sm:block">
+          <SearchIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            placeholder={t("Search templates...", "البحث في القوالب...")}
+            className="h-9 rounded-lg border bg-background ps-9 pe-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-52"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() =>
+              toast.info(
+                t("Coming soon!", "قريباً!"),
+              )
+            }
+          >
+            <DownloadIcon className="size-3.5" />
+            {t("Export Library", "تصدير المكتبة")}
+          </Button>
+          <Button size="sm" className="gap-1.5" onClick={() => openForCreate()}>
+            <PlusIcon className="size-4" />
+            {t("Create New Template", "قالب جديد")}
+          </Button>
+        </div>
+      </div>
+
       <Tabs defaultValue="my-templates">
-        <TabsList className="mb-4">
+        <TabsList className="mb-6">
           <TabsTrigger value="my-templates">
             {t("My Templates", "قوالبي")}
           </TabsTrigger>
@@ -130,110 +234,138 @@ export function TemplatesSettings() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="my-templates" className="space-y-4">
-          <div className="flex items-center justify-end">
-            <Button onClick={() => openForCreate()}>
-              <PlusIcon className="size-4 me-2" />
-              {t("Add Template", "إضافة قالب")}
-            </Button>
-          </div>
-
-          {templates === undefined ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                  <CardHeader className="pb-2 pe-16 space-y-0">
-                    <Skeleton className="h-5 w-32" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-4 w-full mb-2" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </CardContent>
-                </Card>
+        {/* ── My Templates ── */}
+        <TabsContent value="my-templates" className="space-y-5">
+          {/* Category pills */}
+          {templates !== undefined && categoryPills.length > 1 && (
+            <div className="flex flex-wrap gap-2">
+              {categoryPills.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    activeCategory === cat
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
-          ) : templates.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg border-dashed bg-muted/30">
-              <h3 className="text-lg font-medium">
+          )}
+
+          {/* Loading skeleton */}
+          {templates === undefined && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-60 rounded-xl" />
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {templates !== undefined && filteredTemplates.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-center border rounded-xl border-dashed bg-muted/20">
+              <FileTextIcon className="size-10 text-muted-foreground/40 mb-3" />
+              <h3 className="font-semibold">
                 {t("No Templates Yet", "لا توجد قوالب بعد")}
               </h3>
-              <p className="text-sm text-muted-foreground mb-4 max-w-md">
+              <p className="text-sm text-muted-foreground mt-1 max-w-xs">
                 {t(
                   "Create message templates with placeholders to standardize your replies.",
                   "أنشئ قوالب رسائل بمتغيرات لتوحيد ردودك.",
                 )}
               </p>
-              <Button variant="outline" onClick={() => openForCreate()}>
-                <PlusIcon className="size-4 me-2" />
+              <Button
+                variant="outline"
+                className="mt-4 gap-1.5"
+                onClick={() => openForCreate()}
+              >
+                <PlusIcon className="size-4" />
                 {t("Create your first template", "أنشئ قالبك الأول")}
               </Button>
             </div>
-          ) : (
+          )}
+
+          {/* Card grid */}
+          {templates !== undefined && filteredTemplates.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates.map((tpl) => (
-                <Card key={tpl._id} className="relative group overflow-hidden flex flex-col">
-                  <div className="absolute top-2 inset-e-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => openForEdit(tpl)}
-                    >
-                      <PencilIcon className="size-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => handleRemove(tpl._id)}
-                    >
-                      <Trash2Icon className="size-3.5" />
-                    </Button>
-                  </div>
-                  <CardHeader className="pb-2 pe-16 space-y-0 text-start">
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      <Badge
-                        variant={tpl.language === "ar" ? "default" : "outline"}
-                        className="w-fit font-normal text-[10px] uppercase tracking-wider"
-                      >
-                        {tpl.language === "ar" ? "AR" : "EN"}
-                      </Badge>
-                      {tpl.category && (
-                        <Badge
-                          variant="secondary"
-                          className="w-fit font-normal text-[10px] uppercase tracking-wider"
-                        >
-                          {tpl.category}
-                        </Badge>
-                      )}
-                    </div>
-                    <CardTitle className="text-base font-semibold leading-tight line-clamp-1">
-                      {tpl.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1 text-sm text-muted-foreground space-y-2 text-start">
-                    <p className="whitespace-pre-wrap opacity-90 line-clamp-3">
-                      {tpl.body}
-                    </p>
-                    {tpl.variables.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {tpl.variables.map((variable) => (
-                          <Badge key={variable} variant="outline" className="text-[10px]">
-                            {`{{${variable}}}`}
+              {filteredTemplates.map((tpl) => (
+                <div
+                  key={tpl._id}
+                  className="group relative rounded-xl border bg-card overflow-hidden flex flex-col hover:shadow-md transition-shadow"
+                >
+                  {/* Card body */}
+                  <div className="p-5 flex-1 flex flex-col gap-3">
+                    {/* Top row: category badge + icons */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        {tpl.category && (
+                          <span
+                            className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded-full mb-2 ${getCategoryColor(tpl.category)}`}
+                          >
+                            {tpl.category}
+                          </span>
+                        )}
+                        {!tpl.category && (
+                          <Badge
+                            variant={tpl.language === "ar" ? "default" : "outline"}
+                            className="text-[10px] mb-2"
+                          >
+                            {tpl.language === "ar" ? "AR" : "EN"}
                           </Badge>
-                        ))}
+                        )}
+                        <h3 className="text-lg font-bold leading-tight line-clamp-1">
+                          {tpl.title}
+                        </h3>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      <div className="flex items-center gap-1 shrink-0 pt-1">
+                        <FileTextIcon className="size-4 text-muted-foreground/40" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemove(tpl._id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                          title={t("Delete", "حذف")}
+                        >
+                          <Trash2Icon className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Body preview with inline variable highlighting */}
+                    <p className="text-sm text-muted-foreground line-clamp-4 leading-relaxed flex-1">
+                      {renderBody(tpl.body)}
+                    </p>
+                  </div>
+
+                  {/* Bottom action bar */}
+                  <div className="flex border-t">
+                    <button
+                      type="button"
+                      onClick={() => openForEdit(tpl)}
+                      className="flex-1 py-3 text-sm font-medium text-center hover:bg-muted transition-colors"
+                    >
+                      {t("Edit", "تعديل")}
+                    </button>
+                    <div className="w-px bg-border" />
+                    <button
+                      type="button"
+                      onClick={() => handleSelect(tpl)}
+                      className="flex-1 py-3 text-sm font-semibold text-center text-primary hover:bg-primary/5 transition-colors"
+                    >
+                      {t("Select", "اختيار")}
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="library">
-          <TemplateLibraryTab
-            onUseQuickReply={(tpl) => openForCreate(tpl)}
-          />
+          <TemplateLibraryTab onUseQuickReply={(tpl) => openForCreate(tpl)} />
         </TabsContent>
 
         <TabsContent value="broadcast-templates">
@@ -250,6 +382,7 @@ export function TemplatesSettings() {
         </TabsContent>
       </Tabs>
 
+      {/* ── Create / Edit dialog ── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-130">
           <DialogHeader>
@@ -348,6 +481,7 @@ export function TemplatesSettings() {
         </DialogContent>
       </Dialog>
 
+      {/* ── Broadcast template builder dialog ── */}
       <Dialog open={broadcastBuilderOpen} onOpenChange={setBroadcastBuilderOpen}>
         <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

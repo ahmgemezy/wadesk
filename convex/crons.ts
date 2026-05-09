@@ -51,4 +51,10 @@ crons.interval(
   internal.onboarding.cleanupIncompleteOrgs,
 );
 
+crons.interval(
+  "process-scheduled-broadcasts",
+  { minutes: 1 },
+  internal.broadcasts.processScheduledBroadcastsInternal,
+);
+
 export default crons;

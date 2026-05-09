@@ -35,8 +35,7 @@ function FormLogo() {
       </div>
       <span
         style={{
-          fontFamily:
-            "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif",
+          fontFamily: "inherit",
           fontSize: 20,
           fontWeight: 600,
           color: "#1D1D1F",

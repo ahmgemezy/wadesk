@@ -78,7 +78,7 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
         const localeCookie = cookieHeader.split(";").find((c) => c.trim().startsWith("locale="));
         const locale: "ar" | "en" = localeCookie?.split("=")[1]?.trim() === "en" ? "en" : "ar";
 
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+        const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").split(",")[0].trim();
         const siteUrl = process.env.SITE_URL ?? appUrl;
         const callbackUrl = encodeURIComponent(`${appUrl}/onboarding`);
         const verifyUrl = `${siteUrl}/api/auth/verify-email?token=${token}&callbackURL=${callbackUrl}`;

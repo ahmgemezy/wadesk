@@ -18,6 +18,35 @@
 
 ## ✅ Completed Tasks
 
+### 2026-05-09: Broadcasts UI Redesign + Scheduling Backend ✅
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Files modified:**
+- `convex/schema.ts` — added `"scheduled"` to broadcasts status union; added `scheduledAt`, `deliveryRate`, `openRate`, `ctr` optional fields; added `.index("by_status_scheduled", ["status", "scheduledAt"])` for cron query
+- `convex/broadcasts.ts` — `create` mutation accepts `scheduledAt?: number` (validates future timestamp; sets `status: "scheduled"` automatically); added `getDueScheduledInternal` (internalQuery, range query on new index); added `sendInternal` (internalAction, skips auth, only fires `"scheduled"` broadcasts); added `processScheduledBroadcastsInternal` (internalAction, cron entry point)
+- `convex/crons.ts` — added `process-scheduled-broadcasts` cron every 1 minute → calls `processScheduledBroadcastsInternal`
+- `components/broadcasts/broadcasts-page.tsx` — full redesign: header (title + subtitle + search + filter + "Create Campaign" CTA); Active Campaigns 2-col grid with `border-s-4` status color, progress bar, `deliveryRate`/`openRate`/`ctr` metric display (shows `--` when undefined); Recent History table with same metric columns; empty state; "Create Campaign" button opens modal
+- `components/broadcasts/create-broadcast-modal.tsx` — NEW FILE: two-column Dialog (form left, WhatsApp preview right); recipients as tag-chip with list selector; channel selector; Meta/WABDesk template toggle; scrollable template list; variable fill-in; scheduling via date + time inputs (CTA becomes "Schedule Broadcast" when both filled); "Save Draft" saves without sending; success auto-closes modal
+
+**Files created:**
+- `components/broadcasts/create-broadcast-modal.tsx` (310 lines)
+
+**Scheduling flow:**
+1. User fills date + time in modal → CTA shows "Schedule Broadcast"
+2. `create` mutation called with `scheduledAt` → DB stores `status: "scheduled"`
+3. Cron runs every minute → `getDueScheduledInternal` finds overdue scheduled broadcasts → `sendInternal` fires each (snapshots contacts, transitions to "sending", schedules batch processor)
+4. Batch processor handles actual Meta API calls (unchanged)
+
+**Metric fields:**
+- `deliveryRate`, `openRate`, `ctr` stored on broadcasts doc; currently `undefined` on all existing rows (shown as `--` in UI); ready to be populated by a future webhook/delivery-receipt processor
+
+**Backward compat:** `/broadcasts/new` page and `CreateBroadcastWizard` unchanged — still used by `list-detail.tsx` (`?listId=xxx` flow). New modal is the primary create flow from the dashboard.
+
+**TypeScript:** `npx tsc --noEmit` → exit 0, zero errors
+
+---
+
 ### 2026-05-06: Clerk → Better Auth Migration — Stage 2a Part A Applied (Foundation Pre-Schema-Gen) ✅ CORRECTED
 
 **Branch:** `feat/clerk-to-better-auth` (created from `feat/013-departments`)

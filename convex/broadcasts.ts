@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation, action, internalQuery, internalMutation } from "./_generated/server";
+import { query, mutation, action, internalQuery, internalMutation, internalAction } from "./_generated/server";
 import { ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import {
@@ -31,6 +31,7 @@ export const create = mutation({
     channelId: v.id("channels"),
     templateName: v.string(),
     templateLanguage: v.string(),
+    scheduledAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId } = await getCallerIdentity(ctx);
@@ -55,6 +56,10 @@ export const create = mutation({
     }
 
     const now = Date.now();
+    if (args.scheduledAt && args.scheduledAt <= now) {
+      throw new ConvexError({ message: "Scheduled time must be in the future" });
+    }
+
     return ctx.db.insert("broadcasts", {
       tenantId,
       name: args.name,
@@ -62,7 +67,8 @@ export const create = mutation({
       channelId: args.channelId,
       templateName: args.templateName,
       templateLanguage: args.templateLanguage,
-      status: "draft",
+      status: args.scheduledAt ? "scheduled" : "draft",
+      scheduledAt: args.scheduledAt,
       recipientSnapshot: [],
       recipientCount: 0,
       createdBy: callerId,
@@ -339,5 +345,91 @@ export const markComplete = internalMutation({
     if (b.status === "sent" || b.status === "failed") return; // already terminal — idempotent
     const status = (b.sentCount ?? 0) > 0 ? "sent" : "failed";
     await ctx.db.patch(args.broadcastId, { status, sentAt: Date.now() });
+  },
+});
+
+export const getDueScheduledInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now();
+    return ctx.db
+      .query("broadcasts")
+      .withIndex("by_status_scheduled", (q) =>
+        q.eq("status", "scheduled").lte("scheduledAt", now),
+      )
+      .collect();
+  },
+});
+
+export const sendInternal = internalAction({
+  args: { broadcastId: v.id("broadcasts") },
+  handler: async (ctx, args) => {
+    const broadcast = await ctx.runQuery(internal.broadcasts.getInternal, {
+      broadcastId: args.broadcastId,
+    });
+    if (!broadcast || broadcast.status !== "scheduled") return;
+
+    const list = await ctx.runQuery(internal.broadcasts.getListInternal, {
+      listId: broadcast.listId,
+      tenantId: broadcast.tenantId,
+    });
+    if (!list) {
+      await ctx.runMutation(internal.broadcasts.updateStatus, {
+        broadcastId: args.broadcastId,
+        status: "failed",
+        recipientSnapshot: [],
+        recipientCount: 0,
+      });
+      return;
+    }
+
+    const contacts = await ctx.runQuery(internal.broadcasts.getContactsForList, {
+      tenantId: broadcast.tenantId,
+      filters: list.filters,
+    });
+
+    const recipientSnapshot = contacts.map((c) => ({
+      contactId: c._id,
+      phone: c.phone,
+      name: c.customName ?? c.displayName,
+    }));
+
+    if (recipientSnapshot.length === 0) {
+      await ctx.runMutation(internal.broadcasts.updateStatus, {
+        broadcastId: args.broadcastId,
+        status: "failed",
+        recipientSnapshot: [],
+        recipientCount: 0,
+      });
+      return;
+    }
+
+    await ctx.runMutation(internal.broadcasts.updateStatus, {
+      broadcastId: args.broadcastId,
+      status: "sending",
+      recipientSnapshot,
+      recipientCount: recipientSnapshot.length,
+      sentCount: 0,
+      failedCount: 0,
+      retryMap: {},
+    });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.actions.processBroadcastBatch.processBroadcastBatch,
+      { broadcastId: args.broadcastId, batchIndex: 0, batchSize: 50 },
+    );
+  },
+});
+
+export const processScheduledBroadcastsInternal = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const due = await ctx.runQuery(internal.broadcasts.getDueScheduledInternal, {});
+    for (const broadcast of due) {
+      await ctx.runAction(internal.broadcasts.sendInternal, {
+        broadcastId: broadcast._id,
+      });
+    }
   },
 });
