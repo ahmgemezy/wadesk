@@ -18,17 +18,16 @@ export const metadata: Metadata = {
     template: "%s | WABDesk",
   },
   description:
-    "WABDesk is the WhatsApp team inbox built for Arabic-speaking businesses. Manage customer conversations with your entire team from one shared dashboard — no customer ever knows.",
+    "WABDesk is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.",
   keywords: [
     "WhatsApp Business",
-    "WhatsApp team inbox",
-    "customer support WhatsApp",
-    "multi-agent WhatsApp",
-    "WhatsApp CRM Arabic",
-    "MENA customer support",
-    "Arabic WhatsApp platform",
-    "واتساب للشركات",
-    "صندوق بريد واتساب",
+    "multi-agent WhatsApp Business",
+    "Arabic-first WhatsApp platform",
+    "WhatsApp for SMBs",
+    "Arabic-speaking markets",
+    "MENA WhatsApp Business",
+    "واتساب بيزنس",
+    "منصة واتساب للشركات",
   ],
   authors: [{ name: "WABDesk" }],
   creator: "WABDesk",
@@ -40,7 +39,7 @@ export const metadata: Metadata = {
     alternateLocale: ["en_US", "ar_SA", "ar_AE"],
     title: "WABDesk | WhatsApp Business for Teams",
     description:
-      "The WhatsApp team inbox for Arabic-speaking businesses. Multiple agents, one shared inbox — pay Meta for messages, pay WABDesk for your team.",
+      "Arabic-first multi-agent WhatsApp Business platform for SMBs in Arabic-speaking markets. Multiple agents, one number, zero markup on Meta messages.",
     siteName: "WABDesk",
     images: [{ url: "/logo.png", width: 1024, height: 1024, alt: "WABDesk Logo" }],
   },
@@ -48,7 +47,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "WABDesk | WhatsApp Business for Teams",
     description:
-      "WhatsApp team inbox for Arabic-speaking SMBs. Multiple agents, one number, zero markup on Meta messages.",
+      "Arabic-first multi-agent WhatsApp Business platform for SMBs in Arabic-speaking markets.",
     images: ["/logo.png"],
   },
   robots: {

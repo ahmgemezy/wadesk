@@ -10,7 +10,7 @@
 **WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.
 
 **Core Value Proposition:**
-A team inbox built on WhatsApp — multiple agents handle customer conversations from one shared dashboard, with no customer knowing they're talking to a team.
+A team inbox built on WhatsApp Business — multiple agents handle customer conversations from one shared dashboard, with no customer knowing they're talking to a team.
 
 **Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪, broader Arabic-speaking markets  
 **Language:** Arabic-first UI (RTL), English supported  

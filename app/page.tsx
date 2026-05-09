@@ -7,11 +7,11 @@ import { MarketingPage } from "@/components/marketing/marketing-page";
 export const metadata: Metadata = {
   title: "WABDesk | WhatsApp Business for Teams",
   description:
-    "WABDesk is the WhatsApp team inbox built for Arabic-speaking SMBs in Egypt, Saudi Arabia, and the UAE. Multiple agents share one WhatsApp number — manage every customer conversation from a single dashboard.",
+    "WABDesk is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.",
   openGraph: {
     title: "WABDesk | WhatsApp Business for Teams",
     description:
-      "Multiple agents. One WhatsApp number. Zero markup on Meta messages. The team inbox Arabic-speaking businesses have been waiting for.",
+      "Arabic-first multi-agent WhatsApp Business platform for SMBs in Arabic-speaking markets. Multiple agents, one number, zero markup on Meta messages.",
     locale: "ar_EG",
     alternateLocale: ["en_US", "ar_SA", "ar_AE"],
     type: "website",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "WABDesk | WhatsApp Business for Teams",
     description:
-      "The WhatsApp team inbox for Arabic-speaking businesses. Pay Meta for messages. Pay WABDesk for your team. Nothing more.",
+      "Arabic-first multi-agent WhatsApp Business platform for SMBs in Arabic-speaking markets.",
     images: ["/logo.png"],
   },
 };

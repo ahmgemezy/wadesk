@@ -48,9 +48,14 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
     appName: "WabDesk",
     baseURL: process.env.SITE_URL!,
     secret: process.env.BETTER_AUTH_SECRET!,
-    trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS
-      ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
-      : [],
+    trustedOrigins: [
+      ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS
+        ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
+        : []),
+      ...(process.env.NEXT_PUBLIC_APP_URL
+        ? process.env.NEXT_PUBLIC_APP_URL.split(",").map((s) => s.trim()).filter(Boolean)
+        : []),
+    ],
     database: authComponent.adapter(ctx),
     emailVerification: {
       // Sends a single-language verification email matching the user's locale cookie.
