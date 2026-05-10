@@ -258,6 +258,7 @@ export const sendMediaMessage = internalAction({
       v.literal("video"),
     ),
     filename: v.optional(v.string()),
+    caption: v.optional(v.string()),
     tenantId: v.string(),
   },
   handler: async (ctx, args) => {
@@ -284,6 +285,9 @@ export const sendMediaMessage = internalAction({
       const mediaPayload: Record<string, unknown> = { id: mediaId };
       if (args.contentType === "document" && args.filename) {
         mediaPayload.filename = args.filename;
+      }
+      if (args.caption && args.contentType !== "audio") {
+        mediaPayload.caption = args.caption;
       }
 
       const sendRes = await fetch(`${BASE}/${args.phoneNumberId}/messages`, {

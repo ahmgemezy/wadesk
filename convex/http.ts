@@ -84,26 +84,26 @@ function parseMessageContent(msg: MetaMessage): {
       return { content: msg.text?.body ?? "", contentType: "text" };
     case "image":
       return {
-        content: msg.image?.caption ?? "[Image]",
+        content: msg.image?.caption ?? "",
         contentType: "image",
         mediaUrl: msg.image?.id,
       };
     case "audio":
-      return { content: "[Voice Message]", contentType: "audio", mediaUrl: msg.audio?.id };
+      return { content: "", contentType: "audio", mediaUrl: msg.audio?.id };
     case "document":
       return {
-        content: msg.document?.filename ?? msg.document?.caption ?? "[Document]",
+        content: msg.document?.filename ?? msg.document?.caption ?? "",
         contentType: "document",
         mediaUrl: msg.document?.id,
       };
     case "video":
       return {
-        content: msg.video?.caption ?? "[Video]",
+        content: msg.video?.caption ?? "",
         contentType: "video",
         mediaUrl: msg.video?.id,
       };
     case "sticker":
-      return { content: "[Sticker]", contentType: "sticker", mediaUrl: msg.sticker?.id };
+      return { content: "", contentType: "sticker", mediaUrl: msg.sticker?.id };
     case "location": {
       const loc = msg.location;
       return { content: `${loc?.latitude ?? ""},${loc?.longitude ?? ""}|${loc?.name ?? ""}`, contentType: "location" };

@@ -17,10 +17,16 @@ import {
   SmileIcon,
   XIcon,
   Loader2Icon,
+  PlusIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { TemplatePicker } from "@/components/templates/template-picker";
 import { ReplyContextBanner } from "./reply-context-banner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Lazy-load emoji picker to keep initial bundle small
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
@@ -75,6 +81,7 @@ export function MessageInput({
   const [location, setLocation] = useState<LocationPayload | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [locating, setLocating] = useState(false);
   const [templateContent, setTemplateContent] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
@@ -241,6 +248,7 @@ export function MessageInput({
   const handleMediaSubmit = async () => {
     if (!attachment) return;
     setUploading(true);
+    const caption = content.trim() || undefined;
     try {
       const uploadUrl = await generateUploadUrl({});
       const res = await fetch(uploadUrl, {
@@ -255,8 +263,10 @@ export function MessageInput({
         storageId,
         contentType: attachment.type,
         filename: attachment.file.name,
+        caption,
       });
       clearAttachment();
+      if (caption) setContent("");
     } catch {
       toast.error(t("Failed to send attachment", "فشل إرسال المرفق"));
     } finally {
@@ -449,51 +459,39 @@ export function MessageInput({
               >
                 <SmileIcon className="size-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                title={t("Send image", "إرسال صورة")}
-                onClick={() => imageRef.current?.click()}
-              >
-                <ImageIcon className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                title={t("Send video", "إرسال فيديو")}
-                onClick={() => videoRef.current?.click()}
-              >
-                <VideoIcon className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                title={t("Send document", "إرسال مستند")}
-                onClick={() => docRef.current?.click()}
-              >
-                <FileIcon className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                title={t("Send audio", "إرسال صوت")}
-                onClick={() => audioRef.current?.click()}
-              >
-                <MicIcon className="size-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                title={t("Send location", "إرسال الموقع")}
-                onClick={handleLocationPick}
-                disabled={locating}
-              >
-                {locating ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : (
-                  <MapPinIcon className="size-4" />
-                )}
-              </Button>
+
+              <Popover open={showAttachMenu} onOpenChange={setShowAttachMenu}>
+                <PopoverTrigger
+                  title={t("Attach", "إرفاق")}
+                  className="inline-flex items-center justify-center size-9 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <PlusIcon className="size-4" />
+                </PopoverTrigger>
+                <PopoverContent side="top" align="start" className="w-44 p-1.5">
+                  {[
+                    { icon: ImageIcon,  label: t("Image", "صورة"),    action: () => imageRef.current?.click() },
+                    { icon: VideoIcon,  label: t("Video", "فيديو"),   action: () => videoRef.current?.click() },
+                    { icon: FileIcon,   label: t("Document", "مستند"), action: () => docRef.current?.click() },
+                    { icon: MicIcon,    label: t("Audio", "صوت"),     action: () => audioRef.current?.click() },
+                    { icon: MapPinIcon, label: t("Location", "الموقع"), action: handleLocationPick, disabled: locating },
+                  ].map(({ icon: Icon, label, action, disabled }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => { action(); setShowAttachMenu(false); }}
+                      className="flex items-center gap-2.5 w-full rounded-md px-2.5 py-2 text-sm hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {disabled ? (
+                        <Loader2Icon className="size-4 shrink-0 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Icon className="size-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </PopoverContent>
+              </Popover>
             </>
           )}
         </div>

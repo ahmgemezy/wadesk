@@ -13,7 +13,6 @@ import { StatusSelector } from "@/components/inbox/status-selector";
 import { TransferPicker } from "@/components/inbox/transfer-picker";
 import { QuickReplyPanel } from "@/components/inbox/quick-reply-panel";
 import { ContactPanel } from "@/components/contacts/contact-panel";
-import { SeedButton } from "@/components/dev/seed-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
@@ -173,9 +172,6 @@ function InboxPageInner() {
                     </p>
                   )}
                 </div>
-
-                {/* Dev seed button */}
-                <SeedButton />
 
                 {/* Controls */}
                 {selectedConversation?.status !== "forwarded" && selectedConversation?.channelId && (

@@ -230,6 +230,15 @@ export const createInbound = internalMutation({
       .first();
     if (existing) return { messageId: existing._id, conversationId: existing.conversationId, isNewConversation: false, isDuplicate: true };
 
+    const mediaPreview = (ct: string, content: string) => content || (
+      ct === "image" ? "📷 Photo" :
+      ct === "video" ? "🎥 Video" :
+      ct === "audio" ? "🎵 Voice message" :
+      ct === "sticker" ? "🎨 Sticker" :
+      ct === "document" ? "📄 Document" :
+      content
+    );
+
     const contactId: Id<"contacts"> = await ctx.runMutation(internal.contacts.upsertByPhone, {
       tenantId: args.tenantId,
       phone: args.senderPhone,
@@ -283,7 +292,7 @@ export const createInbound = internalMutation({
         status: "open",
         labels: [],
         lastMessageAt: args.timestamp,
-        lastMessagePreview: args.content.slice(0, 100),
+        lastMessagePreview: mediaPreview(args.contentType, args.content).slice(0, 100),
         unreadCount: 1,
         createdAt: args.timestamp,
         lastInboundAt: args.timestamp,
@@ -301,7 +310,7 @@ export const createInbound = internalMutation({
       const wasResolved = conversation.status === "resolved";
       const patch: Record<string, unknown> = {
         lastMessageAt: args.timestamp,
-        lastMessagePreview: args.content.slice(0, 100),
+        lastMessagePreview: mediaPreview(args.contentType, args.content).slice(0, 100),
         unreadCount: (conversation.unreadCount ?? 0) + 1,
         lastInboundAt: args.timestamp,
       };
@@ -472,6 +481,7 @@ export const sendMediaReply = action({
       v.literal("video"),
     ),
     filename: v.optional(v.string()),
+    caption: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -498,6 +508,7 @@ export const sendMediaReply = action({
       contentType: args.contentType,
       mediaUrl,
       filename: args.filename,
+      caption: args.caption,
       now,
     });
 
@@ -518,6 +529,7 @@ export const sendMediaReply = action({
         mediaUrl,
         contentType: args.contentType,
         filename: args.filename,
+        caption: args.caption,
         tenantId,
       });
     }
@@ -561,15 +573,18 @@ export const insertMediaMessage = internalMutation({
     contentType: v.union(v.literal("image"), v.literal("document"), v.literal("audio"), v.literal("video")),
     mediaUrl: v.string(),
     filename: v.optional(v.string()),
+    caption: v.optional(v.string()),
     now: v.number(),
   },
   handler: async (ctx, args) => {
     const preview = args.contentType === "image" ? "📷 Photo" : args.contentType === "document" ? `📄 ${args.filename ?? "Document"}` : args.contentType === "audio" ? "🎵 Audio" : "🎥 Video";
+    // For documents: show filename in bubble (unless caption provided). For images/video/audio: show caption or empty (no filename leak).
+    const content = args.caption ?? (args.contentType === "document" ? (args.filename ?? preview) : "");
     const messageId = await ctx.db.insert("messages", {
       conversationId: args.conversationId,
       tenantId: args.tenantId,
       direction: "outbound",
-      content: args.filename ?? preview,
+      content,
       contentType: args.contentType,
       isInternalNote: false,
       authorId: args.authorId,
@@ -585,6 +600,89 @@ export const insertMediaMessage = internalMutation({
       ...(conv?.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
     });
     return messageId;
+  },
+});
+
+export const retryMessage = action({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+
+    const message = await ctx.runQuery(internal.messages.getMessageInternal, {
+      messageId: args.messageId,
+      tenantId,
+    });
+    if (!message) throw new Error("NOT_FOUND");
+    if (message.status !== "failed") throw new Error("NOT_FAILED");
+
+    const conversation = await ctx.runQuery(internal.messages.getConversationInternal, {
+      conversationId: message.conversationId,
+      tenantId,
+    });
+    if (!conversation) throw new Error("NOT_FOUND");
+
+    const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+    if (!isAdminOrSupervisor && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
+      throw new Error("FORBIDDEN");
+    }
+
+    await ctx.runMutation(internal.messages.resetMessageStatus, {
+      messageId: args.messageId,
+      tenantId,
+    });
+
+    const channel = await ctx.runQuery(internal.messages.getChannelInternal, {
+      channelId: conversation.channelId,
+      tenantId,
+    });
+    const contact = await ctx.runQuery(internal.messages.getContactInternal, {
+      contactId: conversation.contactId,
+      tenantId,
+    });
+    if (!channel || !contact) throw new Error("CHANNEL_OR_CONTACT_NOT_FOUND");
+
+    if (message.contentType === "text" || message.contentType === "unsupported" || message.contentType === "template" || message.contentType === "location" || message.contentType === "system_event" || message.contentType === "sticker") {
+      await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMessage, {
+        messageId: args.messageId,
+        phoneNumberId: channel.phoneNumberId,
+        contactPhone: contact.phone,
+        content: message.content,
+        tenantId,
+      });
+    } else {
+      if (!message.mediaUrl) throw new Error("NO_MEDIA_URL");
+      const isDocument = message.contentType === "document";
+      await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMediaMessage, {
+        messageId: args.messageId,
+        phoneNumberId: channel.phoneNumberId,
+        contactPhone: contact.phone,
+        mediaUrl: message.mediaUrl,
+        contentType: message.contentType as "image" | "document" | "audio" | "video",
+        filename: isDocument ? message.content || undefined : undefined,
+        caption: !isDocument && message.content ? message.content : undefined,
+        tenantId,
+      });
+    }
+  },
+});
+
+export const getMessageInternal = internalQuery({
+  args: { messageId: v.id("messages"), tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const msg = await ctx.db.get(args.messageId);
+    if (!msg || msg.tenantId !== args.tenantId) return null;
+    return msg;
+  },
+});
+
+export const resetMessageStatus = internalMutation({
+  args: { messageId: v.id("messages"), tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const msg = await ctx.db.get(args.messageId);
+    if (!msg || msg.tenantId !== args.tenantId) return;
+    await ctx.db.patch(args.messageId, { status: "sending", failureReason: undefined });
   },
 });
 

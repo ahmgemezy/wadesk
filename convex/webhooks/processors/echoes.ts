@@ -26,19 +26,19 @@ function parseEchoContent(echo: EchoPayload): {
     case "text":
       return { content: echo.text?.body ?? "", contentType: "text" };
     case "image":
-      return { content: echo.image?.caption ?? "[Image]", contentType: "image", metaMediaId: echo.image?.id };
+      return { content: echo.image?.caption ?? "", contentType: "image", metaMediaId: echo.image?.id };
     case "audio":
-      return { content: "[Voice Message]", contentType: "audio", metaMediaId: echo.audio?.id };
+      return { content: "", contentType: "audio", metaMediaId: echo.audio?.id };
     case "document":
       return {
-        content: echo.document?.filename ?? echo.document?.caption ?? "[Document]",
+        content: echo.document?.filename ?? echo.document?.caption ?? "",
         contentType: "document",
         metaMediaId: echo.document?.id,
       };
     case "video":
-      return { content: echo.video?.caption ?? "[Video]", contentType: "video", metaMediaId: echo.video?.id };
+      return { content: echo.video?.caption ?? "", contentType: "video", metaMediaId: echo.video?.id };
     case "sticker":
-      return { content: "[Sticker]", contentType: "sticker", metaMediaId: echo.sticker?.id };
+      return { content: "", contentType: "sticker", metaMediaId: echo.sticker?.id };
     default:
       return { content: "[Unsupported]", contentType: "unsupported" };
   }

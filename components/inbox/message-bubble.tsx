@@ -308,7 +308,7 @@ export function MessageBubble({
   onReply: (message: Message) => void;
   onDelete: (messageId: string) => void;
   onReact: (messageId: string, emoji: string) => void;
-  onRetry?: (content: string) => void;
+  onRetry?: (messageId: string) => void;
 }) {
   const t = useT();
   const locale = useLocale();
@@ -382,7 +382,7 @@ export function MessageBubble({
       {!isInbound && (
         <StatusTick
           status={message.status}
-          onRetry={message.status === "failed" && onRetry ? () => onRetry(message.content) : undefined}
+          onRetry={message.status === "failed" && onRetry ? () => onRetry(message._id) : undefined}
         />
       )}
       {mobileBadge}
@@ -506,6 +506,9 @@ export function MessageBubble({
                 controls
                 className="rounded max-w-xs max-h-64"
               />
+              {message.content && (
+                <p className="text-sm mt-1 px-1.5">{message.content}</p>
+              )}
               <div className="px-1.5 flex items-center justify-between">
                 {timeRow}
                 <a

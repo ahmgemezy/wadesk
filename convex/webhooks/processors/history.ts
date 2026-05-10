@@ -29,19 +29,19 @@ function parseHistoryContent(msg: HistoryMessage): {
     case "text":
       return { content: msg.text?.body ?? "", contentType: "text" };
     case "image":
-      return { content: msg.image?.caption ?? "[Image]", contentType: "image", metaMediaId: msg.image?.id };
+      return { content: msg.image?.caption ?? "", contentType: "image", metaMediaId: msg.image?.id };
     case "audio":
-      return { content: "[Voice Message]", contentType: "audio", metaMediaId: msg.audio?.id };
+      return { content: "", contentType: "audio", metaMediaId: msg.audio?.id };
     case "document":
       return {
-        content: msg.document?.filename ?? msg.document?.caption ?? "[Document]",
+        content: msg.document?.filename ?? msg.document?.caption ?? "",
         contentType: "document",
         metaMediaId: msg.document?.id,
       };
     case "video":
-      return { content: msg.video?.caption ?? "[Video]", contentType: "video", metaMediaId: msg.video?.id };
+      return { content: msg.video?.caption ?? "", contentType: "video", metaMediaId: msg.video?.id };
     case "sticker":
-      return { content: "[Sticker]", contentType: "sticker", metaMediaId: msg.sticker?.id };
+      return { content: "", contentType: "sticker", metaMediaId: msg.sticker?.id };
     default:
       return { content: "[Unsupported]", contentType: "unsupported" };
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useConvexAuth, useMutation } from "convex/react";
+import { useQuery, useConvexAuth, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,6 +100,7 @@ export function ConversationThread({
   const deleteMessageMutation = useMutation(api.messages.deleteMessage);
   const reactToMessageMutation = useMutation(api.messages.reactToMessage);
   const sendMessageMutation = useMutation(api.inbox.sendMessage);
+  const retryMessageAction = useAction(api.messages.retryMessage);
 
   const { isAuthenticated } = useConvexAuth();
   const allLabels = useQuery(api.labels.list, isAuthenticated ? {} : "skip");
@@ -306,13 +307,9 @@ export function ConversationThread({
                       toast.error(locale === "en" ? "Failed to react" : "فشل التفاعل");
                     }
                   }}
-                  onRetry={async (content) => {
+                  onRetry={async (messageId) => {
                     try {
-                      await sendMessageMutation({
-                        conversationId: conversationId as Id<"conversations">,
-                        content,
-                        type: "reply",
-                      });
+                      await retryMessageAction({ messageId: messageId as Id<"messages"> });
                     } catch {
                       toast.error(locale === "en" ? "Failed to resend message" : "فشل إعادة إرسال الرسالة");
                     }
