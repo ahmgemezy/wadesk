@@ -228,8 +228,8 @@ export function CsatSettings() {
           <p className="text-sm font-medium">{t("Message Language", "لغة الرسالة")}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
             {t(
-              "WaDesk will submit the selected language template to Meta automatically.",
-              "سيرسل WaDesk القالب باللغة المختارة إلى Meta تلقائياً.",
+              "WABDesk will submit the selected language template to Meta automatically.",
+              "سيرسل WABDesk القالب باللغة المختارة إلى Meta تلقائياً.",
             )}
           </p>
         </div>
@@ -278,8 +278,8 @@ export function CsatSettings() {
               <p className="text-sm font-medium">{t("WhatsApp Template Approval", "اعتماد قالب واتساب")}</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {t(
-                  "WaDesk automatically submitted the CSAT template to Meta on your behalf.",
-                  "أرسل WaDesk قالب CSAT إلى Meta تلقائياً نيابةً عنك.",
+                  "WABDesk automatically submitted the CSAT template to Meta on your behalf.",
+                  "أرسل WABDesk قالب CSAT إلى Meta تلقائياً نيابةً عنك.",
                 )}
               </p>
             </div>

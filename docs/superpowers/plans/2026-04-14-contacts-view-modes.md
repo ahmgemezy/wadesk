@@ -68,7 +68,7 @@ export interface ContactViewProps {
 - [ ] **Step 3: Type-check**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit
 ```
 
 Expected: no errors related to the new files (they may not be imported yet — that's fine).
@@ -404,7 +404,7 @@ Update `isLoading` definition — currently it's `const isLoading = results === 
 - [ ] **Step 3: Type-check**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit
 ```
 
 Expected: zero errors.
@@ -489,7 +489,7 @@ The row currently ends after the bulk action bar. Add the following segmented ic
 - [ ] **Step 3: Type-check**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit
 ```
 
 Expected: zero errors.
@@ -765,7 +765,7 @@ Also handle the empty state — currently in the original code an empty state re
 - [ ] **Step 3: Type-check**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit
 ```
 
 Expected: zero errors.
@@ -1147,7 +1147,7 @@ Replace the temporary `table` fallback from Task 4:
 - [ ] **Step 3: Type-check**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit
 ```
 
 Expected: zero errors.

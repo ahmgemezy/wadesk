@@ -1,4 +1,4 @@
-# Tasks: WaDesk Marketing Site
+# Tasks: WABDesk Marketing Site
 
 **Input**: Design documents from `/specs/007-marketing-site/`  
 **Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ui-contracts.md ✅, quickstart.md ✅
@@ -33,7 +33,7 @@
 
 - [x] T003 Replace `app/page.tsx` with a Server Component that: (1) calls `auth()` from `@clerk/nextjs/server`, (2) redirects authenticated users with orgId to `/inbox`, (3) redirects authenticated users without orgId to `/onboarding`, (4) exports a `metadata` object with Arabic title, description, and Open Graph tags (see plan.md SEO section), (5) renders `<MarketingPage>` (a new Client Component at `components/marketing/marketing-page.tsx`) passing `isAuthenticated` as a prop
 - [x] T003b Create `components/marketing/marketing-page.tsx` as a **Client Component** (`"use client"`) accepting `isAuthenticated: boolean`. This component: uses `useMarketingLocale()` to get `locale`, applies `dir={locale === "ar" ? "rtl" : "ltr"}` and `lang={locale}` on its root wrapper `<div>`, and renders `<MarketingNav>`, `<HeroSection>`, `<FeaturesSection>`, `<PricingSection>`, `<DifferentiatorsSection>`, `<MarketingFooter>` — all receiving `locale` as a prop alongside their data props
-- [x] T004 Create `components/marketing/marketing-nav.tsx` as a **Client Component** (`"use client"`) accepting `isAuthenticated: boolean` prop. Use `useMarketingLocale()` from `lib/marketing/i18n.ts` to get `locale` and `setLocale`. Render: WaDesk logo, auth-aware CTAs (Sign In / Sign Up when unauthenticated; Dashboard when authenticated), a language toggle button that calls `setLocale` to switch between `"ar"` and `"en"` and shows current language (e.g. "EN" / "ع"), and a `MobileNavSheet` (extracted to `components/marketing/mobile-nav-sheet.tsx`). When `locale="ar"`: apply `dir="rtl"` on the nav wrapper, render Arabic labels. When `locale="en"`: apply `dir="ltr"`, render English labels. Use `ms-`/`me-` Tailwind classes, no `ml-`/`mr-`.
+- [x] T004 Create `components/marketing/marketing-nav.tsx` as a **Client Component** (`"use client"`) accepting `isAuthenticated: boolean` prop. Use `useMarketingLocale()` from `lib/marketing/i18n.ts` to get `locale` and `setLocale`. Render: WABDesk logo, auth-aware CTAs (Sign In / Sign Up when unauthenticated; Dashboard when authenticated), a language toggle button that calls `setLocale` to switch between `"ar"` and `"en"` and shows current language (e.g. "EN" / "ع"), and a `MobileNavSheet` (extracted to `components/marketing/mobile-nav-sheet.tsx`). When `locale="ar"`: apply `dir="rtl"` on the nav wrapper, render Arabic labels. When `locale="en"`: apply `dir="ltr"`, render English labels. Use `ms-`/`me-` Tailwind classes, no `ml-`/`mr-`.
 - [x] T005 Create `components/marketing/marketing-footer.tsx` as a Client Component (`"use client"`) accepting `locale: MarketingLocale`. Render footer links using `t(locale, ...)` for Sign Up, Sign In, Pricing labels. Copyright line in both languages or locale-switched. Layout direction inherited from parent wrapper.
 - [x] T006 Create `components/marketing/mobile-nav-sheet.tsx` as a Client Component (`"use client"`) that renders a shadcn `Sheet` triggered by a hamburger button. Sheet content includes the same CTA links as the desktop nav. Uses `isAuthenticated: boolean` prop.
 
@@ -83,11 +83,11 @@
 
 ## Phase 6: User Story 4 — Visitor Reads Competitive Differentiators (P4)
 
-**Goal**: Skeptical visitor reads "Why WaDesk" section and understands zero markup, Arabic-first, and local currency advantages.
+**Goal**: Skeptical visitor reads "Why WABDesk" section and understands zero markup, Arabic-first, and local currency advantages.
 
 **Independent Test**: Visit `http://localhost:3000`, scroll to differentiators section. Verify all 3 differentiators are visible: (1) zero markup on Meta messages, (2) Arabic-first UX, (3) local currency billing. Verify the page itself is in Arabic RTL — demonstrating the Arabic-first claim, not just stating it.
 
-- [x] T014 [US4] Create `components/marketing/differentiators-section.tsx` as a Client Component (`"use client"`) accepting `differentiators: Differentiator[]` and `locale: MarketingLocale`. Render section with `id="why-wadesk"`, heading via `t(locale, "differentiators.heading")` ("لماذا وا ديسك؟" / "Why WaDesk?"), and 3 differentiator cards — each with Lucide icon + `differentiator.titleAr`/`titleEn` + matching statement based on locale. Differentiators: (1) zero markup on Meta messages, (2) Arabic-first UX (English copy: "Built for Arab markets — designed right-to-left from day one"), (3) local currency billing.
+- [x] T014 [US4] Create `components/marketing/differentiators-section.tsx` as a Client Component (`"use client"`) accepting `differentiators: Differentiator[]` and `locale: MarketingLocale`. Render section with `id="why-wabdesk"`, heading via `t(locale, "differentiators.heading")` ("لماذا وا ديسك؟" / "Why WABDesk?"), and 3 differentiator cards — each with Lucide icon + `differentiator.titleAr`/`titleEn` + matching statement based on locale. Differentiators: (1) zero markup on Meta messages, (2) Arabic-first UX (English copy: "Built for Arab markets — designed right-to-left from day one"), (3) local currency billing.
 - [x] T015 [US4] Wire T014 into `app/page.tsx`: import `DifferentiatorsSection`, pass `differentiators` array from pricing-data.ts.
 
 **Checkpoint**: Differentiators section renders with all 3 competitive claims in Arabic.

@@ -1,4 +1,4 @@
-# Implementation Plan: WaDesk Marketing Site
+# Implementation Plan: WABDesk Marketing Site
 
 **Branch**: `007-marketing-site` | **Date**: 2026-04-04 | **Spec**: [spec.md](spec.md)  
 **Input**: Feature specification from `/specs/007-marketing-site/spec.md`
@@ -59,7 +59,7 @@ components/
     ├── hero-section.tsx              # Hero with value proposition + CTA
     ├── features-section.tsx          # Feature highlight grid (4+ features)
     ├── pricing-section.tsx           # 4 plan cards × 4 currencies
-    ├── differentiators-section.tsx   # "Why WaDesk" competitive claims
+    ├── differentiators-section.tsx   # "Why WABDesk" competitive claims
     └── marketing-footer.tsx          # Footer with Sign Up / Sign In / Pricing links
 
 lib/

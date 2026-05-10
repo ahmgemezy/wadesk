@@ -94,6 +94,6 @@ In Meta App Dashboard → WhatsApp → Configuration:
 
 ### Token Revocation (Edge Case)
 - [ ] Simulate token revocation by revoking app permissions in Meta Business Suite
-- [ ] Next API call from WaDesk triggers error code 190
+- [ ] Next API call from WABDesk triggers error code 190
 - [ ] Channel status changes to "Reconnect required" in Settings
 - [ ] Admin banner shown prompting re-authentication

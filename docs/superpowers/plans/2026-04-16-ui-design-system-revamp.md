@@ -126,7 +126,7 @@ Replace the entire `.dark { ... }` block (lines 44–78) with:
 - [ ] **Step 3: Verify the file still compiles**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit 2>&1 | head -20
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: no output (or only pre-existing warnings unrelated to CSS).
@@ -243,7 +243,7 @@ Replace with:
 - [ ] **Step 5: Verify TypeScript compiles**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit 2>&1 | head -20
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: no new errors.
@@ -334,7 +334,7 @@ Replace with:
 - [ ] **Step 4: Verify TypeScript compiles**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npx tsc --noEmit 2>&1 | head -20
+cd /Users/ahmedgemmezy/Documents/WABDesk && npx tsc --noEmit 2>&1 | head -20
 ```
 
 Expected: no new errors.
@@ -355,7 +355,7 @@ No code changes — visual verification only.
 - [ ] **Step 1: Start the dev server**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk && npm run dev
+cd /Users/ahmedgemmezy/Documents/WABDesk && npm run dev
 ```
 
 Expected: server starts on `http://localhost:3000` with no build errors.

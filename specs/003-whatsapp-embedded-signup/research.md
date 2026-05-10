@@ -69,7 +69,7 @@ const { access_token } = await tokenRes.json();
 
 ## 3. Webhook Subscription After Signup
 
-**Decision**: After token exchange, immediately call `POST https://graph.facebook.com/v21.0/{WABA_ID}/subscribed_apps` with the new system user token. This registers WaDesk's global webhook to receive messages for this WABA.
+**Decision**: After token exchange, immediately call `POST https://graph.facebook.com/v21.0/{WABA_ID}/subscribed_apps` with the new system user token. This registers WABDesk's global webhook to receive messages for this WABA.
 
 **Rationale**: Embedded Signup does NOT automatically subscribe the app to webhooks — this is a critical footgun. Messages will silently not arrive if this step is skipped. It must be called in the same Convex action as the token exchange, before returning success to the client.
 

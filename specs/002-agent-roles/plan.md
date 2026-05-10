@@ -7,7 +7,7 @@
 
 ## Summary
 
-Add three-role team management (Admin / Supervisor / Agent) to WaDesk with enforced permission matrix, three invitation methods (email, WhatsApp, shareable link), and configurable conversation assignment modes per channel (First Reply Wins, Manual, Round Robin). Roles are managed via Clerk Organizations. One new Convex table (`inviteLinks`) stores shareable invite tokens. The `channels.assignmentMode` field from `001-multi-agent-inbox` gets its settings UI and enforcement logic here.
+Add three-role team management (Admin / Supervisor / Agent) to WABDesk with enforced permission matrix, three invitation methods (email, WhatsApp, shareable link), and configurable conversation assignment modes per channel (First Reply Wins, Manual, Round Robin). Roles are managed via Clerk Organizations. One new Convex table (`inviteLinks`) stores shareable invite tokens. The `channels.assignmentMode` field from `001-multi-agent-inbox` gets its settings UI and enforcement logic here.
 
 ---
 

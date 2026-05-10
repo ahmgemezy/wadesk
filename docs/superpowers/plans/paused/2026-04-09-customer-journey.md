@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a sales pipeline (stage tracking), follow-up scheduling with automated WhatsApp sends, contact timeline, and in-app notifications to the existing WaDesk inbox.
+**Goal:** Add a sales pipeline (stage tracking), follow-up scheduling with automated WhatsApp sends, contact timeline, and in-app notifications to the existing WABDesk inbox.
 
 **Architecture:** Four focused Convex modules (contactEvents, notifications, followUps, crons) plus additions to the existing contacts module. UI adds a side panel, full profile page, follow-up modal, notification bell, and stage filters in both the Contacts page and Inbox. Field names in the DB are preserved — queries map them to the spec names in the return layer.
 

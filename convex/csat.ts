@@ -1,7 +1,7 @@
 // convex/csat.ts
 // CSAT (Customer Satisfaction) flow.
 // Triggered when a conversation is resolved. Sends a WhatsApp template asking 1–5 rating.
-// WaDesk auto-submits the template to Meta when CSAT is enabled — no manual Meta work needed.
+// WABDesk auto-submits the template to Meta when CSAT is enabled — no manual Meta work needed.
 // Admin chooses Arabic or English; the correct template is submitted and used for sending.
 
 import { v, ConvexError } from "convex/values";
@@ -12,7 +12,7 @@ import { getCallerIdentity, getCallerRole, assertAdmin, type OrgRole } from "./l
 const META_API_BASE = "https://graph.facebook.com/v25.0";
 const CSAT_TEMPLATE_NAME = "csat_rating";
 
-// Two pre-built templates — admin picks one; WaDesk submits it to Meta automatically.
+// Two pre-built templates — admin picks one; WABDesk submits it to Meta automatically.
 const CSAT_TEMPLATE_CONFIG = {
   ar: {
     metaLanguage: "ar",

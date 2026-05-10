@@ -179,49 +179,49 @@ function ConversationEventPill({
     { pillBg: string; pillText: string; lineBg: string; icon: string }
   > = {
     transfer_department: {
-      pillBg: "bg-blue-100 dark:bg-blue-950",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-blue-700 dark:text-blue-300",
       lineBg: "bg-blue-200 dark:bg-blue-800",
       icon: "↗",
     },
     agent_assigned: {
-      pillBg: "bg-purple-100 dark:bg-purple-950",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-purple-700 dark:text-purple-300",
       lineBg: "bg-purple-200 dark:bg-purple-800",
       icon: "👤",
     },
     agent_unassigned: {
-      pillBg: "bg-gray-100 dark:bg-gray-800",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-gray-600 dark:text-gray-400",
       lineBg: "bg-gray-300 dark:bg-gray-700",
       icon: "👤",
     },
     resolved: {
-      pillBg: "bg-success/10",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-success",
       lineBg: "bg-green-200 dark:bg-green-800",
       icon: "✓",
     },
     reopened: {
-      pillBg: "bg-yellow-100 dark:bg-yellow-950",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-yellow-800 dark:text-yellow-300",
       lineBg: "bg-yellow-200 dark:bg-yellow-800",
       icon: "↩",
     },
     csat_received: {
-      pillBg: "bg-warning/10",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-warning",
       lineBg: "bg-amber-200 dark:bg-amber-800",
       icon: "",
     },
     transfer_within_channel: {
-      pillBg: "bg-blue-100 dark:bg-blue-950",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-blue-700 dark:text-blue-300",
       lineBg: "bg-blue-200 dark:bg-blue-800",
       icon: "↗",
     },
     forward_to_branch: {
-      pillBg: "bg-indigo-100 dark:bg-indigo-950",
+      pillBg: "bg-white dark:bg-gray-900",
       pillText: "text-indigo-700 dark:text-indigo-300",
       lineBg: "bg-indigo-200 dark:bg-indigo-800",
       icon: "↗",

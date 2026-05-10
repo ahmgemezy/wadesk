@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add three WhatsApp-native message interactions to the WaDesk inbox: (1) Reply to a specific message (quoted reply), (2) Delete a sent message within the ~60-second window, and (3) React to a message with an emoji.
+**Goal:** Add three WhatsApp-native message interactions to the WABDesk inbox: (1) Reply to a specific message (quoted reply), (2) Delete a sent message within the ~60-second window, and (3) React to a message with an emoji.
 
 **Architecture:** Each feature follows the same data flow — UI gesture → Convex mutation stores intent in DB → Convex internalAction calls Meta Cloud API. Schema changes are additive (new optional fields on `messages`). The `MessageBubble` component gains a hover-action menu, the `MessageInput` gains a reply context banner, and `sendWhatsAppMessage.ts` gains new action handlers for delete and react.
 
@@ -577,7 +577,7 @@ git commit -m "feat(messages): add sendQuotedReply, deleteMessage, reactToMessag
 
 ## Task 4: Handle incoming reaction webhooks from customers
 
-When a customer reacts to a message in WhatsApp, Meta sends a webhook event. WaDesk must store that reaction in the DB.
+When a customer reacts to a message in WhatsApp, Meta sends a webhook event. WABDesk must store that reaction in the DB.
 
 **Files:**
 - Modify: `convex/http.ts` (find the webhook message handler section)
@@ -1323,6 +1323,6 @@ git commit -m "feat: complete WhatsApp message interactions — quoted reply, de
 | Delete window | Meta only allows deletion within ~60 seconds of sending. The UI hides the Delete button after this window. Because `canDelete` is computed client-side from `message.timestamp`, there's a race between the UI rendering and the actual window closing — this is acceptable UX. |
 | `metaMessageId` on quoted messages | Only messages that have been sent to Meta and received back a `wamid` can be quoted. Optimistic messages (with `status: "sending"`) won't have a `metaMessageId` yet — the Reply button should be disabled or not shown for messages in `"sending"` status. |
 | Quoted replies for inbound messages | Customers' inbound messages always have `metaMessageId` (set during `createInbound`). Quoting them works immediately. |
-| Reactions on internal notes | Internal notes never leave WaDesk and have no `metaMessageId`. The React button should be hidden for `isInternalNote: true` messages. |
+| Reactions on internal notes | Internal notes never leave WABDesk and have no `metaMessageId`. The React button should be hidden for `isInternalNote: true` messages. |
 | Action menu on all content types | Task 7 Step 6 says to apply the same wrapper to image/video/audio/document/location bubbles. Don't skip this — agents will want to reply to image messages too. |
 | RTL layout | The `MessageActionMenu` uses `end-full me-1` / `start-full ms-1` for RTL-safe positioning. Do not use `left-`/`right-` — follow the project's RTL rules. |

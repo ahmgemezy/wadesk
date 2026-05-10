@@ -3,7 +3,7 @@
 **Feature Branch**: `008-dashboard-shell`
 **Created**: 2026-04-04
 **Status**: Draft
-**Input**: User description: "Dashboard shell and role-aware navigation for WaDesk. A persistent app shell wrapping all dashboard pages with a sidebar (desktop) and bottom nav (mobile). Navigation items are role-aware: Admin sees full nav (Inbox, Contacts, Analytics, Settings with all sub-pages); Supervisor sees same minus Billing; Agent sees only Inbox. The shell includes org switcher, user avatar with role badge, and sign-out. All role restrictions enforced at both UI and Convex data layer. RTL-first with Cairo font, dark mode supported."
+**Input**: User description: "Dashboard shell and role-aware navigation for WABDesk. A persistent app shell wrapping all dashboard pages with a sidebar (desktop) and bottom nav (mobile). Navigation items are role-aware: Admin sees full nav (Inbox, Contacts, Analytics, Settings with all sub-pages); Supervisor sees same minus Billing; Agent sees only Inbox. The shell includes org switcher, user avatar with role badge, and sign-out. All role restrictions enforced at both UI and Convex data layer. RTL-first with Cairo font, dark mode supported."
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -11,7 +11,7 @@
 
 An agent logs in and lands on a minimal, focused dashboard showing only the Inbox. There is no clutter from settings, billing, or analytics — just the tools they need to reply to customers. On desktop they see a sidebar; on mobile a bottom navigation bar.
 
-**Why this priority**: Agents are the most frequent users of WaDesk. Without a usable shell they cannot navigate the product at all. This is the foundation every other story depends on.
+**Why this priority**: Agents are the most frequent users of WABDesk. Without a usable shell they cannot navigate the product at all. This is the foundation every other story depends on.
 
 **Independent Test**: Log in as an Agent role → see sidebar with only Inbox link → navigate to Inbox → no Settings, Billing, or Analytics links visible anywhere.
 

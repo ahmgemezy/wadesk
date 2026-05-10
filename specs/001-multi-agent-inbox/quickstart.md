@@ -16,8 +16,8 @@
 ## 1. Scaffold the Project
 
 ```bash
-npx create-next-app@latest wadesk --typescript --tailwind --app --src-dir no
-cd wadesk
+npx create-next-app@latest wabdesk --typescript --tailwind --app --src-dir no
+cd wabdesk
 ```
 
 ## 2. Install Core Dependencies

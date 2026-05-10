@@ -1,4 +1,4 @@
-# UI Contracts: WaDesk Marketing Site
+# UI Contracts: WABDesk Marketing Site
 
 **Feature**: 007-marketing-site  
 **Date**: 2026-04-04
@@ -38,7 +38,7 @@ interface HeroSectionProps {
 ```
 
 **Rendering contract**:
-- Displays product name "WaDesk"
+- Displays product name "WABDesk"
 - Displays value proposition: "صندوق بريد WhatsApp للفرق"
 - Primary CTA: `isAuthenticated: false` → "ابدأ مجاناً" (href="/sign-up") | `true` → "الذهاب إلى لوحة التحكم" (href="/inbox")
 - Secondary CTA: optional "تعرف أكثر" anchor to #features
@@ -98,7 +98,7 @@ interface DifferentiatorsSectionProps {
 ```
 
 **Rendering contract**:
-- Section id: `id="why-wadesk"`
+- Section id: `id="why-wabdesk"`
 - Renders each differentiator with icon + title + statement
 - Must include zero markup, Arabic-first, local currency items
 

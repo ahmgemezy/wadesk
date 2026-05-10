@@ -59,9 +59,15 @@ export const EVENT_DEFAULTS: Record<
  * these for Free/Starter users. notifyDispatch must short-circuit if the
  * tenant's plan is below the gate.
  */
+// sla_breach and csat_received are available on Starter+ per CLAUDE.md §10.
+// Growth+ gate only applies to events that truly need advanced plan features.
 export const GROWTH_PLUS_ONLY_EVENTS = new Set<ToggleableEventType>([
-  "sla_breach",
   "csat_received",
+]);
+
+// Events blocked only on Free plan (available from Starter upward).
+export const STARTER_PLUS_ONLY_EVENTS = new Set<ToggleableEventType>([
+  "sla_breach",
 ]);
 
 /**

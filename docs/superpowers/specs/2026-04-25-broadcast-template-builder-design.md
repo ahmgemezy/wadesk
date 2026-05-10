@@ -8,9 +8,9 @@
 
 ## Problem
 
-WhatsApp broadcasts require Meta-approved templates. Today, admins must leave WaDesk and use Meta Business Manager to create those templates — a painful, technical process that breaks the flow. There is also no way to include media (images, videos) or call-to-action buttons in templates created from within WaDesk.
+WhatsApp broadcasts require Meta-approved templates. Today, admins must leave WABDesk and use Meta Business Manager to create those templates — a painful, technical process that breaks the flow. There is also no way to include media (images, videos) or call-to-action buttons in templates created from within WABDesk.
 
-WaDesk must become a self-contained Meta template builder: admin writes the template, WaDesk submits it to Meta, and once approved it appears in Broadcasts.
+WABDesk must become a self-contained Meta template builder: admin writes the template, WABDesk submits it to Meta, and once approved it appears in Broadcasts.
 
 ---
 
@@ -42,7 +42,7 @@ broadcastTemplates: defineTable({
 
   // Meta identity
   name: v.string(),                  // slugified Meta name, e.g. "product_showcase_ar"
-  title: v.string(),                 // display name in WaDesk UI only
+  title: v.string(),                 // display name in WABDesk UI only
   language: v.string(),              // "ar" | "en"
   category: v.union(
     v.literal("MARKETING"),
@@ -238,7 +238,7 @@ Opens on "Add Broadcast Template" or "Edit". Two-column layout on ≥ md screens
 **Form sections:**
 
 **1. Basic Info**
-- Display title (WaDesk UI label, free text)
+- Display title (WABDesk UI label, free text)
 - Template name (Meta slug — auto-generated from title as `lowercase_underscore`, editable, validated: only `[a-z0-9_]` allowed)
 - Channel selector (dropdown of connected channels)
 - Language: Arabic / English segmented control
@@ -277,7 +277,7 @@ In the broadcast wizard step where the admin picks a template, the source picker
 
 ```
 ○ My Meta Templates (synced from Meta Business Manager)
-● Broadcast Templates (built in WaDesk)         ← new
+● Broadcast Templates (built in WABDesk)         ← new
 ```
 
 When "Broadcast Templates" is selected, only templates with `metaStatus === "approved"` are shown.

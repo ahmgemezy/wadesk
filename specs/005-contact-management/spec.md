@@ -85,11 +85,11 @@ to the pre-created contact profile.
 
 ### User Story 4 — Admin imports contacts from CSV (Priority: P4)
 
-An admin uploads a CSV file containing customer records. WaDesk shows a preview of what will
+An admin uploads a CSV file containing customer records. WABDesk shows a preview of what will
 be imported, reports on duplicates, and completes the import. All imported contacts are
 immediately searchable and visible to agents.
 
-**Why this priority**: Most businesses migrating to WaDesk have an existing customer list. Bulk
+**Why this priority**: Most businesses migrating to WABDesk have an existing customer list. Bulk
 import removes the bottleneck of manual entry.
 
 **Independent Test**: Upload a valid CSV with 10 contacts → review preview → confirm → verify
@@ -112,7 +112,7 @@ handling works (skip or merge).
 ### Edge Cases
 
 - What happens when a contact's phone number changes on WhatsApp?
-  WaDesk identifies contacts by phone number — if the number changes, a new contact is created. Agents can manually merge by updating the existing contact's name/notes.
+  WABDesk identifies contacts by phone number — if the number changes, a new contact is created. Agents can manually merge by updating the existing contact's name/notes.
 - What happens when two agents edit the same contact simultaneously?
   Last write wins — no locking required for MVP. Field-level conflicts are accepted as a known limitation.
 - What happens when a CSV is uploaded with more than 10,000 rows?
@@ -120,7 +120,7 @@ handling works (skip or merge).
 - What happens when a contact is deleted?
   Deletion is blocked if the contact has any conversation history — the contact can only be archived (hidden from search but preserved for compliance).
 - What happens when an imported phone number is in local format (e.g., 01012345678)?
-  WaDesk auto-converts to E.164 format using the country code inferred from the tenant's connected number's country.
+  WABDesk auto-converts to E.164 format using the country code inferred from the tenant's connected number's country.
 
 ## Requirements *(mandatory)*
 

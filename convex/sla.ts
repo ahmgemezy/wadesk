@@ -17,7 +17,7 @@
 import { v, ConvexError } from "convex/values";
 import { mutation, internalMutation } from "./_generated/server";
 import { getCallerIdentity, assertAdmin, type OrgRole } from "./lib/auth";
-import { internal } from "./_generated/api";
+import { internal, components } from "./_generated/api";
 
 // ── Check breaches (called by cron every 5 minutes) ──────────────────────────
 
@@ -57,20 +57,43 @@ export const checkBreaches = internalMutation({
         // Mark as breached
         await ctx.db.patch(conv._id, { slaBreachedAt: now });
 
-        // Notify channel supervisors
+        // Notify channel supervisors + all org admins
         const supervisors = await ctx.db
           .query("channelMembers")
           .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
           .filter((q) => q.eq(q.field("role"), "org:supervisor"))
           .collect();
 
+        // Admins have org-wide access but may not appear as supervisors in
+        // channelMembers (the invite code stores them with role "org:agent").
+        // Query Better Auth directly to find all org admins.
+        let adminUserIds: string[] = [];
+        try {
+          const orgMembers = await ctx.runQuery(
+            components.betterAuth.orgQueries.listOrgMembers,
+            { organizationId: channel.tenantId },
+          );
+          adminUserIds = (orgMembers as Array<{ userId: string; role: string }>)
+            .filter((m) => m.role === "org:admin")
+            .map((m) => m.userId);
+        } catch {
+          // If the component query fails, fall back to supervisors-only.
+        }
+
         const contact = await ctx.db.get(conv.contactId);
         const contactName = contact?.customName ?? contact?.displayName ?? contact?.phone ?? "";
 
-        for (const supervisor of supervisors) {
+        // Deduplicate: a supervisor who is also an admin should get one notification.
+        const supervisorUserIds = new Set(supervisors.map((s) => s.userId));
+        const recipientIds = [
+          ...supervisors.map((s) => s.userId),
+          ...adminUserIds.filter((id) => !supervisorUserIds.has(id)),
+        ];
+
+        for (const userId of recipientIds) {
           await ctx.runMutation(internal.notifications.notifyDispatch, {
             tenantId: channel.tenantId,
-            userId: supervisor.userId,
+            userId,
             eventType: "sla_breach",
             referenceId: conv._id,
             contactName,

@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** WaDesk
+**Project:** WABDesk
 **Generated:** 2026-04-04 01:15:05
 **Category:** Chat & Messaging App
 

@@ -2,7 +2,7 @@
 SYNC IMPACT REPORT
 ==================
 Version change: (none) → 1.0.0
-Initial ratification: all placeholder tokens replaced with WaDesk-specific content.
+Initial ratification: all placeholder tokens replaced with WABDesk-specific content.
 
 Modified principles: N/A (first-time fill)
 Added sections: Core Principles (I–VI), Technology Constraints, Development Workflow, Governance
@@ -16,7 +16,7 @@ Templates checked:
 Follow-up TODOs: none — all fields resolved from CLAUDE.md
 -->
 
-# WaDesk Constitution
+# WABDesk Constitution
 
 ## Core Principles
 
@@ -30,7 +30,7 @@ context. Phone number inputs MUST use `dir="ltr"` inside an otherwise RTL layout
 
 Every component MUST be tested in Arabic before it is considered done.
 
-**Rationale**: WaDesk's core market differentiator is being Arabic-first. Every global competitor
+**Rationale**: WABDesk's core market differentiator is being Arabic-first. Every global competitor
 is English-first. A single RTL regression destroys trust with Arab SMB customers.
 
 ### II. Multi-Tenant Isolation (NON-NEGOTIABLE)
@@ -42,7 +42,7 @@ access — never enforced only on the client.
 
 Cross-tenant data access is a critical security violation and MUST be treated as a P0 bug.
 
-**Rationale**: WaDesk is a shared-infrastructure multi-tenant SaaS. A single missing `tenantId`
+**Rationale**: WABDesk is a shared-infrastructure multi-tenant SaaS. A single missing `tenantId`
 filter can expose one business's customer conversations to another business.
 
 ### III. Real-Time by Default

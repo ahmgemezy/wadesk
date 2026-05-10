@@ -2,7 +2,7 @@
 
 ## Overview
 
-WaDesk uses [Resend](https://resend.com) to send transactional emails for the 30-day channel retention system. This includes:
+WABDesk uses [Resend](https://resend.com) to send transactional emails for the 30-day channel retention system. This includes:
 - **Warning emails** (days 25-29): Notifying admins that their WhatsApp channel will be deleted soon
 - **Deletion confirmation emails** (day 30): Notifying admins that their channel and data have been permanently deleted
 
@@ -18,7 +18,7 @@ WaDesk uses [Resend](https://resend.com) to send transactional emails for the 30
 2. Navigate to **Settings** → **API Keys**
 3. Click **"Create API Key"**
 4. Choose **"Standard API Key"** (default option)
-5. Give it a name like `"WaDesk Development"` or `"WaDesk Production"`
+5. Give it a name like `"WABDesk Development"` or `"WABDesk Production"`
 6. Copy the generated key (starts with `re_`)
 
 ### Step 3: Add to `.env.local`
@@ -77,7 +77,7 @@ Templates are defined in: `convex/actions/sendEmail.ts`
 1. **Check API key exists**: Verify `RESEND_API_KEY` is in `.env.local`
 2. **Check Resend status**: Visit [status.resend.com](https://status.resend.com)
 3. **Check logs**: Look for `[EMAIL_ERROR]` messages in console
-4. **Verify domain**: Resend uses `noreply@wadesk.com` as sender (no domain setup required for testing)
+4. **Verify domain**: Resend uses `noreply@wabdesk.com` as sender (no domain setup required for testing)
 
 ### "RESEND_API_KEY not configured" in Logs
 This is expected in development if you haven't added your key yet. Emails are simply skipped.
@@ -102,7 +102,7 @@ Resend allows:
 - **100 emails/second** on Standard plans
 - **1000 emails/day** on free tier (sufficient for this use case)
 
-WaDesk sends warnings once per day per channel on days 25-29, so volume is minimal.
+WABDesk sends warnings once per day per channel on days 25-29, so volume is minimal.
 
 ## Email Frequency
 

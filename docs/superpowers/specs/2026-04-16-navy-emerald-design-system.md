@@ -1,4 +1,4 @@
-# WaDesk — Navy + Emerald Design System
+# WABDesk — Navy + Emerald Design System
 
 **Date:** 2026-04-16
 **Branch:** 009-automation-rules

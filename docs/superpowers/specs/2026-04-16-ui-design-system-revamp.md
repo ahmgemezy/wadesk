@@ -1,4 +1,4 @@
-# WaDesk UI Design System Revamp
+# WABDesk UI Design System Revamp
 
 **Date:** 2026-04-16  
 **Branch:** 009-automation-rules  

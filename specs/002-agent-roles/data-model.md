@@ -41,13 +41,13 @@ These entities live in Clerk and are accessed via the Clerk Backend SDK from Con
 | Attribute | Source | Notes |
 |-----------|--------|-------|
 | `userId` | Clerk | Unique user identifier |
-| `orgId` | Clerk | = `tenantId` throughout WaDesk |
+| `orgId` | Clerk | = `tenantId` throughout WABDesk |
 | `role` | Clerk | `"org:admin"` \| `"org:supervisor"` \| `"org:agent"` |
 | `status` | Clerk | `"active"` \| `"pending"` (invited, not yet joined) |
 | `createdAt` | Clerk | When membership was created |
 
 **Role mapping**:
-| WaDesk Role | Clerk Role |
+| WABDesk Role | Clerk Role |
 |------------|-----------|
 | Admin | `org:admin` |
 | Supervisor | `org:supervisor` |

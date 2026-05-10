@@ -9,7 +9,7 @@
 
 ### User Story 1 — Agent views and replies to assigned conversations (Priority: P1)
 
-An agent logs into the WaDesk dashboard and sees a list of conversations assigned to them.
+An agent logs into the WABDesk dashboard and sees a list of conversations assigned to them.
 They open a conversation, read the customer's WhatsApp messages, and send a reply. The reply
 appears in the conversation thread instantly. The customer receives the reply on WhatsApp without
 knowing it came from a team platform.

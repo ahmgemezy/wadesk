@@ -1,4 +1,4 @@
-# Quickstart: WaDesk Marketing Site
+# Quickstart: WABDesk Marketing Site
 
 **Feature**: 007-marketing-site  
 **Date**: 2026-04-04

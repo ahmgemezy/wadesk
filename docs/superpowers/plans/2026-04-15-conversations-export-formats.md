@@ -63,7 +63,7 @@ HTML file structure:
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>WaDesk Export — [TenantId] — [Date]</title>
+  <title>WABDesk Export — [TenantId] — [Date]</title>
   <style>/* all styles inline */</style>
 </head>
 <body>

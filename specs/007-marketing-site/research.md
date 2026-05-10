@@ -1,4 +1,4 @@
-# Research: WaDesk Marketing Site
+# Research: WABDesk Marketing Site
 
 **Feature**: 007-marketing-site  
 **Date**: 2026-04-04
@@ -13,7 +13,7 @@
 
 **Alternatives considered**:
 - Middleware redirect: More powerful but adds latency to every root visit and is harder to test in isolation.
-- Separate subdomain (e.g., `wadesk.com` vs `app.wadesk.com`): Ruled out in spec Assumptions — Phase 1 lives at the root of the same Next.js app.
+- Separate subdomain (e.g., `wabdesk.com` vs `app.wabdesk.com`): Ruled out in spec Assumptions — Phase 1 lives at the root of the same Next.js app.
 
 ---
 

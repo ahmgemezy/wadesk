@@ -51,7 +51,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
   const [departmentId, setDepartmentId] = useState<Id<"departments"> | null>(null);
 
   const channels = useQuery(api.channels.listForTenant);
-  const showChannelSelector = (channels?.length ?? 0) > 1;
+  const showChannelSelector = (channels?.length ?? 0) >= 1;
   const departments = useQuery(
     api.departments.listForChannel,
     channelId ? { channelId } : "skip",
@@ -363,6 +363,28 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
   );
 }
 
+function ChannelLabel({ ch }: { ch: { displayName: string; displayPhone?: string | null; _id: string } }) {
+  const hasName = Boolean(ch.displayName);
+  const hasPhone = Boolean(ch.displayPhone);
+
+  if (hasName && hasPhone) {
+    return (
+      <span className="flex items-center gap-1 min-w-0">
+        <span className="truncate">{ch.displayName}</span>
+        <span className="text-muted-foreground">·</span>
+        <span dir="ltr" className="text-muted-foreground shrink-0">{ch.displayPhone}</span>
+      </span>
+    );
+  }
+  if (hasPhone) {
+    return <span dir="ltr">{ch.displayPhone}</span>;
+  }
+  if (hasName) {
+    return <span>{ch.displayName}</span>;
+  }
+  return <span dir="ltr">{ch._id}</span>;
+}
+
 interface ChannelDeptSelectorsProps {
   channels: Array<{ _id: Id<"channels">; displayName: string; displayPhone?: string | null }>;
   channelId: Id<"channels"> | null;
@@ -382,42 +404,66 @@ function ChannelDeptSelectors({
   onDepartmentChange,
   t,
 }: ChannelDeptSelectorsProps) {
-  return (
-    <div className="space-y-2">
-      <Select
-        value={channelId ?? "__none__"}
-        onValueChange={(v) => onChannelChange(v === "__none__" ? null : v as Id<"channels">)}
-      >
-        <SelectTrigger className="w-full text-sm">
-          <SelectValue placeholder={t("Assign to channel (optional)", "تعيين لقناة (اختياري)")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__none__">{t("No channel", "بدون قناة")}</SelectItem>
-          {channels.map((ch) => (
-            <SelectItem key={ch._id} value={ch._id}>
-              {ch.displayName}{ch.displayPhone ? ` · ${ch.displayPhone}` : ""}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+  const selectedChannel = channels.find((ch) => ch._id === channelId);
+  const selectedDept = departments.find((d) => d._id === departmentId);
+  const selectedDeptLabel = selectedDept ? (selectedDept.name || String(selectedDept._id)) : null;
 
-      {channelId && departments.length > 0 && (
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium leading-none">
+          {t("Channel", "القناة")}
+        </label>
         <Select
-          value={departmentId ?? "__none__"}
-          onValueChange={(v) => onDepartmentChange(v === "__none__" ? null : v as Id<"departments">)}
+          value={channelId ?? "__none__"}
+          onValueChange={(v) => onChannelChange(v === "__none__" ? null : v as Id<"channels">)}
         >
           <SelectTrigger className="w-full text-sm">
-            <SelectValue placeholder={t("Assign to department (optional)", "تعيين لقسم (اختياري)")} />
+            <SelectValue placeholder={t("Select a channel", "اختر قناة")}>
+              {selectedChannel ? (
+                <ChannelLabel ch={selectedChannel} />
+              ) : t("No channel", "بدون قناة")}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__none__">{t("No department", "بدون قسم")}</SelectItem>
-            {departments.map((d) => (
-              <SelectItem key={d._id} value={d._id}>
-                {d.name}
+            <SelectItem value="__none__">{t("No channel", "بدون قناة")}</SelectItem>
+            {channels.map((ch) => (
+              <SelectItem key={ch._id} value={ch._id}>
+                <ChannelLabel ch={ch} />
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {channelId && (
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium leading-none">
+            {t("Department", "القسم")}{" "}
+            <span className="text-muted-foreground font-normal">
+              {t("(optional)", "(اختياري)")}
+            </span>
+          </label>
+          <Select
+            value={departmentId ?? "__none__"}
+            onValueChange={(v) => onDepartmentChange(v === "__none__" ? null : v as Id<"departments">)}
+            disabled={departments.length === 0}
+          >
+            <SelectTrigger className="w-full text-sm">
+              <SelectValue placeholder={departments.length === 0 ? t("No departments available", "لا توجد أقسام") : t("Select a department", "اختر قسمًا")}>
+                {selectedDeptLabel ?? t("No department", "بدون قسم")}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">{t("No department", "بدون قسم")}</SelectItem>
+              {departments.map((d) => (
+                <SelectItem key={d._id} value={d._id}>
+                  {d.name || String(d._id)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
     </div>
   );

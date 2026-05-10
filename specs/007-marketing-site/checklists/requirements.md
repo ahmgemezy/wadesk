@@ -1,4 +1,4 @@
-# Specification Quality Checklist: WaDesk Marketing Site
+# Specification Quality Checklist: WABDesk Marketing Site
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-04-04

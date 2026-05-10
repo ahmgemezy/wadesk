@@ -86,7 +86,7 @@ An Admin can view all rules in a list, toggle them on/off instantly, reorder pri
 
 1. **Given** a list of 5 rules, **When** Admin drags rule #3 to position #1, **Then** the updated priority order is saved and future rule evaluation uses the new order immediately.
 2. **Given** an active rule, **When** Admin clicks the toggle to disable it, **Then** the rule stops firing for messages received after the toggle without being deleted.
-3. **Given** a rule being created or edited, **When** Admin clicks "Preview", **Then** a sample output is shown using placeholder values for dynamic variables (e.g., "أهلاً Ahmed, مرحباً في WaDesk").
+3. **Given** a rule being created or edited, **When** Admin clicks "Preview", **Then** a sample output is shown using placeholder values for dynamic variables (e.g., "أهلاً Ahmed, مرحباً في WABDesk").
 4. **Given** a tenant on the Free plan with 2 existing rules, **When** Admin tries to create a third rule, **Then** an upgrade prompt appears and the rule is not saved.
 
 ---
@@ -147,12 +147,12 @@ An Admin can view all rules in a list, toggle them on/off instantly, reorder pri
 
 ## Assumptions
 
-- Business hours configuration (timezone, open/close times, days of week) will be managed in a separate Settings section of the WaDesk dashboard; the Automation Rules feature depends on that configuration existing before the Outside Hours trigger can be used.
+- Business hours configuration (timezone, open/close times, days of week) will be managed in a separate Settings section of the WABDesk dashboard; the Automation Rules feature depends on that configuration existing before the Outside Hours trigger can be used.
 - "Human agent currently active" is defined as: the assigned agent has sent at least one outbound message in the current conversation while it is in Open or Pending status.
 - The no-reply timeout is measured from the timestamp of the most recent inbound customer message, not from conversation creation or assignment time.
 - Phase 1 applies rules to all WhatsApp channels for a tenant (not per-channel scoping); per-channel rule configuration is deferred to Phase 2.
 - Only Admins manage rules; Supervisors and Agents are fully excluded from rule creation and editing.
 - Text-only responses are in scope; media attachments, interactive buttons, and Meta-approved WhatsApp template messages are deferred to Phase 2.
 - `{{current_time}}` resolves to the current time in the tenant's configured timezone.
-- The rules dashboard UI must support Arabic RTL layout, consistent with the rest of the WaDesk product.
+- The rules dashboard UI must support Arabic RTL layout, consistent with the rest of the WABDesk product.
 - The system does not need to notify Admins when a rule fires (no fire alerts in Phase 1); a rule fire log may be viewed in analytics later.

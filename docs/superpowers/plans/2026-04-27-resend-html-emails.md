@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Migrate all 8 WaDesk transactional emails from plain-text strings to branded React Email HTML templates, and wire up the 6 email types that currently have no trigger.
+**Goal:** Migrate all 8 WABDesk transactional emails from plain-text strings to branded React Email HTML templates, and wire up the 6 email types that currently have no trigger.
 
 **Architecture:** All email templates are React components (`convex/emails/`) rendered to HTML via `@react-email/render` inside the existing `"use node"` Convex action `convex/actions/sendEmail.ts`. A new orchestration file `convex/actions/notifyEmail.ts` contains per-trigger internal actions that resolve recipient emails from Clerk and call `sendEmail`. Existing mutations use `ctx.scheduler.runAfter(0, ...)` to schedule these actions.
 
@@ -390,7 +390,7 @@ export function WaEmailLayout({
                 fontFamily,
               }}
             >
-              WaDesk
+              WABDesk
             </Text>
           </Section>
 
@@ -435,7 +435,7 @@ export function WaEmailLayout({
                 fontFamily,
               }}
             >
-              WaDesk — واديسك
+              WABDesk — واديسك
               {" · "}
               {isRtl ? "هذه رسالة تشغيلية تلقائية" : "This is an automated transactional email"}
             </Text>
@@ -648,7 +648,7 @@ export function ChannelDeleted({ locale, variables }: Props) {
         <Text style={textStyle}>
           تم حذف رقم واتساب <strong>"{channelName}"</strong> وجميع بياناته (محادثات، رسائل، أقسام) نهائياً لأنه ظل غير متصل لمدة 30 يوماً.
         </Text>
-        <WaSection locale="ar">يمكنك توصيل رقم واتساب جديد للاستمرار في استخدام WaDesk.</WaSection>
+        <WaSection locale="ar">يمكنك توصيل رقم واتساب جديد للاستمرار في استخدام WABDesk.</WaSection>
       </WaEmailLayout>
     );
   }
@@ -660,7 +660,7 @@ export function ChannelDeleted({ locale, variables }: Props) {
       <Text style={textStyle}>
         Your WhatsApp number <strong>"{channelName}"</strong> and all its data (conversations, messages, departments) have been permanently deleted after 30 days of being disconnected.
       </Text>
-      <WaSection locale="en">You can connect a new WhatsApp number to continue using WaDesk.</WaSection>
+      <WaSection locale="en">You can connect a new WhatsApp number to continue using WABDesk.</WaSection>
     </WaEmailLayout>
   );
 }
@@ -795,7 +795,7 @@ export function NewAssignment({ locale, variables }: Props) {
         <Text style={textStyle}>
           تم تعيين محادثة مع <strong>{contactName}</strong> في قناة <strong>{channelName}</strong> إليك{byLine}.
         </Text>
-        <WaSection locale="ar">سجّل دخولك إلى WaDesk للرد على العميل.</WaSection>
+        <WaSection locale="ar">سجّل دخولك إلى WABDesk للرد على العميل.</WaSection>
         <WaButton href={inboxUrl} locale="ar">فتح المحادثة</WaButton>
       </WaEmailLayout>
     );
@@ -808,7 +808,7 @@ export function NewAssignment({ locale, variables }: Props) {
       <Text style={textStyle}>
         A conversation with <strong>{contactName}</strong> in channel <strong>{channelName}</strong> has been assigned to you{byLine}.
       </Text>
-      <WaSection locale="en">Log in to WaDesk to reply to the customer.</WaSection>
+      <WaSection locale="en">Log in to WABDesk to reply to the customer.</WaSection>
       <WaButton href={inboxUrl} locale="en">Open Conversation</WaButton>
     </WaEmailLayout>
   );
@@ -838,10 +838,10 @@ export function AgentWelcome({ locale, variables }: Props) {
     return (
       <WaEmailLayout locale="ar" accentColor="#10B981" icon="👋"
         heading={`أهلاً ${agentName}، مرحباً بك في ${orgName}`}
-        previewText={`تم إضافتك إلى فريق ${orgName} على WaDesk`}>
+        previewText={`تم إضافتك إلى فريق ${orgName} على WABDesk`}>
         <Text style={textStyle}>أهلاً {agentName}،</Text>
         <Text style={textStyle}>
-          تم إضافتك بنجاح إلى فريق <strong>{orgName}</strong> على WaDesk. يمكنك الآن الرد على محادثات العملاء والتعاون مع فريقك.
+          تم إضافتك بنجاح إلى فريق <strong>{orgName}</strong> على WABDesk. يمكنك الآن الرد على محادثات العملاء والتعاون مع فريقك.
         </Text>
         <WaSection locale="ar">ابدأ بتسجيل الدخول وإلقاء نظرة على الصندوق الوارد.</WaSection>
         <WaButton href={`${appUrl}/inbox`} locale="ar">الذهاب إلى الصندوق الوارد</WaButton>
@@ -851,10 +851,10 @@ export function AgentWelcome({ locale, variables }: Props) {
   return (
     <WaEmailLayout locale="en" accentColor="#10B981" icon="👋"
       heading={`Welcome ${agentName} to ${orgName}`}
-      previewText={`You've been added to ${orgName}'s team on WaDesk`}>
+      previewText={`You've been added to ${orgName}'s team on WABDesk`}>
       <Text style={textStyle}>Hi {agentName},</Text>
       <Text style={textStyle}>
-        You've been successfully added to <strong>{orgName}</strong>'s team on WaDesk. You can now reply to customer conversations and collaborate with your team.
+        You've been successfully added to <strong>{orgName}</strong>'s team on WABDesk. You can now reply to customer conversations and collaborate with your team.
       </Text>
       <WaSection locale="en">Get started by logging in and checking your inbox.</WaSection>
       <WaButton href={`${appUrl}/inbox`} locale="en">Go to Inbox</WaButton>
@@ -1015,8 +1015,8 @@ const SUBJECTS: Record<string, Record<"ar" | "en", string>> = {
     en: "Notification: New Conversation Assigned to You",
   },
   agent_welcome: {
-    ar: "مرحباً بك في WaDesk",
-    en: "Welcome to WaDesk",
+    ar: "مرحباً بك في WABDesk",
+    en: "Welcome to WABDesk",
   },
   billing_payment_failed: {
     ar: "فشل تجديد الاشتراك — يرجى تحديث بيانات الدفع",
@@ -1084,7 +1084,7 @@ export const sendEmail = internalAction({
 
     // Inject appUrl so templates don't need to access process.env directly
     const enrichedVariables: Record<string, string> = {
-      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://app.wadesk.com",
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "https://app.wabdesk.com",
       ...args.variables,
     };
 
@@ -1099,7 +1099,7 @@ export const sendEmail = internalAction({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "WaDesk <noreply@wadesk.com>",
+        from: "WABDesk <noreply@wabdesk.com>",
         to: args.to,
         subject,
         html,

@@ -1,4 +1,4 @@
-# WaDesk — Parchment Light Mode
+# WABDesk — Parchment Light Mode
 
 **Date:** 2026-04-16
 **Branch:** 009-automation-rules

@@ -11,7 +11,7 @@
 >
 > Each sub-agent MUST read `CLAUDE.md` and `PROJECT_STATE.md` before starting.
 
-**Goal:** Add a curated pre-built template library to Settings → Templates so users can browse categorised examples, preview them, and either save them as quick-reply templates or submit them directly to Meta for approval — all without leaving WaDesk.
+**Goal:** Add a curated pre-built template library to Settings → Templates so users can browse categorised examples, preview them, and either save them as quick-reply templates or submit them directly to Meta for approval — all without leaving WABDesk.
 
 **Architecture:** A static TypeScript file (`lib/templateLibrary.ts`) holds ~50 pre-built templates with named `{{variable}}` placeholders. A new "Template Library" tab is added to the existing `TemplatesSettings` component. Clicking a card opens a preview sheet; "Use This Template" either pre-fills the existing create dialog (quick-reply) or opens a `MetaSubmitForm` that calls a new `submitToMeta` Convex action which POSTs to the Meta Graph API and saves the result as a `PENDING` record in `metaTemplates`.
 
@@ -45,7 +45,7 @@
 - [ ] **Step 1.1: Install shadcn Tabs component**
 
 ```bash
-cd /Users/ahmedgemmezy/Documents/wadesk
+cd /Users/ahmedgemmezy/Documents/WABDesk
 npx shadcn@latest add tabs --yes
 ```
 

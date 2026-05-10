@@ -31,7 +31,7 @@ function MobileNavSheet({ isAuthenticated, locale }: { isAuthenticated: boolean;
             {t(locale, "nav.pricing")}
           </Link>
           <Link href="#why-wabdesk" className="text-sm hover:text-primary">
-            {t(locale, "nav.whyWadesk")}
+            {t(locale, "nav.whyWABDesk")}
           </Link>
           <hr className="my-2" />
           {isAuthenticated ? (

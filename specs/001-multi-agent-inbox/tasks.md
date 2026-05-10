@@ -16,7 +16,7 @@
 
 **Purpose**: Create the Next.js + Convex project and connect all services before any feature work begins.
 
-- [x] T001 Scaffold Next.js 15 project: `npx create-next-app@latest wadesk --typescript --tailwind --app` at repo root
+- [x] T001 Scaffold Next.js 15 project: `npx create-next-app@latest wabdesk --typescript --tailwind --app` at repo root
 - [x] T002 Install core dependencies: `npm install convex @clerk/nextjs` then `npx shadcn@latest init` and add components: `button input textarea scroll-area resizable sheet dialog dropdown-menu badge`
 - [x] T003 Initialize Convex project: `npx convex dev` — follow prompts, copy `CONVEX_DEPLOYMENT` to `.env.local`
 - [x] T004 [P] Configure `.env.local` with all environment variables: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CONVEX_URL`, `META_APP_SECRET`, `META_WEBHOOK_VERIFY_TOKEN`

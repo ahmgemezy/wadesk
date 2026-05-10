@@ -7,6 +7,7 @@ import {
   toggleableEventTypeValidator,
   EVENT_DEFAULTS,
   GROWTH_PLUS_ONLY_EVENTS,
+  STARTER_PLUS_ONLY_EVENTS,
   EMAIL_DAILY_CAP_BY_PLAN,
   makeEmailDailyKey,
   todayYmd,
@@ -216,12 +217,15 @@ export const notifyDispatch = internalMutation({
     emailVariables: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
-    // 1. Plan check — Growth+-only events short-circuit on lower plans.
+    // 1. Plan check — gate events by minimum required plan.
     const plan = await readPlan(ctx, args.tenantId);
     if (
       GROWTH_PLUS_ONLY_EVENTS.has(args.eventType) &&
       (plan === "free" || plan === "starter")
     ) {
+      return;
+    }
+    if (STARTER_PLUS_ONLY_EVENTS.has(args.eventType) && plan === "free") {
       return;
     }
 

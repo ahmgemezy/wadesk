@@ -8,7 +8,7 @@
 
 **Decision**: Use Clerk's native `organizationInvitation.create()` Backend SDK API for email invitations.
 
-**Rationale**: Clerk Organizations has a complete invitation lifecycle built in. Admin calls a Convex action → action uses Clerk Backend SDK (`clerkClient.organizations.createOrganizationInvitation()`) → Clerk sends the email with a join link → invitee clicks → Clerk handles account creation and org membership auto-join. The `role` parameter maps directly to WaDesk roles.
+**Rationale**: Clerk Organizations has a complete invitation lifecycle built in. Admin calls a Convex action → action uses Clerk Backend SDK (`clerkClient.organizations.createOrganizationInvitation()`) → Clerk sends the email with a join link → invitee clicks → Clerk handles account creation and org membership auto-join. The `role` parameter maps directly to WABDesk roles.
 
 **Pattern**:
 ```typescript
@@ -29,9 +29,9 @@ await clerkClient.organizations.createOrganizationInvitation({
 
 ---
 
-## 2. Clerk Custom Roles — WaDesk Role Mapping
+## 2. Clerk Custom Roles — WABDesk Role Mapping
 
-**Decision**: Create three Clerk Organization roles: `org:admin`, `org:supervisor`, `org:agent`. Map 1:1 to WaDesk permission matrix.
+**Decision**: Create three Clerk Organization roles: `org:admin`, `org:supervisor`, `org:agent`. Map 1:1 to WABDesk permission matrix.
 
 **Rationale**: Clerk supports custom roles per organization. Using named roles (`org:admin`, `org:supervisor`, `org:agent`) means role is extracted directly from the Clerk JWT in every Convex function via `identity.orgRole` — no extra lookup. Permissions are enforced server-side by checking this value.
 
@@ -57,8 +57,8 @@ const role = identity?.orgRole; // "org:admin" | "org:supervisor" | "org:agent"
 
 **Flow**:
 1. Admin clicks "Generate Link" → Convex mutation creates `inviteLink` doc, auto-revokes previous
-2. Admin copies/shares the URL: `https://app.wadesk.com/join/{token}`
-3. New user opens link → Next.js validates token → shows "Join WaDesk" page
+2. Admin copies/shares the URL: `https://app.wabdesk.com/join/{token}`
+3. New user opens link → Next.js validates token → shows "Join WABDesk" page
 4. User completes Clerk signup (or login if existing account)
 5. Post-auth callback page server action: validates token again → calls `clerkClient.organizations.createOrganizationMembership()` with `role: "org:agent"` → marks token as used (revoked)
 
@@ -88,13 +88,13 @@ const token = randomBytes(32).toString("hex"); // 64-char hex
 3. Template: pre-approved "agent_invite" template with variable `{{1}}` = invite link
 4. On failure: return structured error `{ code: "WHATSAPP_SEND_FAILED", reason: string }` → UI shows inline error + "Copy Link" CTA
 
-**Template requirement**: Tenants must have a Meta-approved invite template. For MVP, WaDesk provides a standard shared template or documents how to create it.
+**Template requirement**: Tenants must have a Meta-approved invite template. For MVP, WABDesk provides a standard shared template or documents how to create it.
 
 **Note for MVP**: If no approved template exists, WhatsApp invite degrades gracefully to showing the copy-link fallback. This is acceptable per spec edge case handling.
 
 **Alternatives considered**:
 - Send as free-form text: Only works within 24h session window — agents won't have an existing session. Rejected.
-- Use WaDesk's own Meta app system user to send: Sends from WaDesk's number, not tenant's — confusing for recipient. Rejected.
+- Use WABDesk's own Meta app system user to send: Sends from WABDesk's number, not tenant's — confusing for recipient. Rejected.
 
 ---
 

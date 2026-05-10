@@ -135,7 +135,7 @@ verify it lands in the Unassigned queue rather than auto-assigning.
 
 - What happens when the only Admin tries to demote themselves to Agent?
   Blocked — at least one Admin MUST exist at all times per tenant.
-- What happens when an invited agent's email already has a WaDesk account in another org?
+- What happens when an invited agent's email already has a WABDesk account in another org?
   They can join multiple organizations with the same account; roles are org-scoped.
 - What happens when a shareable invite link is used after the workspace reaches its plan's
   agent limit?

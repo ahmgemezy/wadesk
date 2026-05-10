@@ -1,4 +1,4 @@
-# Data Model: WaDesk Marketing Site
+# Data Model: WABDesk Marketing Site
 
 **Feature**: 007-marketing-site  
 **Date**: 2026-04-04  
@@ -63,7 +63,7 @@ type FeatureHighlight = {
 
 ### Differentiator
 
-A competitive advantage claim shown in the "Why WaDesk" section.
+A competitive advantage claim shown in the "Why WABDesk" section.
 
 ```typescript
 type Differentiator = {

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let admins build Meta-approved broadcast templates (with image/video headers, body variables, and URL buttons) entirely inside WaDesk, without ever touching Meta Business Manager.
+**Goal:** Let admins build Meta-approved broadcast templates (with image/video headers, body variables, and URL buttons) entirely inside WABDesk, without ever touching Meta Business Manager.
 
 **Architecture:** New `broadcastTemplates` Convex table (separate from quick-reply `messageTemplates` and synced `metaTemplates`). A Convex action POSTs the template to Meta for approval; a cron action polls Meta every 30 min to sync status. Approved templates appear as a new source in the Broadcasts wizard alongside existing synced `metaTemplates`.
 
@@ -1684,7 +1684,7 @@ In the template selection step, before the existing template list, add:
         : "border-input bg-background hover:bg-muted"
     }`}
   >
-    📢 {t("Broadcast Templates (WaDesk)", "قوالب الحملات (WaDesk)")}
+    📢 {t("Broadcast Templates (WABDesk)", "قوالب الحملات (WABDesk)")}
   </button>
 </div>
 

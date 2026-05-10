@@ -1,4 +1,4 @@
-# WaDesk — Full Codebase Audit Report
+# WABDesk — Full Codebase Audit Report
 
 **Date:** 2026-04-28  
 **Branch:** `feat/013-departments`  
@@ -9,7 +9,7 @@
 
 ## 1. Project Overview
 
-**WaDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets. Multiple agents handle WhatsApp conversations from a shared team inbox; no customer knows they're talking to a team.
+**WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets. Multiple agents handle WhatsApp conversations from a shared team inbox; no customer knows they're talking to a team.
 
 **Primary Markets:** Egypt 🇪🇬, Saudi Arabia 🇸🇦, UAE 🇦🇪  
 **Language:** Arabic-first UI (RTL), English supported  
@@ -48,7 +48,7 @@
 ## 3. Project Structure
 
 ```
-wadesk/
+wabdesk/
 ├── app/
 │   ├── layout.tsx                              # Root: ClerkProvider > html(lang="ar" dir="rtl") > ConvexClientProvider
 │   ├── page.tsx                                # Marketing landing page

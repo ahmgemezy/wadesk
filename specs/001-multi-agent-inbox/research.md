@@ -44,7 +44,7 @@ export const listForAgent = query({
 });
 ```
 
-**Role extraction**: Clerk org membership role (`org:admin`, `org:member`) mapped to WaDesk roles in Convex. Role checked server-side before permissioned operations.
+**Role extraction**: Clerk org membership role (`org:admin`, `org:member`) mapped to WABDesk roles in Convex. Role checked server-side before permissioned operations.
 
 **Alternatives considered**:
 - Custom `tenants` table in Convex: Adds sync complexity with Clerk. Rejected.

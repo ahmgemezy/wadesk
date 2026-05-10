@@ -38,7 +38,7 @@ function MarketingNav({
             {t(locale, "nav.pricing")}
           </Link>
           <Link href="#why-wabdesk" className="text-sm hover:text-primary">
-            {t(locale, "nav.whyWadesk")}
+            {t(locale, "nav.whyWABDesk")}
           </Link>
 
           <Button variant="ghost" size="sm" onClick={toggleLocale}>

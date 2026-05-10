@@ -435,7 +435,7 @@ git commit -m "feat(design): update note textarea colors for Navy + Emerald"
 **Files:**
 - Modify: `components/shell/app-sidebar.tsx`
 
-The current sidebar header shows just the text "WaDesk". Add an emerald gradient rounded square with a "W" as a logo mark — visible both in expanded and collapsed state.
+The current sidebar header shows just the text "WABDesk". Add an emerald gradient rounded square with a "W" as a logo mark — visible both in expanded and collapsed state.
 
 - [ ] **Step 5.1: Update the `SidebarHeader` content**
 
@@ -444,7 +444,7 @@ Find the `SidebarHeader` block (around line 95–100):
 ```tsx
       <SidebarHeader className="p-3 flex flex-row items-center gap-2">
         <span className="text-base font-bold flex-1 tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
-          WaDesk
+          WABDesk
         </span>
         <LocaleSwitcher locale={locale} />
       </SidebarHeader>
@@ -458,7 +458,7 @@ Replace with:
           <span className="text-[11px] font-black text-[#0a1020] leading-none">W</span>
         </div>
         <span className="text-base font-bold flex-1 tracking-tight text-foreground group-data-[collapsible=icon]:hidden">
-          WaDesk
+          WABDesk
         </span>
         <LocaleSwitcher locale={locale} />
       </SidebarHeader>
@@ -518,7 +518,7 @@ Check these pages visually. For each, confirm: dark navy background, emerald acc
 
 In the sidebar:
 - Verify the "W" logo mark appears (emerald gradient square)
-- Click to collapse sidebar — confirm "W" stays visible, text "WaDesk" hides
+- Click to collapse sidebar — confirm "W" stays visible, text "WABDesk" hides
 - Verify the active nav item has a teal/emerald icon color
 - Verify inactive nav icons are muted (`#4a6080`)
 

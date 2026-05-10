@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-27  
 **Status:** Approved  
-**Scope:** Migrate all WaDesk transactional emails to React Email HTML templates and wire up 6 previously unwired/missing email types.
+**Scope:** Migrate all WABDesk transactional emails to React Email HTML templates and wire up 6 previously unwired/missing email types.
 
 ---
 
@@ -74,11 +74,11 @@ Install in root `package.json`. No additional Convex config needed — Convex No
 
 ### Base Layout (`WaEmailLayout`)
 
-- **Header:** Emerald green (`#10B981`) background, WaDesk logo as styled text, white heading
+- **Header:** Emerald green (`#10B981`) background, WABDesk logo as styled text, white heading
 - **Body:** White card centered on light gray (`#F8FAFC`), `max-width: 600px`, 16px body font
 - **Icon block:** One large emoji per email type, centered above the heading
 - **CTA Button:** Emerald green, rounded corners, full-width on mobile
-- **Footer:** Dark navy (`#0F172A`) background, "WaDesk — واديسك", legal note
+- **Footer:** Dark navy (`#0F172A`) background, "WABDesk — واديسك", legal note
 
 ### Per-Email Identity
 

@@ -14,7 +14,7 @@ const dictionary: Dictionary = {
   "nav.dashboard": { ar: "الذهاب إلى لوحة التحكم", en: "Go to Dashboard" },
   "nav.features": { ar: "المميزات", en: "Features" },
   "nav.pricing": { ar: "الأسعار", en: "Pricing" },
-  "nav.whyWadesk": { ar: "لماذا واب ديسك؟", en: "Why WABDesk?" },
+  "nav.whyWABDesk": { ar: "لماذا واب ديسك؟", en: "Why WABDesk?" },
   "hero.title": {
     ar: "صندوق بريد WhatsApp للفرق",
     en: "WhatsApp Team Inbox",

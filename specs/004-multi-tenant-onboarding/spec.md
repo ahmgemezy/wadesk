@@ -9,7 +9,7 @@
 
 ### User Story 1 — Business owner signs up and reaches a live inbox in under 5 minutes (Priority: P1)
 
-A small business owner in Egypt discovers WaDesk, clicks "Get Started for Free", and completes
+A small business owner in Egypt discovers WABDesk, clicks "Get Started for Free", and completes
 the entire setup without help. They create an account, set up their business workspace, connect
 their WhatsApp number, and land in a live inbox ready to receive customer messages. The whole
 journey takes under 5 minutes. No credit card required. No technical knowledge needed.
@@ -29,7 +29,7 @@ Every extra step costs conversions.
 2. **Given** the user completes account creation, **When** they reach the WhatsApp connection step,
    **Then** the Embedded Signup flow launches with one click — no manual Meta app configuration.
 3. **Given** the user completes WhatsApp connection, **When** they send a test WhatsApp message
-   to their connected number, **Then** it appears in their WaDesk inbox within 3 seconds.
+   to their connected number, **Then** it appears in their WABDesk inbox within 3 seconds.
 4. **Given** the user completes all steps, **When** they land on the inbox,
    **Then** a progress indicator confirms all setup steps are complete.
 5. **Given** the entire flow from signup to first message, **When** measured end-to-end,
@@ -90,7 +90,7 @@ inbox is accessible without completing the invite step.
 
 - What happens if the WhatsApp connection step fails during onboarding?
   The user sees a clear error with a "Try again" button. The step is not marked complete. They can retry without restarting the entire flow.
-- What happens if the user signs up with an email that already has a WaDesk account?
+- What happens if the user signs up with an email that already has a WABDesk account?
   They are taken to the login page with a message: "You already have an account. Sign in to continue."
 - What happens if the user's free plan trial has already expired when they first complete onboarding?
   Edge case excluded from MVP — trials only start on paid plan. Free plan has no expiry.
@@ -104,7 +104,7 @@ inbox is accessible without completing the invite step.
 - **FR-001**: New users MUST be presented with a step-by-step onboarding flow immediately after account creation — they MUST NOT land on a blank dashboard.
 - **FR-002**: The onboarding flow MUST consist of exactly these steps in order: (1) Create account, (2) Set up workspace name, (3) Connect WhatsApp, (4) Invite team (optional), (5) Go to inbox.
 - **FR-003**: Each completed onboarding step MUST be persisted — users who return after interruption MUST resume at their last incomplete step.
-- **FR-004**: The WhatsApp connection step MUST embed the Embedded Signup flow inline (feature 003) — no redirect away from WaDesk.
+- **FR-004**: The WhatsApp connection step MUST embed the Embedded Signup flow inline (feature 003) — no redirect away from WABDesk.
 - **FR-005**: The "Invite team" step MUST be skippable — the inbox MUST be accessible without completing it.
 - **FR-006**: Once all required steps (1–3) are complete, the user MUST land in the live inbox and the onboarding flow MUST never appear again.
 - **FR-007**: The onboarding flow MUST work correctly in Arabic (RTL) with Arabic UI copy as the default for users whose browser language is Arabic.
@@ -128,7 +128,7 @@ inbox is accessible without completing the invite step.
 
 ## Assumptions
 
-- Clerk handles account creation and authentication; WaDesk controls the post-signup redirect to the onboarding flow.
+- Clerk handles account creation and authentication; WABDesk controls the post-signup redirect to the onboarding flow.
 - Workspace name = Clerk organization name; creating the workspace during onboarding creates the Clerk org.
 - WhatsApp connection (step 3) depends on feature 003 (Embedded Signup) being implemented first.
 - Team invite (step 4) reuses the invite-by-email mechanism from feature 002 (Agent Roles).

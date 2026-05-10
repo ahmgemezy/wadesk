@@ -1,9 +1,9 @@
-# Feature Specification: WaDesk Marketing Site
+# Feature Specification: WABDesk Marketing Site
 
 **Feature Branch**: `007-marketing-site`
 **Created**: 2026-04-04
 **Status**: Draft
-**Input**: Public-facing Arabic-first marketing website for WaDesk targeting SMBs in Egypt and Gulf region
+**Input**: Public-facing Arabic-first marketing website for WABDesk targeting SMBs in Egypt and Gulf region
 
 ---
 
@@ -11,15 +11,15 @@
 
 ### User Story 1 — First-Time Visitor Understands the Product and Signs Up (Priority: P1)
 
-An SMB owner in Egypt or Saudi Arabia hears about WaDesk, opens the website for the first time, and within 60 seconds understands what it does, why it's different, and how much it costs. They click "ابدأ مجاناً / Start Free" and land on the sign-up page.
+An SMB owner in Egypt or Saudi Arabia hears about WABDesk, opens the website for the first time, and within 60 seconds understands what it does, why it's different, and how much it costs. They click "ابدأ مجاناً / Start Free" and land on the sign-up page.
 
 **Why this priority**: This is the primary conversion funnel. Every other page section exists to support this moment. Without it, there is no product growth.
 
-**Independent Test**: A first-time visitor with no prior knowledge of WaDesk can visit the homepage, read the hero section, scroll to pricing, and click Sign Up — all without confusion. The signup page loads correctly.
+**Independent Test**: A first-time visitor with no prior knowledge of WABDesk can visit the homepage, read the hero section, scroll to pricing, and click Sign Up — all without confusion. The signup page loads correctly.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor opens the homepage, **When** they read the hero section, **Then** they understand in one sentence what WaDesk does ("صندوق بريد WhatsApp للفرق")
+1. **Given** a visitor opens the homepage, **When** they read the hero section, **Then** they understand in one sentence what WABDesk does ("صندوق بريد WhatsApp للفرق")
 2. **Given** a visitor scrolls past the hero, **When** they reach the features section, **Then** they see at least 4 key features with Arabic names and icons
 3. **Given** a visitor reaches the pricing section, **When** they view it, **Then** they see prices displayed for EGP, SAR, AED, and USD
 4. **Given** a visitor clicks "ابدأ مجاناً", **When** the page loads, **Then** they are taken to the sign-up page without errors
@@ -29,7 +29,7 @@ An SMB owner in Egypt or Saudi Arabia hears about WaDesk, opens the website for 
 
 ### User Story 2 — Returning Visitor Signs In (Priority: P2)
 
-An existing WaDesk customer visits the website and needs to log in to their dashboard. They find the sign-in link immediately in the navigation and click through without friction.
+An existing WABDesk customer visits the website and needs to log in to their dashboard. They find the sign-in link immediately in the navigation and click through without friction.
 
 **Why this priority**: Retention matters as much as acquisition. A customer who can't find the login is a frustrated customer.
 
@@ -45,7 +45,7 @@ An existing WaDesk customer visits the website and needs to log in to their dash
 
 ### User Story 3 — Visitor Evaluates Pricing and Chooses a Plan (Priority: P3)
 
-A business owner wants to know how much WaDesk costs before committing. They scroll to the pricing section, compare plans, and understand the value of each tier in their local currency.
+A business owner wants to know how much WABDesk costs before committing. They scroll to the pricing section, compare plans, and understand the value of each tier in their local currency.
 
 **Why this priority**: Pricing transparency reduces sales friction and pre-qualifies leads. Arab SMB buyers are price-sensitive and need to see local currency upfront.
 
@@ -66,11 +66,11 @@ A skeptical visitor who has heard of WATI or SleekFlow reads a differentiation s
 
 **Why this priority**: Differentiation messaging converts fence-sitters, especially in the Arab market where global competitors charge markups and offer English-only interfaces.
 
-**Independent Test**: A visitor who knows about competitors can read the differentiation section and articulate at least 2 reasons WaDesk is different from global alternatives.
+**Independent Test**: A visitor who knows about competitors can read the differentiation section and articulate at least 2 reasons WABDesk is different from global alternatives.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor reads the "Why WaDesk" section, **When** they finish, **Then** they understand that WaDesk charges zero markup on Meta messages
+1. **Given** a visitor reads the "Why WABDesk" section, **When** they finish, **Then** they understand that WABDesk charges zero markup on Meta messages
 2. **Given** a visitor reads the page, **When** they experience the RTL Arabic layout, **Then** the site itself demonstrates the Arabic-first claim — not just states it
 3. **Given** a visitor reads the comparison, **When** they look at pricing, **Then** a clear statement explains the cost advantage vs. competitors who charge per agent or markup messages
 

@@ -257,7 +257,7 @@ Public page — no auth required to view.
 **Behavior**:
 1. Calls `inviteLinks.validateToken` (read-only check) to verify token is valid before showing UI
 2. If invalid: shows "Invite expired or invalid" message
-3. If valid: shows "Join [OrgName] on WaDesk" page with Clerk sign-up/sign-in component
+3. If valid: shows "Join [OrgName] on WABDesk" page with Clerk sign-up/sign-in component
 4. After auth: calls `inviteLinks.validateAndJoin` server action with the token
 5. On success: redirects to `/inbox`
 

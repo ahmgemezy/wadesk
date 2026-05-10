@@ -7,7 +7,7 @@
 
 ## Summary
 
-Enable admins to connect their WhatsApp Business Account (WABA) to WaDesk in under 5 minutes using Meta's Embedded Signup JavaScript popup. After completing the OAuth flow, WaDesk exchanges the code for a long-lived system user token (server-side), registers the webhook subscription, and activates the channel — all without the admin touching any Meta developer settings. This feature extends the `channels` table from `001-multi-agent-inbox` with token storage and connection status fields, and introduces the `onboardingStates` table used by `004-multi-tenant-onboarding`.
+Enable admins to connect their WhatsApp Business Account (WABA) to WABDesk in under 5 minutes using Meta's Embedded Signup JavaScript popup. After completing the OAuth flow, WABDesk exchanges the code for a long-lived system user token (server-side), registers the webhook subscription, and activates the channel — all without the admin touching any Meta developer settings. This feature extends the `channels` table from `001-multi-agent-inbox` with token storage and connection status fields, and introduces the `onboardingStates` table used by `004-multi-tenant-onboarding`.
 
 ---
 

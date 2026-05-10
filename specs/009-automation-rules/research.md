@@ -66,7 +66,7 @@ Regex-replaces `{{variable_name}}` with resolved values. Fallbacks:
 - `{{agent_name}}` → assigned agent's name from Clerk user lookup, or `"فريق الدعم"` if unassigned
 - `{{current_time}}` → `new Date().toLocaleTimeString("ar-EG", { timeZone: tenantTimezone })`
 
-**Rationale**: Pure function is easy to unit-test and reuse in the preview endpoint. Fallbacks are Arabic-first, consistent with WaDesk's positioning.
+**Rationale**: Pure function is easy to unit-test and reuse in the preview endpoint. Fallbacks are Arabic-first, consistent with WABDesk's positioning.
 
 ---
 
