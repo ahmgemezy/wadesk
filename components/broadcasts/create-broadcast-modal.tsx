@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -301,6 +302,7 @@ type Props = {
 
 export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
   const isAr = locale === "ar";
+  const isMobile = useIsMobile();
 
   const lists = useQuery(api.contactLists.listForTenant);
   const channels = useQuery(api.channels.listForTenant);
@@ -446,7 +448,28 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-              {done ? (
+              {isMobile ? (
+                <div className="flex flex-col items-center justify-center h-full gap-5 text-center py-10">
+                  <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="size-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3" />
+                    </svg>
+                  </div>
+                  <div className="space-y-2 max-w-xs">
+                    <h3 className="text-base font-semibold text-foreground">
+                      {isAr ? "يتطلب شاشة أكبر" : "Desktop Required"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {isAr
+                        ? "إنشاء رسائل البث متاح على الحاسوب فقط. يرجى فتح التطبيق على جهاز الكمبيوتر أو اللابتوب للمتابعة."
+                        : "Creating broadcast campaigns is optimized for desktop use. Please open WABDesk on your computer or laptop to compose and send broadcasts."}
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                    {isAr ? "حسناً، فهمت" : "Got it"}
+                  </Button>
+                </div>
+              ) : done ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3">
                   <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
                     <CheckIcon className="size-7 text-emerald-700" />
@@ -532,9 +555,13 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                       onClick={() => setShowChannelDropdown((v) => !v)}
                     >
                       <span className="text-sm text-muted-foreground">
-                        {selectedChannel
-                          ? `${selectedChannel.displayName} · ${selectedChannel.displayPhone ?? selectedChannel.phoneNumberId}`
-                          : (isAr ? "اختر رقم واتساب..." : "Select a WhatsApp number...")}
+                        {selectedChannel ? (
+                          <>
+                            {selectedChannel.displayName}
+                            {" · "}
+                            <span dir="ltr">{selectedChannel.displayPhone ?? selectedChannel.phoneNumberId}</span>
+                          </>
+                        ) : (isAr ? "اختر رقم واتساب..." : "Select a WhatsApp number...")}
                       </span>
                       <ChevronDownIcon className="size-4 text-muted-foreground shrink-0" />
                     </div>
@@ -550,7 +577,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                           >
                             <div>
                               <div className="font-medium">{ch.displayName}</div>
-                              <div className="text-xs text-muted-foreground">{ch.displayPhone ?? ch.phoneNumberId}</div>
+                              <div className="text-xs text-muted-foreground" dir="ltr">{ch.displayPhone ?? ch.phoneNumberId}</div>
                             </div>
                             {selectedChannelId === ch._id && (
                               <CheckIcon className="size-4 text-primary shrink-0" />
@@ -713,7 +740,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
             </div>
 
             {/* Footer */}
-            {!done && (
+            {!done && !isMobile && (
               <div className="border-t px-6 py-4 flex items-center justify-between gap-3 shrink-0 bg-background">
                 <Button
                   variant="outline"
@@ -742,7 +769,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
           </div>
 
           {/* ── Right panel: live WhatsApp preview ──────────────────────── */}
-          <div className="w-72 border-s bg-muted/20 flex flex-col shrink-0">
+          <div className={`w-72 border-s bg-muted/20 flex flex-col shrink-0${isMobile ? " hidden" : ""}`}>
             <div className="px-4 py-3.5 border-b shrink-0">
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                 {isAr ? "معاينة مباشرة" : "Preview"}

@@ -3,7 +3,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
-import { getCallerIdentity, getCallerRole, assertAdmin, type OrgRole } from "./lib/auth";
+import { getCallerIdentity, getCallerRole, assertAdmin, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import { internal, components } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 
@@ -24,7 +24,7 @@ export const getMemberProfile = action({
     departments: { id: string; name: string }[];
   }> => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId } = await getCallerIdentity(ctx);
 
@@ -173,7 +173,7 @@ export const updateMemberChannels = action({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId, callerId } = await getCallerIdentity(ctx);
 
@@ -238,7 +238,7 @@ export const updateMemberDepartments = action({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId, callerId } = await getCallerIdentity(ctx);
 
@@ -303,7 +303,7 @@ export const updateMemberContact = action({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId } = await getCallerIdentity(ctx);
 
@@ -337,7 +337,7 @@ export const updateMemberDisplayName = action({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId } = await getCallerIdentity(ctx);
 

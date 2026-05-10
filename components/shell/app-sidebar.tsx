@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import { useAuth } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
@@ -20,6 +20,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, Building2, ChevronsUpDown } from "lucide-react";
@@ -35,11 +36,11 @@ interface NavGroupItemProps {
   item: NavItem;
   pathname: string;
   locale: "ar" | "en";
+  onNavClick: () => void;
 }
 
-function NavGroupItem({ item, pathname, locale }: NavGroupItemProps) {
+function NavGroupItem({ item, pathname, locale, onNavClick }: NavGroupItemProps) {
   const [open, setOpen] = useState(() => pathname.startsWith(item.href));
-  const router = useRouter();
   const Icon = resolveIcon(item.icon);
   const isActive = pathname.startsWith(item.href);
   const label = locale === "ar" ? item.labelAr : item.labelEn;
@@ -48,7 +49,7 @@ function NavGroupItem({ item, pathname, locale }: NavGroupItemProps) {
     <Collapsible open={open} onOpenChange={setOpen}>
       <SidebarMenuItem>
         <CollapsibleTrigger render={
-          <SidebarMenuButton isActive={isActive} tooltip={label} onClick={() => router.push(item.href)} />
+          <SidebarMenuButton isActive={isActive} tooltip={label} />
         }>
           <Icon />
           <span>{label}</span>
@@ -62,7 +63,7 @@ function NavGroupItem({ item, pathname, locale }: NavGroupItemProps) {
               const childLabel = locale === "ar" ? child.labelAr : child.labelEn;
               return (
                 <SidebarMenuSubItem key={child.href}>
-                  <SidebarMenuSubButton isActive={childActive} render={<Link href={child.href} />}>
+                  <SidebarMenuSubButton isActive={childActive} render={<Link href={child.href} onClick={onNavClick} />}>
                     <ChildIcon />
                     <span>{childLabel}</span>
                   </SidebarMenuSubButton>
@@ -84,6 +85,8 @@ interface AppSidebarProps {
 
 export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
   const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeMobile = () => { if (isMobile) setOpenMobile(false); };
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { isLoaded, orgId } = useAuth();
   const { channelId: selectedChannelId } = useSelectedChannel();
@@ -141,6 +144,7 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
                       item={item}
                       pathname={pathname}
                       locale={locale}
+                      onNavClick={closeMobile}
                     />
                   );
                 }
@@ -157,7 +161,7 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
                     <SidebarMenuButton
                       isActive={isActive}
                       tooltip={unreadTooltip}
-                      render={<Link href={item.href} />}
+                      render={<Link href={item.href} onClick={closeMobile} />}
                     >
                       <Icon />
                       <span>{label}</span>

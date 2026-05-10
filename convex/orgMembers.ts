@@ -215,6 +215,12 @@ export const changeRole = action({
       components.betterAuth.orgMutations.updateMemberRole,
       { memberId: targetMember.id, role: args.newRole },
     );
+
+    // Sync the cached role in any live sessions so the change is instant.
+    await ctx.runMutation(
+      components.betterAuth.orgMutations.syncSessionsRole,
+      { userId: args.targetUserId, organizationId: tenantId, role: args.newRole },
+    );
   },
 });
 

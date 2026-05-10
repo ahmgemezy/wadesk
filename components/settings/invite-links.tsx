@@ -325,8 +325,17 @@ function LinkCard({ link, isAdminOrSupervisor, memberNameMap }: LinkCardProps) {
       <div
         className="text-xs font-mono text-muted-foreground bg-muted rounded px-2 py-1.5 truncate"
         dir="ltr"
+        title={link.url}
       >
-        {link.url}
+        {(() => {
+          try {
+            const u = new URL(link.url);
+            const token = u.pathname.split("/").pop() ?? "";
+            return `${u.host}/join/${token.slice(0, 8)}…`;
+          } catch {
+            return link.url;
+          }
+        })()}
       </div>
 
       {/* Meta row */}

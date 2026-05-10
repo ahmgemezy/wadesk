@@ -1583,6 +1583,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         any,
         Name
       >;
+      syncSessionsRole: FunctionReference<
+        "mutation",
+        "internal",
+        { organizationId: string; role: string; userId: string },
+        any,
+        Name
+      >;
       updateMemberRole: FunctionReference<
         "mutation",
         "internal",

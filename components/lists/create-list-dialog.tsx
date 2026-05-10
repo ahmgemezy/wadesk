@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -189,6 +190,7 @@ type Props = {
 export function CreateListDialog({ open, onOpenChange, locale, initialData }: Props) {
   const tx = t[locale];
   const isRTL = locale === "ar";
+  const isMobile = useIsMobile();
   const isEditMode = !!initialData;
   const createList = useMutation(api.contactLists.create);
   const updateList = useMutation(api.contactLists.update);
@@ -365,7 +367,29 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
         </DialogHeader>
 
         {/* Two-column body: filters | preview */}
-        <div className="flex-1 overflow-hidden flex">
+        {isMobile && (
+          <div className="flex flex-col items-center justify-center flex-1 gap-5 text-center px-6 py-10">
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="size-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3" />
+              </svg>
+            </div>
+            <div className="space-y-2 max-w-xs">
+              <h3 className="text-base font-semibold text-foreground">
+                {isRTL ? "يتطلب شاشة أكبر" : "Desktop Required"}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {isRTL
+                  ? "إنشاء القوائم متاح على الحاسوب فقط. يرجى فتح التطبيق على جهاز الكمبيوتر أو اللابتوب للمتابعة."
+                  : "Creating contact lists is optimized for desktop use. Please open WABDesk on your computer or laptop to build and save lists."}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+              {isRTL ? "حسناً، فهمت" : "Got it"}
+            </Button>
+          </div>
+        )}
+        <div className={`flex-1 overflow-hidden flex${isMobile ? " hidden" : ""}`}>
           {/* ── Left: scrollable filters ── */}
           <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5 border-e">
             {/* Identity */}
@@ -597,14 +621,14 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t shrink-0 flex justify-end gap-2 bg-background">
+        {!isMobile && <div className="px-6 py-4 border-t shrink-0 flex justify-end gap-2 bg-background">
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
             {tx.cancel}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? tx.saving : isEditMode ? tx.update : tx.save}
           </Button>
-        </div>
+        </div>}
       </DialogContent>
     </Dialog>
   );

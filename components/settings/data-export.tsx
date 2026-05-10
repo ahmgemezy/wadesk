@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Loader2Icon, DownloadIcon } from "lucide-react";
+import { Loader2Icon, DownloadIcon, LockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useLocale } from "@/lib/i18n/context";
+import { useAuth } from "@/lib/auth-hooks";
 
 type ExportKind = "contacts" | "conversations";
 type ConversationFormat = "json" | "csv" | "html";
@@ -14,6 +15,8 @@ type ConversationFormat = "json" | "csv" | "html";
 export function DataExport() {
   const t = useT();
   const locale = useLocale();
+  const { orgRole } = useAuth();
+  const isAgent = orgRole === "org:agent";
   const [exporting, setExporting] = useState<ExportKind | null>(null);
   const [downloadUrls, setDownloadUrls] = useState<Record<ExportKind, string | null>>({
     contacts: null,
@@ -67,7 +70,19 @@ export function DataExport() {
         </p>
       </div>
 
-      <div className="space-y-3 rounded-lg border p-4">
+      {isAgent && (
+        <div className="flex items-start gap-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+          <LockIcon className="size-4 mt-0.5 shrink-0" />
+          <p>
+            {t(
+              "Data export is restricted to Admins and Supervisors. Contact your account administrator to request an export.",
+              "تصدير البيانات مقتصر على المدراء والمشرفين. تواصل مع مدير حسابك لطلب التصدير.",
+            )}
+          </p>
+        </div>
+      )}
+
+      {!isAgent && <div className="space-y-3 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium">
@@ -177,7 +192,7 @@ export function DataExport() {
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

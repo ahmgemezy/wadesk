@@ -39,6 +39,23 @@ export const updateMemberRole = internalMutation({
   },
 });
 
+// Patches activeOrganizationRole on all live sessions for a user so the role
+// change takes effect immediately without requiring the user to sign out.
+export const syncSessionsRole = internalMutation({
+  args: { userId: v.string(), organizationId: v.string(), role: v.string() },
+  handler: async (ctx, args) => {
+    const sessions = await ctx.db
+      .query("session")
+      .withIndex("userId", (q) => q.eq("userId", args.userId))
+      .collect();
+    await Promise.all(
+      sessions
+        .filter((s) => s.activeOrganizationId === args.organizationId)
+        .map((s) => ctx.db.patch(s._id, { activeOrganizationRole: args.role })),
+    );
+  },
+});
+
 export const deleteMember = internalMutation({
   args: { memberId: v.string() },
   handler: async (ctx, args) => {

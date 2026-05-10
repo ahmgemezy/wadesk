@@ -11,7 +11,7 @@ export const getMemberAnalytics = query({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId } = await getCallerIdentity(ctx);
 
@@ -140,7 +140,7 @@ export const getMemberAuditLog = query({
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId } = await getCallerIdentity(ctx);
 
@@ -360,7 +360,7 @@ export const getAvailableChannels = query({
   args: {},
   handler: async (ctx) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId } = await getCallerIdentity(ctx);
 
@@ -388,7 +388,7 @@ export const getAvailableDepartments = query({
   args: {},
   handler: async (ctx) => {
     const role = await getCallerRole(ctx);
-    assertAdmin(role);
+    assertAdminOrSupervisor(role);
 
     const { tenantId } = await getCallerIdentity(ctx);
 
