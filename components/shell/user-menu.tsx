@@ -18,7 +18,7 @@ interface UserMenuProps {
 
 export function UserMenu({ user, locale }: UserMenuProps) {
   const router = useRouter();
-  const { isSignedIn, userId: currentUserId } = useAuth();
+  const { userId: currentUserId } = useAuth();
   const { user: liveUser } = useUser();
   const role = resolveRole(user.role);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -27,8 +27,6 @@ export function UserMenu({ user, locale }: UserMenuProps) {
   // Use live Better Auth data for reactive name/avatar after profile edits
   const effectiveName = liveUser?.fullName ?? liveUser?.firstName ?? user.name;
   const effectiveAvatar = liveUser?.imageUrl ?? user.imageUrl;
-
-  if (!isSignedIn) return null;
 
   const handleSignOut = async () => {
     setSigningOut(true);

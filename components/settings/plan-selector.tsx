@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ExternalLink, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 type PaidPlan = "starter" | "growth" | "business";
 
@@ -35,7 +36,12 @@ export function PlanSelector() {
     try {
       if (!hasSubscription) {
         const { transactionId } = await createCheckout({ plan: planId });
-        openCheckout({ transactionId });
+        openCheckout({
+          transactionId,
+          onComplete: () => {
+            toast.success(t("Payment successful! Your plan is being updated…", "تم الدفع بنجاح! جارٍ تحديث خطتك…"));
+          },
+        });
       } else {
         await updateSubscription({ plan: planId });
       }

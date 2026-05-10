@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { LocaleProvider } from "@/lib/i18n/context";
 import { KlaroProvider } from "@/components/consent/klaro-provider";
 import { CONSENT_MODE_DEFAULT_SCRIPT } from "@/lib/klaro/consent-mode";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -103,6 +104,7 @@ export default async function RootLayout({
           <LocaleProvider locale={locale}>
             <ThemeProvider>{children}</ThemeProvider>
             <KlaroProvider />
+            <Toaster position="bottom-center" richColors />
           </LocaleProvider>
         </ConvexClientProvider>
       </body>

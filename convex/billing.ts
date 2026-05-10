@@ -1,6 +1,7 @@
 import {
   action,
   internalMutation,
+  mutation,
   httpAction,
 } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
@@ -173,6 +174,7 @@ export const setPaymentStatus = internalMutation({
     await ctx.db.patch(tenant._id, { paymentStatus: args.paymentStatus });
   },
 });
+
 
 export const handlePaddleEvent = internalMutation({
   args: {

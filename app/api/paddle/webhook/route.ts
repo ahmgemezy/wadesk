@@ -46,6 +46,11 @@ export async function POST(req: NextRequest) {
       "x-paddle-internal-secret": internalSecret,
     },
     body: rawBody,
+  }).then(async (res) => {
+    if (!res.ok) {
+      const body = await res.text().catch(() => "(unreadable)");
+      console.error(`[paddle-webhook] Convex rejected with ${res.status}: ${body}`);
+    }
   }).catch((err: unknown) => {
     console.error("[paddle-webhook] Failed to forward to Convex:", err);
   });

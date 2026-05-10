@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { useUser } from "@/lib/auth-hooks";
+import { useAuth, useUser } from "@/lib/auth-hooks";
 import { authClient } from "@/lib/auth-client";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -28,8 +28,9 @@ interface MyProfileModalProps {
 
 export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileModalProps) {
   const t = useT();
+  const { isLoaded, orgId } = useAuth();
   const { user } = useUser();
-  const profile = useQuery(api.profiles.getMyProfile);
+  const profile = useQuery(api.profiles.getMyProfile, isLoaded && orgId ? {} : "skip");
   const updateMyProfile = useMutation(api.profiles.updateMyProfile);
   const generateAvatarUploadUrl = useMutation(api.profiles.generateAvatarUploadUrl);
   const getStorageUrl = useMutation(api.profiles.getStorageUrl);

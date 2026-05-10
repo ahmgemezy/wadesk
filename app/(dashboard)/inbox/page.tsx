@@ -17,7 +17,6 @@ import { SeedButton } from "@/components/dev/seed-button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
-import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/context";
 import { useOrganization } from "@/lib/auth-hooks";
@@ -97,7 +96,6 @@ function InboxPageInner() {
 
   return (
     <>
-      <Toaster />
       <QuickReplyPanel
         open={quickReplyOpen}
         onClose={() => setQuickReplyOpen(false)}

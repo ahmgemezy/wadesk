@@ -1,20 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ChannelStatusBadge } from "@/components/onboarding/channel-status-badge";
 import { EmbeddedSignupButton } from "@/components/onboarding/embedded-signup-button";
-import { Plus, AlertTriangle, CheckCircle2, PhoneCall, Clock } from "lucide-react";
+import { Plus, AlertTriangle, CheckCircle2, PhoneCall, Clock, Terminal } from "lucide-react";
 import { toast } from "sonner";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
 import { Badge } from "@/components/ui/badge";
+
+const IS_DEV = process.env.NEXT_PUBLIC_DEV_MANUAL_CONNECT === "true";
 
 const CHANNEL_LIMITS: Record<string, number> = {
   free: 1,
@@ -33,10 +37,34 @@ export default function ChannelsListPage() {
   const plan = useQuery(api.lib.tenants.getCurrentPlan, isLoaded && orgId ? {} : "skip");
   const disconnectChannel = useMutation(api.channels.disconnect);
 
+  const devConnect = useAction(api.channels.devConnectWithCredentials);
+
   const [showSignup, setShowSignup] = useState(false);
+  const [showDevForm, setShowDevForm] = useState(false);
+  const [devFields, setDevFields] = useState({ phoneNumberId: "", wabaId: "", displayPhone: "", displayName: "" });
+  const [devLoading, setDevLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [reconnectChannelId, setReconnectChannelId] = useState<string | null>(null);
+
+  async function handleDevConnect() {
+    if (!devFields.phoneNumberId || !devFields.wabaId || !devFields.displayPhone || !devFields.displayName) {
+      toast.error("Fill in all fields");
+      return;
+    }
+    setDevLoading(true);
+    try {
+      const { displayPhone } = await devConnect(devFields);
+      setShowDevForm(false);
+      setDevFields({ phoneNumberId: "", wabaId: "", displayPhone: "", displayName: "" });
+      setSuccessMessage(`Connected: ${displayPhone}`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Connection failed");
+    } finally {
+      setDevLoading(false);
+    }
+  }
 
   const channelLimit = plan ? (CHANNEL_LIMITS[plan] ?? 1) : 1;
   type ChannelItem = NonNullable<typeof channels>[number];
@@ -144,6 +172,50 @@ export default function ChannelsListPage() {
               {t("Cancel", "إلغاء")}
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Dev-only: manual credentials form */}
+      {IS_DEV && isAdmin && (
+        <div className="mb-6">
+          {!showDevForm ? (
+            <Button variant="outline" size="sm" className="gap-2 text-muted-foreground border-dashed" onClick={() => setShowDevForm(true)}>
+              <Terminal className="size-3.5" />
+              Dev: Connect with credentials
+            </Button>
+          ) : (
+            <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/20 p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Terminal className="size-4 text-amber-600" />
+                <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">Dev Mode — Manual Connect</span>
+                <span className="text-xs text-muted-foreground ms-auto">Get these from Meta Developer Console → Testing</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Phone Number ID</Label>
+                  <Input placeholder="123456789012345" value={devFields.phoneNumberId} onChange={e => setDevFields(f => ({ ...f, phoneNumberId: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">WABA ID</Label>
+                  <Input placeholder="123456789012345" value={devFields.wabaId} onChange={e => setDevFields(f => ({ ...f, wabaId: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Display Phone</Label>
+                  <Input placeholder="+20 100 000 0000" dir="ltr" value={devFields.displayPhone} onChange={e => setDevFields(f => ({ ...f, displayPhone: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Display Name</Label>
+                  <Input placeholder="My Business" value={devFields.displayName} onChange={e => setDevFields(f => ({ ...f, displayName: e.target.value }))} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" disabled={devLoading} onClick={handleDevConnect}>
+                  {devLoading ? "Connecting…" : "Connect"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowDevForm(false)}>Cancel</Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

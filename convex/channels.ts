@@ -487,6 +487,74 @@ export const completeEmbeddedSignup = action({
   },
 });
 
+// Dev-only: connect a channel using credentials from Meta Developer Console
+// (bypasses Embedded Signup OAuth). Only callable when DEV_MANUAL_CONNECT=true in Convex env.
+export const devConnectWithCredentials = action({
+  args: {
+    phoneNumberId: v.string(),
+    wabaId: v.string(),
+    displayPhone: v.string(),
+    displayName: v.string(),
+  },
+  handler: async (ctx, args): Promise<{ channelId: Id<"channels">; displayPhone: string }> => {
+    if (process.env.DEV_MANUAL_CONNECT !== "true") {
+      throw new ConvexError("NOT_AVAILABLE");
+    }
+
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || !identity.orgId) throw new ConvexError("UNAUTHORIZED");
+    const orgRole = (identity.orgRole as string | undefined) ?? "org:agent";
+    if (orgRole !== "org:admin") throw new ConvexError("FORBIDDEN");
+    const tenantId = identity.orgId as string;
+
+    const plan: Plan = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId });
+    const limit = getChannelLimit(plan);
+    if (limit !== Infinity) {
+      const activeChannels = await ctx.runQuery(internal.channels.listByTenantId, { tenantId });
+      const activeCount = activeChannels.filter(
+        (c: { status?: string }) => c.status === "active" || c.status === "connecting"
+      ).length;
+      if (activeCount >= limit) throw new ConvexError("PLAN_LIMIT_REACHED");
+    }
+
+    const accessToken = process.env.WHATSAPP_API_TOKEN ?? "";
+    if (!accessToken) throw new ConvexError("WHATSAPP_API_TOKEN_NOT_SET");
+
+    const encryptedToken = await encrypt(accessToken);
+
+    const webhookRes = await fetch(
+      `https://graph.facebook.com/v25.0/${args.wabaId}/subscribed_apps`,
+      { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const webhookData = (await webhookRes.json()) as { success?: boolean };
+    const webhookSubscribed = webhookData.success === true;
+
+    const channelId = await ctx.runMutation(internal.channels.upsertChannel, {
+      tenantId,
+      phoneNumberId: args.phoneNumberId,
+      displayPhone: args.displayPhone,
+      displayName: args.displayName,
+      wabaId: args.wabaId,
+      encryptedToken,
+      status: webhookSubscribed ? "active" : "connecting",
+      connectedByUserId: identity.subject,
+    });
+
+    if (!webhookSubscribed) {
+      await ctx.scheduler.runAfter(60_000, internal.channels.retryWebhookSubscription, {
+        channelId,
+        wabaId: args.wabaId,
+        accessToken,
+        attempt: 1,
+      });
+    }
+
+    await ctx.runMutation(internal.channels.markWhatsappConnected, { tenantId });
+    console.log(`[DEV_CONNECT] Channel created: ${args.displayPhone} / ${args.phoneNumberId}`);
+    return { channelId, displayPhone: args.displayPhone };
+  },
+});
+
 export const discoverWabaFromCode = action({
   args: {
     accessToken: v.string(),
