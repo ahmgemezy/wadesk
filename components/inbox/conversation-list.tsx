@@ -12,6 +12,7 @@ import { Search } from "lucide-react";
 import { ConversationListItem } from "./conversation-list-item";
 import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 type AssignmentFilter = "all" | "mine" | "unassigned" | "unread";
 type StageFilter = "all" | "lead" | "prospect" | "customer" | "retained" | "churned";
@@ -74,6 +75,9 @@ export function ConversationList({
 
   const { isAuthenticated } = useConvexAuth();
   const { userId } = useAuth();
+  const { channelId: globalChannelId } = useSelectedChannel();
+  // Global channel context applies when the URL scope doesn't already specify a channel
+  const effectiveChannelId = "channelId" in scopeFilter ? scopeFilter.channelId : globalChannelId;
   const { memberships } = useOrganization({ memberships: true });
 
   const jobTitles = useQuery(
@@ -95,7 +99,7 @@ export function ConversationList({
     }),
   );
 
-  const allLabels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip") ?? [];
+  const allLabels = useQuery(api.labels.list, isAuthenticated ? {} : "skip") ?? [];
 
   // Load all conversations for the selected stage — filter assignment client-side
   // so we can show counts on all 3 tabs simultaneously without extra queries.
@@ -105,7 +109,7 @@ export function ConversationList({
       ? {
           filter: ("filter" in scopeFilter ? scopeFilter.filter : "all") as "all" | "mine" | "unassigned",
           contactStage: stageFilter,
-          ...("channelId" in scopeFilter ? { channelId: scopeFilter.channelId } : {}),
+          ...(effectiveChannelId ? { channelId: effectiveChannelId } : {}),
           ...("departmentId" in scopeFilter ? { departmentId: scopeFilter.departmentId } : {}),
           ...("status" in scopeFilter ? { status: scopeFilter.status } : {}),
         }

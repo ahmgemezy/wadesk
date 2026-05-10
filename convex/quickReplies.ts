@@ -3,23 +3,25 @@ import { query, mutation } from "./_generated/server";
 import { getCallerIdentity, assertAdminOrSupervisor } from "./lib/auth";
 
 export const list = query({
-  args: { category: v.optional(v.string()) },
+  args: {
+    category: v.optional(v.string()),
+    channelId: v.optional(v.id("channels")),
+  },
   handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
-
-    if (args.category) {
-      return ctx.db
-        .query("quickReplies")
-        .withIndex("by_tenant_category", (q) =>
-          q.eq("tenantId", tenantId).eq("category", args.category!),
-        )
-        .collect();
-    }
-
-    return ctx.db
+    const all = await ctx.db
       .query("quickReplies")
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .collect();
+
+    const channelFiltered = args.channelId
+      ? all.filter((r) => !r.channelId || r.channelId === args.channelId)
+      : all;
+
+    if (args.category) {
+      return channelFiltered.filter((r) => r.category === args.category);
+    }
+    return channelFiltered;
   },
 });
 
@@ -28,6 +30,7 @@ export const create = mutation({
     title: v.string(),
     content: v.string(),
     category: v.optional(v.string()),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -36,6 +39,7 @@ export const create = mutation({
 
     return ctx.db.insert("quickReplies", {
       tenantId,
+      channelId: args.channelId,
       title: args.title,
       content: args.content,
       usageCount: 0,

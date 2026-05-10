@@ -235,6 +235,7 @@ export const createInbound = internalMutation({
       phone: args.senderPhone,
       displayName: args.senderDisplayName,
       wabaId: args.wabaId,
+      channelId: args.channelId,
     });
 
     let conversation = await ctx.db

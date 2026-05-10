@@ -27,6 +27,34 @@ export const listForTenant = query({
   },
 });
 
+export const listAccessible = query({
+  args: {},
+  handler: async (ctx) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+    const channels = await ctx.db
+      .query("channels")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .collect();
+
+    const sanitize = (ch: (typeof channels)[number]) => {
+      const { accessToken: _a, tokenEncryptedAt: _t, ...rest } = ch;
+      return rest;
+    };
+
+    if (orgRole === "org:admin" || orgRole === "org:supervisor") {
+      return channels.map(sanitize);
+    }
+
+    // Agents: only channels they are a member of
+    const memberships = await ctx.db
+      .query("channelMembers")
+      .withIndex("by_tenant_user", (q) => q.eq("tenantId", tenantId).eq("userId", callerId))
+      .collect();
+    const memberChannelIds = new Set(memberships.map((m) => m.channelId.toString()));
+    return channels.filter((ch) => memberChannelIds.has(ch._id.toString())).map(sanitize);
+  },
+});
+
 export const listByPhoneId = internalQuery({
   args: { phoneNumberId: v.string() },
   handler: async (ctx, args) => {
@@ -637,16 +665,16 @@ export const upsertChannel = internalMutation({
     connectedByUserId: v.string(),
   },
   handler: async (ctx, args): Promise<Id<"channels">> => {
-    const existing = await ctx.db
+    // 1. Same-tenant reconnection: reuse existing channel document as-is
+    const sameTenantExisting = await ctx.db
       .query("channels")
       .withIndex("by_tenant_phone", (q) =>
         q.eq("tenantId", args.tenantId).eq("phoneNumberId", args.phoneNumberId)
       )
       .first();
 
-    if (existing) {
-      // Reconnection path — reuse existing channelId
-      await ctx.db.patch(existing._id, {
+    if (sameTenantExisting) {
+      await ctx.db.patch(sameTenantExisting._id, {
         accessToken: args.encryptedToken,
         tokenEncryptedAt: Date.now(),
         status: args.status,
@@ -657,9 +685,54 @@ export const upsertChannel = internalMutation({
         deactivationWarningsSent: undefined,
         isActive: args.status === "active",
       });
-      return existing._id;
+      return sameTenantExisting._id;
     }
 
+    // 2. Cross-tenant: same phone number was connected under a different tenant.
+    // The phone number is the stable anchor — transfer the channel document (and all
+    // its departments) to the current tenant so the customer's setup is preserved.
+    const crossTenantExisting = await ctx.db
+      .query("channels")
+      .withIndex("by_phone_number_id", (q) =>
+        q.eq("phoneNumberId", args.phoneNumberId)
+      )
+      .first();
+
+    if (crossTenantExisting) {
+      await ctx.db.patch(crossTenantExisting._id, {
+        tenantId: args.tenantId,
+        accessToken: args.encryptedToken,
+        tokenEncryptedAt: Date.now(),
+        status: args.status,
+        displayPhone: args.displayPhone,
+        displayName: args.displayName,
+        connectedAt: Date.now(),
+        disconnectedAt: undefined,
+        deactivationWarningsSent: undefined,
+        isActive: args.status === "active",
+      });
+
+      // Re-home departments and channel members to the new tenant
+      const depts = await ctx.db
+        .query("departments")
+        .withIndex("by_channel", (q) => q.eq("channelId", crossTenantExisting._id))
+        .collect();
+      for (const dept of depts) {
+        await ctx.db.patch(dept._id, { tenantId: args.tenantId });
+      }
+
+      const members = await ctx.db
+        .query("channelMembers")
+        .withIndex("by_channel", (q) => q.eq("channelId", crossTenantExisting._id))
+        .collect();
+      for (const member of members) {
+        await ctx.db.patch(member._id, { tenantId: args.tenantId });
+      }
+
+      return crossTenantExisting._id;
+    }
+
+    // 3. First connection of this number — create channel + seed default department
     const channelId = await ctx.db.insert("channels", {
       tenantId: args.tenantId,
       phoneNumberId: args.phoneNumberId,

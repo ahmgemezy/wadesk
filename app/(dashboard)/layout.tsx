@@ -19,6 +19,7 @@ import { PastDueBanner } from "@/components/shell/past-due-banner";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { TeamPresenceDropdown } from "@/components/ui/team-presence-dropdown";
 import { PresenceInitializer } from "@/components/shell/presence-initializer";
+import { SelectedChannelProvider } from "@/lib/hooks/channel-context";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,7 @@ export default async function DashboardLayout({
   const sidebarOpen = sidebarCookie === "true";
 
   return (
+    <SelectedChannelProvider>
     <SidebarProvider defaultOpen={sidebarOpen} className="h-svh overflow-hidden">
       <AppSidebar user={resolvedUser} navItems={navItems} locale={locale} />
       <SidebarInset className="overflow-hidden">
@@ -96,5 +98,6 @@ export default async function DashboardLayout({
       </SidebarInset>
       <BottomNav items={navItems} locale={locale} />
     </SidebarProvider>
+    </SelectedChannelProvider>
   );
 }

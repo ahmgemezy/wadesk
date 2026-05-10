@@ -32,7 +32,7 @@ export function LabelPicker({ conversationId, activeLabels }: LabelPickerProps) 
   const t = useT();
   const translateLabel = useTranslatedLabel();
   const { isAuthenticated } = useConvexAuth();
-  const labels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip") ?? [];
+  const labels = useQuery(api.labels.list, isAuthenticated ? {} : "skip") ?? [];
   const addLabel = useMutation(api.labels.addToConversation);
   const removeLabel = useMutation(api.labels.removeFromConversation);
 

@@ -16,6 +16,7 @@ import { useT } from "@/lib/i18n/context";
 import { toast } from "sonner";
 import type { TriggerType } from "@/lib/automationHelpers";
 import { BusinessHoursForm } from "./BusinessHoursForm";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 const PLAN_RULE_LIMITS: Record<string, number> = {
   free: 2,
@@ -41,7 +42,8 @@ type RuleDoc = {
 export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
   const t = useT();
   const { organization } = useOrganization();
-  const rules = useQuery(api.automations.listRules) as
+  const { channelId: selectedChannelId } = useSelectedChannel();
+  const rules = useQuery(api.automations.listRules, selectedChannelId ? { channelId: selectedChannelId } : {}) as
     | RuleDoc[]
     | undefined;
   const plan = useQuery(api.lib.tenants.getCurrentPlan);

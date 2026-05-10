@@ -102,7 +102,7 @@ export function ConversationThread({
   const sendMessageMutation = useMutation(api.inbox.sendMessage);
 
   const { isAuthenticated } = useConvexAuth();
-  const allLabels = useQuery(api.labels.list, isAuthenticated ? undefined : "skip");
+  const allLabels = useQuery(api.labels.list, isAuthenticated ? {} : "skip");
   const activeConv = useQuery(
     api.inbox.getConversation,
     isAuthenticated ? { conversationId: conversationId as Id<"conversations"> } : "skip"

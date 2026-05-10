@@ -54,7 +54,7 @@ export const sendCsatMessage = internalAction({
 
     // Plan gate: Growth and above only
     const plan: string | null = await ctx.runQuery(internal.lib.tenants.getPlan, { tenantId: args.tenantId });
-    if (plan === "free" || plan === "starter") return;
+    if (plan === "free") return;
 
     const language = ((settings.language ?? "ar") as CsatLanguage);
     const templateConfig = CSAT_TEMPLATE_CONFIG[language];
@@ -619,13 +619,16 @@ export const getContactCsat = query({
 // ── Public: get settings for UI ──────────────────────────────────────────────
 
 export const getSettings = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { channelId: v.optional(v.id("channels")) },
+  handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
-    const settings = await ctx.db
+    const all = await ctx.db
       .query("csatSettings")
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
-      .first();
+      .collect();
+    const settings = args.channelId
+      ? (all.find((s) => s.channelId === args.channelId) ?? all.find((s) => !s.channelId) ?? null)
+      : (all.find((s) => !s.channelId) ?? all[0] ?? null);
     return settings
       ? { ...settings, language: settings.language ?? "ar" as const }
       : { enabled: false, delayMinutes: 5, language: "ar" as const, _id: null };
@@ -640,6 +643,7 @@ export const updateSettings = mutation({
     enabled: v.boolean(),
     delayMinutes: v.number(),
     language: v.union(v.literal("ar"), v.literal("en")),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
@@ -649,10 +653,13 @@ export const updateSettings = mutation({
       throw new ConvexError("DELAY_OUT_OF_RANGE");
     }
 
-    const existing = await ctx.db
+    const all = await ctx.db
       .query("csatSettings")
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
-      .first();
+      .collect();
+    const existing = args.channelId
+      ? (all.find((s) => s.channelId === args.channelId) ?? null)
+      : (all.find((s) => !s.channelId) ?? null);
 
     const prevLanguage = existing?.language ?? "ar";
     const languageChanged = prevLanguage !== args.language;
@@ -667,6 +674,7 @@ export const updateSettings = mutation({
     } else {
       await ctx.db.insert("csatSettings", {
         tenantId,
+        channelId: args.channelId,
         enabled: args.enabled,
         delayMinutes: args.delayMinutes,
         language: args.language,

@@ -100,9 +100,11 @@ export default defineSchema({
     departmentId: v.optional(v.id("departments")),
     healthScore: v.optional(v.number()),
     sentimentOverall: v.optional(v.union(v.literal("positive"), v.literal("neutral"), v.literal("negative"))),
+    channelId: v.optional(v.id("channels")),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_phone", ["tenantId", "phone"])
+    .index("by_tenant_channel", ["tenantId", "channelId"])
     .index("by_tenant_archived", ["tenantId", "isArchived"])
     .index("by_tenant_stage", ["tenantId", "stage"])
     .index("by_tenant_assigned", ["tenantId", "assignedAgentId"])
@@ -297,6 +299,7 @@ export default defineSchema({
 
   quickReplies: defineTable({
     tenantId: v.string(),
+    channelId: v.optional(v.id("channels")),
     title: v.string(),
     content: v.string(),
     usageCount: v.number(),
@@ -475,13 +478,15 @@ export default defineSchema({
       v.literal("video"),
       v.literal("document"),
     )),
+    channelId: v.optional(v.id("channels")),
     createdBy: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_tenant_enabled", ["tenantId", "enabled"])
-    .index("by_tenant_priority", ["tenantId", "priority"]),
+    .index("by_tenant_priority", ["tenantId", "priority"])
+    .index("by_tenant_channel", ["tenantId", "channelId"]),
 
   businessHours: defineTable({
     tenantId: v.string(),
@@ -505,6 +510,7 @@ export default defineSchema({
 
   conversationLabels: defineTable({
     tenantId: v.string(),
+    channelId: v.optional(v.id("channels")),
     name: v.string(),
     color: v.string(),
     emoji: v.optional(v.string()),
@@ -531,15 +537,18 @@ export default defineSchema({
 
   csatSettings: defineTable({
     tenantId: v.string(),
+    channelId: v.optional(v.id("channels")),
     enabled: v.boolean(),
     delayMinutes: v.number(),          // how many minutes after resolve to send (default: 5)
     language: v.optional(v.union(v.literal("ar"), v.literal("en"))), // template language
     updatedAt: v.number(),
   })
-    .index("by_tenant", ["tenantId"]),
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_channel", ["tenantId", "channelId"]),
 
   messageTemplates: defineTable({
     tenantId: v.string(),
+    channelId: v.optional(v.id("channels")),
     title: v.string(),
     body: v.string(),
     category: v.optional(v.string()),
@@ -709,6 +718,7 @@ export default defineSchema({
   notificationPreferences: defineTable({
     tenantId: v.string(),
     userId: v.string(),
+    channelId: v.optional(v.id("channels")),
     eventType: v.union(
       v.literal("sla_breach"),
       v.literal("followup_due"),
@@ -723,7 +733,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_tenant_user", ["tenantId", "userId"])
-    .index("by_tenant_user_event", ["tenantId", "userId", "eventType"]),
+    .index("by_tenant_user_event", ["tenantId", "userId", "eventType"])
+    .index("by_tenant_user_channel", ["tenantId", "userId", "channelId"]),
 
   memberProfiles: defineTable({
     tenantId: v.string(),

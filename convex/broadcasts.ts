@@ -13,14 +13,17 @@ import type { Doc } from "./_generated/dataModel";
 const META_BASE = "https://graph.facebook.com/v25.0";
 
 export const listForTenant = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { channelId: v.optional(v.id("channels")) },
+  handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
-    return ctx.db
+    const all = await ctx.db
       .query("broadcasts")
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .order("desc")
       .collect();
+    return args.channelId
+      ? all.filter((b) => b.channelId === args.channelId)
+      : all;
   },
 });
 

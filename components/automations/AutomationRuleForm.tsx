@@ -4,6 +4,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 import {
   Sheet,
   SheetContent,
@@ -82,6 +83,7 @@ export function AutomationRuleForm({
 }: AutomationRuleFormProps) {
   const t = useT();
   const locale = useLocale();
+  const { channelId: selectedChannelId } = useSelectedChannel();
   const createRule = useMutation(api.automations.createRule);
   const updateRule = useMutation(api.automations.updateRule);
   const businessHours = useQuery(
@@ -182,6 +184,7 @@ export function AutomationRuleForm({
           ...baseArgs,
           ...(triggerType === "keyword" ? { keywordList } : {}),
           ...(triggerType === "no_reply_timeout" ? { timeoutMinutes } : {}),
+          ...(selectedChannelId ? { channelId: selectedChannelId } : {}),
         });
       }
       toast.success(

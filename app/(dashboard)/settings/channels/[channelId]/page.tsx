@@ -7,7 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { DepartmentList } from "@/components/settings/department-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Check, X, Trash2, UserCircle, AlertTriangle, Clock } from "lucide-react";
+import { Pencil, Check, X, Trash2, UserCircle, AlertTriangle, Clock, CheckCircle2, Zap, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
@@ -40,6 +40,11 @@ export default function ChannelSettingsPage({
   const updateReopenWindow = useMutation(api.channels.updateReopenWindow);
   const [reopenHours, setReopenHours] = useState<string>("");
   const [savingReopen, setSavingReopen] = useState(false);
+
+  const rules = useQuery(api.automations.listRules, {}) as { _id: string }[] | undefined;
+  const templates = useQuery(api.messageTemplates.list, {}) as { _id: string }[] | undefined;
+  const automationCount = rules?.length ?? 0;
+  const templateCount = templates?.length ?? 0;
 
   useEffect(() => {
     if (channel) {
@@ -165,8 +170,28 @@ export default function ChannelSettingsPage({
 
       {reconnectSuccess && (
         <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-800">
-          <AlertDescription className="text-green-800 dark:text-green-300 font-cairo">
-            {t("Reconnected successfully!", "تم إعادة الاتصال بنجاح!")}
+          <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+          <AlertDescription className="text-green-800 dark:text-green-300">
+            <p className="font-semibold font-cairo mb-2">
+              {t("Reconnected successfully!", "تم إعادة الاتصال بنجاح!")}
+            </p>
+            <p className="text-xs mb-3 font-cairo text-green-700 dark:text-green-400">
+              {t("Your workspace data is ready:", "بياناتك جاهزة:")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline"
+                className="h-7 text-xs border-green-300 text-green-800 hover:bg-green-100 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/30 gap-1.5"
+                onClick={() => router.push("/automations")}>
+                <Zap className="size-3" />
+                {t(`${automationCount} Automation Rules`, `${automationCount} قاعدة أتمتة`)}
+              </Button>
+              <Button size="sm" variant="outline"
+                className="h-7 text-xs border-green-300 text-green-800 hover:bg-green-100 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/30 gap-1.5"
+                onClick={() => router.push("/settings/templates")}>
+                <FileText className="size-3" />
+                {t(`${templateCount} Templates`, `${templateCount} قالب`)}
+              </Button>
+            </div>
           </AlertDescription>
         </Alert>
       )}
@@ -341,6 +366,34 @@ export default function ChannelSettingsPage({
       <div className="border-t pt-6">
         <DepartmentList channelId={channelId} />
       </div>
+
+      {channel.status === "active" && (
+        <div className="border-t pt-6 space-y-3">
+          <h3 className="text-sm font-medium">{t("Workspace Settings", "إعدادات مساحة العمل")}</h3>
+          <p className="text-xs text-muted-foreground font-cairo">
+            {t(
+              "Automation rules and message templates apply to all your channels.",
+              "قواعد الأتمتة وقوالب الرسائل تُطبَّق على جميع قنواتك."
+            )}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" className="gap-1.5"
+              onClick={() => router.push("/automations")}>
+              <Zap className="size-3.5" />
+              {rules === undefined
+                ? t("Automation Rules", "قواعد الأتمتة")
+                : t(`${automationCount} Automation Rules`, `${automationCount} قاعدة أتمتة`)}
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1.5"
+              onClick={() => router.push("/settings/templates")}>
+              <FileText className="size-3.5" />
+              {templates === undefined
+                ? t("Message Templates", "قوالب الرسائل")
+                : t(`${templateCount} Templates`, `${templateCount} قالب`)}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="border-t pt-6">
         <Button

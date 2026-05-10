@@ -14,6 +14,7 @@ import { NotificationsPreferencesRow } from "@/components/settings/notifications
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { TOGGLEABLE_EVENT_TYPES } from "@/convex/lib/notificationEvents";
 import { useT } from "@/lib/i18n/context";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 function PreferenceRowSkeleton() {
   return (
@@ -48,8 +49,9 @@ function PreferencesLoadingSkeleton() {
 
 export function NotificationsPreferences() {
   const t = useT();
+  const { channelId: selectedChannelId } = useSelectedChannel();
   const { preferences, plan, isLoading, updatePreference } =
-    useNotificationPreferences();
+    useNotificationPreferences(selectedChannelId);
 
   return (
     <Card>

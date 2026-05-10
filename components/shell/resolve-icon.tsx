@@ -18,6 +18,7 @@ import {
   SlidersHorizontal,
   Bell,
   Bot,
+  ShieldCheck,
 } from "lucide-react";
 import type { IconName } from "@/lib/shell/types";
 import type { LucideIcon } from "lucide-react";
@@ -42,6 +43,7 @@ const ICON_MAP: Record<IconName, LucideIcon> = {
   SlidersHorizontal,
   Bell,
   Bot,
+  ShieldCheck,
 };
 
 export function resolveIcon(name: IconName): LucideIcon {

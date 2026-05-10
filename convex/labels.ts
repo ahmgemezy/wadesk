@@ -3,13 +3,15 @@ import { query, mutation } from "./_generated/server";
 import { getCallerIdentity, assertAdminOrSupervisor, assertAdmin, type OrgRole } from "./lib/auth";
 
 export const list = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { channelId: v.optional(v.id("channels")) },
+  handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
-    return ctx.db
+    const all = await ctx.db
       .query("conversationLabels")
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .collect();
+    if (!args.channelId) return all;
+    return all.filter((l) => !l.channelId || l.channelId === args.channelId);
   },
 });
 
@@ -18,6 +20,7 @@ export const create = mutation({
     name: v.string(),
     color: v.string(),
     emoji: v.optional(v.string()),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -30,12 +33,13 @@ export const create = mutation({
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .collect();
 
-    if (existing.some((l) => l.name.toLowerCase() === args.name.trim().toLowerCase())) {
+    if (existing.some((l) => l.name.toLowerCase() === args.name.trim().toLowerCase() && l.channelId === args.channelId)) {
       throw new ConvexError("LABEL_EXISTS");
     }
 
     return ctx.db.insert("conversationLabels", {
       tenantId,
+      channelId: args.channelId,
       name: args.name.trim(),
       color: args.color,
       emoji: args.emoji,

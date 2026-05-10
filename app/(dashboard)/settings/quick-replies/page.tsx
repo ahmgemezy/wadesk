@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 
@@ -13,17 +13,22 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 
 import { useT } from "@/lib/i18n/context";
-import { Plus, Pencil, Trash2, MessageSquare, FileText, ExternalLink } from "lucide-react";
+import { Plus, Pencil, Trash2, MessageSquare, FileText, ExternalLink, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 export default function QuickRepliesPage() {
-  const quickReplies = useQuery(api.quickReplies.list, {}) as
-    | { _id: string; title: string; content: string; category?: string }[]
+  const { isAuthenticated } = useConvexAuth();
+  const { channelId } = useSelectedChannel();
+  const qArgs = isAuthenticated ? (channelId ? { channelId } : {}) : "skip" as const;
+
+  const quickReplies = useQuery(api.quickReplies.list, qArgs) as
+    | { _id: string; title: string; content: string; category?: string; channelId?: string }[]
     | undefined;
-  const messageTemplates = useQuery(api.messageTemplates.list, {}) as
-    | { _id: string; title: string; body: string; category?: string; language: string }[]
+  const messageTemplates = useQuery(api.messageTemplates.list, qArgs) as
+    | { _id: string; title: string; body: string; category?: string; language: string; channelId?: string }[]
     | undefined;
   const createReply = useMutation(api.quickReplies.create);
   const removeReply = useMutation(api.quickReplies.remove);
@@ -72,6 +77,7 @@ export default function QuickRepliesPage() {
           title: title.trim(),
           content: body.trim(),
           category: category.trim() || undefined,
+          ...(channelId ? { channelId } : {}),
         });
       }
       setIsSheetOpen(false);
@@ -146,11 +152,19 @@ export default function QuickRepliesPage() {
               </div>
               
               <CardHeader className="pb-2 pe-16 space-y-0 text-start">
-                {qr.category && (
-                  <Badge variant="secondary" className="mb-2 w-fit font-normal text-[10px] uppercase tracking-wider">
-                    {qr.category}
-                  </Badge>
-                )}
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {qr.category && (
+                    <Badge variant="secondary" className="w-fit font-normal text-[10px] uppercase tracking-wider">
+                      {qr.category}
+                    </Badge>
+                  )}
+                  {qr.channelId && (
+                    <Badge variant="outline" className="w-fit font-normal text-[10px] gap-1">
+                      <Hash className="size-2.5" />
+                      {t("Channel", "قناة")}
+                    </Badge>
+                  )}
+                </div>
                 <CardTitle className="text-base font-semibold leading-tight line-clamp-1">
                   {qr.title}
                 </CardTitle>

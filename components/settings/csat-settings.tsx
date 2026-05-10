@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
 import { useOrganization } from "@/lib/auth-hooks";
 import { Lock, RefreshCw, CheckCircle2, Clock, XCircle, Wifi } from "lucide-react";
+import { PlanGate } from "@/components/ui/plan-gate";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 type TemplateStatus = "APPROVED" | "PENDING" | "REJECTED" | "PAUSED" | null;
 type CsatLanguage = "ar" | "en";
@@ -70,8 +72,9 @@ export function CsatSettings() {
   const { membership } = useOrganization();
   const role = membership?.role as string | undefined;
   const isAdmin = role === "org:admin" || role === "admin";
+  const { channelId: selectedChannelId } = useSelectedChannel();
 
-  const settings = useQuery(api.csat.getSettings, isAuthenticated ? undefined : "skip");
+  const settings = useQuery(api.csat.getSettings, isAuthenticated ? (selectedChannelId ? { channelId: selectedChannelId } : {}) : "skip");
   const templateStatuses = useQuery(api.csat.getCsatTemplateStatuses, isAuthenticated ? undefined : "skip");
   const updateSettings = useMutation(api.csat.updateSettings);
   const syncStatuses = useAction(api.csat.syncCsatTemplateStatuses);
@@ -95,7 +98,7 @@ export function CsatSettings() {
   async function handleSave() {
     setSaving(true);
     try {
-      await updateSettings({ enabled, delayMinutes, language });
+      await updateSettings({ enabled, delayMinutes, language, ...(selectedChannelId ? { channelId: selectedChannelId } : {}) });
       toast.success(t("Settings saved", "تم حفظ الإعدادات"));
       if (enabled) {
         toast.info(
@@ -163,6 +166,7 @@ export function CsatSettings() {
   const preview = TEMPLATE_PREVIEW[language];
 
   return (
+    <PlanGate requiredPlan="starter" featureLabel={t("CSAT", "تقييم رضا العملاء")}>
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold">{t("Customer Satisfaction (CSAT)", "تقييم رضا العملاء (CSAT)")}</h2>
@@ -359,5 +363,6 @@ export function CsatSettings() {
         </div>
       )}
     </div>
+    </PlanGate>
   );
 }

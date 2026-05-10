@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 function Count({ n }: { n: number }) {
   return (
@@ -28,6 +29,7 @@ function Count({ n }: { n: number }) {
 
 export function InboxQueueTree() {
   const t = useT();
+  const { channelId: selectedChannelId } = useSelectedChannel();
   const data = useQuery(api.inbox.queueCounts);
   const params = useSearchParams();
   const scope = params.get("scope") ?? "";
@@ -119,7 +121,10 @@ export function InboxQueueTree() {
 
               <div className="my-1.5 border-t border-border" />
 
-              {data.channels.map((c) => {
+              {(selectedChannelId
+                ? data.channels.filter((c) => c._id === selectedChannelId)
+                : data.channels
+              ).map((c) => {
                 const channelKey = `ch:${c._id}`;
                 const open = expanded[channelKey] ?? false;
                 return (

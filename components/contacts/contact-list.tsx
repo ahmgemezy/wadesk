@@ -32,6 +32,7 @@ import { ContactTable } from "./contact-table";
 import { ContactCompactList } from "./contact-compact-list";
 import { cn } from "@/lib/utils";
 import { type Stage, STAGE_CONFIG, STAGE_TABS } from "./contact-stage-config";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 type ViewMode = "cards" | "table" | "compact";
 
@@ -103,6 +104,7 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
 
   const { isLoaded, orgId } = useAuth();
   const hasOrg = isLoaded && !!orgId;
+  const { channelId: selectedChannelId } = useSelectedChannel();
 
   const { membership } = useOrganization();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,7 +125,9 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
 
   const listResults = usePaginatedQuery(
     api.contacts.listForTenant,
-    hasOrg && !isSearching && !isStageFiltered ? { includeArchived } : "skip",
+    hasOrg && !isSearching && !isStageFiltered
+      ? { includeArchived, ...(selectedChannelId ? { channelId: selectedChannelId } : {}) }
+      : "skip",
     { initialNumItems: PAGE_SIZE },
   );
 

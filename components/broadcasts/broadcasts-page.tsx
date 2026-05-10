@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { PlanGate } from "@/components/ui/plan-gate";
+import { usePlan } from "@/lib/hooks/use-plan";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -14,6 +16,7 @@ import {
 } from "lucide-react";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { CreateBroadcastModal } from "./create-broadcast-modal";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 type Broadcast = Doc<"broadcasts">;
 
@@ -263,7 +266,10 @@ const tx = {
 export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
   const t = tx[locale];
   const [modalOpen, setModalOpen] = useState(false);
-  const broadcasts = useQuery(api.broadcasts.listForTenant);
+  const { channelId: selectedChannelId } = useSelectedChannel();
+  const broadcasts = useQuery(api.broadcasts.listForTenant, selectedChannelId ? { channelId: selectedChannelId } : {});
+  const { atLeast } = usePlan();
+  const canBroadcast = atLeast("starter");
 
   const { active, history } = useMemo(() => {
     const all = broadcasts ?? [];
@@ -296,6 +302,15 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
   return (
     <>
       <div className="p-6 space-y-6">
+        {/* Plan gate banner */}
+        {!canBroadcast && (
+          <PlanGate
+            requiredPlan="starter"
+            featureLabel={locale === "ar" ? "الإشعارات التلقائية" : "Broadcasts"}
+            variant="banner"
+          />
+        )}
+
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -321,7 +336,8 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
             <Button
               size="sm"
               className="shrink-0 gap-1.5"
-              onClick={() => setModalOpen(true)}
+              disabled={!canBroadcast}
+              onClick={() => canBroadcast && setModalOpen(true)}
             >
               <PlusIcon className="size-4" />
               {t.create}
@@ -339,7 +355,7 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
               <p className="font-semibold">{t.emptyTitle}</p>
               <p className="text-sm text-muted-foreground mt-1">{t.emptyHint}</p>
             </div>
-            <Button onClick={() => setModalOpen(true)} className="gap-1.5">
+            <Button onClick={() => canBroadcast && setModalOpen(true)} disabled={!canBroadcast} className="gap-1.5">
               <PlusIcon className="size-4" />
               {t.emptyBtn}
             </Button>

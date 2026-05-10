@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,10 +73,13 @@ function renderBody(text: string): React.ReactNode {
 
 export function TemplatesSettings() {
   const t = useT();
+  const { isAuthenticated } = useConvexAuth();
+  const { channelId } = useSelectedChannel();
 
-  const templates = useQuery(api.messageTemplates.list, {}) as
-    | Template[]
-    | undefined;
+  const templates = useQuery(
+    api.messageTemplates.list,
+    isAuthenticated ? (channelId ? { channelId } : {}) : "skip",
+  ) as Template[] | undefined;
 
   const createTemplate = useMutation(api.messageTemplates.create);
   const updateTemplate = useMutation(api.messageTemplates.update);
@@ -168,6 +172,7 @@ export function TemplatesSettings() {
           body: body.trim(),
           category: category.trim() || undefined,
           language,
+          ...(channelId ? { channelId } : {}),
         });
         toast.success(t("Template created", "تم إنشاء القالب"));
       }

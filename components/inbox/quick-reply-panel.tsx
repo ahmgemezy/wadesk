@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/context";
@@ -41,8 +42,10 @@ export function QuickReplyPanel({
   const [fillValues, setFillValues] = useState<Record<string, string>>({});
   const [fillErrors, setFillErrors] = useState<string[]>([]);
 
-  const quickReplies = useQuery(api.quickReplies.list, open ? {} : "skip");
-  const messageTemplates = useQuery(api.messageTemplates.list, open ? {} : "skip");
+  const { channelId } = useSelectedChannel();
+  const panelArgs = open ? (channelId ? { channelId } : {}) : "skip" as const;
+  const quickReplies = useQuery(api.quickReplies.list, panelArgs);
+  const messageTemplates = useQuery(api.messageTemplates.list, panelArgs);
 
   const allItems: ReplyItem[] | undefined = useMemo(() => {
     if (!quickReplies || !messageTemplates) return undefined;

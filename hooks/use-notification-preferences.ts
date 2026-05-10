@@ -10,6 +10,7 @@ import {
 } from "@/convex/lib/notificationEvents";
 import { useT } from "@/lib/i18n/context";
 import type { Plan } from "@/convex/lib/planLimits";
+import type { Id } from "@/convex/_generated/dataModel";
 
 type PreferenceRow = {
   eventType: ToggleableEventType;
@@ -32,16 +33,18 @@ type UseNotificationPreferencesReturn = {
   ) => Promise<void>;
 };
 
-export function useNotificationPreferences(): UseNotificationPreferencesReturn {
+export function useNotificationPreferences(channelId?: Id<"channels"> | null): UseNotificationPreferencesReturn {
   const t = useT();
+  const queryArgs = channelId ? { channelId } : {};
 
-  const rawPreferences = useQuery(api.notifications.getPreferences);
+  const rawPreferences = useQuery(api.notifications.getPreferences, queryArgs);
   const plan = useQuery(api.lib.tenants.getCurrentPlan);
 
   const updatePrefMutation = useMutation(
     api.notifications.updatePreference,
   ).withOptimisticUpdate((localStore, args) => {
-    const existing = localStore.getQuery(api.notifications.getPreferences, {});
+    const key = args.channelId ? { channelId: args.channelId } : {};
+    const existing = localStore.getQuery(api.notifications.getPreferences, key);
     if (existing === undefined) return;
     const updated = existing.map((row) =>
       row.eventType === args.eventType
@@ -52,7 +55,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
           }
         : row,
     );
-    localStore.setQuery(api.notifications.getPreferences, {}, updated);
+    localStore.setQuery(api.notifications.getPreferences, key, updated);
   });
 
   const computedPreferences = useMemo<PreferenceRow[] | undefined>(() => {
@@ -73,7 +76,7 @@ export function useNotificationPreferences(): UseNotificationPreferencesReturn {
       emailEnabled: boolean,
     ): Promise<void> => {
       try {
-        await updatePrefMutation({ eventType, inAppEnabled, emailEnabled });
+        await updatePrefMutation({ eventType, inAppEnabled, emailEnabled, ...(channelId ? { channelId } : {}) });
       } catch (err) {
         toast.error(
           t(

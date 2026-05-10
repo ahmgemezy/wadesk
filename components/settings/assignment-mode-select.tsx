@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useT } from "@/lib/i18n/context";
+import Link from "next/link";
 
 interface AssignmentModeSelectProps {
   channelId: Id<"channels">;
@@ -84,12 +85,16 @@ export function AssignmentModeSelect({
                   className="mt-1"
                 />
                 <div>
-                  <div className="font-medium text-sm">
+                  <div className="font-medium text-sm flex items-center flex-wrap gap-1.5">
                     {t(mode.labelEn, mode.labelAr)}
                     {isLocked && (
-                      <span className="ms-2 text-xs text-muted-foreground">
-                        ({t("Growth plan required", "خطة النمو مطلوبة")})
-                      </span>
+                      <Link
+                        href="/settings/billing"
+                        className="text-xs font-normal text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:opacity-80"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {t("Growth plan required — Upgrade", "خطة النمو مطلوبة — ترقية")}
+                      </Link>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">
@@ -104,7 +109,10 @@ export function AssignmentModeSelect({
                 <Tooltip key={mode.value}>
                   <TooltipTrigger render={inner} />
                   <TooltipContent>
-                    {t("Requires Growth plan or above", "ترقية إلى خطة النمو أو أعلى")}
+                    {t(
+                      "Round Robin requires the Growth plan or above. Go to Settings → Billing to upgrade.",
+                      "التوزيع الدوري يتطلب خطة النمو أو أعلى. انتقل إلى الإعدادات → الفواتير للترقية.",
+                    )}
                   </TooltipContent>
                 </Tooltip>
               );

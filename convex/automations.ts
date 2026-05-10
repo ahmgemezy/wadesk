@@ -13,14 +13,17 @@ import {
 } from "../lib/automationHelpers";
 
 export const listRules = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { channelId: v.optional(v.id("channels")) },
+  handler: async (ctx, args) => {
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
     assertAdminOrSupervisor(orgRole as OrgRole);
-    return ctx.db
+    const all = await ctx.db
       .query("automationRules")
       .withIndex("by_tenant_priority", (q) => q.eq("tenantId", tenantId))
       .collect();
+    return args.channelId
+      ? all.filter((r) => !r.channelId || r.channelId === args.channelId)
+      : all;
   },
 });
 
@@ -57,6 +60,7 @@ export const createRule = mutation({
       v.literal("video"),
       v.literal("document"),
     )),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
@@ -113,6 +117,7 @@ export const createRule = mutation({
       senderName: args.senderName?.trim() || undefined,
       mediaUrl: args.mediaUrl?.trim() || undefined,
       mediaType: args.mediaType,
+      channelId: args.channelId,
       createdBy: callerId,
       createdAt: Date.now(),
       updatedAt: Date.now(),

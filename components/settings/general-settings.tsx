@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -9,6 +10,7 @@ import { useT } from "@/lib/i18n/context";
 import { useAuth } from "@/lib/auth-hooks";
 import { Mail, ImageIcon, Loader2Icon } from "lucide-react";
 import { ForwardTemplateCard } from "./forward-template-card";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 function getInitials(name: string | null): string {
   if (!name) return "W";
@@ -143,6 +145,15 @@ function BrandLogoCard() {
 
 export function GeneralSettings() {
   const t = useT();
+  const router = useRouter();
+  const { channelId: selectedChannelId } = useSelectedChannel();
+
+  useEffect(() => {
+    if (selectedChannelId) {
+      router.replace(`/settings/channels/${selectedChannelId}`);
+    }
+  }, [selectedChannelId, router]);
+
   const currentLocale = useQuery(api.lib.tenants.getEmailLocalePublic);
   const updateLocale = useMutation(api.lib.tenants.updateEmailLocale);
 

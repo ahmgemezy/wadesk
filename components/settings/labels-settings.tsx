@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 import { useOrganization } from "@/lib/auth-hooks";
 import { cn } from "@/lib/utils";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -43,7 +44,11 @@ export function LabelsSettings() {
     { name: "VIP",                        color: "yellow", emoji: "⭐" },
   ];
 
-  const labelsQuery = useQuery(api.labels.list, isAuthenticated ? undefined : "skip");
+  const { channelId } = useSelectedChannel();
+  const labelsQuery = useQuery(
+    api.labels.list,
+    isAuthenticated ? (channelId ? { channelId } : {}) : "skip",
+  );
   const labels = labelsQuery ?? [];
   const createLabel = useMutation(api.labels.create);
   const removeLabel = useMutation(api.labels.remove);
@@ -111,7 +116,7 @@ export function LabelsSettings() {
     setCreating(true);
     setFormError(null);
     try {
-      await createLabel({ name: name.trim(), color, emoji: emoji.trim() || undefined });
+      await createLabel({ name: name.trim(), color, emoji: emoji.trim() || undefined, ...(channelId ? { channelId } : {}) });
       setName("");
       setEmoji("");
       toast.success(t("Label created", "تم إنشاء التصنيف"));
@@ -162,7 +167,7 @@ export function LabelsSettings() {
   async function seedDefaults() {
     for (const def of DEFAULT_LABELS) {
       try {
-        await createLabel(def);
+        await createLabel({ ...def, ...(channelId ? { channelId } : {}) });
       } catch {
         // skip if already exists
       }

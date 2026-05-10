@@ -26,7 +26,10 @@ import { ChevronDown, Building2, ChevronsUpDown } from "lucide-react";
 import { UserMenu } from "./user-menu";
 import { LocaleSwitcher } from "./locale-switcher";
 import { resolveIcon } from "./resolve-icon";
+import { ChannelSwitcher } from "./channel-switcher";
+import { useSelectedChannel } from "@/lib/hooks/channel-context";
 import type { NavItem, ResolvedUser } from "@/lib/shell/types";
+import type { Id } from "@/convex/_generated/dataModel";
 
 interface NavGroupItemProps {
   item: NavItem;
@@ -83,9 +86,12 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useConvexAuth();
   const { isLoaded, orgId } = useAuth();
+  const { channelId: selectedChannelId } = useSelectedChannel();
   const conversations = useQuery(
     api.inbox.listConversations,
-    !isLoading && isAuthenticated && isLoaded && !!orgId ? { filter: "all" } : "skip",
+    !isLoading && isAuthenticated && isLoaded && !!orgId
+      ? { filter: "all", ...(selectedChannelId ? { channelId: selectedChannelId as Id<"channels"> } : {}) }
+      : "skip",
   );
   const totalUnread = conversations?.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0) ?? 0;
 
@@ -95,19 +101,24 @@ export function AppSidebar({ user, navItems, locale }: AppSidebarProps) {
       side={locale === "ar" ? "right" : "left"}
       dir={locale === "ar" ? "rtl" : "ltr"}
     >
-      <SidebarHeader className="p-3 flex flex-row items-center gap-2">
-        <div className="flex-1 flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
-          <span className="text-base font-semibold tracking-tight text-foreground">WABDesk</span>
-          <Link
-            href="/select-org"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Building2 className="size-3 shrink-0" />
-            <span className="truncate">{user.orgName}</span>
-            <ChevronsUpDown className="size-3 shrink-0" />
-          </Link>
+      <SidebarHeader className="p-3 flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
+            <span className="text-base font-semibold tracking-tight text-foreground">WABDesk</span>
+            <Link
+              href="/select-org"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Building2 className="size-3 shrink-0" />
+              <span className="truncate">{user.orgName}</span>
+              <ChevronsUpDown className="size-3 shrink-0" />
+            </Link>
+          </div>
+          <LocaleSwitcher locale={locale} />
         </div>
-        <LocaleSwitcher locale={locale} />
+        <div className="group-data-[collapsible=icon]:hidden">
+          <ChannelSwitcher locale={locale} />
+        </div>
       </SidebarHeader>
 
       <SidebarSeparator />

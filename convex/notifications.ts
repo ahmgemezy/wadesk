@@ -286,8 +286,8 @@ export const notifyDispatch = internalMutation({
  * any event the user has not explicitly saved a row for.
  */
 export const getPreferences = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { channelId: v.optional(v.id("channels")) },
+  handler: async (ctx, args) => {
     const { tenantId, callerId } = await getCallerIdentity(ctx);
     if (!tenantId) return [];
     const rows = await ctx.db
@@ -296,7 +296,11 @@ export const getPreferences = query({
         q.eq("tenantId", tenantId).eq("userId", callerId),
       )
       .collect();
-    const byEvent = new Map(rows.map((r) => [r.eventType, r]));
+    // When channelId provided, prefer channel-specific rows; fall back to global (no channelId)
+    const scoped = args.channelId
+      ? rows.filter((r) => r.channelId === args.channelId || !r.channelId)
+      : rows.filter((r) => !r.channelId);
+    const byEvent = new Map(scoped.map((r) => [r.eventType, r]));
     return TOGGLEABLE_EVENT_TYPES.map((et) => {
       const row = byEvent.get(et);
       const def = EVENT_DEFAULTS[et];
@@ -320,11 +324,13 @@ export const updatePreference = mutation({
     eventType: toggleableEventTypeValidator,
     inAppEnabled: v.boolean(),
     emailEnabled: v.boolean(),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId } = await getCallerIdentity(ctx);
     if (!tenantId) throw new Error("Unauthorized");
-    const existing = await ctx.db
+    // Match on both eventType and channelId (null-safe)
+    const rows = await ctx.db
       .query("notificationPreferences")
       .withIndex("by_tenant_user_event", (q) =>
         q
@@ -332,7 +338,10 @@ export const updatePreference = mutation({
           .eq("userId", callerId)
           .eq("eventType", args.eventType),
       )
-      .first();
+      .collect();
+    const existing = rows.find((r) =>
+      args.channelId ? r.channelId === args.channelId : !r.channelId,
+    ) ?? null;
     const now = Date.now();
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -344,6 +353,7 @@ export const updatePreference = mutation({
       await ctx.db.insert("notificationPreferences", {
         tenantId,
         userId: callerId,
+        channelId: args.channelId,
         eventType: args.eventType,
         inAppEnabled: args.inAppEnabled,
         emailEnabled: args.emailEnabled,

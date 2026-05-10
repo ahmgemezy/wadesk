@@ -24,6 +24,7 @@ export const listForTenant = query({
   args: {
     paginationOpts: paginationOptsValidator,
     includeArchived: v.optional(v.boolean()),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
@@ -40,7 +41,10 @@ export const listForTenant = query({
           )
           .order("desc")
           .paginate(args.paginationOpts);
-    const enriched = await enrichWithConversationCount(ctx, result.page);
+    const page = args.channelId
+      ? result.page.filter((c) => !c.channelId || c.channelId === args.channelId)
+      : result.page;
+    const enriched = await enrichWithConversationCount(ctx, page);
     return { ...result, page: enriched };
   },
 });
@@ -229,6 +233,7 @@ export const upsertByPhone = internalMutation({
     displayName: v.optional(v.string()),
     wabaId: v.optional(v.string()),
     incrementConversations: v.optional(v.boolean()),
+    channelId: v.optional(v.id("channels")),
   },
   handler: async (ctx, args) => {
     // Normalize to E.164: Meta often sends numbers without the leading "+"
@@ -267,6 +272,7 @@ export const upsertByPhone = internalMutation({
       country: autoCountry,
       totalConversations: args.incrementConversations ? 1 : 0,
       wabaId: args.wabaId,
+      channelId: args.channelId,
       firstSeenAt: Date.now(),
       lastSeenAt: Date.now(),
       createdAt: Date.now(),
