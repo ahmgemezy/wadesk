@@ -157,7 +157,7 @@ export function ConversationThread({
 
   if (messages === undefined) {
     return (
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 bg-[#f7f3ee] dark:bg-zinc-950">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
@@ -174,7 +174,7 @@ export function ConversationThread({
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+      <div className="flex-1 flex items-center justify-center text-stone-400 bg-[#f7f3ee] dark:bg-zinc-950">
         {locale === "en" ? "No messages yet" : "لا توجد رسائل بعد"}
       </div>
     );
@@ -228,17 +228,17 @@ export function ConversationThread({
               )}
         </div>
       )}
-      <div className="flex-1 min-h-0 overflow-y-auto bg-muted/20">
+      <div className="flex-1 min-h-0 overflow-y-auto bg-[#f7f3ee] dark:bg-zinc-950">
         <div className="p-4 space-y-4">
         {groups.map((group) => (
           <div key={group.date}>
             {/* Date divider */}
             <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px bg-border/60" />
-              <span className="text-[10px] font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full whitespace-nowrap">
+              <div className="flex-1 h-px bg-black/10" />
+              <span className="text-[10px] font-medium text-stone-500 bg-stone-200 dark:bg-zinc-800 dark:text-zinc-400 px-3 py-1 rounded-full whitespace-nowrap">
                 {group.date}
               </span>
-              <div className="flex-1 h-px bg-border/60" />
+              <div className="flex-1 h-px bg-black/10" />
             </div>
 
             {/* Messages for this date */}

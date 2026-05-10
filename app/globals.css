@@ -71,9 +71,9 @@
   --chart-5: #AF52DE;
 
   /* ─── Message bubbles ───────────────────────────────────────── */
-  --agent-bubble-bg:        #0071E3;
-  --agent-bubble-text:      #ffffff;
-  --customer-bubble-bg:     #F5F5F7;
+  --agent-bubble-bg:        #dcf8c6;
+  --agent-bubble-text:      #1D1D1F;
+  --customer-bubble-bg:     #ffffff;
   --customer-bubble-text:   #1D1D1F;
   --internal-note-bg:       #fffbef;
   --internal-note-border:   #FF9500;
@@ -141,8 +141,8 @@
   --chart-5: #BF5AF2;
 
   /* ─── Message bubbles ──────────────────────────────────────── */
-  --agent-bubble-bg:        #0A84FF;
-  --agent-bubble-text:      #ffffff;
+  --agent-bubble-bg:        #1a4731;
+  --agent-bubble-text:      #dcf8c6;
   --customer-bubble-bg:     #3A3A3C;
   --customer-bubble-text:   #F5F5F7;
   --internal-note-bg:       rgba(255, 149, 0, 0.12);
