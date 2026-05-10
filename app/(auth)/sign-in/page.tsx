@@ -64,7 +64,7 @@ export default function SignInPage() {
 
   return (
     <div className="w-full max-w-sm" dir={locale === "ar" ? "rtl" : "ltr"}>
-      <div className="bg-white/90 backdrop-blur-xl border border-black/[0.08] rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 space-y-6">
+      <div className="bg-white/90 backdrop-blur-xl border border-black/8 rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
             {t("Sign In", "تسجيل الدخول")}
@@ -79,7 +79,7 @@ export default function SignInPage() {
             type="button"
             onClick={() => handleSocial("google")}
             disabled={loading || socialLoading !== null}
-            className="w-full rounded-full bg-white border border-black/[0.12] hover:bg-black/[0.02] active:bg-black/[0.04] text-[#1D1D1F] font-normal py-2.5 text-[15px] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full rounded-full bg-white border border-black/12 hover:bg-black/2 active:bg-black/4 text-[#1D1D1F] font-normal py-2.5 text-[15px] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {socialLoading === "google" ? (
               <Loader2 className="size-4 animate-spin" />
@@ -111,9 +111,9 @@ export default function SignInPage() {
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="flex-1 border-t border-black/[0.12]" />
+            <div className="flex-1 border-t border-black/12" />
             <span className="text-[13px] text-[#6E6E73]">{t("or", "أو")}</span>
-            <div className="flex-1 border-t border-black/[0.12]" />
+            <div className="flex-1 border-t border-black/12" />
           </div>
         </div>
 
@@ -130,7 +130,7 @@ export default function SignInPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               dir="ltr"
-              className="w-full rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
+              className="w-full rounded-xl border border-black/12 bg-black/4 px-3.5 py-2.5 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
               placeholder="you@example.com"
             />
           </div>
@@ -148,13 +148,13 @@ export default function SignInPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 dir="ltr"
-                className="w-full rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 pe-10 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
+                className="w-full rounded-xl border border-black/12 bg-black/4 px-3.5 py-2.5 pe-10 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 end-3 flex items-center text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
+                className="absolute inset-y-0 inset-e-3 flex items-center text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

@@ -139,7 +139,7 @@ export function TeamMemberList() {
             {/* Actions menu */}
             {((isAdmin && member.userId !== currentUserId) ||
               (isSupervisor && member.role === "org:agent" && member.userId !== currentUserId)) && (
-              <div className="absolute top-3 end-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              <div className="absolute top-3 inset-e-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={<Button variant="ghost" size="icon-sm" />}
@@ -202,7 +202,7 @@ export function TeamMemberList() {
                 </div>
               )}
               {member.status === "pending" && (
-                <span className="absolute -bottom-1 -end-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-medium px-1.5 py-0.5 leading-none">
+                <span className="absolute -bottom-1 -inset-e-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-medium px-1.5 py-0.5 leading-none">
                   {t("Pending", "معلق")}
                 </span>
               )}

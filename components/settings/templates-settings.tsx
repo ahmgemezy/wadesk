@@ -198,7 +198,7 @@ export function TemplatesSettings() {
       {/* ── Page header ── */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div className="relative hidden sm:block">
-          <SearchIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+          <SearchIcon className="absolute inset-s-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             placeholder={t("Search templates...", "البحث في القوالب...")}

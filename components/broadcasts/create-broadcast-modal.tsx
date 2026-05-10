@@ -271,7 +271,7 @@ function VariablePopover({
   onClose: () => void;
 }) {
   return (
-    <div className="absolute bottom-full mb-1 start-0 z-20 bg-popover border rounded-lg shadow-lg p-2 min-w-[180px]">
+    <div className="absolute bottom-full mb-1 inset-s-0 z-20 bg-popover border rounded-lg shadow-lg p-2 min-w-45">
       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1 mb-1.5">
         Insert Variable
       </p>
@@ -465,7 +465,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                       {isAr ? "المستلمون" : "Recipients"}
                     </p>
                     <div
-                      className="flex flex-wrap items-center gap-1.5 p-2 border rounded-lg min-h-[44px] cursor-text"
+                      className="flex flex-wrap items-center gap-1.5 p-2 border rounded-lg min-h-11 cursor-text"
                       onClick={() => setShowListDropdown((v) => !v)}
                     >
                       {selectedLists.map((l) => (
@@ -483,7 +483,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                           </button>
                         </span>
                       ))}
-                      <span className="text-sm text-muted-foreground flex-1 min-w-[120px] flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground flex-1 min-w-30 flex items-center justify-between">
                         {selectedListIds.length === 0 && (isAr ? "اختر قوائم جهات الاتصال..." : "Search groups or contacts...")}
                         <ChevronDownIcon className="size-4 ms-auto shrink-0 text-muted-foreground" />
                       </span>
@@ -685,7 +685,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                     {showSchedule && (
                       <div className="flex gap-2 mt-2">
                         <div className="relative flex-1">
-                          <CalendarIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+                          <CalendarIcon className="absolute inset-s-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
                           <input
                             type="date"
                             value={scheduledDate}
@@ -696,7 +696,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                           />
                         </div>
                         <div className="relative flex-1">
-                          <ClockIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+                          <ClockIcon className="absolute inset-s-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
                           <input
                             type="time"
                             value={scheduledTime}

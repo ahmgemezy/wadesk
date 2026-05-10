@@ -207,7 +207,7 @@ function HistoryTable({
               key={b._id}
               className={idx < broadcasts.length - 1 ? "border-b" : ""}
             >
-              <td className="px-4 py-3 font-medium max-w-[200px] truncate">
+              <td className="px-4 py-3 font-medium max-w-50 truncate">
                 {b.name}
               </td>
               <td className="px-4 py-3">
@@ -319,7 +319,7 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
           </div>
           <div className="flex items-center gap-2">
             <div className="relative hidden md:block">
-              <SearchIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+              <SearchIcon className="absolute inset-s-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
                 placeholder={t.search}

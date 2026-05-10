@@ -200,7 +200,7 @@ export function GeneralSettings() {
             <span className="font-medium">العربية</span>
             <span className="text-xs opacity-70">Arabic</span>
             {(currentLocale === "ar" || (!currentLocale && !isLoading)) && (
-              <span className="absolute top-2 end-2 size-2 rounded-full bg-primary" />
+              <span className="absolute top-2 inset-e-2 size-2 rounded-full bg-primary" />
             )}
           </button>
 
@@ -218,7 +218,7 @@ export function GeneralSettings() {
             <span className="font-medium">English</span>
             <span className="text-xs opacity-70">الإنجليزية</span>
             {currentLocale === "en" && (
-              <span className="absolute top-2 end-2 size-2 rounded-full bg-primary" />
+              <span className="absolute top-2 inset-e-2 size-2 rounded-full bg-primary" />
             )}
           </button>
         </div>

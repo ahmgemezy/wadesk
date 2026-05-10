@@ -206,7 +206,7 @@ export function ConversationList({
             className={cn(
               "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all whitespace-nowrap",
               stageFilter === tab.value
-                ? "bg-primary text-primary-foreground shadow-[var(--shadow-xs)]"
+                ? "bg-primary text-primary-foreground shadow-(--shadow-xs)"
                 : "bg-muted text-muted-foreground hover:bg-muted/80",
             )}
           >
@@ -223,7 +223,7 @@ export function ConversationList({
             className={cn(
               "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all",
               labelFilter === null
-                ? "bg-primary text-primary-foreground shadow-[var(--shadow-xs)]"
+                ? "bg-primary text-primary-foreground shadow-(--shadow-xs)"
                 : "bg-muted text-muted-foreground hover:bg-muted/80",
             )}
           >
@@ -236,7 +236,7 @@ export function ConversationList({
               className={cn(
                 "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all flex items-center gap-1",
                 labelFilter === label.name
-                  ? "bg-primary text-primary-foreground shadow-[var(--shadow-xs)]"
+                  ? "bg-primary text-primary-foreground shadow-(--shadow-xs)"
                   : "bg-muted text-muted-foreground hover:bg-muted/80",
               )}
             >
@@ -253,7 +253,7 @@ export function ConversationList({
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="h-20 rounded-lg bg-gradient-to-r from-muted via-muted/60 to-muted animate-shimmer"
+              className="h-20 rounded-lg bg-linear-to-r from-muted via-muted/60 to-muted animate-shimmer"
             />
           ))}
         </div>

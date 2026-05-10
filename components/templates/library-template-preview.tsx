@@ -113,7 +113,7 @@ export function LibraryTemplatePreview({
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium mb-2">
                 {t("Preview", "معاينة")}
               </p>
-              <div className="rounded-xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 shadow-inner">
+              <div className="rounded-xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-4 shadow-inner">
                 <div className="relative">
                   <div
                     className="inline-block rounded-xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed max-w-full shadow-md"

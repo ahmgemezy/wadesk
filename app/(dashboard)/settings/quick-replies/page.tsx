@@ -128,7 +128,7 @@ export default function QuickRepliesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickReplies?.map((qr) => (
             <Card key={qr._id} className="relative group overflow-hidden flex flex-col">
-              <div className="absolute top-2 end-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-2 inset-e-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button variant="ghost" size="icon-sm" onClick={() => openForEdit(qr)}>
                   <Pencil className="size-3.5" />
                   <span className="sr-only">Edit</span>
@@ -218,7 +218,7 @@ export default function QuickRepliesPage() {
       )}
 
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetContent className="flex flex-col w-full sm:!max-w-[450px] text-start p-0">
+        <SheetContent className="flex flex-col w-full sm:max-w-112.5! text-start p-0">
           <SheetHeader className="border-b border-border/60 bg-muted/20">
             <SheetTitle>
               {editingId ? t("Edit Quick Reply", "تعديل الرد السريع") : t("Add New Reply", "إضافة رد جديد")}
@@ -236,7 +236,7 @@ export default function QuickRepliesPage() {
               />
             </div>
             
-            <div className="space-y-2 flex flex-col min-h-[200px]">
+            <div className="space-y-2 flex flex-col min-h-50">
               <label className="text-sm font-medium">{t("Reply body", "نص الرد")}</label>
               <Textarea
                 placeholder={t("Hello, how can I help you?", "مرحباً، كيف يمكنني مساعدتك؟")}
