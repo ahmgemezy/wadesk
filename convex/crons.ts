@@ -52,6 +52,12 @@ crons.interval(
 );
 
 crons.interval(
+  "purge-stale-rate-limits",
+  { hours: 24 },
+  internal.cleanup.purgeStaleRateLimits,
+);
+
+crons.interval(
   "process-scheduled-broadcasts",
   { minutes: 1 },
   internal.broadcasts.processScheduledBroadcastsInternal,

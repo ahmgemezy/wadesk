@@ -371,15 +371,15 @@ export const getAvailableChannels = query({
 
     // Include active channels and legacy docs without a status field
     const activeChannels = channels.filter(
-      (ch: any) =>
+      (ch) =>
         ch.status === "active" ||
         ch.isActive === true ||
         (ch.status == null && ch.isActive == null),
     );
 
-    return activeChannels.map((ch: any) => ({
+    return activeChannels.map((ch) => ({
       id: ch._id,
-      name: ch.displayName || ch.name || "Unknown",
+      name: ch.displayName || "Unknown",
     }));
   },
 });
@@ -397,7 +397,7 @@ export const getAvailableDepartments = query({
       .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
       .take(100);
 
-    return departments.map((dept: any) => ({
+    return departments.map((dept) => ({
       id: dept._id,
       name: dept.name || "Unknown",
       channelId: dept.channelId ?? null,
@@ -420,7 +420,7 @@ export const addMemberToChannels = internalMutation({
     for (const channelId of args.channelIds) {
       await ctx.db.insert("channelMembers", {
         tenantId: args.tenantId,
-        channelId: channelId as any,
+        channelId: channelId as Id<"channels">,
         userId: args.userId,
         userName: args.userName || "",
         userEmail: args.userEmail || "",
@@ -447,7 +447,7 @@ export const addMemberToDepartments = internalMutation({
     for (const departmentId of args.departmentIds) {
       await ctx.db.insert("departmentMembers", {
         tenantId: args.tenantId,
-        departmentId: departmentId as any,
+        departmentId: departmentId as Id<"departments">,
         userId: args.userId,
         userName: args.userName || "",
         userEmail: args.userEmail || "",

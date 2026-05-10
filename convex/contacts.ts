@@ -5,20 +5,6 @@ import { getCallerIdentity, getCallerRole, assertAdminOrSupervisor } from "./lib
 import { paginationOptsValidator } from "convex/server";
 import { getCountryFromPhone } from "../lib/phoneGeo";
 
-async function enrichWithConversationCount<T extends { _id: import("./_generated/dataModel").Id<"contacts">; totalConversations?: number }>(
-  ctx: { db: import("./_generated/server").DatabaseReader },
-  contacts: T[]
-): Promise<T[]> {
-  return Promise.all(
-    contacts.map(async (contact) => {
-      const convs = await ctx.db
-        .query("conversations")
-        .withIndex("by_contact", (q) => q.eq("contactId", contact._id))
-        .collect();
-      return { ...contact, totalConversations: convs.length };
-    })
-  );
-}
 
 export const listForTenant = query({
   args: {
@@ -44,8 +30,7 @@ export const listForTenant = query({
     const page = args.channelId
       ? result.page.filter((c) => !c.channelId || c.channelId === args.channelId)
       : result.page;
-    const enriched = await enrichWithConversationCount(ctx, page);
-    return { ...result, page: enriched };
+    return { ...result, page };
   },
 });
 
@@ -60,19 +45,17 @@ export const search = query({
     const isPhoneQuery = /^[\d+]/.test(args.query);
 
     if (isPhoneQuery) {
+      const prefix = args.query;
       const results = await ctx.db
         .query("contacts")
         .withIndex("by_tenant_phone", (q) =>
-          q.eq("tenantId", tenantId),
+          q.eq("tenantId", tenantId).gte("phone", prefix).lt("phone", prefix + "￿"),
         )
-        .order("desc")
         .paginate(args.paginationOpts);
 
-      const prefix = args.query;
-      const filtered = results.page.filter((c) => {
-        if (!args.includeArchived && c.isArchived) return false;
-        return c.phone.startsWith(prefix);
-      });
+      const filtered = args.includeArchived
+        ? results.page
+        : results.page.filter((c) => !c.isArchived);
       return { ...results, page: filtered };
     }
 
@@ -86,8 +69,7 @@ export const search = query({
     const filtered = args.includeArchived
       ? results.page
       : results.page.filter((c) => !c.isArchived);
-    const enriched = await enrichWithConversationCount(ctx, filtered);
-    return { ...results, page: enriched };
+    return { ...results, page: filtered };
   },
 });
 
@@ -100,14 +82,7 @@ export const getById = query({
       return null;
     }
 
-    let conversationCount = 0;
-    for await (const _ of ctx.db
-      .query("conversations")
-      .withIndex("by_contact", (q) => q.eq("contactId", args.contactId))
-    ) {
-      conversationCount++;
-    }
-
+    const conversationCount = contact.totalConversations ?? 0;
     return { contact, conversationCount };
   },
 });
@@ -130,6 +105,11 @@ export const update = mutation({
     const contact = await ctx.db.get(args.contactId);
     if (!contact || contact.tenantId !== tenantId) {
       throw new Error("Contact not found");
+    }
+
+    if (args.assignedAgentId !== undefined) {
+      const role = await getCallerRole(ctx);
+      assertAdminOrSupervisor(role);
     }
 
     const patch: Record<string, unknown> = {};
@@ -389,16 +369,16 @@ export const listByStage = query({
   },
 });
 
-export const backfillCountries = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const { tenantId } = await getCallerIdentity(ctx);
+export const backfillCountries = internalMutation({
+  args: { tenantId: v.string() },
+  handler: async (ctx, args) => {
+    const tenantId = args.tenantId;
     const contacts = await ctx.db
       .query("contacts")
       .withIndex("by_tenant_archived", (q) =>
         q.eq("tenantId", tenantId).eq("isArchived", false),
       )
-      .collect();
+      .take(500);
 
     let updated = 0;
     for (const c of contacts) {

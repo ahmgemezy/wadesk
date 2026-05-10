@@ -37,6 +37,9 @@ export const assignRoundRobin = internalAction({
 
     const agentIds = deptMembers.map((m) => m.userId);
 
+    let sortedAgentIds: string[];
+    let agentNameMap: Map<string, string>;
+
     if (agentIds.length === 0) {
       // Fallback: use all org members
       const allMembers = await ctx.runQuery(
@@ -47,45 +50,29 @@ export const assignRoundRobin = internalAction({
 
       if (sortedMembers.length === 0) return;
 
-      const idx = (department.roundRobinIndex ?? 0) % sortedMembers.length;
-      const agentMember = sortedMembers[idx];
-      const assignedAgentId = agentMember.userId as string;
-      const user = await ctx.runQuery(components.betterAuth.adapter.findOne, {
-        model: "user",
-        where: [{ field: "id", value: assignedAgentId }],
-      });
-      const agentName = (user?.name as string | null) ?? assignedAgentId;
-
-      if (assignedAgentId) {
-        await ctx.runMutation(internal.conversations.assignInternal, {
-          conversationId: args.conversationId,
-          agentId: assignedAgentId,
-          tenantId: args.tenantId,
-          assignmentType: "round_robin",
-          agentName,
-        });
-      }
+      sortedAgentIds = sortedMembers.map((m) => m.userId as string);
+      agentNameMap = new Map(sortedMembers.map((m) => [m.userId as string, m.userId as string]));
     } else {
-      // Assign to next department member in rotation
-      const sortedIds = [...agentIds].sort();
-      const idx = (department.roundRobinIndex ?? 0) % sortedIds.length;
-      const assignedAgentId = sortedIds[idx];
-      const matchedMember = deptMembers.find((m) => m.userId === assignedAgentId);
-      const agentName = matchedMember?.userName ?? assignedAgentId;
-
-      await ctx.runMutation(internal.conversations.assignInternal, {
-        conversationId: args.conversationId,
-        agentId: assignedAgentId,
-        tenantId: args.tenantId,
-        assignmentType: "round_robin",
-        agentName,
-      });
+      sortedAgentIds = [...agentIds].sort();
+      agentNameMap = new Map(deptMembers.map((m) => [m.userId, m.userName]));
     }
 
-    // Increment the department's round-robin index
-    await ctx.runMutation(internal.departments.incrementRoundRobinIndex, {
-      departmentId,
+    // Atomically select the next agent and advance the index in one transaction
+    const assignedAgentId = await ctx.runMutation(
+      internal.departments.selectAndAdvanceRoundRobin,
+      { departmentId, tenantId: args.tenantId, sortedAgentIds },
+    );
+
+    if (!assignedAgentId) return;
+
+    const agentName = agentNameMap.get(assignedAgentId) ?? assignedAgentId;
+
+    await ctx.runMutation(internal.conversations.assignInternal, {
+      conversationId: args.conversationId,
+      agentId: assignedAgentId,
       tenantId: args.tenantId,
+      assignmentType: "round_robin",
+      agentName,
     });
   },
 });

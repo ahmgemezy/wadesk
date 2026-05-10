@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { XIcon, UsersIcon, CheckIcon, GlobeIcon, MapPinIcon } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 // ─── World Countries (ISO 3166-1 alpha-2, excluding IL) ──────────────────────
 // Each entry: [iso, arabicName, englishName]
@@ -197,17 +197,6 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
 
   // Fetch countries that actually exist in this tenant's contacts
   const availableIsoCodes = useQuery(api.contactLists.getAvailableCountries);
-  const backfillCountries = useMutation(api.contacts.backfillCountries);
-  const backfillRan = useRef(false);
-
-  // On first open, backfill country from phone for contacts that don't have it yet
-  useEffect(() => {
-    if (open && !backfillRan.current) {
-      backfillRan.current = true;
-      backfillCountries().catch(() => {});
-    }
-  }, [open, backfillCountries]);
-
   const [name, setName] = useState(initialData?.name ?? "");
   const [description, setDescription] = useState(initialData?.description ?? "");
   const [selectedCountries, setSelectedCountries] = useState<string[]>(initialData?.filters.countries ?? []);

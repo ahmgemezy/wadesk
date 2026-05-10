@@ -82,7 +82,7 @@ export const sendReply = mutation({
       contentType: "text",
       isInternalNote: false,
       authorId: callerId,
-      status: "sent",
+      status: "sending",
       timestamp: Date.now(),
       createdAt: Date.now(),
     });
@@ -1019,6 +1019,8 @@ export const createOutboundForward = internalMutation({
 export const markFailed = internalMutation({
   args: { messageId: v.id("messages"), reason: v.string() },
   handler: async (ctx, args) => {
+    const msg = await ctx.db.get(args.messageId);
+    if (!msg) return;
     await ctx.db.patch(args.messageId, {
       status: "failed",
       failureReason: args.reason,

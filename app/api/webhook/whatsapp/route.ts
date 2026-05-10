@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 // Verify Meta's HMAC-SHA256 signature on the raw body
@@ -10,7 +10,10 @@ function verifySignature(
   const expected =
     "sha256=" +
     createHmac("sha256", appSecret).update(payload).digest("hex");
-  return expected === signature;
+  const expectedBuf = Buffer.from(expected);
+  const receivedBuf = Buffer.from(signature);
+  if (expectedBuf.length !== receivedBuf.length) return false;
+  return timingSafeEqual(expectedBuf, receivedBuf);
 }
 
 // GET — Meta hub verification challenge

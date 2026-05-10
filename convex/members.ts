@@ -402,6 +402,10 @@ export const updateMemberAvatarFromUrl = action({
     url: v.string(),
   },
   handler: async (ctx, args) => {
+    if (!args.url.startsWith("https://")) {
+      throw new Error("Avatar URL must use HTTPS");
+    }
+
     const role = await getCallerRole(ctx);
     assertAdmin(role);
 

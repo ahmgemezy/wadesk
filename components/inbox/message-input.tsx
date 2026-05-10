@@ -122,7 +122,7 @@ export function MessageInput({
               _id: ("optimistic_" + now) as Id<"messages">,
               _creationTime: now,
               conversationId: args.conversationId,
-              tenantId: "",
+              tenantId: "__optimistic__",
               direction: "outbound" as const,
               content: args.content,
               contentType: "text" as const,

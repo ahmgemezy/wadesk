@@ -8,9 +8,9 @@ import type { Id } from "../_generated/dataModel";
 
 const BASE = `https://graph.facebook.com/${process.env.WHATSAPP_API_VERSION ?? "v25.0"}`;
 
-async function getChannelToken(ctx: ActionCtx, phoneNumberId: string): Promise<string> {
+async function getChannelToken(ctx: ActionCtx, phoneNumberId: string, tenantId: string): Promise<string> {
   const channels = await ctx.runQuery(internal.channels.listByPhoneId, { phoneNumberId });
-  const channel = channels?.[0];
+  const channel = channels?.find(c => c.tenantId === tenantId);
   if (channel?.accessToken) {
     return decrypt(channel.accessToken);
   }
@@ -37,7 +37,7 @@ export const sendMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
-      const token = await getChannelToken(ctx, args.phoneNumberId);
+      const token = await getChannelToken(ctx, args.phoneNumberId, args.tenantId);
       const response = await fetch(
         `${BASE}/${args.phoneNumberId}/messages`,
         {
@@ -95,7 +95,7 @@ export const sendLocation = internalAction({
   },
   handler: async (ctx, args) => {
     try {
-      const token = await getChannelToken(ctx, args.phoneNumberId);
+      const token = await getChannelToken(ctx, args.phoneNumberId, args.tenantId);
       const body: Record<string, unknown> = {
         messaging_product: "whatsapp",
         to: args.contactPhone,
@@ -150,7 +150,7 @@ export const sendQuotedMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
-      const token = await getChannelToken(ctx, args.phoneNumberId);
+      const token = await getChannelToken(ctx, args.phoneNumberId, args.tenantId);
       const response = await fetch(
         `${BASE}/${args.phoneNumberId}/messages`,
         {
@@ -204,7 +204,7 @@ export const deleteWhatsAppMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
-      const token = await getChannelToken(ctx, args.phoneNumberId);
+      const token = await getChannelToken(ctx, args.phoneNumberId, args.tenantId);
       const deleteResponse = await fetch(
         `${BASE}/${args.phoneNumberId}/messages/${args.metaMessageId}`,
         {
@@ -236,7 +236,7 @@ export const sendReaction = internalAction({
   },
   handler: async (ctx, _args) => {
     try {
-      const token = await getChannelToken(ctx, _args.phoneNumberId);
+      const token = await getChannelToken(ctx, _args.phoneNumberId, _args.tenantId);
       await fetch(
         `${BASE}/${_args.phoneNumberId}/messages`,
         {
@@ -280,7 +280,7 @@ export const sendMediaMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
-      const token = await getChannelToken(ctx, args.phoneNumberId);
+      const token = await getChannelToken(ctx, args.phoneNumberId, args.tenantId);
       // Step 1: Upload media to Meta to get a media_id
       const formData = new FormData();
       const fileRes = await fetch(args.mediaUrl);

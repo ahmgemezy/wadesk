@@ -15,6 +15,7 @@ export const {
 
 // Decode the Convex auth JWT to extract claims without a round-trip Convex query.
 // Used by server layouts that only need userId/orgId/orgRole for redirect logic.
+// UX routing only — does NOT verify the JWT signature; never use for authorization
 export async function getServerAuth(): Promise<{
   userId: string | null;
   orgId: string | null;

@@ -157,7 +157,7 @@ export const notifySend = internalAction({
     // 1. Resolve email via the canonical helper.
     const email = await resolveUserEmail(ctx, args.userId);
     if (!email) {
-      console.warn("notifySend: user has no primary email", args.userId);
+      console.warn("[NOTIFY] notifySend: user has no primary email", { userId: args.userId });
       return;
     }
 

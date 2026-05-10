@@ -8,6 +8,7 @@ import { v, ConvexError } from "convex/values";
 import { internal } from "./_generated/api";
 import { getCallerRole } from "./lib/auth";
 import type { Plan } from "./lib/planLimits";
+import { verifyPaddleSignature } from "./webhooks/verify";
 
 function paddleBaseUrl(): string {
   return process.env.PADDLE_SANDBOX === "true"
@@ -217,9 +218,18 @@ export const handlePaddleEvent = internalMutation({
 });
 
 export const paddleWebhook = httpAction(async (ctx, request) => {
-  const internalSecret = request.headers.get("x-paddle-internal-secret");
-  if (internalSecret !== process.env.PADDLE_INTERNAL_SECRET) {
-    return new Response("Forbidden", { status: 403 });
+  const rawBody = await request.text();
+
+  const paddleSecret = process.env.PADDLE_WEBHOOK_SECRET;
+  if (!paddleSecret) {
+    console.error("[billing] paddleWebhook: PADDLE_WEBHOOK_SECRET not configured");
+    return new Response("Internal Server Error", { status: 500 });
+  }
+
+  const signatureHeader = request.headers.get("Paddle-Signature");
+  const valid = await verifyPaddleSignature(rawBody, signatureHeader, paddleSecret);
+  if (!valid) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   let event: {
@@ -234,7 +244,7 @@ export const paddleWebhook = httpAction(async (ctx, request) => {
   };
 
   try {
-    event = await request.json();
+    event = JSON.parse(rawBody);
   } catch {
     return new Response("Bad Request", { status: 400 });
   }

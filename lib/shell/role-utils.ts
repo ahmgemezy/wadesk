@@ -9,7 +9,7 @@ export const ROLE_ORDER: Record<ResolvedRole, number> = {
 export function resolveRole(
   orgRole: string | undefined,
 ): ResolvedRole {
-  if (orgRole === "org:admin" || orgRole === "admin") return "admin";
+  if (orgRole === "org:admin") return "admin";
   if (orgRole === "org:supervisor") return "supervisor";
   return "agent";
 }

@@ -121,7 +121,7 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
     // Skip while availableDepartments is still loading — an empty array here
     // would incorrectly wipe pre-selected departments from the profile.
     if (availableDepartments === undefined) return;
-    const validDeptIds = new Set(filteredDepartments.map((d) => d.id));
+    const validDeptIds = new Set<string>(filteredDepartments.map((d) => d.id));
     setSelectedDepartments((prev) => {
       const next = new Set([...prev].filter((id) => validDeptIds.has(id)));
       return next.size === prev.size ? prev : next;

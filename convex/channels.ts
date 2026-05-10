@@ -3,7 +3,7 @@ import { ConvexError } from "convex/values";
 import { query, mutation, action, internalQuery, internalMutation, internalAction } from "./_generated/server";
 import { getCallerRole, getCallerIdentity, assertAdmin, type OrgRole } from "./lib/auth";
 import { getChannelLimit } from "./lib/planLimits";
-import { encrypt } from "./lib/encryption";
+import { encrypt, decrypt } from "./lib/encryption";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import type { Plan } from "./lib/planLimits";
@@ -503,7 +503,6 @@ export const completeEmbeddedSignup = action({
       await ctx.scheduler.runAfter(60_000, internal.channels.retryWebhookSubscription, {
         channelId,
         wabaId: args.wabaId,
-        accessToken,
         attempt: 1,
       });
     }
@@ -572,7 +571,6 @@ export const devConnectWithCredentials = action({
       await ctx.scheduler.runAfter(60_000, internal.channels.retryWebhookSubscription, {
         channelId,
         wabaId: args.wabaId,
-        accessToken,
         attempt: 1,
       });
     }
@@ -594,7 +592,9 @@ export const discoverWabaFromCode = action({
     const accessToken = args.accessToken;
     const apiBase = process.env.META_GRAPH_API_BASE_URL ?? "https://graph.facebook.com";
 
-    const userRes = await fetch(`${apiBase}/v25.0/me?fields=id&access_token=${accessToken}`);
+    const userRes = await fetch(`${apiBase}/v25.0/me?fields=id`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
     const userData = (await userRes.json()) as { id?: string };
     if (!userData.id) {
       console.error("[CHANNEL] Fallback: Could not get user ID:", userData);
@@ -602,7 +602,8 @@ export const discoverWabaFromCode = action({
     }
 
     const businessesRes = await fetch(
-      `${apiBase}/v25.0/${userData.id}/businesses?access_token=${accessToken}`
+      `${apiBase}/v25.0/${userData.id}/businesses`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     const businessesData = (await businessesRes.json()) as { data?: { id: string }[] };
     const businesses = businessesData.data ?? [];
@@ -614,14 +615,16 @@ export const discoverWabaFromCode = action({
 
     for (const biz of businesses) {
       const wabasRes = await fetch(
-        `${apiBase}/v25.0/${biz.id}/owned_whatsapp_business_accounts?access_token=${accessToken}`
+        `${apiBase}/v25.0/${biz.id}/owned_whatsapp_business_accounts`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       const wabasData = (await wabasRes.json()) as { data?: { id: string }[] };
       const wabas = wabasData.data ?? [];
 
       for (const waba of wabas) {
         const phonesRes = await fetch(
-          `${apiBase}/v25.0/${waba.id}/phone_numbers?access_token=${accessToken}`
+          `${apiBase}/v25.0/${waba.id}/phone_numbers`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         const phonesData = (await phonesRes.json()) as {
           data?: { id: string; display_phone_number?: string; verified_name?: string }[];
@@ -699,37 +702,9 @@ export const upsertChannel = internalMutation({
       .first();
 
     if (crossTenantExisting) {
-      await ctx.db.patch(crossTenantExisting._id, {
-        tenantId: args.tenantId,
-        accessToken: args.encryptedToken,
-        tokenEncryptedAt: Date.now(),
-        status: args.status,
-        displayPhone: args.displayPhone,
-        displayName: args.displayName,
-        connectedAt: Date.now(),
-        disconnectedAt: undefined,
-        deactivationWarningsSent: undefined,
-        isActive: args.status === "active",
-      });
-
-      // Re-home departments and channel members to the new tenant
-      const depts = await ctx.db
-        .query("departments")
-        .withIndex("by_channel", (q) => q.eq("channelId", crossTenantExisting._id))
-        .collect();
-      for (const dept of depts) {
-        await ctx.db.patch(dept._id, { tenantId: args.tenantId });
-      }
-
-      const members = await ctx.db
-        .query("channelMembers")
-        .withIndex("by_channel", (q) => q.eq("channelId", crossTenantExisting._id))
-        .collect();
-      for (const member of members) {
-        await ctx.db.patch(member._id, { tenantId: args.tenantId });
-      }
-
-      return crossTenantExisting._id;
+      throw new ConvexError(
+        "This WhatsApp number is already connected to another workspace. Please disconnect it there first."
+      );
     }
 
     // 3. First connection of this number — create channel + seed default department
@@ -781,17 +756,19 @@ export const retryWebhookSubscription = internalAction({
   args: {
     channelId: v.id("channels"),
     wabaId: v.string(),
-    accessToken: v.string(),
     attempt: v.number(),
   },
   handler: async (ctx, args) => {
     const MAX_ATTEMPTS = 5;
 
+    const channel = await ctx.runQuery(internal.channels.getById, { channelId: args.channelId });
+    const token = channel?.accessToken ? await decrypt(channel.accessToken) : "";
+
     const webhookRes = await fetch(
       `https://graph.facebook.com/v25.0/${args.wabaId}/subscribed_apps`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${args.accessToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
     const webhookData = (await webhookRes.json()) as { success?: boolean; error?: { code?: number } };
@@ -811,7 +788,6 @@ export const retryWebhookSubscription = internalAction({
       await ctx.scheduler.runAfter(60_000, internal.channels.retryWebhookSubscription, {
         channelId: args.channelId,
         wabaId: args.wabaId,
-        accessToken: args.accessToken,
         attempt: args.attempt + 1,
       });
     } else {

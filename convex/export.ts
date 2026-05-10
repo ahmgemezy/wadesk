@@ -37,12 +37,13 @@ export const listAllConversationsForExport = internalQuery({
 });
 
 export const listMessagesForConversation = internalQuery({
-  args: { conversationId: v.id("conversations") },
+  args: { conversationId: v.id("conversations"), tenantId: v.string() },
   handler: async (ctx, args) => {
-    return await ctx.db
+    const messages = await ctx.db
       .query("messages")
       .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
       .collect();
+    return messages.filter((msg) => msg.tenantId === args.tenantId);
   },
 });
 
@@ -149,6 +150,7 @@ async function buildConversationsExportData(
       const [messages, contact, channel] = await Promise.all([
         ctx.runQuery(internal.export.listMessagesForConversation, {
           conversationId: conv._id as Id<"conversations">,
+          tenantId,
         }) as Promise<Array<Record<string, unknown>>>,
         ctx.runQuery(internal.export.getContactForExport, {
           contactId: conv.contactId as Id<"contacts">,

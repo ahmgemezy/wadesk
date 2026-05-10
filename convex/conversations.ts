@@ -27,10 +27,10 @@ async function callerHasConversationAccess(
     if (!conversation.departmentId) return true;
     const member = await ctx.db
       .query("departmentMembers")
-      .withIndex("by_department", (q: any) =>
-        q.eq("departmentId", conversation.departmentId)
+      .withIndex("by_department", (q) =>
+        q.eq("departmentId", conversation.departmentId!)
       )
-      .filter((q: any) => q.eq(q.field("userId"), callerId))
+      .filter((q) => q.eq(q.field("userId"), callerId))
       .first();
     return !!member;
   }
@@ -110,12 +110,25 @@ export const get = query({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) return null;
 
-    if (
-      !isAdminOrSupervisor(orgRole) &&
-      conversation.assignedAgentId !== callerId &&
-      conversation.assignedAgentId !== undefined
-    ) {
-      return null;
+    if (!isAdminOrSupervisor(orgRole)) {
+      if (
+        conversation.assignedAgentId !== undefined &&
+        conversation.assignedAgentId !== callerId
+      ) {
+        return null;
+      }
+      // Unassigned conversation: require department membership if one is set
+      if (!conversation.assignedAgentId && conversation.departmentId) {
+        const member = await ctx.db
+          .query("departmentMembers")
+          .withIndex("by_department_user", (q) =>
+            q
+              .eq("departmentId", conversation.departmentId as Id<"departments">)
+              .eq("userId", callerId),
+          )
+          .first();
+        if (!member) return null;
+      }
     }
 
     let isCurrentUserDeptMember = false;
@@ -972,7 +985,7 @@ export const previewForwardMessage = query({
       ar: "للحصول على خدمة أفضل، تواصل مع فرع {{branchName}} على {{branchNumber}}",
       en: "For better service, please contact our {{branchName}} branch at {{branchNumber}}",
     };
-    const lang: "ar" | "en" = "ar";
+    const lang: "ar" | "en" = (((conversation as { contactLanguage?: string }).contactLanguage) ?? "ar") as "ar" | "en";
     const number = target.displayPhone
       ? (target.displayPhone.startsWith("+") ? target.displayPhone : `+${target.displayPhone}`)
       : "";
@@ -997,7 +1010,7 @@ export const forwardToBranch = action({
     const actorName = identity?.name ?? identity?.email ?? "Someone";
 
     const ctxData: {
-      sourceChannelId: any;
+      sourceChannelId: string;
       sourcePhoneNumberId: string;
       contactPhone: string;
       contactName: string;
@@ -1017,11 +1030,11 @@ export const forwardToBranch = action({
       tenantId,
     });
 
-    const conversation: any = await ctx.runQuery(internal.conversations.getInternal, {
+    const conversation = await ctx.runQuery(internal.conversations.getInternal, {
       conversationId: args.conversationId,
     });
     const lang: "ar" | "en" =
-      conversation && (conversation as any).contactLanguage === "en" ? "en" : "ar";
+      conversation && (conversation as { contactLanguage?: string }).contactLanguage === "en" ? "en" : "ar";
 
     const formattedNumber = ctxData.targetBranchNumber
       ? (ctxData.targetBranchNumber.startsWith("+")
@@ -1033,7 +1046,7 @@ export const forwardToBranch = action({
       .replaceAll("{{branchName}}", ctxData.targetBranchName)
       .replaceAll("{{branchNumber}}", formattedNumber);
 
-    const messageId: any = await ctx.runMutation(internal.messages.createOutboundForward, {
+    const messageId = await ctx.runMutation(internal.messages.createOutboundForward, {
       conversationId: args.conversationId,
       tenantId,
       content: renderedText,

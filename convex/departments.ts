@@ -285,3 +285,26 @@ export const incrementRoundRobinIndex = internalMutation({
     });
   },
 });
+
+export const selectAndAdvanceRoundRobin = internalMutation({
+  args: {
+    departmentId: v.id("departments"),
+    tenantId: v.string(),
+    sortedAgentIds: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    if (args.sortedAgentIds.length === 0) return null;
+
+    const dept = await ctx.db.get(args.departmentId);
+    if (!dept || dept.tenantId !== args.tenantId) return null;
+
+    const idx = (dept.roundRobinIndex ?? 0) % args.sortedAgentIds.length;
+    const agentId = args.sortedAgentIds[idx];
+
+    await ctx.db.patch(args.departmentId, {
+      roundRobinIndex: (dept.roundRobinIndex ?? 0) + 1,
+    });
+
+    return agentId;
+  },
+});
