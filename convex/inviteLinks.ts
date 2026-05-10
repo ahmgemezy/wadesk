@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { ConvexError } from "convex/values";
 import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { getCallerRole, getCallerIdentity, assertAdmin, assertAdminOrSupervisor } from "./lib/auth";
 import { getAppUrl } from "./lib/appUrl";
 
@@ -152,6 +153,32 @@ export const getActiveForTenant = internalQuery({
       .withIndex("by_tenant", (q) => q.eq("tenantId", args.tenantId))
       .collect();
     return links.find((l) => !l.revoked && l.expiresAt > Date.now()) ?? null;
+  },
+});
+
+export const createWithChannel = internalMutation({
+  args: {
+    tenantId: v.string(),
+    createdBy: v.string(),
+    defaultRole: v.union(v.literal("org:agent"), v.literal("org:supervisor")),
+    channelId: v.id("channels"),
+    departmentId: v.optional(v.id("departments")),
+  },
+  handler: async (ctx, args) => {
+    const token = generateToken();
+    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    await ctx.db.insert("inviteLinks", {
+      tenantId: args.tenantId,
+      token,
+      createdBy: args.createdBy,
+      expiresAt,
+      revoked: false,
+      defaultRole: args.defaultRole,
+      createdAt: Date.now(),
+      channelId: args.channelId as Id<"channels">,
+      departmentId: args.departmentId as Id<"departments"> | undefined,
+    });
+    return { token, url: buildUrl(token), expiresAt };
   },
 });
 

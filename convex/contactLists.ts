@@ -139,9 +139,15 @@ export const getMatchingContacts = query({
       )
       .collect();
 
-    const matching = allContacts.filter((c) =>
-      contactMatchesFilters(c, list.filters),
-    );
+    const labelContactIds =
+      list.filters.labels && list.filters.labels.length > 0
+        ? await getLabelContactIds(ctx, tenantId, list.filters.labels)
+        : null;
+
+    const matching = allContacts.filter((c) => {
+      if (labelContactIds !== null && !labelContactIds.has(c._id)) return false;
+      return contactMatchesFilters(c, list.filters);
+    });
 
     const { numItems, cursor } = args.paginationOpts;
     const startIndex = cursor ? parseInt(cursor, 10) : 0;
@@ -206,6 +212,22 @@ export const getStats = query({
   },
 });
 
+async function getLabelContactIds(
+  ctx: { db: import("./_generated/server").DatabaseReader },
+  tenantId: string,
+  labels: string[],
+): Promise<Set<string>> {
+  const convs = await ctx.db
+    .query("conversations")
+    .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+    .collect();
+  const ids = new Set<string>();
+  for (const c of convs) {
+    if (c.labels.some((l: string) => labels.includes(l))) ids.add(c.contactId);
+  }
+  return ids;
+}
+
 export const previewCount = query({
   args: {
     filters: v.object({
@@ -219,10 +241,16 @@ export const previewCount = query({
         v.literal("churned"),
       ))),
       tags: v.optional(v.array(v.string())),
+      labels: v.optional(v.array(v.string())),
     }),
   },
   handler: async (ctx, args) => {
     const { tenantId } = await getCallerIdentity(ctx);
+
+    const labelContactIds =
+      args.filters.labels && args.filters.labels.length > 0
+        ? await getLabelContactIds(ctx, tenantId, args.filters.labels)
+        : null;
 
     const allContacts = await ctx.db
       .query("contacts")
@@ -231,9 +259,10 @@ export const previewCount = query({
       )
       .collect();
 
-    const matching = allContacts.filter((c) =>
-      contactMatchesFilters(c, args.filters),
-    );
+    const matching = allContacts.filter((c) => {
+      if (labelContactIds !== null && !labelContactIds.has(c._id)) return false;
+      return contactMatchesFilters(c, args.filters);
+    });
 
     const stageBreakdown: Record<string, number> = {};
     for (const contact of matching) {
@@ -260,6 +289,7 @@ export const create = mutation({
         v.literal("churned"),
       ))),
       tags: v.optional(v.array(v.string())),
+      labels: v.optional(v.array(v.string())),
     }),
   },
   handler: async (ctx, args) => {

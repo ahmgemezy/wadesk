@@ -1,5 +1,5 @@
 import { v, ConvexError } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { getCallerIdentity, getCallerRole, assertAdmin } from "./lib/auth";
 
 export const listForChannel = query({
@@ -138,5 +138,37 @@ export const removeMember = mutation({
       assertAdmin(callerRole);
     }
     await ctx.db.delete(membership._id);
+  },
+});
+
+export const addMemberInternal = internalMutation({
+  args: {
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+    userId: v.string(),
+    userName: v.string(),
+    userEmail: v.string(),
+    userImageUrl: v.optional(v.string()),
+    role: v.union(v.literal("org:supervisor"), v.literal("org:agent")),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("channelMembers")
+      .withIndex("by_channel_user", (q) =>
+        q.eq("channelId", args.channelId).eq("userId", args.userId)
+      )
+      .first();
+    if (existing) return existing._id;
+    return ctx.db.insert("channelMembers", {
+      tenantId: args.tenantId,
+      channelId: args.channelId,
+      userId: args.userId,
+      userName: args.userName,
+      userEmail: args.userEmail,
+      userImageUrl: args.userImageUrl,
+      role: args.role,
+      addedBy: "system",
+      createdAt: Date.now(),
+    });
   },
 });

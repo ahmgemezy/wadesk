@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
-import { UsersIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { UsersIcon, ChevronLeftIcon, ChevronRightIcon, Trash2Icon, XIcon } from "lucide-react";
+import { toast } from "sonner";
 
 const STAGE_COLORS: Record<string, { dot: string; bg: string; text: string }> = {
   lead:     { dot: "bg-slate-400",   bg: "bg-slate-50 dark:bg-slate-800/60",   text: "text-slate-600 dark:text-slate-300" },
@@ -31,6 +35,23 @@ type Props = {
 export function ListCard({ list, stats, locale }: Props) {
   const router = useRouter();
   const isRTL = locale === "ar";
+  const removeList = useMutation(api.contactLists.remove);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setDeleting(true);
+    try {
+      await removeList({ listId: list._id });
+      toast.success(locale === "ar" ? "تم حذف القائمة" : "List deleted");
+    } catch {
+      toast.error(locale === "ar" ? "فشل الحذف" : "Failed to delete");
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
 
   const topStages = stats
     ? Object.entries(stats.stageBreakdown)
@@ -54,12 +75,14 @@ export function ListCard({ list, stats, locale }: Props) {
       : `${filterCount} filter${filterCount > 1 ? "s" : ""}`;
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => router.push(`/lists/${list._id}`)}
-      className="group w-full text-start bg-card border border-border rounded-2xl p-5 hover:border-primary/40 hover:shadow-[0_2px_12px_0_oklch(0.52_0.16_155/0.08)] transition-all duration-200 flex flex-col gap-4"
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push(`/lists/${list._id}`); }}
+      className="group w-full text-start bg-card border border-border rounded-2xl p-5 hover:border-primary/40 hover:shadow-[0_2px_12px_0_oklch(0.52_0.16_155/0.08)] transition-all duration-200 flex flex-col gap-4 cursor-pointer"
     >
-      {/* Top row: name + chevron */}
+      {/* Top row: name + actions */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-sm text-foreground truncate">{list.name}</div>
@@ -67,8 +90,39 @@ export function ListCard({ list, stats, locale }: Props) {
             <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{list.description}</div>
           )}
         </div>
-        <div className="text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5">
-          {isRTL ? <ChevronLeftIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
+        <div className="flex items-center gap-1 shrink-0">
+          {confirmDelete ? (
+            <>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDelete}
+                className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-md disabled:opacity-50"
+              >
+                {deleting ? "…" : (locale === "ar" ? "تأكيد" : "Delete")}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <XIcon className="size-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all"
+              >
+                <Trash2Icon className="size-4" />
+              </button>
+              <div className="text-muted-foreground group-hover:text-primary transition-colors mt-0.5">
+                {isRTL ? <ChevronLeftIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -103,6 +157,6 @@ export function ListCard({ list, stats, locale }: Props) {
       ) : (
         <div className="text-xs text-muted-foreground">{filterLabel}</div>
       )}
-    </button>
+    </div>
   );
 }

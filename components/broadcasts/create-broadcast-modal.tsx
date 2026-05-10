@@ -304,6 +304,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
 
   const lists = useQuery(api.contactLists.listForTenant);
   const channels = useQuery(api.channels.listForTenant);
+  const tenantProfile = useQuery(api.lib.tenants.getTenantProfile);
 
   // Mutations
   const createBroadcast = useMutation(api.broadcasts.create);
@@ -489,21 +490,34 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                     </div>
 
                     {/* Dropdown */}
-                    {showListDropdown && lists && lists.length > 0 && (
+                    {showListDropdown && lists !== undefined && (
                       <div className="mt-1 border rounded-lg shadow-md bg-popover overflow-hidden">
-                        {lists.map((l) => (
-                          <button
-                            key={l._id}
-                            type="button"
-                            onClick={() => toggleList(l._id)}
-                            className="w-full text-start text-sm px-3 py-2.5 hover:bg-muted flex items-center justify-between"
-                          >
-                            <span>{l.name}</span>
-                            {selectedListIds.includes(l._id) && (
-                              <CheckIcon className="size-4 text-primary" />
-                            )}
-                          </button>
-                        ))}
+                        {lists.length === 0 ? (
+                          <div className="px-4 py-4 text-center space-y-1">
+                            <p className="text-sm font-medium text-foreground">
+                              {isAr ? "لا توجد قوائم بعد" : "No lists yet"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {isAr
+                                ? "أنشئ قائمة جهات اتصال من صفحة القوائم أولاً"
+                                : "Create a contact list in the Lists page first"}
+                            </p>
+                          </div>
+                        ) : (
+                          lists.map((l) => (
+                            <button
+                              key={l._id}
+                              type="button"
+                              onClick={() => { toggleList(l._id); setShowListDropdown(false); }}
+                              className="w-full text-start text-sm px-3 py-2.5 hover:bg-muted flex items-center justify-between"
+                            >
+                              <span>{l.name}</span>
+                              {selectedListIds.includes(l._id) && (
+                                <CheckIcon className="size-4 text-primary" />
+                              )}
+                            </button>
+                          ))
+                        )}
                       </div>
                     )}
                   </div>
@@ -737,7 +751,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
             <div className="flex-1 flex items-center justify-center p-6 overflow-hidden">
               <WaPhoneMockup
                 channelName={selectedChannel?.displayName ?? null}
-                channelPictureUrl={selectedChannel?.profilePictureUrl ?? null}
+                channelPictureUrl={selectedChannel?.profilePictureUrl ?? tenantProfile?.logoUrl ?? null}
                 body={body}
                 mediaPreview={mediaPreview}
               />

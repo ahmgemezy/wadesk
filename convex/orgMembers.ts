@@ -7,6 +7,7 @@ import { getCallerRole, getCallerIdentity, assertAdmin, assertAdminOrSupervisor,
 import { assertAgentLimitNotReached, assertSupervisorRoleAllowed } from "./lib/planLimits";
 import { assertNotLastAdmin } from "./lib/lastAdmin";
 import { internal, components } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { resolveOrgName } from "./lib/emailHelpers";
 import { getAppUrl } from "./lib/appUrl";
 
@@ -29,6 +30,8 @@ export const inviteByEmail = action({
       v.literal("org:supervisor"),
       v.literal("org:agent"),
     ),
+    channelId: v.optional(v.id("channels")),
+    departmentId: v.optional(v.id("departments")),
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
@@ -91,6 +94,17 @@ export const inviteByEmail = action({
         inviteUrl,
       },
     });
+
+    if (args.channelId) {
+      const channelRole = args.role === "org:admin" ? "org:agent" : args.role as "org:supervisor" | "org:agent";
+      await ctx.runMutation(internal.pendingChannelAssignments.create, {
+        tenantId,
+        email: args.email,
+        channelId: args.channelId as Id<"channels">,
+        departmentId: args.departmentId as Id<"departments"> | undefined,
+        role: channelRole,
+      });
+    }
   },
 });
 
@@ -212,6 +226,8 @@ export const inviteByWhatsApp = action({
       v.literal("org:supervisor"),
       v.literal("org:agent"),
     ),
+    channelId: v.optional(v.id("channels")),
+    departmentId: v.optional(v.id("departments")),
   },
   handler: async (ctx, args) => {
     const role = await getCallerRole(ctx);
@@ -239,17 +255,29 @@ export const inviteByWhatsApp = action({
     assertAgentLimitNotReached(members.length, plan);
     if (args.role === "org:supervisor") assertSupervisorRoleAllowed(plan);
 
-    const existingLinks = await ctx.runQuery(internal.inviteLinks.getActiveForTenant, { tenantId });
     let inviteUrl: string;
 
-    if (existingLinks && !existingLinks.revoked && existingLinks.expiresAt > Date.now()) {
-      inviteUrl = `${getAppUrl()}/join/${existingLinks.token}`;
-    } else {
-      const result = await ctx.runMutation(internal.inviteLinks.ensureActive, {
+    if (args.channelId) {
+      // Dedicated link per-invite so channel/dept metadata is embedded on the link
+      const result = await ctx.runMutation(internal.inviteLinks.createWithChannel, {
         tenantId,
         createdBy: callerId,
+        defaultRole: args.role === "org:admin" ? "org:agent" : (args.role as "org:supervisor" | "org:agent"),
+        channelId: args.channelId as Id<"channels">,
+        departmentId: args.departmentId as Id<"departments"> | undefined,
       });
       inviteUrl = result.url;
+    } else {
+      const existingLinks = await ctx.runQuery(internal.inviteLinks.getActiveForTenant, { tenantId });
+      if (existingLinks && !existingLinks.revoked && existingLinks.expiresAt > Date.now()) {
+        inviteUrl = `${getAppUrl()}/join/${existingLinks.token}`;
+      } else {
+        const result = await ctx.runMutation(internal.inviteLinks.ensureActive, {
+          tenantId,
+          createdBy: callerId,
+        });
+        inviteUrl = result.url;
+      }
     }
 
     const channels = await ctx.runQuery(internal.channels.listByTenantId, { tenantId });

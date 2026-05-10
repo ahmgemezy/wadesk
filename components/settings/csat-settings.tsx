@@ -74,6 +74,11 @@ export function CsatSettings() {
   const isAdmin = role === "org:admin" || role === "admin";
   const { channelId: selectedChannelId } = useSelectedChannel();
 
+  const channels = useQuery(api.channels.listForTenant);
+  const selectedChannel = channels?.find((c) => c._id === selectedChannelId);
+  const { organization } = useOrganization();
+  const channelDisplayName = selectedChannel?.displayName ?? organization?.name ?? "";
+
   const settings = useQuery(api.csat.getSettings, isAuthenticated ? (selectedChannelId ? { channelId: selectedChannelId } : {}) : "skip");
   const templateStatuses = useQuery(api.csat.getCsatTemplateStatuses, isAuthenticated ? undefined : "skip");
   const updateSettings = useMutation(api.csat.updateSettings);
@@ -163,7 +168,12 @@ export function CsatSettings() {
     return <div className="h-32 rounded-lg bg-muted animate-pulse" />;
   }
 
-  const preview = TEMPLATE_PREVIEW[language];
+  const preview = {
+    ...TEMPLATE_PREVIEW[language],
+    body: TEMPLATE_PREVIEW[language].body
+      .replace("[اسم الشركة]", channelDisplayName)
+      .replace("[Company Name]", channelDisplayName),
+  };
 
   return (
     <PlanGate requiredPlan="starter" featureLabel={t("CSAT", "تقييم رضا العملاء")}>

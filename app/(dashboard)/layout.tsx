@@ -19,6 +19,7 @@ import { PastDueBanner } from "@/components/shell/past-due-banner";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { TeamPresenceDropdown } from "@/components/ui/team-presence-dropdown";
 import { PresenceInitializer } from "@/components/shell/presence-initializer";
+import { PendingAssignmentBootstrap } from "@/components/shell/pending-assignment-bootstrap";
 import { SelectedChannelProvider } from "@/lib/hooks/channel-context";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +92,7 @@ export default async function DashboardLayout({
           <ConvexAuthGuard>
             <PastDueBanner />
             <PresenceInitializer />
+            <PendingAssignmentBootstrap />
             {children}
             <PaddleProvider />
           </ConvexAuthGuard>

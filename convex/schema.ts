@@ -129,6 +129,7 @@ export default defineSchema({
         v.literal("churned"),
       ))),
       tags: v.optional(v.array(v.string())),
+      labels: v.optional(v.array(v.string())),
     }),
     createdBy: v.string(),
     createdAt: v.number(),
@@ -319,6 +320,8 @@ export default defineSchema({
     revoked: v.boolean(),
     defaultRole: v.union(v.literal("org:agent"), v.literal("org:supervisor")),
     createdAt: v.number(),
+    channelId: v.optional(v.id("channels")),
+    departmentId: v.optional(v.id("departments")),
   })
     .index("by_tenant", ["tenantId"])
     .index("by_token", ["token"]),
@@ -759,4 +762,16 @@ export default defineSchema({
   })
     .index("by_tenant_agent", ["tenantId", "agentId"])
     .index("by_tenant_conversation", ["tenantId", "conversationId"]),
+
+  pendingChannelAssignments: defineTable({
+    tenantId: v.string(),
+    email: v.string(),
+    channelId: v.optional(v.id("channels")),
+    departmentId: v.optional(v.id("departments")),
+    role: v.union(v.literal("org:supervisor"), v.literal("org:agent")),
+    applied: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_email_tenant", ["email", "tenantId"]),
 });

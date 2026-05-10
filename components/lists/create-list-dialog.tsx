@@ -4,12 +4,13 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { TagIcon } from "lucide-react";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { XIcon, UsersIcon, CheckIcon, GlobeIcon, MapPinIcon } from "lucide-react";
@@ -137,6 +138,8 @@ const t = {
     saving: "جاري الحفظ...",
     allContacts: "جميع جهات الاتصال",
     noCountries: "لا توجد دول في جهات الاتصال",
+    labels: "التصنيفات",
+    noLabels: "لا توجد تصنيفات محددة بعد",
   },
   en: {
     title: "Create List",
@@ -158,6 +161,8 @@ const t = {
     saving: "Saving...",
     allContacts: "All contacts",
     noCountries: "No countries found in contacts",
+    labels: "Labels",
+    noLabels: "No labels created yet",
   },
 };
 
@@ -170,6 +175,7 @@ type InitialData = {
     cities?: string[];
     stages?: Stage[];
     tags?: string[];
+    labels?: string[];
   };
 };
 
@@ -212,6 +218,8 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
   const [selectedStages, setSelectedStages] = useState<Stage[]>(initialData?.filters.stages ?? []);
   const [tags, setTags] = useState<string[]>(initialData?.filters.tags ?? []);
   const [tagInput, setTagInput] = useState("");
+  const [selectedLabels, setSelectedLabels] = useState<string[]>(initialData?.filters.labels ?? []);
+  const availableLabels = useQuery(api.labels.list, {});
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState(false);
 
@@ -224,6 +232,7 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
       setCities(initialData?.filters.cities ?? []);
       setSelectedStages(initialData?.filters.stages ?? []);
       setTags(initialData?.filters.tags ?? []);
+      setSelectedLabels(initialData?.filters.labels ?? []);
       setNameError(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -235,8 +244,9 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
       cities: cities.length > 0 ? cities : undefined,
       stages: selectedStages.length > 0 ? selectedStages : undefined,
       tags: tags.length > 0 ? tags : undefined,
+      labels: selectedLabels.length > 0 ? selectedLabels : undefined,
     }),
-    [selectedCountries, cities, selectedStages, tags],
+    [selectedCountries, cities, selectedStages, tags, selectedLabels],
   );
 
   const preview = useQuery(api.contactLists.previewCount, { filters });
@@ -291,6 +301,7 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
     setSelectedStages([]);
     setTags([]);
     setTagInput("");
+    setSelectedLabels([]);
     setNameError(false);
   }
 
@@ -326,7 +337,8 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
     selectedCountries.length > 0 ||
     cities.length > 0 ||
     selectedStages.length > 0 ||
-    tags.length > 0;
+    tags.length > 0 ||
+    selectedLabels.length > 0;
 
   const topStages = preview
     ? Object.entries(preview.stageBreakdown)
@@ -336,22 +348,21 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
     : [];
 
   return (
-    <Sheet
+    <Dialog
       open={open}
       onOpenChange={(o) => {
         if (!o) reset();
         onOpenChange(o);
       }}
     >
-      <SheetContent
-        side={isRTL ? "right" : "left"}
-        className="flex flex-col gap-0 p-0 overflow-hidden w-[min(92vw,960px)] sm:w-[min(80vw,960px)]"
+      <DialogContent
+        className="flex flex-col gap-0 p-0 overflow-hidden w-[90vw] max-w-4xl sm:max-w-4xl h-[min(90vh,700px)]"
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b shrink-0">
-          <SheetTitle className="text-base font-semibold">{isEditMode ? tx.editTitle : tx.title}</SheetTitle>
-        </SheetHeader>
+        <DialogHeader className="px-6 py-4 border-b shrink-0">
+          <DialogTitle className="text-base font-semibold">{isEditMode ? tx.editTitle : tx.title}</DialogTitle>
+        </DialogHeader>
 
         {/* Two-column body: filters | preview */}
         <div className="flex-1 overflow-hidden flex">
@@ -504,6 +515,39 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
                 className="h-9 text-sm"
               />
             </FilterSection>
+
+            {/* Labels */}
+            {availableLabels !== undefined && availableLabels.length > 0 && (
+              <FilterSection label={tx.labels}>
+                <div className="flex flex-wrap gap-2">
+                  {availableLabels.map((label) => {
+                    const selected = selectedLabels.includes(label.name);
+                    return (
+                      <button
+                        key={label._id}
+                        type="button"
+                        onClick={() =>
+                          setSelectedLabels((prev) =>
+                            prev.includes(label.name)
+                              ? prev.filter((l) => l !== label.name)
+                              : [...prev, label.name],
+                          )
+                        }
+                        className={`inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border font-medium transition-all duration-150 ${
+                          selected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-transparent text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                        }`}
+                      >
+                        {selected && <CheckIcon className="size-3 shrink-0" />}
+                        {label.emoji && <span>{label.emoji}</span>}
+                        {label.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </FilterSection>
+            )}
           </div>
 
           {/* ── Right: live preview (fixed, not scrolling) ── */}
@@ -512,33 +556,42 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
               {tx.previewLabel}
             </p>
 
-            {/* Big number */}
-            <div className="flex flex-col gap-1">
-              <div className="flex items-baseline gap-1.5">
-                <UsersIcon className="size-4 text-primary mb-0.5 shrink-0" />
-                <span className="text-3xl font-bold text-foreground tabular-nums leading-none">
-                  {preview === undefined ? "—" : preview.count.toLocaleString()}
-                </span>
+            {!hasFilters ? (
+              <div className="flex flex-col items-center justify-center flex-1 text-center gap-2 pb-8">
+                <UsersIcon className="size-8 text-muted-foreground/40" />
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {locale === "ar"
+                    ? "اختر فلتراً واحداً على الأقل لمعاينة النتائج"
+                    : "Select at least one filter to preview results"}
+                </p>
               </div>
-              <span className="text-xs text-muted-foreground">{tx.contacts}</span>
-            </div>
-
-            {/* Stage breakdown */}
-            {topStages.length > 0 && (
-              <div className="flex flex-col gap-2.5">
-                {topStages.map(([stage, count]) => (
-                  <div key={stage} className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-muted-foreground truncate">
-                      {(STAGE_LABELS as Record<string, { ar: string; en: string }>)[stage]?.[locale] ?? stage}
+            ) : (
+              <>
+                {/* Big number */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <UsersIcon className="size-4 text-primary mb-0.5 shrink-0" />
+                    <span className="text-3xl font-bold text-foreground tabular-nums leading-none">
+                      {preview === undefined ? "—" : preview.count.toLocaleString()}
                     </span>
-                    <span className="text-xs font-semibold tabular-nums shrink-0">{count}</span>
                   </div>
-                ))}
-              </div>
-            )}
+                  <span className="text-xs text-muted-foreground">{tx.contacts}</span>
+                </div>
 
-            {!hasFilters && preview !== undefined && (
-              <p className="text-xs text-muted-foreground">{tx.allContacts}</p>
+                {/* Stage breakdown */}
+                {topStages.length > 0 && (
+                  <div className="flex flex-col gap-2.5">
+                    {topStages.map(([stage, count]) => (
+                      <div key={stage} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground truncate">
+                          {(STAGE_LABELS as Record<string, { ar: string; en: string }>)[stage]?.[locale] ?? stage}
+                        </span>
+                        <span className="text-xs font-semibold tabular-nums shrink-0">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -552,8 +605,8 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
             {saving ? tx.saving : isEditMode ? tx.update : tx.save}
           </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 

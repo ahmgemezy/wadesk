@@ -1,5 +1,5 @@
 import { v, ConvexError } from "convex/values";
-import { query, mutation, internalQuery } from "./_generated/server";
+import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { getCallerIdentity, getCallerRole, assertAdmin } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
@@ -221,5 +221,38 @@ export const getMembersForDepartment = internalQuery({
       userId: m.userId,
       userName: m.userName ?? "",
     }));
+  },
+});
+
+export const addMemberInternal = internalMutation({
+  args: {
+    tenantId: v.string(),
+    departmentId: v.id("departments"),
+    userId: v.string(),
+    userName: v.string(),
+    userEmail: v.string(),
+    userImageUrl: v.optional(v.string()),
+    role: v.union(v.literal("org:supervisor"), v.literal("org:agent")),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("departmentMembers")
+      .withIndex("by_department_user", (q) =>
+        q.eq("departmentId", args.departmentId).eq("userId", args.userId)
+      )
+      .first();
+    if (existing) return existing._id;
+    return ctx.db.insert("departmentMembers", {
+      tenantId: args.tenantId,
+      departmentId: args.departmentId,
+      userId: args.userId,
+      userName: args.userName,
+      userEmail: args.userEmail,
+      userImageUrl: args.userImageUrl,
+      role: args.role,
+      addedBy: "system",
+      addedAt: Date.now(),
+      createdAt: Date.now(),
+    });
   },
 });

@@ -29,11 +29,13 @@ export default async function SettingsLayout({
   const navItems = filterNavItems(role);
   const settingsItem = navItems.find((item) => item.href === "/settings");
   const settingsChildren = settingsItem?.children ?? [];
+  const adminItem = navItems.find((item) => item.href === "/settings/team");
+  const adminChildren = adminItem?.children ?? [];
 
   return (
     <>
       <Breadcrumb locale={locale} />
-      <SettingsSubNav items={settingsChildren} locale={locale} />
+      <SettingsSubNav items={settingsChildren} adminItems={adminChildren} locale={locale} />
       {children}
     </>
   );

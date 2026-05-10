@@ -20,14 +20,14 @@ export function assertPlanAtLeast(current: Plan, required: Plan): void {
 
 const AGENT_LIMITS: Record<string, number> = {
   free: 3,
-  starter: 5,
+  starter: 6,
   growth: 15,
   business: Infinity,
 };
 
 const CHANNEL_LIMITS: Record<string, number> = {
   free: 1,
-  starter: 2,
+  starter: 1,
   growth: 5,
   business: Infinity,
 };
@@ -99,10 +99,10 @@ export function assertListLimitNotReached(
 }
 
 export function assertBroadcastsAllowed(plan: Plan): void {
-  if (plan === "free" || plan === "starter") {
+  if (plan === "free") {
     throw new ConvexError({
       message: "PLAN_LIMIT_REACHED",
-      data: { reason: "Broadcasts are available on Growth and above. Please upgrade your plan." },
+      data: { reason: "Broadcasts are available on Starter and above. Please upgrade your plan." },
     });
   }
 }

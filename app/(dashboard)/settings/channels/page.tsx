@@ -22,7 +22,7 @@ const IS_DEV = process.env.NEXT_PUBLIC_DEV_MANUAL_CONNECT === "true";
 
 const CHANNEL_LIMITS: Record<string, number> = {
   free: 1,
-  starter: 2,
+  starter: 1,
   growth: 5,
   business: Infinity,
 };
@@ -307,6 +307,12 @@ export default function ChannelsListPage() {
                               {channel.displayPhone}
                             </div>
                           )}
+                          <p className="text-xs text-muted-foreground font-cairo">
+                            {t(
+                              "Automations, templates, and settings are preserved",
+                              "قواعد الأتمتة والقوالب والإعدادات محفوظة"
+                            )}
+                          </p>
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">

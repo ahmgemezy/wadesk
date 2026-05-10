@@ -137,7 +137,7 @@ Retrofitting multi-number support after launch requires painful schema migration
 | Plan     | Max Numbers |
 | -------- | ----------- |
 | Free     | 1           |
-| Starter  | 2           |
+| Starter  | 1           |
 | Growth   | 5           |
 | Business | Unlimited   |
 
@@ -208,12 +208,12 @@ Crossed-out prices are shown on the pricing page to anchor perceived value.
 | 🇦🇪 UAE           | 37 AED/month  |
 | 🌍 International | $9.99/month   |
 
-|                  |                                                |
-| ---------------- | ---------------------------------------------- |
-| WhatsApp numbers | 2                                              |
-| Agents           | 5                                              |
-| Conversations    | Unlimited                                      |
-| Features         | Quick replies, Internal notes, Basic analytics |
+|                  |                                                                         |
+| ---------------- | ----------------------------------------------------------------------- |
+| WhatsApp numbers | 1                                                                       |
+| Agents           | 6                                                                       |
+| Conversations    | Unlimited                                                               |
+| Features         | Quick replies, Internal notes, Basic analytics, Broadcasts, SLA alerts, CSAT |
 
 #### 🥇 Growth _(Sweet spot)_ — ~~$49.99~~ → $22.99/month
 
@@ -229,7 +229,7 @@ Crossed-out prices are shown on the pricing page to anchor perceived value.
 | WhatsApp numbers | 5                                                                                             |
 | Agents           | 15                                                                                            |
 | Conversations    | Unlimited                                                                                     |
-| Features         | Everything in Starter + Broadcasts + CSAT + SLA + Automation rules + Business profile editing |
+| Features         | Everything in Starter + Up to 15 agents + 5 numbers + Automation rules + Business profile editing + Round-robin assignment |
 
 #### 💎 Business — ~~$99.99~~ → $44.99/month
 
@@ -570,7 +570,7 @@ If a conversation stays open without a reply for too long, alert the supervisor 
 
 ### Plan Availability
 
-- Basic SLA alerts: **Growth and above**
+- Basic SLA alerts: **Starter and above**
 - Advanced SLA rules (per label/channel): **Business**
 
 ### Implementation Note
@@ -599,7 +599,7 @@ After a conversation is closed, automatically send the customer a satisfaction r
 - CSAT score per agent shown to Supervisor/Admin only
 - Aggregate CSAT shown in analytics (e.g. "Average score this month: 4.3 ⭐")
 - Toggle on/off per tenant in settings
-- Available on **Growth and above**
+- Available on **Starter and above**
 
 ---
 

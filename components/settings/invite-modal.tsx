@@ -4,12 +4,20 @@ import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { useOrganization, useAuth } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RoleSelect } from "./role-select";
@@ -38,6 +46,16 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
   const [linkFallback, setLinkFallback] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
+
+  const [channelId, setChannelId] = useState<Id<"channels"> | null>(null);
+  const [departmentId, setDepartmentId] = useState<Id<"departments"> | null>(null);
+
+  const channels = useQuery(api.channels.listForTenant);
+  const showChannelSelector = (channels?.length ?? 0) > 1;
+  const departments = useQuery(
+    api.departments.listForChannel,
+    channelId ? { channelId } : "skip",
+  );
 
   const t = useT();
   const inviteByEmail = useAction(api.orgMembers.inviteByEmail);
@@ -89,7 +107,12 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     clearState();
     setSending(true);
     try {
-      await inviteByEmail({ email: email.trim(), role: effectiveRole });
+      await inviteByEmail({
+        email: email.trim(),
+        role: effectiveRole,
+        ...(channelId ? { channelId } : {}),
+        ...(channelId && departmentId ? { departmentId } : {}),
+      });
       setEmail("");
       onInvited();
       onClose();
@@ -122,7 +145,12 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
     clearState();
     setSending(true);
     try {
-      const result = await inviteByWhatsApp({ phone: phone.trim(), role: effectiveRole });
+      const result = await inviteByWhatsApp({
+        phone: phone.trim(),
+        role: effectiveRole,
+        ...(channelId ? { channelId } : {}),
+        ...(channelId && departmentId ? { departmentId } : {}),
+      });
       if (result.whatsappSent) {
         setPhone("");
         onInvited();
@@ -204,7 +232,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
           {tabs.map((t) => (
             <button
               key={t.id}
-              onClick={() => { setTab(t.id); clearState(); }}
+              onClick={() => { setTab(t.id); clearState(); setChannelId(null); setDepartmentId(null); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-t-md transition-colors ${
                 tab === t.id
                   ? "bg-primary text-primary-foreground"
@@ -227,6 +255,17 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
               dir="ltr"
             />
             <RoleSelect value={isSupervisor ? "org:agent" : role} onChange={isSupervisor ? () => {} : setRole} disabled={isSupervisor} />
+            {showChannelSelector && (
+              <ChannelDeptSelectors
+                channels={channels ?? []}
+                channelId={channelId}
+                departmentId={departmentId}
+                departments={departments ?? []}
+                onChannelChange={(id) => { setChannelId(id); setDepartmentId(null); }}
+                onDepartmentChange={setDepartmentId}
+                t={t}
+              />
+            )}
             <Button
               onClick={handleInviteEmail}
               disabled={!email.trim() || sending}
@@ -247,6 +286,17 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
               dir="ltr"
             />
             <RoleSelect value={isSupervisor ? "org:agent" : role} onChange={isSupervisor ? () => {} : setRole} disabled={isSupervisor} />
+            {showChannelSelector && (
+              <ChannelDeptSelectors
+                channels={channels ?? []}
+                channelId={channelId}
+                departmentId={departmentId}
+                departments={departments ?? []}
+                onChannelChange={(id) => { setChannelId(id); setDepartmentId(null); }}
+                onDepartmentChange={setDepartmentId}
+                t={t}
+              />
+            )}
             <Button
               onClick={handleInviteWhatsApp}
               disabled={!phone.trim() || sending}
@@ -310,5 +360,65 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface ChannelDeptSelectorsProps {
+  channels: Array<{ _id: Id<"channels">; displayName: string; displayPhone?: string | null }>;
+  channelId: Id<"channels"> | null;
+  departmentId: Id<"departments"> | null;
+  departments: Array<{ _id: Id<"departments">; name: string }>;
+  onChannelChange: (id: Id<"channels"> | null) => void;
+  onDepartmentChange: (id: Id<"departments"> | null) => void;
+  t: (en: string, ar: string) => string;
+}
+
+function ChannelDeptSelectors({
+  channels,
+  channelId,
+  departmentId,
+  departments,
+  onChannelChange,
+  onDepartmentChange,
+  t,
+}: ChannelDeptSelectorsProps) {
+  return (
+    <div className="space-y-2">
+      <Select
+        value={channelId ?? "__none__"}
+        onValueChange={(v) => onChannelChange(v === "__none__" ? null : v as Id<"channels">)}
+      >
+        <SelectTrigger className="w-full text-sm">
+          <SelectValue placeholder={t("Assign to channel (optional)", "تعيين لقناة (اختياري)")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none__">{t("No channel", "بدون قناة")}</SelectItem>
+          {channels.map((ch) => (
+            <SelectItem key={ch._id} value={ch._id}>
+              {ch.displayName}{ch.displayPhone ? ` · ${ch.displayPhone}` : ""}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {channelId && departments.length > 0 && (
+        <Select
+          value={departmentId ?? "__none__"}
+          onValueChange={(v) => onDepartmentChange(v === "__none__" ? null : v as Id<"departments">)}
+        >
+          <SelectTrigger className="w-full text-sm">
+            <SelectValue placeholder={t("Assign to department (optional)", "تعيين لقسم (اختياري)")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">{t("No department", "بدون قسم")}</SelectItem>
+            {departments.map((d) => (
+              <SelectItem key={d._id} value={d._id}>
+                {d.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    </div>
   );
 }

@@ -52,8 +52,38 @@ export const validateAndJoin = action({
     );
 
     const userEmail = identity.email ?? "";
+    const userName = identity.name ?? userEmail;
     const agentName =
       identity.givenName ?? identity.name?.split(" ")[0] ?? "Agent";
+
+    // Apply channel assignment embedded in the link (WhatsApp invite flow)
+    if (link.channelId) {
+      const channelRole = (link.defaultRole === "org:supervisor" ? "org:supervisor" : "org:agent") as "org:supervisor" | "org:agent";
+      await ctx.runMutation(internal.channelMembers.addMemberInternal, {
+        tenantId,
+        channelId: link.channelId,
+        userId,
+        userName,
+        userEmail,
+        role: channelRole,
+      });
+      if (link.departmentId) {
+        await ctx.runMutation(internal.departmentMembers.addMemberInternal, {
+          tenantId,
+          departmentId: link.departmentId,
+          userId,
+          userName,
+          userEmail,
+          role: channelRole,
+        });
+      }
+    }
+
+    // Apply any email-based pending assignments (email invite flow)
+    if (userEmail) {
+      await ctx.runAction(internal.pendingChannelAssignments.applyPendingInternal, {});
+    }
+
     if (userEmail) {
       await ctx.runAction(internal.actions.notifyEmail.agentWelcomeEmail, {
         userId,
