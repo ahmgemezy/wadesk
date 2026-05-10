@@ -3,7 +3,7 @@ import { ConvexError } from "convex/values";
 import { query, mutation, internalMutation, internalQuery, action } from "./_generated/server";
 import type { QueryCtx, MutationCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getCallerIdentity, getCallerRole, assertAdmin } from "./lib/auth";
+import { getCallerIdentity, getCallerRole, assertAdmin, isAdminOrSupervisor } from "./lib/auth";
 import {
   closeActiveParticipantStint,
   incrementParticipantMessageCount,
@@ -11,9 +11,6 @@ import {
 } from "./lib/participants";
 import type { Id } from "./_generated/dataModel";
 
-function isAdminOrSupervisor(orgRole: string): boolean {
-  return orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-}
 
 async function callerHasConversationAccess(
   ctx: QueryCtx | MutationCtx,

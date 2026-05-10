@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
-import { getCallerIdentity } from "./lib/auth";
+import { getCallerIdentity, isAdminOrSupervisor } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
 type SearchResult = {
@@ -19,10 +19,6 @@ export const globalSearch = query({
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
 
     const searchType = args.type ?? "all";
     const queryText = args.query.trim();
@@ -39,7 +35,7 @@ export const globalSearch = query({
         .take(20);
 
       for (const conv of convos) {
-        if (!isAdminOrSupervisor && conv.assignedAgentId !== callerId && conv.assignedAgentId !== undefined) {
+        if (!isAdminOrSupervisor(orgRole) && conv.assignedAgentId !== callerId && conv.assignedAgentId !== undefined) {
           continue;
         }
         const contact = await ctx.db.get(conv.contactId);
@@ -65,7 +61,7 @@ export const globalSearch = query({
       for (const msg of messages) {
         if (msg.isInternalNote) continue;
         const conv = await ctx.db.get(msg.conversationId);
-        if (!isAdminOrSupervisor && conv?.assignedAgentId !== callerId && conv?.assignedAgentId !== undefined) {
+        if (!isAdminOrSupervisor(orgRole) && conv?.assignedAgentId !== callerId && conv?.assignedAgentId !== undefined) {
           continue;
         }
         results.push({

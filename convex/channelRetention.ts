@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 export const listDisconnectedChannels = internalQuery({
   args: {},
@@ -29,7 +30,7 @@ export const purgeChannel = internalMutation({
     collectedContactIds: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const contactIds = new Set<string>(args.collectedContactIds ?? []);
+    const contactIds = new Set<Id<"contacts">>((args.collectedContactIds ?? []) as Id<"contacts">[]);
 
     // 1. Channel members
     const channelMembers = await ctx.db
@@ -97,19 +98,19 @@ export const purgeChannel = internalMutation({
       await ctx.scheduler.runAfter(0, internal.channelRetention.purgeChannel, {
         channelId: args.channelId,
         tenantId: args.tenantId,
-        collectedContactIds: Array.from(contactIds),
+        collectedContactIds: Array.from(contactIds) as string[],
       });
       return;
     }
 
     // 4. Orphaned contacts
-    for (const contactIdStr of contactIds) {
+    for (const contactId of contactIds) {
       const contactDocs = await ctx.db
         .query("conversations")
-        .withIndex("by_contact", (q) => q.eq("contactId", contactIdStr as any))
+        .withIndex("by_contact", (q) => q.eq("contactId", contactId))
         .collect();
       if (contactDocs.length === 0) {
-        await ctx.db.delete(contactIdStr as any);
+        await ctx.db.delete(contactId);
       }
     }
 

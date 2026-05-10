@@ -1,6 +1,6 @@
 import { v, ConvexError } from "convex/values";
 import { mutation } from "./_generated/server";
-import { getCallerIdentity, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
+import { getCallerIdentity, assertAdminOrSupervisor, isAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import { makeUserMutationKey, makeTenantMutationKey, enforceRateLimit } from "./lib/rateLimit";
 
 export const batchAssign = mutation({
@@ -46,10 +46,6 @@ export const batchUpdateStatus = mutation({
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
 
     await enforceRateLimit(ctx, makeUserMutationKey(callerId, "batchUpdateStatus"), {
       windowMs: 60_000,
@@ -66,7 +62,7 @@ export const batchUpdateStatus = mutation({
       const conv = await ctx.db.get(convId);
       if (!conv || conv.tenantId !== tenantId) continue;
 
-      if (!isAdminOrSupervisor && conv.assignedAgentId !== callerId) {
+      if (!isAdminOrSupervisor(orgRole) && conv.assignedAgentId !== callerId) {
         continue;
       }
 
@@ -85,12 +81,8 @@ export const batchAddLabel = mutation({
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
 
-    if (!isAdminOrSupervisor) {
+    if (!isAdminOrSupervisor(orgRole)) {
       throw new ConvexError("FORBIDDEN");
     }
 
@@ -127,12 +119,8 @@ export const batchRemoveLabel = mutation({
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
 
-    if (!isAdminOrSupervisor) {
+    if (!isAdminOrSupervisor(orgRole)) {
       throw new ConvexError("FORBIDDEN");
     }
 
@@ -169,11 +157,6 @@ export const batchClose = mutation({
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
-
     await enforceRateLimit(ctx, makeUserMutationKey(callerId, "batchClose"), {
       windowMs: 60_000,
       maxRequests: 10,
@@ -189,7 +172,7 @@ export const batchClose = mutation({
       const conv = await ctx.db.get(convId);
       if (!conv || conv.tenantId !== tenantId) continue;
 
-      if (!isAdminOrSupervisor && conv.assignedAgentId !== callerId) {
+      if (!isAdminOrSupervisor(orgRole) && conv.assignedAgentId !== callerId) {
         continue;
       }
 

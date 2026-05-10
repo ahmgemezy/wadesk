@@ -1,7 +1,7 @@
 import { v, ConvexError } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getCallerIdentity, type OrgRole } from "./lib/auth";
+import { getCallerIdentity, isAdminOrSupervisor, type OrgRole } from "./lib/auth";
 
 export const scheduleMessage = mutation({
   args: {
@@ -17,12 +17,7 @@ export const scheduleMessage = mutation({
       throw new ConvexError("NOT_FOUND");
     }
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
-
-    if (!isAdminOrSupervisor && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
+    if (!isAdminOrSupervisor(orgRole) && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
       throw new ConvexError("FORBIDDEN");
     }
 

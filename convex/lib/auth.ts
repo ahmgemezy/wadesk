@@ -56,3 +56,7 @@ export function assertAdminOrSupervisor(role: OrgRole): void {
     throw new ConvexError("FORBIDDEN");
   }
 }
+
+export function isAdminOrSupervisor(role: string): boolean {
+  return role === "org:admin" || role === "org:supervisor";
+}

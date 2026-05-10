@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Always return 200 immediately — Meta retries on non-200
-  const convexSiteUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? "";
+  const convexSiteUrl = process.env.CONVEX_SITE_URL ?? "";
   const webhookSecret = process.env.WHATSAPP_WEBHOOK_SECRET ?? "";
 
   // Fire-and-forget to Convex HTTP action (V2 — handles echoes + coexistence)

@@ -1,8 +1,8 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { query, mutation, internalMutation, internalQuery, action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
-import { getCallerIdentity } from "./lib/auth";
+import { getCallerIdentity, isAdminOrSupervisor } from "./lib/auth";
 import { enforceRateLimit, makeUserMutationKey } from "./lib/rateLimit";
 import {
   incrementParticipantMessageCount,
@@ -16,9 +16,6 @@ export const listForConversation = query({
 
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) return [];
-
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
 
     const messages = await ctx.db
       .query("messages")
@@ -35,7 +32,7 @@ export const listForConversation = query({
     // before; everyone else sees the conversation only when it has a
     // follow-up message in it.
     if (
-      !isAdminOrSupervisor &&
+      !isAdminOrSupervisor(orgRole) &&
       conversation.assignedAgentId !== callerId &&
       conversation.assignedAgentId !== undefined
     ) {
@@ -60,19 +57,21 @@ export const sendReply = mutation({
       maxRequests: 60,
     });
 
-    const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation || conversation.tenantId !== tenantId) {
-      throw new Error("NOT_FOUND");
+    if (args.content.length > 4096) {
+      throw new ConvexError("MESSAGE_TOO_LONG");
     }
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
     if (
-      !isAdminOrSupervisor &&
+      !isAdminOrSupervisor(orgRole) &&
       conversation.assignedAgentId !== callerId &&
       conversation.assignedAgentId !== undefined
     ) {
-      throw new Error("FORBIDDEN");
+      throw new ConvexError("FORBIDDEN");
     }
 
     const messageId = await ctx.db.insert("messages", {
@@ -89,10 +88,10 @@ export const sendReply = mutation({
     });
 
     const channel = await ctx.db.get(conversation.channelId);
-    if (!channel) throw new Error("CHANNEL_NOT_FOUND");
+    if (!channel) throw new ConvexError("CHANNEL_NOT_FOUND");
 
     const contact = await ctx.db.get(conversation.contactId);
-    if (!contact) throw new Error("CONTACT_NOT_FOUND");
+    if (!contact) throw new ConvexError("CONTACT_NOT_FOUND");
 
     let assignedAgentId = conversation.assignedAgentId;
     if (!assignedAgentId) {
@@ -161,17 +160,15 @@ export const addInternalNote = mutation({
 
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) {
-      throw new Error("NOT_FOUND");
+      throw new ConvexError("NOT_FOUND");
     }
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
     if (
-      !isAdminOrSupervisor &&
+      !isAdminOrSupervisor(orgRole) &&
       conversation.assignedAgentId !== callerId &&
       conversation.assignedAgentId !== undefined
     ) {
-      throw new Error("FORBIDDEN");
+      throw new ConvexError("FORBIDDEN");
     }
 
     const messageId = await ctx.db.insert("messages", {
@@ -414,11 +411,10 @@ export const sendLocationReply = mutation({
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
     const conversation = await ctx.db.get(args.conversationId);
-    if (!conversation || conversation.tenantId !== tenantId) throw new Error("NOT_FOUND");
+    if (!conversation || conversation.tenantId !== tenantId) throw new ConvexError("NOT_FOUND");
 
-    const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-    if (!isAdminOrSupervisor && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
-      throw new Error("FORBIDDEN");
+    if (!isAdminOrSupervisor(orgRole) && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
+      throw new ConvexError("FORBIDDEN");
     }
 
     const now = Date.now();
@@ -490,15 +486,14 @@ export const sendMediaReply = action({
       conversationId: args.conversationId,
       tenantId,
     });
-    if (!conversation) throw new Error("NOT_FOUND");
+    if (!conversation) throw new ConvexError("NOT_FOUND");
 
-    const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-    if (!isAdminOrSupervisor && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
-      throw new Error("FORBIDDEN");
+    if (!isAdminOrSupervisor(orgRole) && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
+      throw new ConvexError("FORBIDDEN");
     }
 
     const mediaUrl = await ctx.storage.getUrl(args.storageId);
-    if (!mediaUrl) throw new Error("STORAGE_URL_FAILED");
+    if (!mediaUrl) throw new ConvexError("STORAGE_URL_FAILED");
 
     const now = Date.now();
     const messageId: Id<"messages"> = await ctx.runMutation(internal.messages.insertMediaMessage, {
@@ -614,18 +609,17 @@ export const retryMessage = action({
       messageId: args.messageId,
       tenantId,
     });
-    if (!message) throw new Error("NOT_FOUND");
-    if (message.status !== "failed") throw new Error("NOT_FAILED");
+    if (!message) throw new ConvexError("NOT_FOUND");
+    if (message.status !== "failed") throw new ConvexError("NOT_FAILED");
 
     const conversation = await ctx.runQuery(internal.messages.getConversationInternal, {
       conversationId: message.conversationId,
       tenantId,
     });
-    if (!conversation) throw new Error("NOT_FOUND");
+    if (!conversation) throw new ConvexError("NOT_FOUND");
 
-    const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-    if (!isAdminOrSupervisor && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
-      throw new Error("FORBIDDEN");
+    if (!isAdminOrSupervisor(orgRole) && conversation.assignedAgentId !== callerId && conversation.assignedAgentId !== undefined) {
+      throw new ConvexError("FORBIDDEN");
     }
 
     await ctx.runMutation(internal.messages.resetMessageStatus, {
@@ -641,7 +635,7 @@ export const retryMessage = action({
       contactId: conversation.contactId,
       tenantId,
     });
-    if (!channel || !contact) throw new Error("CHANNEL_OR_CONTACT_NOT_FOUND");
+    if (!channel || !contact) throw new ConvexError("CHANNEL_OR_CONTACT_NOT_FOUND");
 
     if (message.contentType === "text" || message.contentType === "unsupported" || message.contentType === "template" || message.contentType === "location" || message.contentType === "system_event" || message.contentType === "sticker") {
       await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMessage, {
@@ -652,7 +646,7 @@ export const retryMessage = action({
         tenantId,
       });
     } else {
-      if (!message.mediaUrl) throw new Error("NO_MEDIA_URL");
+      if (!message.mediaUrl) throw new ConvexError("NO_MEDIA_URL");
       const isDocument = message.contentType === "document";
       await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMediaMessage, {
         messageId: args.messageId,
@@ -797,26 +791,24 @@ export const sendQuotedReply = mutation({
 
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) {
-      throw new Error("NOT_FOUND");
+      throw new ConvexError("NOT_FOUND");
     }
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
     if (
-      !isAdminOrSupervisor &&
+      !isAdminOrSupervisor(orgRole) &&
       conversation.assignedAgentId !== callerId &&
       conversation.assignedAgentId !== undefined
     ) {
-      throw new Error("FORBIDDEN");
+      throw new ConvexError("FORBIDDEN");
     }
 
     const quotedMsg = await ctx.db.get(args.quotedMessageId);
     if (!quotedMsg || quotedMsg.conversationId !== args.conversationId) {
-      throw new Error("QUOTED_MESSAGE_NOT_FOUND");
+      throw new ConvexError("QUOTED_MESSAGE_NOT_FOUND");
     }
 
     if (!quotedMsg.metaMessageId) {
-      throw new Error("QUOTED_MESSAGE_HAS_NO_META_ID");
+      throw new ConvexError("QUOTED_MESSAGE_HAS_NO_META_ID");
     }
 
     const now = Date.now();
@@ -836,7 +828,7 @@ export const sendQuotedReply = mutation({
 
     const channel = await ctx.db.get(conversation.channelId);
     const contact = await ctx.db.get(conversation.contactId);
-    if (!channel || !contact) throw new Error("CHANNEL_OR_CONTACT_NOT_FOUND");
+    if (!channel || !contact) throw new ConvexError("CHANNEL_OR_CONTACT_NOT_FOUND");
 
     await ctx.db.patch(args.conversationId, {
       lastMessageAt: now,
@@ -869,26 +861,24 @@ export const deleteMessage = mutation({
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
 
     const msg = await ctx.db.get(args.messageId);
-    if (!msg || msg.tenantId !== tenantId) throw new Error("NOT_FOUND");
+    if (!msg || msg.tenantId !== tenantId) throw new ConvexError("NOT_FOUND");
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
-    if (!isAdminOrSupervisor && msg.authorId !== callerId) {
-      throw new Error("FORBIDDEN");
+    if (!isAdminOrSupervisor(orgRole) && msg.authorId !== callerId) {
+      throw new ConvexError("FORBIDDEN");
     }
 
     if (msg.direction !== "outbound" || msg.isInternalNote) {
-      throw new Error("CANNOT_DELETE_THIS_MESSAGE");
+      throw new ConvexError("CANNOT_DELETE_THIS_MESSAGE");
     }
 
     if (!msg.metaMessageId) {
-      throw new Error("NO_META_MESSAGE_ID");
+      throw new ConvexError("NO_META_MESSAGE_ID");
     }
 
     const conversation = await ctx.db.get(msg.conversationId);
-    if (!conversation) throw new Error("CONVERSATION_NOT_FOUND");
+    if (!conversation) throw new ConvexError("CONVERSATION_NOT_FOUND");
     const channel = await ctx.db.get(conversation.channelId);
-    if (!channel) throw new Error("CHANNEL_NOT_FOUND");
+    if (!channel) throw new ConvexError("CHANNEL_NOT_FOUND");
 
     await ctx.db.patch(args.messageId, { deletedAt: Date.now() });
 
@@ -914,15 +904,15 @@ export const reactToMessage = mutation({
     const { tenantId, callerId } = await getCallerIdentity(ctx);
 
     const msg = await ctx.db.get(args.messageId);
-    if (!msg || msg.tenantId !== tenantId) throw new Error("NOT_FOUND");
+    if (!msg || msg.tenantId !== tenantId) throw new ConvexError("NOT_FOUND");
 
-    if (!msg.metaMessageId) throw new Error("NO_META_MESSAGE_ID");
+    if (!msg.metaMessageId) throw new ConvexError("NO_META_MESSAGE_ID");
 
     const conversation = await ctx.db.get(msg.conversationId);
-    if (!conversation) throw new Error("CONVERSATION_NOT_FOUND");
+    if (!conversation) throw new ConvexError("CONVERSATION_NOT_FOUND");
     const channel = await ctx.db.get(conversation.channelId);
     const contact = await ctx.db.get(conversation.contactId);
-    if (!channel || !contact) throw new Error("CHANNEL_OR_CONTACT_NOT_FOUND");
+    if (!channel || !contact) throw new ConvexError("CHANNEL_OR_CONTACT_NOT_FOUND");
 
     const existing = msg.reactions ?? [];
     const alreadyReacted = existing.findIndex((r) => r.reactorId === callerId);

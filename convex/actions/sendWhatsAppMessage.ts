@@ -1,14 +1,26 @@
 "use node";
 
-import { internalAction } from "../_generated/server";
+import { internalAction, type ActionCtx } from "../_generated/server";
 import { v } from "convex/values";
 import { internal } from "../_generated/api";
+import { decrypt } from "../lib/encryption";
+import type { Id } from "../_generated/dataModel";
 
 const BASE = `https://graph.facebook.com/${process.env.WHATSAPP_API_VERSION ?? "v25.0"}`;
 
-async function markFailed(ctx: { runMutation: Function }, messageId: string, tenantId: string, reason?: string) {
+async function getChannelToken(ctx: ActionCtx, phoneNumberId: string): Promise<string> {
+  const channels = await ctx.runQuery(internal.channels.listByPhoneId, { phoneNumberId });
+  const channel = channels?.[0];
+  if (channel?.accessToken) {
+    return decrypt(channel.accessToken);
+  }
+  // Fallback to global system user token if no per-channel token
+  return process.env.META_SYSTEM_USER_TOKEN ?? "";
+}
+
+async function markFailed(ctx: ActionCtx, messageId: Id<"messages">, tenantId: string, reason?: string) {
   await ctx.runMutation(internal.messages.updateStatus, {
-    messageId: messageId as any,
+    messageId,
     status: "failed",
     tenantId,
     failureReason: reason,
@@ -25,12 +37,13 @@ export const sendMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
+      const token = await getChannelToken(ctx, args.phoneNumberId);
       const response = await fetch(
         `${BASE}/${args.phoneNumberId}/messages`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -82,6 +95,7 @@ export const sendLocation = internalAction({
   },
   handler: async (ctx, args) => {
     try {
+      const token = await getChannelToken(ctx, args.phoneNumberId);
       const body: Record<string, unknown> = {
         messaging_product: "whatsapp",
         to: args.contactPhone,
@@ -96,7 +110,7 @@ export const sendLocation = internalAction({
       const res = await fetch(`${BASE}/${args.phoneNumberId}/messages`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
@@ -136,12 +150,13 @@ export const sendQuotedMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
+      const token = await getChannelToken(ctx, args.phoneNumberId);
       const response = await fetch(
         `${BASE}/${args.phoneNumberId}/messages`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -189,12 +204,13 @@ export const deleteWhatsAppMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
+      const token = await getChannelToken(ctx, args.phoneNumberId);
       const deleteResponse = await fetch(
         `${BASE}/${args.phoneNumberId}/messages/${args.metaMessageId}`,
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
         },
       );
@@ -220,12 +236,13 @@ export const sendReaction = internalAction({
   },
   handler: async (ctx, _args) => {
     try {
+      const token = await getChannelToken(ctx, _args.phoneNumberId);
       await fetch(
         `${BASE}/${_args.phoneNumberId}/messages`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -263,6 +280,7 @@ export const sendMediaMessage = internalAction({
   },
   handler: async (ctx, args) => {
     try {
+      const token = await getChannelToken(ctx, args.phoneNumberId);
       // Step 1: Upload media to Meta to get a media_id
       const formData = new FormData();
       const fileRes = await fetch(args.mediaUrl);
@@ -273,7 +291,7 @@ export const sendMediaMessage = internalAction({
 
       const uploadRes = await fetch(`${BASE}/${args.phoneNumberId}/media`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
@@ -293,7 +311,7 @@ export const sendMediaMessage = internalAction({
       const sendRes = await fetch(`${BASE}/${args.phoneNumberId}/messages`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.META_SYSTEM_USER_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

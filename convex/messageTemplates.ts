@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCallerIdentity, assertAdminOrSupervisor } from "./lib/auth";
@@ -84,7 +84,7 @@ export const update = mutation({
 
     const template = await ctx.db.get(args.id);
     if (!template || template.tenantId !== tenantId) {
-      throw new Error("NOT_FOUND");
+      throw new ConvexError("NOT_FOUND");
     }
 
     const patch: Record<string, unknown> = { updatedAt: Date.now() };
@@ -109,7 +109,7 @@ export const remove = mutation({
 
     const template = await ctx.db.get(args.id);
     if (!template || template.tenantId !== tenantId) {
-      throw new Error("NOT_FOUND");
+      throw new ConvexError("NOT_FOUND");
     }
 
     await ctx.db.delete(args.id);

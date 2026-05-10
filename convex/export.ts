@@ -7,10 +7,11 @@ import { getCallerRole, assertAdminOrSupervisor, type OrgRole } from "./lib/auth
 export const listAllContactsForExport = internalQuery({
   args: { tenantId: v.string() },
   handler: async (ctx, args) => {
+    // Capped at 5000 — large exports should use a paginated path in a future iteration
     return await ctx.db
       .query("contacts")
       .withIndex("by_tenant", (q) => q.eq("tenantId", args.tenantId))
-      .collect();
+      .take(5000);
   },
 });
 
@@ -27,10 +28,11 @@ export const listCustomFieldsForContact = internalQuery({
 export const listAllConversationsForExport = internalQuery({
   args: { tenantId: v.string() },
   handler: async (ctx, args) => {
+    // Capped at 5000 — large exports should use a paginated path in a future iteration
     return await ctx.db
       .query("conversations")
       .withIndex("by_tenant", (q) => q.eq("tenantId", args.tenantId))
-      .collect();
+      .take(5000);
   },
 });
 

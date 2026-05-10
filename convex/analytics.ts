@@ -8,7 +8,7 @@
  */
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-import { getCallerIdentity, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
+import { getCallerIdentity, assertAdminOrSupervisor, isAdminOrSupervisor, type OrgRole } from "./lib/auth";
 
 export const getTeamSummary = query({
   args: {
@@ -415,9 +415,9 @@ export const getMyStats = query({
     let conversationsHandled = 0;
     const responseTimes: number[] = [];
 
-    const isAdminOrSupervisor = orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
+    const callerIsAdminOrSupervisor = isAdminOrSupervisor(orgRole);
 
-    if (isAdminOrSupervisor) {
+    if (callerIsAdminOrSupervisor) {
       for await (const doc of ctx.db
         .query("conversationMetrics")
         .withIndex("by_tenant_created", (q) =>

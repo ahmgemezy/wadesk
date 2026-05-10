@@ -5,7 +5,7 @@
 import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getCallerIdentity, assertAdminOrSupervisor, type OrgRole } from "./lib/auth";
+import { getCallerIdentity, assertAdminOrSupervisor, isAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
 // ─── List Conversations ───────────────────────────────────────────────────────
@@ -36,11 +36,6 @@ export const listConversations = query({
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
-
     const all = await ctx.db
       .query("conversations")
       .withIndex("by_last_message", (q) => q.eq("tenantId", tenantId))
@@ -52,7 +47,7 @@ export const listConversations = query({
       filtered = all.filter((c) => c.assignedAgentId === callerId);
     } else if (args.filter === "unassigned") {
       filtered = all.filter((c) => !c.assignedAgentId);
-    } else if (!isAdminOrSupervisor) {
+    } else if (!isAdminOrSupervisor(orgRole)) {
       // Agents see: assigned-to-me, unassigned, OR conversations that contain
       // a follow-up (so the team can collaborate on outreach across
       // departments without being blocked by assignment).
@@ -193,10 +188,8 @@ export const sendMessage = mutation({
       throw new ConvexError("NOT_FOUND");
     }
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" || orgRole === "admin" || orgRole === "org:supervisor";
     if (
-      !isAdminOrSupervisor &&
+      !isAdminOrSupervisor(orgRole) &&
       conversation.assignedAgentId !== callerId &&
       conversation.assignedAgentId !== undefined
     ) {
@@ -280,12 +273,7 @@ export const updateStatus = mutation({
       throw new ConvexError("NOT_FOUND");
     }
 
-    const isAdminOrSupervisor =
-      orgRole === "org:admin" ||
-      orgRole === "admin" ||
-      orgRole === "org:supervisor";
-
-    if (!isAdminOrSupervisor) {
+    if (!isAdminOrSupervisor(orgRole)) {
       // Agent can only resolve conversations assigned to them
       if (conversation.assignedAgentId !== callerId) {
         throw new ConvexError("FORBIDDEN");
@@ -419,9 +407,8 @@ export const queueCounts = query({
   args: {},
   handler: async (ctx) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    const isAdmin = orgRole === "org:admin" || orgRole === "admin";
-    const isSupervisor = orgRole === "org:supervisor";
-    const isPrivileged = isAdmin || isSupervisor;
+    const isAdmin = orgRole === "org:admin";
+    const isPrivileged = isAdminOrSupervisor(orgRole);
 
     const allChannels = await ctx.db
       .query("channels")

@@ -1,6 +1,6 @@
 import { v, ConvexError } from "convex/values";
 import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
-import { getCallerIdentity, getCallerRole, assertAdmin } from "./lib/auth";
+import { getCallerIdentity, getCallerRole, assertAdmin, isAdminOrSupervisor } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
 
 export const listForDepartment = query({
@@ -90,7 +90,7 @@ export const addMember = mutation({
       throw new ConvexError("NOT_FOUND");
     }
 
-    if (orgRole !== "org:admin" && orgRole !== "admin") {
+    if (!isAdminOrSupervisor(orgRole)) {
       if (args.role === "org:supervisor") {
         throw new ConvexError("FORBIDDEN");
       }
@@ -156,7 +156,7 @@ export const removeMember = mutation({
       .first();
     if (!membership) return;
 
-    if (orgRole !== "org:admin" && orgRole !== "admin") {
+    if (!isAdminOrSupervisor(orgRole)) {
       if (membership.role === "org:supervisor") {
         throw new ConvexError("FORBIDDEN");
       }
