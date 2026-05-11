@@ -268,6 +268,200 @@ export const listPendingInternal = internalQuery({
   },
 });
 
+// ── Internal query: list templates for a channel ─────────────────────────────
+
+export const listByChannelInternal = internalQuery({
+  args: { channelId: v.id("channels"), tenantId: v.string() },
+  handler: async (ctx, { channelId, tenantId }) => {
+    return ctx.db
+      .query("broadcastTemplates")
+      .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+      .filter((q) => q.eq(q.field("channelId"), channelId))
+      .collect();
+  },
+});
+
+// ── Internal mutation: insert an imported template ────────────────────────────
+
+export const insertImportedInternal = internalMutation({
+  args: {
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+    createdBy: v.string(),
+    name: v.string(),
+    title: v.string(),
+    language: v.string(),
+    category: v.union(v.literal("MARKETING"), v.literal("UTILITY")),
+    headerType: v.union(
+      v.literal("NONE"), v.literal("TEXT"), v.literal("IMAGE"),
+      v.literal("VIDEO"), v.literal("DOCUMENT"),
+    ),
+    headerText: v.optional(v.string()),
+    body: v.string(),
+    variables: v.array(v.string()),
+    footer: v.optional(v.string()),
+    buttons: v.optional(v.array(v.object({
+      type: v.union(v.literal("URL"), v.literal("PHONE_NUMBER"), v.literal("QUICK_REPLY")),
+      text: v.string(),
+      value: v.string(),
+      isDynamic: v.optional(v.boolean()),
+    }))),
+    metaStatus: v.union(
+      v.literal("draft"), v.literal("pending"), v.literal("approved"),
+      v.literal("rejected"), v.literal("paused"),
+    ),
+    metaTemplateId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.insert("broadcastTemplates", { ...args, createdAt: now, updatedAt: now });
+  },
+});
+
+// ── Types for Meta API responses ──────────────────────────────────────────────
+
+type MetaComponent = {
+  type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
+  format?: string;
+  text?: string;
+  buttons?: Array<{ type: string; text: string; url?: string; phone_number?: string }>;
+};
+
+type MetaTemplate = {
+  id: string;
+  name: string;
+  language: string;
+  status: string;
+  category: string;
+  components: MetaComponent[];
+};
+
+function mapMetaStatus(
+  s: string,
+): "draft" | "pending" | "approved" | "rejected" | "paused" {
+  switch (s.toUpperCase()) {
+    case "APPROVED": return "approved";
+    case "PENDING":  return "pending";
+    case "REJECTED": return "rejected";
+    case "PAUSED":
+    case "DISABLED": return "paused";
+    default:         return "draft";
+  }
+}
+
+function parseMetaTemplate(mt: MetaTemplate): {
+  name: string; title: string; language: string;
+  category: "MARKETING" | "UTILITY";
+  headerType: "NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+  headerText?: string;
+  body: string; variables: string[];
+  footer?: string;
+  buttons: Array<{ type: "URL" | "PHONE_NUMBER" | "QUICK_REPLY"; text: string; value: string; isDynamic: boolean }>;
+} | null {
+  const header = mt.components.find((c) => c.type === "HEADER");
+  const bodyComp = mt.components.find((c) => c.type === "BODY");
+  const footerComp = mt.components.find((c) => c.type === "FOOTER");
+  const buttonsComp = mt.components.find((c) => c.type === "BUTTONS");
+
+  if (!bodyComp?.text) return null;
+
+  // Header
+  let headerType: "NONE" | "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT" = "NONE";
+  let headerText: string | undefined;
+  if (header) {
+    const fmt = (header.format ?? "TEXT").toUpperCase();
+    if (fmt === "TEXT" || fmt === "IMAGE" || fmt === "VIDEO" || fmt === "DOCUMENT") {
+      headerType = fmt as typeof headerType;
+      if (fmt === "TEXT") headerText = header.text;
+    }
+  }
+
+  // Body — convert positional {{1}}, *{{1}}* back to named variables
+  let idx = 0;
+  const body = bodyComp.text.replace(/\*?\{\{(\d+)\}\}\*?/g, () => `{{variable_${++idx}}}`);
+  const variables = extractVariables(body);
+
+  // Buttons
+  const buttons: Array<{ type: "URL" | "PHONE_NUMBER" | "QUICK_REPLY"; text: string; value: string; isDynamic: boolean }> = [];
+  for (const btn of buttonsComp?.buttons ?? []) {
+    if (btn.type === "URL") {
+      const isDynamic = (btn.url ?? "").includes("{{1}}");
+      buttons.push({ type: "URL", text: btn.text, value: (btn.url ?? "").replace(/\{\{1\}\}$/, ""), isDynamic });
+    } else if (btn.type === "PHONE_NUMBER") {
+      buttons.push({ type: "PHONE_NUMBER", text: btn.text, value: btn.phone_number ?? "", isDynamic: false });
+    } else {
+      buttons.push({ type: "QUICK_REPLY", text: btn.text, value: "", isDynamic: false });
+    }
+  }
+
+  const title = mt.name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const category: "MARKETING" | "UTILITY" = mt.category === "UTILITY" ? "UTILITY" : "MARKETING";
+
+  return { name: mt.name, title, language: mt.language, category, headerType, headerText, body, variables, footer: footerComp?.text, buttons };
+}
+
+// ── importFromMeta action ─────────────────────────────────────────────────────
+
+export const importFromMeta = action({
+  args: { channelId: v.id("channels") },
+  handler: async (ctx, { channelId }) => {
+    const role = await getCallerRole(ctx);
+    assertAdminOrSupervisor(role);
+
+    const identity = await ctx.auth.getUserIdentity();
+    const tenantId = identity!.orgId as string;
+
+    const channel = await ctx.runQuery(internal.broadcastTemplates.getChannelInternal, { channelId, tenantId });
+    if (!channel) throw new ConvexError("CHANNEL_NOT_FOUND");
+
+    const { decrypt } = await import("./lib/encryption");
+    const token = channel.accessToken ? await decrypt(channel.accessToken) : null;
+    if (!token) throw new ConvexError("CHANNEL_TOKEN_MISSING");
+
+    const res = await fetch(
+      `${META_BASE}/${channel.wabaId}/message_templates?fields=id,name,language,status,category,components&limit=200`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const data = await res.json() as { data?: MetaTemplate[]; error?: { message: string; code?: number } };
+    if (!res.ok || data.error) {
+      const errMsg = data.error?.message ?? `HTTP ${res.status}`;
+      const isTokenExpired =
+        errMsg.includes("Session has expired") ||
+        errMsg.includes("Error validating access token") ||
+        data.error?.code === 190;
+      if (isTokenExpired) {
+        throw new ConvexError(
+          "TOKEN_EXPIRED: Your WhatsApp channel access token has expired. Please reconnect the channel in Settings → Channels to refresh it.",
+        );
+      }
+      throw new ConvexError(`Meta API error: ${errMsg}`);
+    }
+
+    const existing = await ctx.runQuery(internal.broadcastTemplates.listByChannelInternal, { channelId, tenantId });
+    const existingNames = new Set(existing.map((t) => t.name));
+
+    let imported = 0;
+    let skipped = 0;
+
+    for (const mt of data.data ?? []) {
+      if (existingNames.has(mt.name)) { skipped++; continue; }
+      const parsed = parseMetaTemplate(mt);
+      if (!parsed) { skipped++; continue; }
+      await ctx.runMutation(internal.broadcastTemplates.insertImportedInternal, {
+        tenantId,
+        channelId,
+        createdBy: identity!.subject,
+        ...parsed,
+        metaStatus: mapMetaStatus(mt.status),
+        metaTemplateId: mt.id,
+      });
+      imported++;
+    }
+
+    return { imported, skipped };
+  },
+});
+
 // ── Helper: build Meta API components ─────────────────────────────────────────
 
 function buildMetaComponents(tpl: {
@@ -389,10 +583,19 @@ export const submit = action({
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json() as { id?: string; error?: { message: string } };
+    const data = await res.json() as { id?: string; error?: { message: string; code?: number } };
 
     if (!res.ok || data.error) {
       const errMsg = data.error?.message ?? `HTTP ${res.status}`;
+      const isTokenExpired =
+        errMsg.includes("Session has expired") ||
+        errMsg.includes("Error validating access token") ||
+        data.error?.code === 190;
+      if (isTokenExpired) {
+        throw new ConvexError(
+          "TOKEN_EXPIRED: Your WhatsApp channel access token has expired. Please reconnect the channel in Settings → Channels to refresh it.",
+        );
+      }
       throw new ConvexError(`Meta API error: ${errMsg}`);
     }
 

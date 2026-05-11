@@ -488,22 +488,24 @@ export function TemplatesSettings() {
 
       {/* ── Broadcast template builder dialog ── */}
       <Dialog open={broadcastBuilderOpen} onOpenChange={setBroadcastBuilderOpen}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-4xl h-[90vh] p-0 gap-0 overflow-hidden flex flex-col">
+          <DialogHeader className="px-6 pt-5 pb-4 border-b shrink-0">
             <DialogTitle>
               {broadcastEditingId
                 ? t("Edit Broadcast Template", "تعديل قالب البث")
                 : t("Create Broadcast Template", "إنشاء قالب البث")}
             </DialogTitle>
           </DialogHeader>
-          <BroadcastTemplateBuilder
-            templateId={broadcastEditingId ?? undefined}
-            onClose={() => setBroadcastBuilderOpen(false)}
-            onSave={() => {
-              setBroadcastBuilderOpen(false);
-              setBroadcastEditingId(null);
-            }}
-          />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <BroadcastTemplateBuilder
+              templateId={broadcastEditingId ?? undefined}
+              onClose={() => setBroadcastBuilderOpen(false)}
+              onSave={() => {
+                setBroadcastBuilderOpen(false);
+                setBroadcastEditingId(null);
+              }}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>

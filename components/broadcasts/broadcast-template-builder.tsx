@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -53,6 +53,66 @@ const HEADER_OPTIONS: { value: HeaderType; label: string; labelAr: string }[] = 
   { value: "DOCUMENT", label: "Document", labelAr: "مستند" },
 ];
 
+const VAR_GROUPS = [
+  {
+    id: "customer",
+    labelEn: "Customer",
+    labelAr: "العميل",
+    vars: [
+      { key: "name",       descEn: "Full name",    descAr: "الاسم الكامل" },
+      { key: "first_name", descEn: "First name",   descAr: "الاسم الأول" },
+      { key: "phone",      descEn: "Phone",        descAr: "الهاتف" },
+      { key: "city",       descEn: "City",         descAr: "المدينة" },
+    ],
+  },
+  {
+    id: "order",
+    labelEn: "Order",
+    labelAr: "الطلب",
+    vars: [
+      { key: "order_id",        descEn: "Order #",       descAr: "رقم الطلب" },
+      { key: "order_status",    descEn: "Status",        descAr: "الحالة" },
+      { key: "product",         descEn: "Product",       descAr: "المنتج" },
+      { key: "quantity",        descEn: "Quantity",      descAr: "الكمية" },
+      { key: "tracking_number", descEn: "Tracking #",    descAr: "رقم التتبع" },
+      { key: "delivery_date",   descEn: "Delivery date", descAr: "تاريخ التسليم" },
+    ],
+  },
+  {
+    id: "payment",
+    labelEn: "Payment",
+    labelAr: "الدفع",
+    vars: [
+      { key: "amount",     descEn: "Amount",      descAr: "المبلغ" },
+      { key: "discount",   descEn: "Discount",    descAr: "الخصم" },
+      { key: "code",       descEn: "Promo code",  descAr: "كود الخصم" },
+      { key: "invoice_id", descEn: "Invoice #",   descAr: "رقم الفاتورة" },
+    ],
+  },
+  {
+    id: "datetime",
+    labelEn: "Date & Time",
+    labelAr: "التاريخ والوقت",
+    vars: [
+      { key: "date",             descEn: "Date",             descAr: "التاريخ" },
+      { key: "time",             descEn: "Time",             descAr: "الوقت" },
+      { key: "appointment_date", descEn: "Appointment",      descAr: "تاريخ الموعد" },
+      { key: "expiry_date",      descEn: "Expiry date",      descAr: "تاريخ الانتهاء" },
+    ],
+  },
+  {
+    id: "general",
+    labelEn: "General",
+    labelAr: "عام",
+    vars: [
+      { key: "link",          descEn: "Link",          descAr: "رابط" },
+      { key: "business_name", descEn: "Business name", descAr: "اسم الشركة" },
+      { key: "agent_name",    descEn: "Agent name",    descAr: "اسم الموظف" },
+      { key: "note",          descEn: "Note",          descAr: "ملاحظة" },
+    ],
+  },
+] as const;
+
 export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props) {
   const t = useT();
   const channels = useQuery(api.channels.listForTenant);
@@ -78,6 +138,8 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
   const [buttons, setButtons] = useState<BtnField[]>([]);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [activeVarGroup, setActiveVarGroup] = useState<typeof VAR_GROUPS[number]["id"]>("customer");
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const isLocked = template?.metaStatus === "pending" || template?.metaStatus === "approved";
 
@@ -110,6 +172,20 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
   }
 
   const detectedVars = extractVariables(body);
+
+  function insertVariable(varName: string) {
+    const el = bodyRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? body.length;
+    const end = el.selectionEnd ?? body.length;
+    const tag = `{{${varName}}}`;
+    const next = body.slice(0, start) + tag + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + tag.length, start + tag.length);
+    });
+  }
 
   // Build live preview components
   const previewComponents: TemplateComponent[] = [];
@@ -200,18 +276,18 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
   const canSubmitToMeta = templateId && !isLocked && !!title.trim() && !!body.trim() && !!channelId;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full">
         {isLocked && (
-          <div className="rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+          <div className="mx-6 mt-4 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 px-3 py-2 text-sm text-amber-700 dark:text-amber-400 shrink-0">
             {template?.metaStatus === "pending"
               ? t("This template is pending Meta review and cannot be edited.", "هذا القالب قيد مراجعة ميتا ولا يمكن تعديله.")
               : t("Approved templates cannot be edited.", "لا يمكن تعديل القوالب المعتمدة.")}
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* ── Left: Form ── */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0">
+          {/* ── Left: Scrollable form ── */}
+          <div className="overflow-y-auto px-6 py-5 space-y-4 border-e border-border">
             {/* Basic Info */}
             <div className="space-y-3">
               <div className="space-y-1">
@@ -342,20 +418,93 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
             </div>
 
             {/* Body */}
-            <div className="space-y-1">
-              <Label>{t("Body", "النص")}</Label>
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between">
+                <Label>{t("Body", "النص")}</Label>
+                <span className="text-[11px] text-muted-foreground">
+                  {t("Use {{variable}} to personalise", "استخدم {{متغير}} للتخصيص")}
+                </span>
+              </div>
+
+              {/* Variable picker */}
+              <div className="rounded-md border border-border overflow-hidden">
+                {/* Tab strip */}
+                <div className="flex border-b border-border overflow-x-auto scrollbar-none bg-muted/40">
+                  {VAR_GROUPS.map((group) => (
+                    <button
+                      key={group.id}
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => setActiveVarGroup(group.id)}
+                      className={[
+                        "shrink-0 px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors",
+                        activeVarGroup === group.id
+                          ? "border-primary text-foreground bg-background"
+                          : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                      ].join(" ")}
+                    >
+                      {t(group.labelEn, group.labelAr)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Chip grid */}
+                <div className="p-2.5 flex flex-wrap gap-1.5 bg-background">
+                  {VAR_GROUPS.find((g) => g.id === activeVarGroup)?.vars.map(({ key, descEn, descAr }) => {
+                    const isUsed = detectedVars.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={isLocked}
+                        onClick={() => insertVariable(key)}
+                        className={[
+                          "group flex flex-col items-start px-2.5 py-1.5 rounded-md border text-left transition-all",
+                          isUsed
+                            ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
+                            : "border-border bg-muted/30 hover:border-border hover:bg-muted/60",
+                          "disabled:opacity-50 disabled:cursor-not-allowed",
+                        ].join(" ")}
+                      >
+                        <span className={["text-[11px] font-medium leading-none mb-[3px]", isUsed ? "text-primary" : "text-foreground"].join(" ")}>
+                          {t(descEn, descAr)}
+                        </span>
+                        <span className={["text-[10px] font-mono leading-none", isUsed ? "text-primary/60" : "text-muted-foreground"].join(" ")}>
+                          {`{{${key}}}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Footer hint */}
+                <div className="px-3 py-1.5 border-t border-border bg-muted/20">
+                  <p className="text-[10px] text-muted-foreground">
+                    {t(
+                      "Click a variable to insert it at your cursor. Agents fill in the values before sending.",
+                      "اضغط على متغير لإدراجه عند المؤشر. يملأ الوكلاء القيم قبل الإرسال."
+                    )}
+                  </p>
+                </div>
+              </div>
+
               <Textarea
+                ref={bodyRef}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={t("Hello {{name}}, your order {{order_id}} is ready!", "أهلاً {{name}}، طلبك {{order_id}} جاهز!")}
-                className="min-h-[120px] resize-none"
+                className="min-h-[120px] resize-none text-sm"
                 dir="auto"
                 disabled={isLocked}
               />
+
               {detectedVars.length > 0 && (
-                <div className="flex flex-wrap gap-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-muted-foreground shrink-0">
+                    {t("In this message:", "في هذه الرسالة:")}
+                  </span>
                   {detectedVars.map((v) => (
-                    <Badge key={v} variant="secondary" className="text-xs">{`{{${v}}}`}</Badge>
+                    <Badge key={v} variant="secondary" className="text-[11px] font-mono py-0">{`{{${v}}}`}</Badge>
                   ))}
                 </div>
               )}
@@ -457,9 +606,9 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
             </div>
           </div>
 
-          {/* ── Right: Live Preview ── */}
-          <div className="flex flex-col items-center justify-start pt-2">
-            <p className="text-xs text-muted-foreground mb-3">
+          {/* ── Right: Sticky preview ── */}
+          <div className="overflow-y-auto px-6 py-5 flex flex-col items-center gap-3">
+            <p className="text-xs text-muted-foreground self-center">
               {t("Live Preview", "معاينة مباشرة")}
             </p>
             <WhatsAppTemplatePreview
@@ -469,8 +618,8 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
           </div>
         </div>
 
-      {/* Action bar */}
-      <div className="flex justify-between items-center pt-4 border-t mt-2">
+      {/* Action bar — pinned to bottom */}
+      <div className="flex justify-between items-center px-6 py-4 border-t shrink-0">
         <Button variant="outline" onClick={onClose}>
           {t("Cancel", "إلغاء")}
         </Button>
