@@ -41,8 +41,6 @@ import {
   ShoppingCartIcon,
   WifiIcon,
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -717,7 +715,7 @@ function ProductFormDialog({
                     {descLen}/9,999
                   </span>
                 </div>
-                <Textarea
+                <textarea
                   id="pf-desc"
                   value={draft.description}
                   onChange={field("description")}
@@ -886,9 +884,11 @@ function ProductFormDialog({
                   </p>
                 </div>
                 {!isEdit && (
-                  <Switch
+                  <input
+                    type="checkbox"
                     checked={draft.hasVariants}
-                    onCheckedChange={(v) => setField("hasVariants", v)}
+                    onChange={(e) => setField("hasVariants", e.target.checked)}
+                    className="w-5 h-5 rounded cursor-pointer accent-[#0071E3]"
                   />
                 )}
               </div>
@@ -1603,14 +1603,26 @@ function CatalogCard({
               {t("WhatsApp Storefront", "واجهة المتجر")}
             </p>
             <div className="flex items-center gap-2">
-              <Switch checked={isCatalogVisible ?? false} onCheckedChange={handleToggleVisibility} disabled={togglingVisibility} />
+              <input
+                type="checkbox"
+                checked={isCatalogVisible ?? false}
+                onChange={(e) => handleToggleVisibility(e.target.checked)}
+                disabled={togglingVisibility}
+                className="w-4 h-4 rounded cursor-pointer accent-[#0071E3] disabled:opacity-50"
+              />
               <span className="flex items-center gap-1 text-[#6E6E73]">
                 <EyeIcon className="size-3.5" />
                 {t("Visible to customers", "مرئي للعملاء")}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Switch checked={isCartEnabled ?? false} onCheckedChange={handleToggleCart} disabled={togglingCart} />
+              <input
+                type="checkbox"
+                checked={isCartEnabled ?? false}
+                onChange={(e) => handleToggleCart(e.target.checked)}
+                disabled={togglingCart}
+                className="w-4 h-4 rounded cursor-pointer accent-[#0071E3] disabled:opacity-50"
+              />
               <span className="flex items-center gap-1 text-[#6E6E73]">
                 <ShoppingCartIcon className="size-3.5" />
                 {t("Cart enabled", "عربة التسوق")}

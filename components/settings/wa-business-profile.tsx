@@ -6,9 +6,7 @@ import { useQuery, useAction, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { DT } from "@/lib/design-tokens";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
@@ -182,9 +180,9 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
               "انتهت صلاحية رمز الوصول لهذه القناة. يرجى إعادة ربط رقم واتساب لاستعادة الوصول."
             )}
           </p>
-          <Button variant="outline" onClick={() => router.push("/settings/channels")}>
+          <button className={DT.BTN_OUTLINE} onClick={() => router.push("/settings/channels")}>
             {t("Reconnect Channel", "إعادة ربط القناة")}
-          </Button>
+          </button>
         </CardContent>
       </Card>
     );
@@ -198,9 +196,9 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
           <p className="font-medium">
             {t("Business Profile editing requires Growth plan or above", "تحرير الملف التجاري يتطلب خطة النمو أو أعلى")}
           </p>
-          <Button variant="outline" onClick={() => router.push("/settings/billing")}>
+          <button className={DT.BTN_OUTLINE} onClick={() => router.push("/settings/billing")}>
             {t("Upgrade Plan", "ترقية الخطة")}
-          </Button>
+          </button>
         </CardContent>
       </Card>
     );
@@ -237,9 +235,8 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                 className="hidden"
                 onChange={handlePhotoUpload}
               />
-              <Button
-                size="sm"
-                variant="outline"
+              <button
+                className={DT.BTN_OUTLINE}
                 disabled={uploadingPhoto}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -251,7 +248,7 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                 {uploadingPhoto
                   ? t("Uploading...", "جاري الرفع...")
                   : t("Upload Photo", "رفع صورة")}
-              </Button>
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -266,7 +263,7 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
             {displayName && (
               <div className="space-y-1">
                 <div className="flex items-center gap-1">
-                  <label className="text-sm font-medium">
+                  <label className={DT.LBL}>
                     {t("Display Name", "اسم العرض")}
                   </label>
                   <Tooltip>
@@ -281,23 +278,24 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                     </TooltipContent>
                   </Tooltip>
                 </div>
-                <Input value={displayName} readOnly className="bg-muted" disabled />
+                <input value={displayName} readOnly className={`${DT.INPUT} bg-muted cursor-not-allowed opacity-50`} disabled />
               </div>
             )}
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">
+              <label className={DT.LBL}>
                 {t("Description", "الوصف")}
               </label>
-              <Textarea
+              <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 maxLength={512}
                 rows={3}
+                className={DT.TEXTAREA}
               />
               <div className="flex justify-start">
-                <Button
-                  size="sm"
+                <button
+                  className={DT.BTN_SM}
                   disabled={savingField === "description"}
                   onClick={() => saveField("description", description)}
                 >
@@ -307,22 +305,23 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                     <SaveIcon className="size-4 me-1" />
                   )}
                   {t("Save", "حفظ")}
-                </Button>
+                </button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">
+              <label className={DT.LBL}>
                 {t("Address", "العنوان")}
               </label>
-              <Input
+              <input
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 maxLength={256}
+                className={DT.INPUT}
               />
               <div className="flex justify-start">
-                <Button
-                  size="sm"
+                <button
+                  className={DT.BTN_SM}
                   disabled={savingField === "address"}
                   onClick={() => saveField("address", address)}
                 >
@@ -332,23 +331,24 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                     <SaveIcon className="size-4 me-1" />
                   )}
                   {t("Save", "حفظ")}
-                </Button>
+                </button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">
+              <label className={DT.LBL}>
                 {t("Email", "البريد الإلكتروني")}
               </label>
-              <Input
+              <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 maxLength={128}
+                className={DT.INPUT}
               />
               <div className="flex justify-start">
-                <Button
-                  size="sm"
+                <button
+                  className={DT.BTN_SM}
                   disabled={savingField === "email"}
                   onClick={() => saveField("email", email)}
                 >
@@ -358,23 +358,24 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                     <SaveIcon className="size-4 me-1" />
                   )}
                   {t("Save", "حفظ")}
-                </Button>
+                </button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">
+              <label className={DT.LBL}>
                 {t("Website", "الموقع الإلكتروني")}
               </label>
-              <Input
+              <input
                 type="url"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://example.com"
+                className={DT.INPUT}
               />
               <div className="flex justify-start">
-                <Button
-                  size="sm"
+                <button
+                  className={DT.BTN_SM}
                   disabled={savingField === "website"}
                   onClick={() => saveField("website", website)}
                 >
@@ -384,18 +385,18 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                     <SaveIcon className="size-4 me-1" />
                   )}
                   {t("Save", "حفظ")}
-                </Button>
+                </button>
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium">
+              <label className={DT.LBL}>
                 {t("Category", "الفئة")}
               </label>
               <select
                 value={vertical}
                 onChange={(e) => setVertical(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                className={DT.INPUT}
               >
                 <option value="">
                   {t("Select category", "اختر الفئة")}
@@ -407,8 +408,8 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                 ))}
               </select>
               <div className="flex justify-start">
-                <Button
-                  size="sm"
+                <button
+                  className={DT.BTN_SM}
                   disabled={savingField === "vertical"}
                   onClick={() => saveField("vertical", vertical)}
                 >
@@ -418,7 +419,7 @@ export function WABusinessProfile({ channelId }: WABusinessProfileProps) {
                     <SaveIcon className="size-4 me-1" />
                   )}
                   {t("Save", "حفظ")}
-                </Button>
+                </button>
               </div>
             </div>
           </CardContent>
