@@ -2,8 +2,8 @@
 
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import type { DateRange } from "./date-range-picker";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -64,14 +64,10 @@ export function TeamSummaryCards({ dateRange, locale = "ar" }: TeamSummaryCardsP
     return (
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-4 w-24" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16" />
-            </CardContent>
-          </Card>
+          <div key={i} className={`${DT.CARD_SM} p-5`}>
+            <Skeleton className="h-4 w-24 mb-3" />
+            <Skeleton className="h-8 w-16" />
+          </div>
         ))}
       </div>
     );
@@ -79,7 +75,7 @@ export function TeamSummaryCards({ dateRange, locale = "ar" }: TeamSummaryCardsP
 
   if (data.totalConversations === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className={`text-center py-8 ${DT.MUTED}`}>
         {locale === "ar" ? "لا توجد بيانات لهذه الفترة" : "No data for this period"}
       </div>
     );
@@ -129,27 +125,20 @@ export function TeamSummaryCards({ dateRange, locale = "ar" }: TeamSummaryCardsP
     >
       {cards.map((card) => (
         <motion.div key={card.id} variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
-          <Card className="overflow-hidden relative group bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground font-sans">
-                {card.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold tracking-tight font-sans text-foreground">
-                {card.isNumeric ? <AnimatedCounter value={card.value as number} /> : card.value}
-                {card.suffix && (
-                  <span className="text-sm text-muted-foreground ms-1">{card.suffix}</span>
-                )}
-              </div>
-              {card.subtext && (
-                <p className="text-xs text-muted-foreground mt-1">{card.subtext}</p>
+          <div className={`${DT.CARD_SM} overflow-hidden relative p-5`}>
+            <div className={`${DT.MICRO} mb-2`}>
+              {card.label}
+            </div>
+            <div className="text-[32px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+              {card.isNumeric ? <AnimatedCounter value={card.value as number} /> : card.value}
+              {card.suffix && (
+                <span className={`${DT.MUTED} ms-1`}>{card.suffix}</span>
               )}
-            </CardContent>
-            
-            {/* Sparkline background highlight effect */}
-            <div className="absolute inset-0 bg-linear-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-          </Card>
+            </div>
+            {card.subtext && (
+              <p className={`${DT.MICRO} mt-1`}>{card.subtext}</p>
+            )}
+          </div>
         </motion.div>
       ))}
     </motion.div>

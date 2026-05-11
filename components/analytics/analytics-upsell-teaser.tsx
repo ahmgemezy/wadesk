@@ -1,7 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import Link from "next/link";
 
 interface AnalyticsUpsellTeaserProps {
@@ -14,27 +13,23 @@ export function AnalyticsUpsellTeaser({ locale = "ar" }: AnalyticsUpsellTeaserPr
       <div className="relative">
         <div className="grid gap-4 sm:grid-cols-3 blur-[6px] pointer-events-none select-none">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="pt-6">
-                <div className="h-16 bg-muted rounded" />
-              </CardContent>
-            </Card>
+            <div key={i} className={`${DT.CARD} p-6`}>
+              <div className="h-16 bg-black/[0.06] dark:bg-white/[0.08] rounded" />
+            </div>
           ))}
         </div>
-        <Card className="absolute inset-0 flex items-center justify-center bg-card/90 backdrop-blur-sm">
-          <CardContent className="text-center space-y-4 pt-6">
-            <p className="text-lg font-medium">
+        <div className={`${DT.CARD} absolute inset-0 flex items-center justify-center`}>
+          <div className="text-center space-y-4 p-6">
+            <p className={`text-[17px] font-medium ${DT.BODY}`}>
               {locale === "ar"
                 ? "ترقية إلى Growth للوصول إلى التحليلات"
                 : "Upgrade to Growth for Analytics"}
             </p>
-            <Link href="/settings/billing">
-              <Button>
-                {locale === "ar" ? "ترقية الآن" : "Upgrade Now"}
-              </Button>
+            <Link href="/settings/billing" className={DT.BTN_SM_PRIMARY}>
+              {locale === "ar" ? "ترقية الآن" : "Upgrade Now"}
             </Link>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

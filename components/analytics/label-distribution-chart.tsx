@@ -2,8 +2,8 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import {
   BarChart,
   Bar,
@@ -17,15 +17,19 @@ import {
 import type { DateRange } from "./date-range-picker";
 import { useTranslatedLabel } from "@/lib/i18n/context";
 
+const APPLE_PALETTE = ["#0071E3", "#34C759", "#FF9500", "#FF3B30", "#AF52DE", "#5AC8FA"];
+
+// Map legacy semantic color names → Apple palette equivalents so existing
+// data flowing through still renders with a consistent token-driven palette.
 const COLOR_HEX: Record<string, string> = {
-  red: "#ef4444",
-  green: "#22c55e",
-  blue: "#3b82f6",
-  yellow: "#facc15",
-  purple: "#a855f7",
-  orange: "#f97316",
-  pink: "#ec4899",
-  gray: "#9ca3af",
+  red: "#FF3B30",
+  green: "#34C759",
+  blue: "#0071E3",
+  yellow: "#FF9500",
+  purple: "#AF52DE",
+  orange: "#FF9500",
+  pink: "#FF3B30",
+  gray: "#8E8E93",
 };
 
 interface LabelDistributionChartProps {
@@ -42,43 +46,32 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
 
   if (!data) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <Skeleton className="h-5 w-40 mb-4" />
+        <Skeleton className="h-64 w-full" />
+      </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {locale === "ar" ? "توزيع التصنيفات" : "Label Distribution"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            {locale === "ar" ? "لا توجد بيانات لهذه الفترة" : "No data for this period"}
-          </p>
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <h2 className={`${DT.H3} mb-4`}>
+          {locale === "ar" ? "توزيع التصنيفات" : "Label Distribution"}
+        </h2>
+        <p className={`text-center py-8 ${DT.MUTED}`}>
+          {locale === "ar" ? "لا توجد بيانات لهذه الفترة" : "No data for this period"}
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card className="bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
-      <CardHeader>
-        <CardTitle className="font-sans tracking-tight">
-          {locale === "ar" ? "توزيع التصنيفات" : "Label Distribution"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div dir="ltr" className="h-72 w-full">
+    <div className={`${DT.CARD} p-6`}>
+      <h2 className={`${DT.H3} mb-4`}>
+        {locale === "ar" ? "توزيع التصنيفات" : "Label Distribution"}
+      </h2>
+      <div dir="ltr" className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
@@ -86,47 +79,42 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
               margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
             >
               <defs>
-                {data.map((entry, index) => (
-                  <linearGradient
-                    key={`gradient-${index}`}
-                    id={`barGradient-${index}`}
-                    x1="0"
-                    y1="0"
-                    x2="1"
-                    y2="0"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor={COLOR_HEX[entry.color] ?? "#9ca3af"}
-                      stopOpacity={0.8}
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor={COLOR_HEX[entry.color] ?? "#9ca3af"}
-                      stopOpacity={0.4}
-                    />
-                  </linearGradient>
-                ))}
+                {data.map((entry, index) => {
+                  const fill = COLOR_HEX[entry.color] ?? APPLE_PALETTE[index % APPLE_PALETTE.length];
+                  return (
+                    <linearGradient
+                      key={`gradient-${index}`}
+                      id={`barGradient-${index}`}
+                      x1="0"
+                      y1="0"
+                      x2="1"
+                      y2="0"
+                    >
+                      <stop offset="0%" stopColor={fill} stopOpacity={0.85} />
+                      <stop offset="100%" stopColor={fill} stopOpacity={0.45} />
+                    </linearGradient>
+                  );
+                })}
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
                 horizontal={false}
-                className="stroke-muted/30"
+                className="stroke-black/[0.06] dark:stroke-white/[0.06]"
               />
               <XAxis
                 type="number"
-                axisLine={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1 }}
-                tickLine={{ stroke: "rgba(255,255,255,0.15)" }}
-                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                axisLine={{ stroke: "rgba(127,127,127,0.15)", strokeWidth: 1 }}
+                tickLine={{ stroke: "rgba(127,127,127,0.15)" }}
+                tick={{ fontSize: 11, fill: "#6E6E73" }}
                 allowDecimals={false}
                 width={50}
               />
               <YAxis
                 type="category"
                 dataKey="name"
-                axisLine={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1 }}
+                axisLine={{ stroke: "rgba(127,127,127,0.15)", strokeWidth: 1 }}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: "#d1d5db" }}
+                tick={{ fontSize: 12, fill: "#6E6E73" }}
                 width={100}
                 tickFormatter={(val: string) => translateLabel(val)}
               />
@@ -138,21 +126,23 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
                       count: number;
                       percentage: number;
                       emoji?: string;
+                      color: string;
                     };
+                    const dot = COLOR_HEX[item.color] ?? APPLE_PALETTE[0];
                     return (
-                      <div className="rounded-lg border border-border/50 bg-background/80 backdrop-blur-xl p-3 shadow-xl">
-                        <p className="text-sm font-medium mb-1.5">
+                      <div className="rounded-xl border border-black/[0.08] bg-white/95 backdrop-blur-xl p-3 shadow-xl dark:bg-[#1C1C1E]/95 dark:border-white/[0.08]">
+                        <p className="text-[13px] font-medium mb-1.5 text-[#1D1D1F] dark:text-white">
                           {item.emoji ? `${item.emoji} ` : ""}
                           {translateLabel(item.name)}
                         </p>
                         <div className="flex items-center gap-2">
-                          <div className="size-2.5 rounded-full bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-                          <p className="text-sm text-foreground">
+                          <div className="size-2.5 rounded-full" style={{ backgroundColor: dot }} />
+                          <p className="text-[13px] text-[#1D1D1F] dark:text-white">
                             {item.count}{" "}
-                            <span className="text-muted-foreground">
+                            <span className="text-[#6E6E73] dark:text-white/50">
                               {locale === "ar" ? "محادثات" : "conversations"}
                             </span>
-                            <span className="text-muted-foreground ms-1">
+                            <span className="text-[#6E6E73] dark:text-white/50 ms-1">
                               ({item.percentage}%)
                             </span>
                           </p>
@@ -179,14 +169,14 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
           </ResponsiveContainer>
         </div>
 
-        <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-border/30">
-          {data.map((item) => (
-            <div key={item.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <div className={`flex flex-wrap gap-3 mt-4 pt-4 ${DT.DIVIDER}`}>
+          {data.map((item, index) => (
+            <div key={item.name} className={`flex items-center gap-1.5 ${DT.MICRO}`}>
               <span
                 className="size-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: COLOR_HEX[item.color] ?? "#9ca3af" }}
+                style={{ backgroundColor: COLOR_HEX[item.color] ?? APPLE_PALETTE[index % APPLE_PALETTE.length] }}
               />
-              <span className="font-medium text-foreground/80">
+              <span className="font-medium text-[#1D1D1F] dark:text-white">
                 {item.emoji ? `${item.emoji} ` : ""}
                 {translateLabel(item.name)}
               </span>
@@ -194,7 +184,6 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

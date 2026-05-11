@@ -2,8 +2,8 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import {
   AreaChart,
   Area,
@@ -14,6 +14,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { DateRange } from "./date-range-picker";
+
+const APPLE_PALETTE = ["#0071E3", "#34C759", "#FF9500", "#FF3B30", "#AF52DE", "#5AC8FA"];
 
 interface VolumeChartProps {
   dateRange: DateRange;
@@ -28,120 +30,110 @@ export function VolumeChart({ dateRange, locale = "ar" }: VolumeChartProps) {
 
   if (!data) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <Skeleton className="h-5 w-40 mb-4" />
+        <Skeleton className="h-64 w-full" />
+      </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {locale === "ar" ? "حجم المحادثات" : "Conversation Volume"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            {locale === "ar" ? "لا توجد بيانات لهذه الفترة" : "No data for this period"}
-          </p>
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <h2 className={`${DT.H3} mb-4`}>
+          {locale === "ar" ? "حجم المحادثات" : "Conversation Volume"}
+        </h2>
+        <p className={`text-center py-8 ${DT.MUTED}`}>
+          {locale === "ar" ? "لا توجد بيانات لهذه الفترة" : "No data for this period"}
+        </p>
+      </div>
     );
   }
 
+  const accent = APPLE_PALETTE[0];
+
   return (
-    <Card className="bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
-      <CardHeader>
-        <CardTitle className="font-sans tracking-tight">
-          {locale === "ar" ? "حجم المحادثات" : "Conversation Volume"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div dir="ltr" className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
-              <defs>
-                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/30" />
-              <XAxis
-                dataKey="bucketLabel"
-                axisLine={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1 }}
-                tickLine={{ stroke: "rgba(255,255,255,0.15)" }}
-                tick={{ fontSize: 11, fill: "#9ca3af" }}
-                tickFormatter={(val: string) => {
-                  const d = new Date(val + "T00:00:00");
-                  return d.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" });
-                }}
-                dy={5}
-                height={50}
-                label={{ 
-                  value: locale === "ar" ? "التاريخ" : "Date", 
-                  position: "insideBottom", 
-                  offset: -10,
-                  fill: "#6b7280",
-                  fontSize: 12,
-                  fontWeight: 500
-                }}
-              />
-              <YAxis 
-                axisLine={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 1 }}
-                tickLine={{ stroke: "rgba(255,255,255,0.15)" }}
-                tick={{ fontSize: 11, fill: "#9ca3af" }} 
-                allowDecimals={false} 
-                width={60}
-                label={{ 
-                  value: locale === "ar" ? "عدد المحادثات" : "Conversation Volume", 
-                  angle: -90, 
-                  position: "insideLeft", 
-                  offset: 15,
-                  fill: "#6b7280",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  style: { textAnchor: "middle" }
-                }}
-              />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="rounded-lg border border-border/50 bg-background/80 backdrop-blur-xl p-3 shadow-xl">
-                        <p className="text-sm font-medium mb-1.5">{label}</p>
-                        <div className="flex items-center gap-2">
-                          <div className="size-2.5 rounded-full bg-[#3b82f6] shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
-                          <p className="text-sm text-foreground">
-                            {payload[0].value} <span className="text-muted-foreground">{locale === "ar" ? "محادثات" : "Conversations"}</span>
-                          </p>
-                        </div>
+    <div className={`${DT.CARD} p-6`}>
+      <h2 className={`${DT.H3} mb-4`}>
+        {locale === "ar" ? "حجم المحادثات" : "Conversation Volume"}
+      </h2>
+      <div dir="ltr" className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+            <defs>
+              <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={accent} stopOpacity={0.4} />
+                <stop offset="100%" stopColor={accent} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-black/[0.06] dark:stroke-white/[0.06]" />
+            <XAxis
+              dataKey="bucketLabel"
+              axisLine={{ stroke: "rgba(127,127,127,0.15)", strokeWidth: 1 }}
+              tickLine={{ stroke: "rgba(127,127,127,0.15)" }}
+              tick={{ fontSize: 11, fill: "#6E6E73" }}
+              tickFormatter={(val: string) => {
+                const d = new Date(val + "T00:00:00");
+                return d.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" });
+              }}
+              dy={5}
+              height={50}
+              label={{
+                value: locale === "ar" ? "التاريخ" : "Date",
+                position: "insideBottom",
+                offset: -10,
+                fill: "#6E6E73",
+                fontSize: 12,
+                fontWeight: 500
+              }}
+            />
+            <YAxis
+              axisLine={{ stroke: "rgba(127,127,127,0.15)", strokeWidth: 1 }}
+              tickLine={{ stroke: "rgba(127,127,127,0.15)" }}
+              tick={{ fontSize: 11, fill: "#6E6E73" }}
+              allowDecimals={false}
+              width={60}
+              label={{
+                value: locale === "ar" ? "عدد المحادثات" : "Conversation Volume",
+                angle: -90,
+                position: "insideLeft",
+                offset: 15,
+                fill: "#6E6E73",
+                fontSize: 12,
+                fontWeight: 500,
+                style: { textAnchor: "middle" }
+              }}
+            />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div className="rounded-xl border border-black/[0.08] bg-white/95 backdrop-blur-xl p-3 shadow-xl dark:bg-[#1C1C1E]/95 dark:border-white/[0.08]">
+                      <p className="text-[13px] font-medium mb-1.5 text-[#1D1D1F] dark:text-white">{label}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="size-2.5 rounded-full" style={{ backgroundColor: accent }} />
+                        <p className="text-[13px] text-[#1D1D1F] dark:text-white">
+                          {payload[0].value} <span className="text-[#6E6E73] dark:text-white/50">{locale === "ar" ? "محادثات" : "Conversations"}</span>
+                        </p>
                       </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="count"
-                stroke="#3b82f6"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#colorCount)"
-                activeDot={{ r: 6, strokeWidth: 0, fill: "#3b82f6", filter: "drop-shadow(0px 0px 4px rgba(59,130,246,0.8))" }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="count"
+              stroke={accent}
+              strokeWidth={3}
+              fillOpacity={1}
+              fill="url(#colorCount)"
+              activeDot={{ r: 6, strokeWidth: 0, fill: accent }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }

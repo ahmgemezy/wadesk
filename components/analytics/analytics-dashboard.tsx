@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { DT } from "@/lib/design-tokens";
 import { DateRangePicker, type DateRange } from "./date-range-picker";
 import { TeamSummaryCards } from "./team-summary-cards";
 import { AgentPerformanceTable } from "./agent-performance-table";
@@ -32,7 +33,7 @@ export function AnalyticsDashboard({ locale = "ar" }: AnalyticsDashboardProps) {
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold font-sans tracking-tight text-foreground">
+        <h1 className={DT.H1}>
           {locale === "ar" ? "التحليلات" : "Analytics"}
         </h1>
         <DateRangePicker value={dateRange} onChange={setDateRange} locale={locale} />

@@ -2,8 +2,8 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 
 interface AgentMyStatsProps {
   locale?: "ar" | "en";
@@ -50,14 +50,10 @@ export function AgentMyStats({ locale = "ar" }: AgentMyStatsProps) {
     return (
       <div className="grid gap-4 sm:grid-cols-2 p-4 md:p-6">
         {Array.from({ length: 2 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-4 w-32" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-8 w-16" />
-            </CardContent>
-          </Card>
+          <div key={i} className={`${DT.CARD_SM} p-5`}>
+            <Skeleton className="h-4 w-32 mb-3" />
+            <Skeleton className="h-8 w-16" />
+          </div>
         ))}
       </div>
     );
@@ -66,16 +62,12 @@ export function AgentMyStats({ locale = "ar" }: AgentMyStatsProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 p-4 md:p-6">
       {cards.map((card) => (
-        <Card key={card.label}>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {card.label}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{card.value}</div>
-          </CardContent>
-        </Card>
+        <div key={card.label} className={`${DT.CARD_SM} p-5`}>
+          <div className={`${DT.MICRO} mb-2`}>
+            {card.label}
+          </div>
+          <div className="text-[32px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">{card.value}</div>
+        </div>
       ))}
     </div>
   );

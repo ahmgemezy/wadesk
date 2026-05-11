@@ -2,17 +2,16 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import { ArrowDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-const STAGE_CONFIG: Record<string, { en: string; ar: string; color: string; bgLight: string }> = {
-  lead:     { en: "Lead",     ar: "عميل محتمل", color: "#3b82f6", bgLight: "bg-blue-500" },
-  prospect: { en: "Prospect", ar: "مرشح",       color: "#a855f7", bgLight: "bg-purple-500" },
-  customer: { en: "Customer", ar: "عميل",       color: "#22c55e", bgLight: "bg-green-500" },
-  retained: { en: "Retained", ar: "عميل دائم", color: "#10b981", bgLight: "bg-emerald-500" },
-  churned:  { en: "Churned",  ar: "مفقود",      color: "#ef4444", bgLight: "bg-red-500" },
+const STAGE_CONFIG: Record<string, { en: string; ar: string; color: string }> = {
+  lead:     { en: "Lead",     ar: "عميل محتمل", color: "#0071E3" },
+  prospect: { en: "Prospect", ar: "مرشح",       color: "#AF52DE" },
+  customer: { en: "Customer", ar: "عميل",       color: "#34C759" },
+  retained: { en: "Retained", ar: "عميل دائم", color: "#5AC8FA" },
+  churned:  { en: "Churned",  ar: "مفقود",      color: "#FF3B30" },
 };
 
 interface StageFunnelChartProps {
@@ -24,45 +23,34 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
 
   if (!data) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <Skeleton className="h-5 w-40 mb-4" />
+        <Skeleton className="h-64 w-full" />
+      </div>
     );
   }
 
   if (data.total === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {locale === "ar" ? "قمع التحويل" : "Conversion Funnel"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            {locale === "ar" ? "لا توجد بيانات" : "No data available"}
-          </p>
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <h2 className={`${DT.H3} mb-4`}>
+          {locale === "ar" ? "قمع التحويل" : "Conversion Funnel"}
+        </h2>
+        <p className={`text-center py-8 ${DT.MUTED}`}>
+          {locale === "ar" ? "لا توجد بيانات" : "No data available"}
+        </p>
+      </div>
     );
   }
 
   const maxCount = Math.max(...data.funnel.map((s) => s.count), 1);
 
   return (
-    <Card className="bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
-      <CardHeader>
-        <CardTitle className="font-sans tracking-tight">
-          {locale === "ar" ? "قمع التحويل" : "Conversion Funnel"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+    <div className={`${DT.CARD} p-6`}>
+      <h2 className={`${DT.H3} mb-4`}>
+        {locale === "ar" ? "قمع التحويل" : "Conversion Funnel"}
+      </h2>
+      <div className="space-y-2">
           {data.funnel.map((stage, i) => {
             const config = STAGE_CONFIG[stage.stage];
             const widthPct = maxCount > 0 ? Math.max((stage.count / maxCount) * 100, 8) : 8;
@@ -71,11 +59,11 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
             return (
               <div key={stage.stage}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">{label}</span>
+                  <span className="text-[13px] font-medium text-[#1D1D1F] dark:text-white">{label}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold">{stage.count}</span>
+                    <span className="text-[13px] font-semibold text-[#1D1D1F] dark:text-white">{stage.count}</span>
                     {i > 0 && (
-                      <span className="text-xs text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                      <span className={`${DT.MICRO} bg-black/[0.06] dark:bg-white/[0.08] px-1.5 py-0.5 rounded`}>
                         {stage.conversionRate}%
                       </span>
                     )}
@@ -85,12 +73,12 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
                   className="h-10 rounded-lg transition-all duration-500 flex items-center justify-center relative overflow-hidden"
                   style={{
                     width: `${widthPct}%`,
-                    backgroundColor: config?.color ?? "#9ca3af",
+                    backgroundColor: config?.color ?? "#8E8E93",
                     marginInline: "auto",
                   }}
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0" />
-                  <span className="relative text-xs font-semibold text-white drop-shadow-sm">
+                  <span className="relative text-[12px] font-semibold text-white drop-shadow-sm">
                     {stage.count > 0
                       ? `${Math.round((stage.count / data.total) * 100)}%`
                       : ""}
@@ -98,9 +86,9 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
                 </div>
 
                 {i < data.funnel.length - 1 && (
-                  <div className="flex items-center justify-center py-1.5 text-muted-foreground">
+                  <div className={`flex items-center justify-center py-1.5 ${DT.MUTED}`}>
                     <ArrowDown className="size-3.5" />
-                    <span className="text-xs mx-1">
+                    <span className="text-[11px] mx-1">
                       {stage.conversionRate > 0
                         ? `${data.funnel[i + 1].conversionRate}% ${locale === "ar" ? "تحويل" : "conversion"}`
                         : ""}
@@ -113,15 +101,15 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
           })}
 
           {data.churned > 0 && (
-            <div className="mt-4 pt-4 border-t border-border/30">
+            <div className={`mt-4 pt-4 ${DT.DIVIDER}`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-sm font-medium flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full bg-red-500" />
+                <span className="text-[13px] font-medium flex items-center gap-1.5 text-[#1D1D1F] dark:text-white">
+                  <span className="size-2.5 rounded-full bg-[#FF3B30] dark:bg-[#FF453A]" />
                   {STAGE_CONFIG.churned[locale === "ar" ? "ar" : "en"]}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-red-500">{data.churned}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-[13px] font-semibold text-[#FF3B30] dark:text-[#FF453A]">{data.churned}</span>
+                  <span className={DT.MICRO}>
                     {data.total > 0 ? `${Math.round((data.churned / data.total) * 100)}%` : "0%"}
                   </span>
                 </div>
@@ -139,19 +127,19 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
           )}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-border/30">
+        <div className={`mt-4 pt-4 ${DT.DIVIDER}`}>
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">
+            <div className={`${DT.CARD_FLAT} p-3`}>
+              <p className={DT.MICRO}>
                 {locale === "ar" ? "إجمالي العملاء" : "Total Contacts"}
               </p>
-              <p className="text-lg font-bold">{data.total}</p>
+              <p className="text-[17px] font-semibold text-[#1D1D1F] dark:text-white">{data.total}</p>
             </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <p className="text-xs text-muted-foreground">
+            <div className={`${DT.CARD_FLAT} p-3`}>
+              <p className={DT.MICRO}>
                 {locale === "ar" ? "معدل الاحتفاظ" : "Retention Rate"}
               </p>
-              <p className="text-lg font-bold">
+              <p className="text-[17px] font-semibold text-[#1D1D1F] dark:text-white">
                 {data.total > 0
                   ? `${Math.round(((data.distribution.find((d) => d.stage === "retained")?.count ?? 0) / data.total) * 100)}%`
                   : "0%"}
@@ -159,7 +147,6 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

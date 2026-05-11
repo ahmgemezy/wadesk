@@ -2,16 +2,16 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const STAGE_CONFIG: Record<string, { en: string; ar: string; color: string }> = {
-  lead:     { en: "Lead",     ar: "عميل محتمل", color: "#3b82f6" },
-  prospect: { en: "Prospect", ar: "مرشح",       color: "#a855f7" },
-  customer: { en: "Customer", ar: "عميل",       color: "#22c55e" },
-  retained: { en: "Retained", ar: "عميل دائم", color: "#10b981" },
-  churned:  { en: "Churned",  ar: "مفقود",      color: "#ef4444" },
+  lead:     { en: "Lead",     ar: "عميل محتمل", color: "#0071E3" },
+  prospect: { en: "Prospect", ar: "مرشح",       color: "#AF52DE" },
+  customer: { en: "Customer", ar: "عميل",       color: "#34C759" },
+  retained: { en: "Retained", ar: "عميل دائم", color: "#5AC8FA" },
+  churned:  { en: "Churned",  ar: "مفقود",      color: "#FF3B30" },
 };
 
 interface CustomerLifecycleChartProps {
@@ -23,31 +23,23 @@ export function CustomerLifecycleChart({ locale = "ar" }: CustomerLifecycleChart
 
   if (!data) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <Skeleton className="h-5 w-40 mb-4" />
+        <Skeleton className="h-64 w-full" />
+      </div>
     );
   }
 
   if (data.total === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {locale === "ar" ? "مراحل دورة حياة العملاء" : "Customer Lifecycle Stages"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-8">
-            {locale === "ar" ? "لا توجد بيانات" : "No data available"}
-          </p>
-        </CardContent>
-      </Card>
+      <div className={`${DT.CARD} p-6`}>
+        <h2 className={`${DT.H3} mb-4`}>
+          {locale === "ar" ? "مراحل دورة حياة العملاء" : "Customer Lifecycle Stages"}
+        </h2>
+        <p className={`text-center py-8 ${DT.MUTED}`}>
+          {locale === "ar" ? "لا توجد بيانات" : "No data available"}
+        </p>
+      </div>
     );
   }
 
@@ -56,18 +48,15 @@ export function CustomerLifecycleChart({ locale = "ar" }: CustomerLifecycleChart
     value: d.count,
     stage: d.stage,
     percentage: d.percentage,
-    color: STAGE_CONFIG[d.stage]?.color ?? "#9ca3af",
+    color: STAGE_CONFIG[d.stage]?.color ?? "#8E8E93",
   }));
 
   return (
-    <Card className="bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
-      <CardHeader>
-        <CardTitle className="font-sans tracking-tight">
-          {locale === "ar" ? "مراحل دورة حياة العملاء" : "Customer Lifecycle Stages"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div dir="ltr" className="h-64 w-full relative">
+    <div className={`${DT.CARD} p-6`}>
+      <h2 className={`${DT.H3} mb-4`}>
+        {locale === "ar" ? "مراحل دورة حياة العملاء" : "Customer Lifecycle Stages"}
+      </h2>
+      <div dir="ltr" className="h-64 w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -94,17 +83,17 @@ export function CustomerLifecycleChart({ locale = "ar" }: CustomerLifecycleChart
                       color: string;
                     };
                     return (
-                      <div className="rounded-lg border border-border/50 bg-background/80 backdrop-blur-xl p-3 shadow-xl">
+                      <div className="rounded-xl border border-black/[0.08] bg-white/95 backdrop-blur-xl p-3 shadow-xl dark:bg-[#1C1C1E]/95 dark:border-white/[0.08]">
                         <div className="flex items-center gap-2 mb-1">
                           <span
                             className="size-2.5 rounded-full"
                             style={{ backgroundColor: item.color }}
                           />
-                          <p className="text-sm font-medium">{item.name}</p>
+                          <p className="text-[13px] font-medium text-[#1D1D1F] dark:text-white">{item.name}</p>
                         </div>
-                        <p className="text-sm text-foreground">
+                        <p className="text-[13px] text-[#1D1D1F] dark:text-white">
                           {item.value}{" "}
-                          <span className="text-muted-foreground">
+                          <span className="text-[#6E6E73] dark:text-white/50">
                             {locale === "ar" ? "جهة اتصال" : "contacts"} ({item.percentage}%)
                           </span>
                         </p>
@@ -117,28 +106,27 @@ export function CustomerLifecycleChart({ locale = "ar" }: CustomerLifecycleChart
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-3xl font-bold tracking-tight font-sans">{data.total}</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[32px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">{data.total}</span>
+            <span className={DT.MICRO}>
               {locale === "ar" ? "إجمالي العملاء" : "Total Contacts"}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-4 mt-4 pt-4 border-t border-border/30">
+        <div className={`flex flex-wrap justify-center gap-4 mt-4 pt-4 ${DT.DIVIDER}`}>
           {chartData.map((item) => (
-            <div key={item.stage} className="flex items-center gap-1.5 text-xs">
+            <div key={item.stage} className={`flex items-center gap-1.5 ${DT.MICRO}`}>
               <span
                 className="size-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="font-medium text-foreground/80">{item.name}</span>
-              <span className="text-muted-foreground">
+              <span className="font-medium text-[#1D1D1F] dark:text-white">{item.name}</span>
+              <span>
                 {item.value} ({item.percentage}%)
               </span>
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

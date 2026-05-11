@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { DT } from "@/lib/design-tokens";
 import { CalendarIcon } from "lucide-react";
 import { format, subDays, differenceInDays } from "date-fns";
 
@@ -52,7 +52,7 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
 
   return (
     <div className="flex flex-wrap items-center gap-2" dir={locale === "ar" ? "rtl" : "ltr"}>
-      <div className="hidden sm:inline-flex items-center rounded-full border bg-muted/40 p-1 shadow-sm">
+      <div className="hidden sm:inline-flex items-center bg-black/[0.04] dark:bg-white/[0.06] rounded-xl p-1">
         {PRESETS.map((preset) => {
           const isActive =
             differenceInDays(value.to, value.from) === preset.days &&
@@ -62,10 +62,10 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
               key={preset.days}
               onClick={() => handlePreset(preset.days)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:text-foreground",
-                isActive 
-                  ? "bg-background text-foreground shadow-sm ring-1 ring-border" 
-                  : "text-muted-foreground"
+                "rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all",
+                isActive
+                  ? "bg-white shadow-sm text-[#0071E3] dark:bg-white/[0.10] dark:text-[#0A84FF]"
+                  : DT.MUTED
               )}
             >
               {locale === "ar" ? preset.labelAr : preset.labelEn}
@@ -76,10 +76,10 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
 
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger render={<div />} nativeButton={false}>
-          <Button variant="outline" size="sm" className="gap-2">
+          <button type="button" className={DT.BTN_SM}>
             <CalendarIcon className="h-4 w-4" />
             {format(value.from, "yyyy/MM/dd")} — {format(value.to, "yyyy/MM/dd")}
-          </Button>
+          </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
@@ -92,7 +92,7 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
       </Popover>
 
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-[13px] text-[#FF3B30] dark:text-[#FF453A]">{error}</p>
       )}
     </div>
   );

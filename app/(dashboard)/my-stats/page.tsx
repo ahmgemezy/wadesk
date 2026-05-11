@@ -2,6 +2,7 @@ import { getServerAuth } from "@/lib/auth-server";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AgentMyStats } from "@/components/analytics/agent-my-stats";
+import { DT } from "@/lib/design-tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +24,10 @@ export default async function MyStatsPage() {
   return (
     <div>
       <div className="p-4 md:p-6">
-        <h1 className="text-2xl font-bold mb-2">
+        <h1 className={`${DT.H1} mb-2`}>
           {locale === "ar" ? "إحصائياتي" : "My Stats"}
         </h1>
-        <p className="text-muted-foreground mb-6">
+        <p className={`${DT.MUTED} mb-6`}>
           {locale === "ar"
             ? "أداؤك لهذا الشهر"
             : "Your performance this month"}

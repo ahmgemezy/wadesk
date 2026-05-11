@@ -2,7 +2,6 @@
 
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -12,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import type { DateRange } from "./date-range-picker";
 
 interface AgentPerformanceTableProps {
@@ -48,73 +48,61 @@ export function AgentPerformanceTable({ dateRange, locale = "ar" }: AgentPerform
 
   if (!data) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-5 w-40" />
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.06] p-6">
+        <Skeleton className="h-5 w-40 mb-4" />
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {locale === "ar" ? "أداء الوكلاء" : "Agent Performance"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-center py-4">
-            {locale === "ar" ? "لا توجد بيانات لهذه الفترة" : "No data for this period"}
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.06] p-6">
+        <h2 className={`${DT.H3} mb-4 ${locale === "ar" ? "text-right" : ""}`}>
+          {locale === "ar" ? "أداء الوكلاء" : "Agent Performance"}
+        </h2>
+        <p className={`text-center py-4 ${DT.MUTED}`}>
+          {locale === "ar" ? "لا توجد بيانات لهذه الفترة" : "No data for this period"}
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card className="bg-card/40 backdrop-blur-xl border-border/50 shadow-2xl">
-      <CardHeader>
-        <CardTitle className={`font-sans tracking-tight ${locale === "ar" ? "text-right" : ""}`}>
-          {locale === "ar" ? "أداء الوكلاء" : "Agent Performance"}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-          <Table className="table-fixed">
-            <TableHeader>
-              <TableRow className="hover:bg-transparent border-border/50">
-                <TableHead className="font-sans text-start">
-                  {locale === "ar" ? "اسم الوكيل" : "Agent Name"}
-                </TableHead>
-                <TableHead className="text-center font-sans">
-                  {locale === "ar" ? "المحادثات" : "Conversations"}
-                </TableHead>
-                <TableHead className="text-center font-sans">
-                  {locale === "ar" ? "متوسط وقت الرد" : "Avg Response Time"}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data.map((agent) => (
-                <TableRow key={agent.agentId ?? "unassigned"} className="border-border/30 hover:bg-muted/30">
-                  <TableCell className="font-medium font-sans text-start">{agent.agentName}</TableCell>
-                  <TableCell className="text-center font-sans font-medium">{agent.conversationsHandled}</TableCell>
-                  <TableCell className="text-center font-sans">
-                    {formatResponseTime(agent.avgFirstResponseTimeSeconds, locale)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-      </CardContent>
-    </Card>
+    <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.06] p-6">
+      <h2 className={`${DT.H3} mb-4 ${locale === "ar" ? "text-right" : ""}`}>
+        {locale === "ar" ? "أداء الوكلاء" : "Agent Performance"}
+      </h2>
+      <Table className="table-fixed">
+        <TableHeader>
+          <TableRow className="hover:bg-transparent border-black/[0.08] dark:border-white/[0.06]">
+            <TableHead className={`${DT.SEC} text-start`}>
+              {locale === "ar" ? "اسم الوكيل" : "Agent Name"}
+            </TableHead>
+            <TableHead className={`${DT.SEC} text-center`}>
+              {locale === "ar" ? "المحادثات" : "Conversations"}
+            </TableHead>
+            <TableHead className={`${DT.SEC} text-center`}>
+              {locale === "ar" ? "متوسط وقت الرد" : "Avg Response Time"}
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((agent) => (
+            <TableRow key={agent.agentId ?? "unassigned"} className="border-black/[0.06] dark:border-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.05]">
+              <TableCell className="font-medium text-[14px] text-[#1D1D1F] dark:text-white text-start">{agent.agentName}</TableCell>
+              <TableCell className="text-center text-[14px] font-medium text-[#1D1D1F] dark:text-white">{agent.conversationsHandled}</TableCell>
+              <TableCell className={`text-center ${DT.BODY}`}>
+                {formatResponseTime(agent.avgFirstResponseTimeSeconds, locale)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
