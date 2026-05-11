@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { Eye, EyeOff, Loader2, CheckCircle2, Check, X } from "lucide-react";
 import Link from "next/link";
 import { useT, useLocale } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 type Strength = "weak" | "medium" | "strong";
 
@@ -83,11 +84,11 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="w-full max-w-sm" dir={isRtl ? "rtl" : "ltr"}>
-        <div className="bg-white/90 backdrop-blur-xl border border-black/[0.08] rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 text-center space-y-4">
-          <p className="text-[15px] text-[#FF3B30]">
+        <div className={`${DT.CARD} p-8 text-center space-y-4`}>
+          <p className="text-[15px] text-[#FF3B30] dark:text-[#FF453A]">
             {t("Invalid or expired reset link.", "رابط إعادة التعيين غير صالح أو منتهي الصلاحية.")}
           </p>
-          <Link href="/forgot-password" className="text-[14px] text-[#0071E3] hover:text-[#0077ED]">
+          <Link href="/forgot-password" className={DT.TEXT_BLUE_INTERACTIVE}>
             {t("Request a new link", "طلب رابط جديد")}
           </Link>
         </div>
@@ -97,15 +98,15 @@ function ResetPasswordForm() {
 
   return (
     <div className="w-full max-w-sm" dir={isRtl ? "rtl" : "ltr"}>
-      <div className="bg-white/90 backdrop-blur-xl border border-black/[0.08] rounded-[22px] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] p-8 space-y-6">
+      <div className={`${DT.CARD} p-8 space-y-6`}>
         {done ? (
           <div className="flex flex-col items-center gap-4 py-2 text-center">
-            <CheckCircle2 className="size-12 text-[#34C759]" />
+            <CheckCircle2 className="size-12 text-[#34C759] dark:text-[#30D158]" />
             <div className="space-y-1">
-              <h1 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+              <h1 className={DT.H2}>
                 {t("Password updated!", "تم تحديث كلمة المرور!")}
               </h1>
-              <p className="text-[15px] text-[#6E6E73]">
+              <p className={DT.MUTED}>
                 {t("Redirecting you to sign in…", "جارٍ توجيهك لتسجيل الدخول…")}
               </p>
             </div>
@@ -113,17 +114,17 @@ function ResetPasswordForm() {
         ) : (
           <>
             <div className="text-center space-y-1">
-              <h1 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+              <h1 className={DT.H2}>
                 {t("Set New Password", "تعيين كلمة مرور جديدة")}
               </h1>
-              <p className="text-[15px] text-[#6E6E73]">
+              <p className={DT.MUTED}>
                 {t("Choose a strong password for your account", "اختر كلمة مرور قوية لحسابك")}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-[#1D1D1F]" htmlFor="password">
+              <div>
+                <label className={DT.LBL} htmlFor="password">
                   {t("New Password", "كلمة المرور الجديدة")}
                 </label>
                 <div className="relative">
@@ -135,13 +136,13 @@ function ResetPasswordForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     dir="ltr"
-                    className="w-full rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 pe-10 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
+                    className={`${DT.INPUT} pe-10`}
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute inset-y-0 end-3 flex items-center text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
+                    className="absolute inset-y-0 end-3 flex items-center text-[#6E6E73] hover:text-[#1D1D1F] dark:text-white/50 dark:hover:text-white transition-colors"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -150,7 +151,7 @@ function ResetPasswordForm() {
 
                 {/* Strength bar */}
                 {showStrength && (
-                  <div className="space-y-2 pt-1">
+                  <div className="space-y-2 pt-2">
                     <div className="flex items-center gap-1.5">
                       {[1, 2, 3, 4].map((n) => (
                         <div
@@ -191,8 +192,8 @@ function ResetPasswordForm() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[13px] font-medium text-[#1D1D1F]" htmlFor="confirm">
+              <div>
+                <label className={DT.LBL} htmlFor="confirm">
                   {t("Confirm Password", "تأكيد كلمة المرور")}
                 </label>
                 <input
@@ -203,13 +204,13 @@ function ResetPasswordForm() {
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   dir="ltr"
-                  className="w-full rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73]"
+                  className={DT.INPUT}
                   placeholder="••••••••"
                 />
               </div>
 
               {error && (
-                <p className="text-[13px] text-[#FF3B30] bg-[#FF3B30]/10 rounded-lg px-3 py-2">
+                <p className="text-[13px] text-[#FF3B30] dark:text-[#FF453A] bg-[#FF3B30]/10 dark:bg-[#FF453A]/10 rounded-lg px-3 py-2">
                   {error}
                 </p>
               )}
@@ -217,7 +218,7 @@ function ResetPasswordForm() {
               <button
                 type="submit"
                 disabled={loading || strength === "weak"}
-                className="w-full rounded-full bg-[#0071E3] hover:bg-[#0077ED] active:bg-[#006CD1] text-white font-normal py-2.5 text-[15px] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className={`${DT.BTN_PRIMARY} w-full mt-4`}
               >
                 {loading && <Loader2 className="size-4 animate-spin" />}
                 {loading

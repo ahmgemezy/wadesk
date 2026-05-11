@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { type MarketingLocale, t } from "@/lib/marketing/i18n";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { MobileNavSheet } from "@/components/marketing/mobile-nav-sheet";
 
 function MarketingNav({
@@ -22,49 +22,69 @@ function MarketingNav({
   return (
     <nav
       dir={locale === "ar" ? "rtl" : "ltr"}
-      className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm"
+      className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-xl border-b border-black/[0.06] dark:bg-[#111111]/80 dark:border-white/[0.05]"
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
+        <Link href="/" className={`${DT.H3} flex items-center gap-2`}>
           <Image src="/logo.png" alt="WABDesk" width={28} height={28} className="rounded-md" />
           {locale === "ar" ? "واب ديسك" : "WABDesk"}
         </Link>
 
         <div className="hidden items-center gap-4 md:flex">
-          <Link href="#features" className="text-sm hover:text-primary">
+          <Link
+            href="#features"
+            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+          >
             {t(locale, "nav.features")}
           </Link>
-          <Link href="#pricing" className="text-sm hover:text-primary">
+          <Link
+            href="#pricing"
+            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+          >
             {t(locale, "nav.pricing")}
           </Link>
-          <Link href="#why-wabdesk" className="text-sm hover:text-primary">
+          <Link
+            href="#why-wabdesk"
+            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+          >
             {t(locale, "nav.whyWABDesk")}
           </Link>
 
-          <Button variant="ghost" size="sm" onClick={toggleLocale}>
+          <button
+            type="button"
+            onClick={toggleLocale}
+            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+          >
             {locale === "ar" ? "EN" : "ع"}
-          </Button>
+          </button>
 
           {isAuthenticated ? (
-            <Button size="sm" nativeButton={false} render={<Link href="/inbox" />}>
+            <Link href="/inbox" className={DT.BTN_SM_PRIMARY}>
               {t(locale, "nav.dashboard")}
-            </Button>
+            </Link>
           ) : (
             <>
-              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href="/sign-in" />}>
+              <Link
+                href="/sign-in"
+                className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+              >
                 {t(locale, "nav.signIn")}
-              </Button>
-              <Button size="sm" nativeButton={false} render={<Link href="/sign-up" />}>
+              </Link>
+              <Link href="/sign-up" className={DT.BTN_SM_PRIMARY}>
                 {t(locale, "nav.signUp")}
-              </Button>
+              </Link>
             </>
           )}
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
-          <Button variant="ghost" size="icon-xs" onClick={toggleLocale}>
+          <button
+            type="button"
+            onClick={toggleLocale}
+            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors px-2`}
+          >
             {locale === "ar" ? "EN" : "ع"}
-          </Button>
+          </button>
           <MobileNavSheet isAuthenticated={isAuthenticated} locale={locale} />
         </div>
       </div>

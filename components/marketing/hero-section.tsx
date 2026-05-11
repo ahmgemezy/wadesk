@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { type MarketingLocale, t } from "@/lib/marketing/i18n";
+import { DT } from "@/lib/design-tokens";
 
 function HeroSection({
   isAuthenticated,
@@ -11,18 +12,18 @@ function HeroSection({
   locale: MarketingLocale;
 }) {
   return (
-    <section className="flex min-h-[70vh] items-center justify-center px-4 py-16 sm:py-24">
+    <section className="flex min-h-[70vh] items-center justify-center bg-[#F5F5F7] dark:bg-[#111111] px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+        <h1 className="text-[48px] font-semibold tracking-[-1px] leading-tight text-[#1D1D1F] dark:text-white">
           {t(locale, "hero.title")}
         </h1>
-        <p className="mt-6 text-lg leading-relaxed text-muted-foreground sm:text-xl">
+        <p className={`mt-6 ${DT.MUTED} text-[18px] leading-relaxed`}>
           {t(locale, "hero.subtitle")}
         </p>
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
             href={isAuthenticated ? "/inbox" : "/sign-up"}
-            className="inline-flex h-12 min-w-45 cursor-pointer items-center justify-center rounded-lg bg-primary px-6 text-base font-medium text-primary-foreground hover:bg-primary/80"
+            className={`${DT.BTN_PRIMARY} px-8 py-3 text-[16px]`}
           >
             {isAuthenticated
               ? t(locale, "cta.dashboard")
@@ -31,7 +32,7 @@ function HeroSection({
           {!isAuthenticated && (
             <Link
               href="#features"
-              className="inline-flex h-12 min-w-45 cursor-pointer items-center justify-center rounded-lg border border-border px-6 text-base font-medium hover:bg-muted"
+              className={`${DT.BTN_OUTLINE} px-8 py-3 text-[16px]`}
             >
               {t(locale, "cta.learnMore")}
             </Link>

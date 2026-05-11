@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { type MarketingLocale, t } from "@/lib/marketing/i18n";
 import { type Plan, type Currency } from "@/lib/marketing/pricing-data";
+import { DT } from "@/lib/design-tokens";
 
 const currencyLabels: Record<string, { symbol: string; label: string }> = {
   EGP: { symbol: "ج.م", label: "EGP" },
@@ -31,42 +32,44 @@ function PricingSection({
   locale: MarketingLocale;
 }) {
   return (
-    <section id="pricing" className="px-4 py-16 sm:py-24">
+    <section id="pricing" className="bg-[#F5F5F7] dark:bg-[#111111] px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl">
-        <h2 className="mb-12 text-center text-3xl font-bold sm:text-4xl">
+        <h2 className="mb-12 text-center text-[34px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
           {t(locale, "pricing.heading")}
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative flex flex-col rounded-xl border bg-background p-6 ${
+              className={`relative flex flex-col p-6 ${
                 plan.highlighted
-                  ? "ring-2 ring-primary shadow-lg"
-                  : ""
+                  ? `${DT.CARD} ring-2 ring-[#0071E3] dark:ring-[#0A84FF]`
+                  : DT.CARD
               }`}
             >
               {plan.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-0.5 text-xs font-medium text-primary-foreground">
+                <div className={`${DT.BADGE_BLUE} absolute -top-3 left-1/2 -translate-x-1/2`}>
                   {t(locale, "pricing.bestValue")}
                 </div>
               )}
 
               <div className="mb-4">
-                <h3 className="text-lg font-semibold">
+                <h3 className={DT.H3}>
                   {locale === "ar" ? plan.nameAr : plan.nameEn}
                 </h3>
               </div>
 
               <div className="mb-4">
                 {plan.isFree ? (
-                  <span className="text-2xl font-bold">
+                  <span className="text-[40px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
                     {locale === "ar" ? "مجاني" : "Free"}
                   </span>
                 ) : (
-                  <p className="text-sm font-medium leading-relaxed">
-                    {formatPrices(plan.price)}
-                    <span className="text-muted-foreground">
+                  <p className={`${DT.BODY} leading-relaxed`}>
+                    <span className="text-[40px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+                      {formatPrices(plan.price)}
+                    </span>
+                    <span className={DT.MUTED}>
                       {t(locale, "pricing.month")}
                     </span>
                   </p>
@@ -74,12 +77,12 @@ function PricingSection({
               </div>
 
               {plan.isFree && (
-                <span className="mb-4 inline-block w-fit rounded-full bg-muted px-3 py-1 text-xs font-medium">
+                <span className={`${DT.BADGE_NEUTRAL} mb-4 w-fit`}>
                   {t(locale, "pricing.noCard")}
                 </span>
               )}
 
-              <div className="mb-4 space-y-1 text-sm text-muted-foreground">
+              <div className={`mb-4 space-y-1 ${DT.MUTED}`}>
                 <p>
                   {(plan.agentLimit ?? null) === null
                     ? t(locale, "pricing.unlimited")
@@ -99,21 +102,14 @@ function PricingSection({
                   ? plan.featuresAr
                   : plan.featuresEn
                 ).map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <li key={i} className={`${DT.BODY} flex items-start gap-2`}>
+                    <Check className="mt-0.5 size-4 shrink-0 text-[#34C759] dark:text-[#30D158]" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
 
-              <Link
-                href="/sign-up"
-                className={`inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-lg text-sm font-medium ${
-                  plan.highlighted
-                    ? "bg-primary text-primary-foreground hover:bg-primary/80"
-                    : "border border-border hover:bg-muted"
-                }`}
-              >
+              <Link href="/sign-up" className={`${DT.BTN_SM_PRIMARY} w-full`}>
                 {plan.isFree
                   ? t(locale, "cta.signup")
                   : t(locale, "cta.startNow")}
