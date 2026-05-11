@@ -18,13 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { RoleSelect } from "./role-select";
 import type { OrgRole } from "./team-member-list";
 import { Mail, MessageCircle, Link2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 interface InviteModalProps {
   open: boolean;
@@ -247,12 +246,13 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
 
         {tab === "email" && (
           <div className="space-y-3">
-            <Input
+            <input
               type="email"
               placeholder={t("Email address", "البريد الإلكتروني")}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               dir="ltr"
+              className={DT.INPUT}
             />
             <RoleSelect value={isSupervisor ? "org:agent" : role} onChange={isSupervisor ? () => {} : setRole} disabled={isSupervisor} />
             {showChannelSelector && (
@@ -266,24 +266,25 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
                 t={t}
               />
             )}
-            <Button
+            <button
               onClick={handleInviteEmail}
               disabled={!email.trim() || sending}
-              className="w-full"
+              className={`w-full ${DT.BTN_PRIMARY}`}
             >
               {sending ? t("Sending...", "جارٍ الإرسال...") : t("Invite", "دعوة")}
-            </Button>
+            </button>
           </div>
         )}
 
         {tab === "whatsapp" && (
           <div className="space-y-3">
-            <Input
+            <input
               type="tel"
               placeholder="+201012345678"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
               dir="ltr"
+              className={DT.INPUT}
             />
             <RoleSelect value={isSupervisor ? "org:agent" : role} onChange={isSupervisor ? () => {} : setRole} disabled={isSupervisor} />
             {showChannelSelector && (
@@ -297,21 +298,21 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
                 t={t}
               />
             )}
-            <Button
+            <button
               onClick={handleInviteWhatsApp}
               disabled={!phone.trim() || sending}
-              className="w-full"
+              className={`w-full ${DT.BTN_PRIMARY}`}
             >
               {sending ? t("Sending...", "جارٍ الإرسال...") : t("Send WhatsApp", "إرسال واتساب")}
-            </Button>
+            </button>
             {linkFallback && (
               <div className="flex items-center gap-2 min-w-0">
                 <code className="text-xs bg-muted px-2 py-1 rounded flex-1 break-all min-w-0" dir="ltr">
                   {linkFallback}
                 </code>
-                <Button variant="outline" size="icon-sm" onClick={async () => { await navigator.clipboard.writeText(linkFallback); }}>
+                <button className={DT.BTN_ICON_SM} onClick={async () => { await navigator.clipboard.writeText(linkFallback); }}>
                   <Copy className="size-4" />
-                </Button>
+                </button>
               </div>
             )}
           </div>
@@ -325,27 +326,26 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
                   <code className="text-xs bg-muted px-2 py-1 rounded flex-1 break-all min-w-0" dir="ltr">
                     {activeLink.url}
                   </code>
-                  <Button variant="outline" size="icon-sm" onClick={handleCopyActiveLink}>
+                  <button className={DT.BTN_ICON_SM} onClick={handleCopyActiveLink}>
                     {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                  </Button>
+                  </button>
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className={DT.MICRO}>
                   {t("Expires:", "تنتهي في:")} {new Date(activeLink.expiresAt).toLocaleDateString(t("en-US", "ar-EG"))}
                 </div>
-                <Button
-                  variant="destructive"
+                <button
                   onClick={handleRevoke}
                   disabled={sending}
-                  className="w-full"
+                  className={`w-full ${DT.BTN_DESTRUCTIVE}`}
                 >
                   {t("Revoke Link", "إلغاء الرابط")}
-                </Button>
+                </button>
               </>
             ) : (
-              <Button
+              <button
                 onClick={handleGenerate}
                 disabled={sending}
-                className="w-full"
+                className={`w-full ${DT.BTN_PRIMARY}`}
               >
                 {t("Generate Link", "إنشاء رابط")}
               </Button>

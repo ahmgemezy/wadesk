@@ -5,7 +5,6 @@ import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { useOrganization } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, Clock, Trash2, Bell, CheckCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useLocale } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 export function NotificationsSettings() {
   const t = useT();
@@ -102,11 +102,11 @@ export function NotificationsSettings() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+          <h2 className={`${DT.H2} flex items-center gap-2`}>
             <Bell className="size-4" />
             {t("Notifications Log", "سجل الإشعارات")}
           </h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className={`${DT.MUTED} mt-0.5`}>
             {t(
               "Notifications older than 30 days are removed automatically.",
               "تُحذف الإشعارات الأقدم من 30 يوماً تلقائياً.",
@@ -115,27 +115,24 @@ export function NotificationsSettings() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {unreadCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              className={DT.BTN_SM}
               onClick={handleMarkAllRead}
               disabled={busy}
             >
               <CheckCheck className="size-3.5 me-1.5" />
               {t("Mark all read", "تحديد الكل كمقروء")}
-            </Button>
+            </button>
           )}
           {isAdmin && notifications.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              className={`${DT.BTN_SM} text-destructive hover:text-destructive`}
               onClick={handleClearAll}
               disabled={busy}
-              className="text-destructive hover:text-destructive"
             >
               <Trash2 className="size-3.5 me-1.5" />
               {t("Clear all", "حذف الكل")}
-            </Button>
+            </button>
           )}
         </div>
       </div>
