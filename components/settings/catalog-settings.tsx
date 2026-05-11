@@ -74,17 +74,42 @@ const CONDITION_OPTIONS = [
   { value: "used", labelEn: "Used", labelAr: "مستعمل" },
 ];
 
+const GENDER_OPTIONS = [
+  { value: "", labelEn: "— None —" },
+  { value: "male", labelEn: "Male" },
+  { value: "female", labelEn: "Female" },
+  { value: "unisex", labelEn: "Unisex" },
+];
+
+const AGE_GROUP_OPTIONS = [
+  { value: "", labelEn: "— None —" },
+  { value: "adult", labelEn: "Adult" },
+  { value: "teen", labelEn: "Teen" },
+  { value: "kids", labelEn: "Kids" },
+  { value: "toddler", labelEn: "Toddler" },
+  { value: "newborn", labelEn: "Newborn" },
+];
+
 interface ProductDraft {
   retailerId: string;
   name: string;
   description: string;
   price: string;
+  salePrice: string;
   currency: string;
   imageUrl: string;
+  additionalImages: string[];
   availability: string;
   condition: string;
   brand: string;
   productUrl: string;
+  itemGroupId: string;
+  color: string;
+  size: string;
+  material: string;
+  pattern: string;
+  gender: string;
+  ageGroup: string;
 }
 
 const EMPTY_DRAFT: ProductDraft = {
@@ -92,12 +117,21 @@ const EMPTY_DRAFT: ProductDraft = {
   name: "",
   description: "",
   price: "",
+  salePrice: "",
   currency: "",
   imageUrl: "",
+  additionalImages: [],
   availability: "in stock",
   condition: "new",
   brand: "",
   productUrl: "",
+  itemGroupId: "",
+  color: "",
+  size: "",
+  material: "",
+  pattern: "",
+  gender: "",
+  ageGroup: "",
 };
 
 function ProductFormDialog({
@@ -113,12 +147,21 @@ function ProductFormDialog({
     name: string;
     description?: string;
     price?: string;
+    salePrice?: string;
     currency?: string;
     imageUrl?: string;
+    additionalImages?: string[];
     availability?: string;
     condition?: string;
     brand?: string;
     productUrl?: string;
+    itemGroupId?: string;
+    color?: string;
+    size?: string;
+    material?: string;
+    pattern?: string;
+    gender?: string;
+    ageGroup?: string;
   } | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -134,12 +177,21 @@ function ProductFormDialog({
           name: editingProduct.name,
           description: editingProduct.description ?? "",
           price: editingProduct.price ?? "",
+          salePrice: editingProduct.salePrice ?? "",
           currency: editingProduct.currency ?? "",
           imageUrl: editingProduct.imageUrl ?? "",
+          additionalImages: editingProduct.additionalImages ?? [],
           availability: editingProduct.availability ?? "in stock",
           condition: editingProduct.condition ?? "new",
           brand: editingProduct.brand ?? "",
           productUrl: editingProduct.productUrl ?? "",
+          itemGroupId: editingProduct.itemGroupId ?? "",
+          color: editingProduct.color ?? "",
+          size: editingProduct.size ?? "",
+          material: editingProduct.material ?? "",
+          pattern: editingProduct.pattern ?? "",
+          gender: editingProduct.gender ?? "",
+          ageGroup: editingProduct.ageGroup ?? "",
         }
       : EMPTY_DRAFT,
   );
@@ -149,6 +201,8 @@ function ProductFormDialog({
     editingProduct?.imageUrl ?? null,
   );
   const [imageError, setImageError] = useState(false);
+  const [additionalImageUploading, setAdditionalImageUploading] = useState(false);
+  const additionalFileInputRef = useRef<HTMLInputElement>(null);
 
   const createProduct = useMutation(api.catalog.createProduct);
   const updateProduct = useMutation(api.catalog.updateProduct);
@@ -209,6 +263,45 @@ function ProductFormDialog({
     setImageError(false);
   }
 
+  async function handleAdditionalImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("Only image files are allowed", "يُسمح بالصور فقط"));
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error(t("Image must be under 8 MB", "يجب أن تكون الصورة أقل من 8 ميجابايت"));
+      return;
+    }
+    setAdditionalImageUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error("upload_failed");
+      const { storageId } = await res.json() as { storageId: Id<"_storage"> };
+      const url = await resolveUrl({ storageId });
+      setDraft((d) => ({ ...d, additionalImages: [...d.additionalImages, url] }));
+      toast.success(t("Image uploaded", "تم رفع الصورة"));
+    } catch {
+      toast.error(t("Failed to upload image", "فشل رفع الصورة"));
+    } finally {
+      setAdditionalImageUploading(false);
+      if (additionalFileInputRef.current) additionalFileInputRef.current.value = "";
+    }
+  }
+
+  function removeAdditionalImage(idx: number) {
+    setDraft((d) => ({
+      ...d,
+      additionalImages: d.additionalImages.filter((_, i) => i !== idx),
+    }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.name.trim()) return;
@@ -219,12 +312,21 @@ function ProductFormDialog({
         name: draft.name.trim(),
         description: draft.description.trim() || undefined,
         price: draft.price.trim() || undefined,
+        salePrice: draft.salePrice.trim() || undefined,
         currency: draft.currency.trim() || undefined,
         imageUrl: draft.imageUrl.trim() || undefined,
+        additionalImages: draft.additionalImages.length > 0 ? draft.additionalImages : undefined,
         availability: draft.availability || undefined,
         condition: draft.condition || undefined,
         brand: draft.brand.trim() || undefined,
         productUrl: draft.productUrl.trim() || undefined,
+        itemGroupId: draft.itemGroupId.trim() || undefined,
+        color: draft.color.trim() || undefined,
+        size: draft.size.trim() || undefined,
+        material: draft.material.trim() || undefined,
+        pattern: draft.pattern.trim() || undefined,
+        gender: draft.gender || undefined,
+        ageGroup: draft.ageGroup || undefined,
       };
       if (isEdit) {
         await updateProduct({ productId: editingProduct!._id, ...shared });
@@ -253,7 +355,7 @@ function ProductFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
           <DialogTitle className="text-base">
             {isEdit ? t("Edit Product", "تعديل المنتج") : t("Add Product", "إضافة منتج")}
@@ -365,6 +467,57 @@ function ProductFormDialog({
               </div>
             </div>
 
+            {/* ── Additional Images ──────────────────────────────────── */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {t("Additional Images", "صور إضافية")}
+                </p>
+                <span className="text-xs text-muted-foreground">
+                  {draft.additionalImages.length}/9
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2 items-center">
+                {draft.additionalImages.map((url, idx) => (
+                  <div key={idx} className="relative size-16 rounded border overflow-hidden group shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="size-full object-cover" loading="lazy" />
+                    <button
+                      type="button"
+                      onClick={() => removeAdditionalImage(idx)}
+                      className="absolute top-0.5 end-0.5 size-4 rounded-full bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <XIcon className="size-2.5" />
+                    </button>
+                  </div>
+                ))}
+                {draft.additionalImages.length < 9 && (
+                  <button
+                    type="button"
+                    onClick={() => additionalFileInputRef.current?.click()}
+                    disabled={additionalImageUploading}
+                    className="size-16 rounded-md border-2 border-dashed flex flex-col items-center justify-center gap-0.5 text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
+                  >
+                    {additionalImageUploading ? (
+                      <Loader2Icon className="size-4 animate-spin" />
+                    ) : (
+                      <>
+                        <PlusIcon className="size-4" />
+                        <span className="text-[9px]">{t("Add", "إضافة")}</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                <input
+                  ref={additionalFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  className="hidden"
+                  onChange={handleAdditionalImageFile}
+                />
+              </div>
+            </div>
+
             <Separator />
 
             {/* ── Identity ──────────────────────────────────────────── */}
@@ -459,6 +612,20 @@ function ProductFormDialog({
                     className="uppercase"
                   />
                 </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="pf-salePrice">{t("Sale Price", "سعر التخفيض")}</Label>
+                <Input
+                  id="pf-salePrice"
+                  value={draft.salePrice}
+                  onChange={field("salePrice")}
+                  placeholder={t("e.g. 79.99 (leave empty if no discount)", "مثال: 79.99 (اتركه فارغاً إن لم يوجد خصم)")}
+                  dir="ltr"
+                  inputMode="decimal"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("Discounted price shown to customers — must be lower than the regular price.", "السعر المخفّض المعروض للعملاء — يجب أن يكون أقل من السعر الأصلي.")}
+                </p>
               </div>
               <p className="text-xs text-muted-foreground">
                 {t(
@@ -557,6 +724,125 @@ function ProductFormDialog({
               </div>
             </div>
 
+            <Separator />
+
+            {/* ── Variants ──────────────────────────────────────────── */}
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {t("Variants", "المتغيرات")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t(
+                    "Products with the same Item Group ID are shown as variants in Meta Commerce Manager.",
+                    "المنتجات التي تشترك في نفس معرّف المجموعة تُعرض كمتغيرات في Meta Commerce Manager.",
+                  )}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</Label>
+                <Input
+                  id="pf-itemGroupId"
+                  value={draft.itemGroupId}
+                  onChange={field("itemGroupId")}
+                  placeholder={t("e.g. nike-air-max-270", "مثال: nike-air-max-270")}
+                  dir="ltr"
+                  className="font-mono"
+                  maxLength={100}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("Leave empty if this product has no variants.", "اتركه فارغاً إذا لم تكن لهذا المنتج متغيرات.")}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="pf-color">{t("Color", "اللون")}</Label>
+                  <Input
+                    id="pf-color"
+                    value={draft.color}
+                    onChange={field("color")}
+                    placeholder={t("e.g. Red", "مثال: أحمر")}
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="pf-size">{t("Size", "المقاس")}</Label>
+                  <Input
+                    id="pf-size"
+                    value={draft.size}
+                    onChange={field("size")}
+                    placeholder={t("e.g. XL, 42", "مثال: XL، 42")}
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="pf-material">{t("Material", "الخامة")}</Label>
+                  <Input
+                    id="pf-material"
+                    value={draft.material}
+                    onChange={field("material")}
+                    placeholder={t("e.g. Cotton", "مثال: قطن")}
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="pf-pattern">{t("Pattern", "النمط")}</Label>
+                  <Input
+                    id="pf-pattern"
+                    value={draft.pattern}
+                    onChange={field("pattern")}
+                    placeholder={t("e.g. Striped", "مثال: مقلّم")}
+                    maxLength={100}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>{t("Gender", "الجنس")}</Label>
+                  <Select
+                    value={draft.gender}
+                    onValueChange={(v) => setField("gender", v ?? "")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <span>
+                        {GENDER_OPTIONS.find(o => o.value === draft.gender)?.labelEn ?? "— None —"}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDER_OPTIONS.map((o) => (
+                        <SelectItem key={o.value || "__none__"} value={o.value}>
+                          {o.labelEn}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>{t("Age Group", "الفئة العمرية")}</Label>
+                  <Select
+                    value={draft.ageGroup}
+                    onValueChange={(v) => setField("ageGroup", v ?? "")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <span>
+                        {AGE_GROUP_OPTIONS.find(o => o.value === draft.ageGroup)?.labelEn ?? "— None —"}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AGE_GROUP_OPTIONS.map((o) => (
+                        <SelectItem key={o.value || "__none__"} value={o.value}>
+                          {o.labelEn}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
             {/* bottom breathing room */}
             <div className="h-2" />
           </div>
@@ -567,7 +853,7 @@ function ProductFormDialog({
             </Button>
             <Button
               type="submit"
-              disabled={saving || imageUploading || !draft.name.trim() || (!isEdit && !draft.retailerId.trim())}
+              disabled={saving || imageUploading || additionalImageUploading || !draft.name.trim() || (!isEdit && !draft.retailerId.trim())}
             >
               {saving && <Loader2Icon className="size-3.5 animate-spin me-1.5" />}
               {isEdit ? t("Save Changes", "حفظ التغييرات") : t("Add Product", "إضافة منتج")}
@@ -587,9 +873,21 @@ type CatalogProduct = {
   name: string;
   description?: string;
   price?: string;
+  salePrice?: string;
   currency?: string;
   imageUrl?: string;
+  additionalImages?: string[];
   availability?: string;
+  condition?: string;
+  brand?: string;
+  productUrl?: string;
+  itemGroupId?: string;
+  color?: string;
+  size?: string;
+  material?: string;
+  pattern?: string;
+  gender?: string;
+  ageGroup?: string;
   source?: "sync" | "manual";
 };
 
