@@ -5,9 +5,8 @@ import { useQuery, useMutation } from "convex/react";
 import { useOrganization } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { DT } from "@/lib/design-tokens";
 import {
   Dialog,
   DialogContent,
@@ -81,16 +80,16 @@ function ConfirmDialog({
         </DialogHeader>
         <p className="text-sm text-muted-foreground">{description}</p>
         <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
+          <button className={DT.BTN_OUTLINE} onClick={onClose} disabled={loading}>
             {t("Cancel", "إلغاء")}
-          </Button>
-          <Button
-            variant={confirmVariant}
+          </button>
+          <button
+            className={confirmVariant === "destructive" ? DT.BTN_DESTRUCTIVE : DT.BTN_PRIMARY}
             onClick={onConfirm}
             disabled={loading}
           >
             {loading ? t("Please wait…", "يرجى الانتظار…") : confirmLabel}
-          </Button>
+          </button>
         </div>
       </DialogContent>
     </Dialog>
@@ -158,13 +157,15 @@ function CreateLinkDialog({ open, onClose, isSupervisor }: CreateLinkDialogProps
         <div className="space-y-4">
           {/* Label */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">
+            <label className={DT.LBL}>
               {t("Label", "الاسم")}
             </label>
-            <Input
+            <input
+              type="text"
               placeholder={t("e.g. Agent Link", "مثال: رابط الوكلاء")}
               value={label}
-              onChange={(e) => setLabel(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLabel(e.target.value)}
+              className={DT.INPUT}
             />
           </div>
 
@@ -233,14 +234,14 @@ function CreateLinkDialog({ open, onClose, isSupervisor }: CreateLinkDialogProps
           )}
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={handleClose} disabled={loading}>
+            <button className={DT.BTN_OUTLINE} onClick={handleClose} disabled={loading}>
               {t("Cancel", "إلغاء")}
-            </Button>
-            <Button onClick={handleSubmit} disabled={loading || !label.trim()}>
+            </button>
+            <button className={DT.BTN_PRIMARY} onClick={handleSubmit} disabled={loading || !label.trim()}>
               {loading
                 ? t("Creating…", "جارٍ الإنشاء…")
                 : t("Create & Copy", "إنشاء ونسخ")}
-            </Button>
+            </button>
           </div>
         </div>
       </DialogContent>
@@ -362,36 +363,30 @@ function LinkCard({ link, isAdminOrSupervisor, memberNameMap }: LinkCardProps) {
       {/* Actions */}
       {isAdminOrSupervisor && (
         <div className="flex items-center gap-2 pt-1">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            className={`${DT.BTN_SM} flex items-center gap-1.5`}
             onClick={handleCopy}
             disabled={link.isExpired}
-            className="flex items-center gap-1.5"
           >
             <Copy className="size-3.5" />
             {t("Copy", "نسخ")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
+            className={`${DT.BTN_SM} flex items-center gap-1.5`}
             onClick={() => setConfirmRegenerate(true)}
             disabled={loading}
-            className="flex items-center gap-1.5"
           >
             <RefreshCw className="size-3.5" />
             {t("Regenerate", "تجديد")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
+            className={`${DT.BTN_SM} flex items-center gap-1.5 text-destructive hover:text-destructive`}
             onClick={() => setConfirmRevoke(true)}
             disabled={loading}
-            className="flex items-center gap-1.5 text-destructive hover:text-destructive"
           >
             <Trash2 className="size-3.5" />
             {t("Revoke", "إلغاء")}
-          </Button>
+          </button>
         </div>
       )}
 
