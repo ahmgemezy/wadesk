@@ -8,6 +8,7 @@ import { EmbeddedSignupButton } from "./embedded-signup-button";
 import { useT } from "@/lib/i18n/context";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { DT } from "@/lib/design-tokens";
 
 interface StepConnectWhatsAppProps {
   onComplete: () => void;
@@ -61,20 +62,17 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
   if (connected) {
     return (
       <div className="flex flex-col items-center gap-5 text-center py-2">
-        <div
-          className="size-16 rounded-2xl flex items-center justify-center"
-          style={{ background: "rgba(52,199,89,0.10)" }}
-        >
-          <CheckCircle2 className="size-8 text-[#34C759]" />
+        <div className="rounded-full size-16 bg-[#34C759]/10 dark:bg-[#30D158]/10 text-[#34C759] dark:text-[#30D158] flex items-center justify-center">
+          <CheckCircle2 className="size-8" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+          <h2 className={DT.H2}>
             {t("Connected!", "تم الربط بنجاح!")}
           </h2>
           {displayPhone && (
-            <p className="text-[15px] text-[#6E6E73]" dir="ltr">{displayPhone}</p>
+            <p className={DT.MUTED} dir="ltr">{displayPhone}</p>
           )}
-          <p className="text-[14px] text-[#6E6E73]">
+          <p className={DT.MUTED}>
             {t("Moving to the next step…", "جارٍ الانتقال للخطوة التالية…")}
           </p>
         </div>
@@ -85,10 +83,10 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center space-y-1">
-        <h2 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+        <h2 className={DT.H2}>
           {t("Connect WhatsApp Business", "ربط حساب واتساب بيزنس")}
         </h2>
-        <p className="text-[15px] text-[#6E6E73]">
+        <p className={DT.MUTED}>
           {t(
             "You own the WABA directly — WABDesk never locks you in.",
             "ستمتلك حساب WABA مباشرة — WABDesk لا يقيدك أبداً."
@@ -107,7 +105,7 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
           onSuccess={handleSuccess}
           onError={(err) => setError(err)}
         />
-        <p className="text-[12px] text-[#6E6E73] text-center">
+        <p className={`${DT.INFO_BOX} text-center`}>
           {t(
             "A Meta window will open to link your WhatsApp Business account.",
             "ستُفتح نافذة من ميتا لاختيار حساب واتساب بيزنس الخاص بك."
@@ -115,10 +113,10 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
         </p>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-black/8">
+      <div className={`flex items-center justify-between pt-1 ${DT.DIVIDER}`}>
         <button
           onClick={handleBack}
-          className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
+          className={`flex items-center gap-1.5 ${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
         >
           <ChevronRight className="size-4 rtl:rotate-180" />
           {t("Back", "رجوع")}
@@ -127,7 +125,7 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
           <button
             onClick={handleSkip}
             disabled={skipping || cancelling}
-            className="flex items-center gap-1.5 text-[13px] text-[#6E6E73] hover:text-[#1D1D1F] transition-colors disabled:opacity-40"
+            className={`${DT.MUTED} underline flex items-center gap-1.5 ${DT.MUTED_HOVER} transition-colors disabled:opacity-40`}
           >
             {skipping ? <Loader2 className="size-3.5 animate-spin" /> : <SkipForward className="size-3.5" />}
             {t("Skip for now", "تخطي الآن")}
@@ -135,7 +133,7 @@ export function StepConnectWhatsApp({ onComplete }: StepConnectWhatsAppProps) {
           <button
             onClick={handleCancel}
             disabled={cancelling || skipping}
-            className="flex items-center gap-1.5 text-[13px] text-[#FF3B30] hover:text-[#CC2A20] transition-colors disabled:opacity-40"
+            className={`flex items-center gap-1.5 text-[13px] ${DT.TEXT_RED} ${DT.TEXT_RED_HOVER} disabled:opacity-40`}
           >
             {cancelling ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}
             {t("Cancel setup", "إلغاء الإعداد")}

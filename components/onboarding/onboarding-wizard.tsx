@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "next/navigation";
 import { api } from "../../convex/_generated/api";
 import { ConvexError } from "convex/values";
+import { DT } from "@/lib/design-tokens";
 import { StepProgress } from "./step-progress";
 import { StepWorkspaceName } from "./step-workspace-name";
 import { StepConnectWhatsApp } from "./step-connect-whatsapp";
@@ -71,18 +72,18 @@ export function OnboardingWizard({ locale }: OnboardingWizardProps) {
 
   if (loading) {
     return (
-      <div className="w-full space-y-6">
+      <div className={`${DT.CARD} max-w-lg mx-auto p-8 w-full space-y-6`}>
         <div className="flex gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="flex-1">
-              <div className="h-8 rounded-full bg-muted animate-pulse" />
+              <div className="h-8 rounded-full bg-black/[0.06] dark:bg-white/[0.08] animate-pulse" />
             </div>
           ))}
         </div>
         <div className="space-y-4 mt-8">
-          <div className="h-6 w-48 bg-muted animate-pulse rounded" />
-          <div className="h-4 w-64 bg-muted animate-pulse rounded" />
-          <div className="h-10 w-32 bg-muted animate-pulse rounded-md mt-4" />
+          <div className="h-6 w-48 bg-black/[0.06] dark:bg-white/[0.08] animate-pulse rounded" />
+          <div className="h-4 w-64 bg-black/[0.06] dark:bg-white/[0.08] animate-pulse rounded" />
+          <div className="h-10 w-32 bg-black/[0.06] dark:bg-white/[0.08] animate-pulse rounded-md mt-4" />
         </div>
       </div>
     );
@@ -93,7 +94,7 @@ export function OnboardingWizard({ locale }: OnboardingWizardProps) {
   }
 
   return (
-    <div className="w-full space-y-8">
+    <div className={`${DT.CARD} max-w-lg mx-auto p-8 w-full space-y-8`}>
       <StepProgress
         completedSteps={completedSteps}
         currentStep={currentStep}

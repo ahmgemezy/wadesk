@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 export type ChannelStatus = "connecting" | "active" | "disconnected" | "reconnect_required";
 
@@ -8,18 +9,11 @@ interface ChannelStatusBadgeProps {
   status: ChannelStatus;
 }
 
-const STATUS_CLASS: Record<ChannelStatus, string> = {
-  active: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  connecting: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  disconnected: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-  reconnect_required: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-};
-
 const DOT_CLASS: Record<ChannelStatus, string> = {
-  active: "bg-green-500",
-  connecting: "bg-yellow-500 animate-pulse",
-  disconnected: "bg-gray-400",
-  reconnect_required: "bg-red-500",
+  active: DT.DOT_GREEN,
+  connecting: `${DT.DOT_AMBER} animate-pulse`,
+  disconnected: DT.DOT_GRAY,
+  reconnect_required: DT.DOT_RED,
 };
 
 export function ChannelStatusBadge({ status }: ChannelStatusBadgeProps) {
@@ -33,10 +27,8 @@ export function ChannelStatusBadge({ status }: ChannelStatusBadgeProps) {
   };
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_CLASS[status]}`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${DOT_CLASS[status]}`} />
+    <span className={`inline-flex items-center gap-1.5 ${DT.MUTED}`}>
+      <span className={DOT_CLASS[status]} />
       <span className="font-cairo">{label[status]}</span>
     </span>
   );

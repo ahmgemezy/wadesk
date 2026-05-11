@@ -6,6 +6,7 @@ import { useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { ConvexError } from "convex/values";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 interface EmbeddedSignupButtonProps {
   onSuccess: (channelId: string, displayPhone: string) => void;
@@ -202,7 +203,7 @@ export function EmbeddedSignupButton({
         type="button"
         onClick={handleClick}
         disabled={!isReady || loading}
-        className="inline-flex items-center justify-center gap-2 rounded-md bg-[#1877F2] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#166FE5] disabled:opacity-50 disabled:pointer-events-none transition-colors font-cairo"
+        className={`${DT.BTN_PRIMARY} w-full disabled:pointer-events-none font-cairo`}
       >
         {loading ? (
           <>

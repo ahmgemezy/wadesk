@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Loader2, LogOut } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 export function StepWorkspaceName() {
   const [name, setName] = useState("");
@@ -46,22 +47,26 @@ export function StepWorkspaceName() {
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center space-y-1">
-        <h2 className="text-[22px] font-semibold tracking-[-0.4px] text-[#1D1D1F]">
+        <h2 className={DT.H2}>
           {t("Name Your Workspace", "سمّي مساحة العمل")}
         </h2>
-        <p className="text-[15px] text-[#6E6E73]">
+        <p className={DT.MUTED}>
           {t("Choose a name for your workspace", "اختر اسمًا لمساحة عملك")}
         </p>
       </div>
 
       <form onSubmit={handleCreate} className="space-y-3">
+        <label className={DT.LBL} htmlFor="workspace-name">
+          {t("Workspace name", "اسم مساحة العمل")}
+        </label>
         <input
+          id="workspace-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Acme Corp"
           disabled={loading}
-          className="w-full rounded-xl border border-black/12 bg-black/4 px-3.5 py-2.5 text-[15px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73] disabled:opacity-50"
+          className={`${DT.INPUT} disabled:opacity-50`}
         />
         {error && (
           <p className="text-[13px] text-[#FF3B30] bg-[#FF3B30]/10 rounded-lg px-3 py-2">{error}</p>
@@ -69,8 +74,7 @@ export function StepWorkspaceName() {
         <button
           type="submit"
           disabled={loading || !name.trim()}
-          className="w-full rounded-full py-2.5 text-[15px] font-normal text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          style={{ background: "#0071E3" }}
+          className={`${DT.BTN_PRIMARY} w-full`}
         >
           {loading && <Loader2 className="size-4 animate-spin" />}
           {loading ? t("Creating…", "جارٍ الإنشاء…") : t("Create Workspace", "إنشاء مساحة العمل")}
@@ -81,7 +85,7 @@ export function StepWorkspaceName() {
         type="button"
         onClick={handleCancel}
         disabled={loading || signingOut}
-        className="flex items-center justify-center gap-1.5 text-[13px] text-[#6E6E73] hover:text-[#1D1D1F] transition-colors disabled:opacity-40 mx-auto"
+        className={`flex items-center justify-center gap-1.5 ${DT.MUTED} ${DT.MUTED_HOVER} transition-colors disabled:opacity-40 mx-auto`}
       >
         {signingOut ? <Loader2 className="size-3.5 animate-spin" /> : <LogOut className="size-3.5" />}
         {t("Sign out and go back", "تسجيل الخروج والعودة")}
