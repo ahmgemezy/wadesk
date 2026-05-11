@@ -4,9 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useAction, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
@@ -14,6 +12,7 @@ import { useOrganization } from "@/lib/auth-hooks";
 import { Lock, RefreshCw, CheckCircle2, Clock, XCircle, Wifi } from "lucide-react";
 import { PlanGate } from "@/components/ui/plan-gate";
 import { useSelectedChannel } from "@/lib/hooks/channel-context";
+import { DT } from "@/lib/design-tokens";
 
 type TemplateStatus = "APPROVED" | "PENDING" | "REJECTED" | "PAUSED" | null;
 type CsatLanguage = "ar" | "en";
@@ -179,8 +178,8 @@ export function CsatSettings() {
     <PlanGate requiredPlan="starter" featureLabel={t("CSAT", "تقييم رضا العملاء")}>
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">{t("Customer Satisfaction (CSAT)", "تقييم رضا العملاء (CSAT)")}</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <h2 className={DT.H2}>{t("Customer Satisfaction (CSAT)", "تقييم رضا العملاء (CSAT)")}</h2>
+        <p className={`${DT.MUTED} mt-0.5`}>
           {t(
             "Automatically ask customers to rate their experience after a conversation is resolved.",
             "اطلب تلقائياً من العملاء تقييم تجربتهم بعد إغلاق المحادثة.",
@@ -205,10 +204,10 @@ export function CsatSettings() {
 
         {enabled && (
           <div className="flex items-center gap-3 pt-2 border-t">
-            <label className="text-sm font-medium flex-1">
+            <label className={`${DT.LBL} flex-1`}>
               {t("Send after (minutes)", "الإرسال بعد (دقائق)")}
             </label>
-            <Input
+            <input
               type="number"
               min={0}
               max={60}
@@ -216,7 +215,7 @@ export function CsatSettings() {
               onChange={(e) =>
                 setDelayMinutes(Math.max(0, Math.min(60, parseInt(e.target.value) || 0)))
               }
-              className="w-20 text-center"
+              className={`w-20 text-center ${DT.INPUT_SM}`}
             />
           </div>
         )}
@@ -266,9 +265,9 @@ export function CsatSettings() {
         </div>
       </div>
 
-      <Button onClick={handleSave} disabled={saving || settings === undefined}>
+      <button className={DT.BTN_PRIMARY} onClick={handleSave} disabled={saving || settings === undefined}>
         {saving ? t("Saving…", "جاري الحفظ…") : t("Save Settings", "حفظ الإعدادات")}
-      </Button>
+      </button>
 
       {/* Template approval status — shown when CSAT is currently enabled (from DB) */}
       {settings.enabled && templateStatuses !== undefined && (
@@ -283,16 +282,14 @@ export function CsatSettings() {
                 )}
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              className={`${DT.BTN_SM} shrink-0`}
               onClick={handleSync}
               disabled={syncing}
-              className="shrink-0"
             >
               <RefreshCw className={`size-3.5 me-1.5 ${syncing ? "animate-spin" : ""}`} />
               {t("Refresh", "تحديث")}
-            </Button>
+            </button>
           </div>
 
           {hasPending && !allApproved && (
@@ -344,17 +341,15 @@ export function CsatSettings() {
                   <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={ch.status as TemplateStatus} />
                     {(ch.status === "REJECTED" || ch.status === "PAUSED" || ch.status === null) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs"
+                      <button
+                        className={`${DT.BTN_SM} h-7 text-xs`}
                         disabled={resubmitting === ch.channelId}
                         onClick={() => handleResubmit(ch.channelId as Id<"channels">)}
                       >
                         {resubmitting === ch.channelId
                           ? t("Submitting…", "جاري الإرسال…")
                           : t("Resubmit", "إعادة إرسال")}
-                      </Button>
+                      </button>
                     )}
                   </div>
                 </div>

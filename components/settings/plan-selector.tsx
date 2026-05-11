@@ -7,10 +7,10 @@ import { usePlan } from "@/lib/hooks/use-plan";
 import { openCheckout } from "@/lib/paddle";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, ExternalLink, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { DT } from "@/lib/design-tokens";
 
 type PaidPlan = "starter" | "growth" | "business";
 
@@ -146,17 +146,15 @@ export function PlanSelector() {
 
               {/* CTA */}
               {!isFree && !isCurrent && (
-                <Button
-                  size="sm"
-                  variant={isHighlighted ? "default" : "outline"}
+                <button
+                  className={`w-full ${isHighlighted ? DT.BTN_PRIMARY : DT.BTN_OUTLINE}`}
                   disabled={isLoading}
-                  className="w-full"
                   onClick={() => handleSelectPlan(plan.id)}
                 >
                   {isLoading
                     ? t("Loading…", "جارٍ التحميل…")
                     : t("Get started", "ابدأ الآن")}
-                </Button>
+                </button>
               )}
 
               {isCurrent && !isFree && (
@@ -177,16 +175,14 @@ export function PlanSelector() {
 
       {hasSubscription && (
         <div className="pt-2 border-t">
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            className={`inline-flex items-center gap-2 ${DT.MUTED} hover:text-foreground transition-colors disabled:opacity-50`}
             disabled={loading === "portal"}
             onClick={handleManageSubscription}
-            className="text-muted-foreground gap-2"
           >
             <ExternalLink className="h-4 w-4" />
             {t("Manage subscription (cancel, invoices)", "إدارة الاشتراك (إلغاء، فواتير)")}
-          </Button>
+          </button>
         </div>
       )}
     </div>

@@ -5,7 +5,6 @@ import { useAction } from "convex/react";
 import { useOrganization, useUser } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -17,6 +16,7 @@ import { InviteModal } from "./invite-modal";
 import { MemberProfileModal } from "@/components/team/member-profile-modal";
 import { useT } from "@/lib/i18n/context";
 import { MoreHorizontal, Plus, UserPlus, Shield, HeadphonesIcon, Crown } from "lucide-react";
+import { DT } from "@/lib/design-tokens";
 
 export type OrgRole = "org:admin" | "org:supervisor" | "org:agent";
 
@@ -120,13 +120,13 @@ export function TeamMemberList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
+        <h2 className={DT.H2}>
           {t("Team Members", "أعضاء الفريق")}
         </h2>
-        <Button onClick={() => setInviteOpen(true)} size="sm">
+        <button className={DT.BTN_SM} onClick={() => setInviteOpen(true)}>
           <UserPlus className="size-4 ms-1" />
           {t("Invite", "دعوة")}
-        </Button>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -142,7 +142,7 @@ export function TeamMemberList() {
               <div className="absolute top-3 inset-e-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    render={<Button variant="ghost" size="icon-sm" />}
+                    render={<button className={DT.BTN_ICON_SM} />}
                     onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   >
                     <MoreHorizontal className="size-4" />

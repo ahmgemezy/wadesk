@@ -5,8 +5,6 @@ import dynamic from "next/dynamic";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Smile, X, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +12,7 @@ import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 import { useOrganization } from "@/lib/auth-hooks";
 import { cn } from "@/lib/utils";
 import { useSelectedChannel } from "@/lib/hooks/channel-context";
+import { DT } from "@/lib/design-tokens";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -179,15 +178,15 @@ export function LabelsSettings() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">{t("Conversation Labels", "تصنيفات المحادثات")}</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h2 className={DT.H2}>{t("Conversation Labels", "تصنيفات المحادثات")}</h2>
+          <p className={`${DT.MUTED} mt-0.5`}>
             {t("Tag conversations to categorize and filter them.", "صنّف المحادثات لتنظيمها وتصفيتها بسهولة.")}
           </p>
         </div>
         {labels.length === 0 && isAdmin && (
-          <Button variant="outline" size="sm" onClick={seedDefaults}>
+          <button onClick={seedDefaults} className={DT.BTN_SM}>
             {t("Add defaults", "إضافة الافتراضية")}
-          </Button>
+          </button>
         )}
       </div>
 
@@ -245,10 +244,11 @@ export function LabelsSettings() {
                         </div>
                       )}
                     </div>
-                    <Input
+                    <input
+                      type="text"
                       value={editName}
                       onChange={(e) => { setEditName(e.target.value); setEditError(null); }}
-                      className="flex-1"
+                      className={`flex-1 ${DT.INPUT}`}
                       autoFocus
                     />
                   </div>
@@ -273,13 +273,13 @@ export function LabelsSettings() {
                     <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{editError}</p>
                   )}
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={handleSaveEdit} disabled={saving || !editName.trim()}>
+                    <button className={DT.BTN_SM_PRIMARY} onClick={handleSaveEdit} disabled={saving || !editName.trim()}>
                       <Check className="size-3.5 me-1.5" />
                       {saving ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
+                    </button>
+                    <button className={DT.BTN_SM} onClick={cancelEdit} disabled={saving}>
                       {t("Cancel", "إلغاء")}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               );
@@ -300,22 +300,18 @@ export function LabelsSettings() {
                 </span>
                 {isAdmin && (
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground hover:text-foreground"
+                    <button
+                      className={`${DT.BTN_ICON_SM} text-muted-foreground hover:text-foreground`}
                       onClick={() => startEdit(label)}
                     >
                       <Pencil className="size-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground hover:text-destructive"
+                    </button>
+                    <button
+                      className={`${DT.BTN_ICON_SM} text-muted-foreground hover:text-destructive`}
                       onClick={() => handleRemove(label._id, translateLabel(label.name))}
                     >
                       <Trash2 className="size-3.5" />
-                    </Button>
+                    </button>
                   </div>
                 )}
               </div>
@@ -325,7 +321,7 @@ export function LabelsSettings() {
       )}
 
       <form onSubmit={handleCreate} className="space-y-3 border-t pt-4">
-        <h3 className="text-sm font-medium">{t("New Label", "تصنيف جديد")}</h3>
+        <h3 className={DT.LBL}>{t("New Label", "تصنيف جديد")}</h3>
         <div className="flex gap-2">
           <div className="relative" ref={emojiRef}>
             <button
@@ -363,11 +359,12 @@ export function LabelsSettings() {
               </div>
             )}
           </div>
-          <Input
+          <input
+            type="text"
             value={name}
             onChange={(e) => { setName(e.target.value); setFormError(null); }}
             placeholder={t("Label name", "اسم التصنيف")}
-            className="flex-1"
+            className={`flex-1 ${DT.INPUT}`}
             required
           />
         </div>
@@ -393,10 +390,10 @@ export function LabelsSettings() {
             {formError}
           </p>
         )}
-        <Button type="submit" size="sm" disabled={creating || !name.trim()}>
+        <button type="submit" className={DT.BTN_SM_PRIMARY} disabled={creating || !name.trim()}>
           <Plus className="size-3.5 me-1.5" />
           {creating ? t("Creating...", "جاري الإنشاء...") : t("Create Label", "إنشاء تصنيف")}
-        </Button>
+        </button>
       </form>
     </div>
   );

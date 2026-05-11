@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui/button";
 import { Loader2Icon, DownloadIcon, LockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { useAuth } from "@/lib/auth-hooks";
+import { DT } from "@/lib/design-tokens";
 
 type ExportKind = "contacts" | "conversations";
 type ConversationFormat = "json" | "csv" | "html";
@@ -59,10 +59,10 @@ export function DataExport() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">
+        <h2 className={DT.H2}>
           {t("Data & Privacy", "البيانات والخصوصية")}
         </h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
+        <p className={`${DT.MUTED} mt-0.5`}>
           {t(
             "Export your contacts and conversations. Available on all plans.",
             "صدّر جهات الاتصال والمحادثات. متاح لجميع الخطط.",
@@ -96,19 +96,18 @@ export function DataExport() {
             </p>
           </div>
           {exporting === "contacts" ? (
-            <Button disabled size="sm">
+            <button className={DT.BTN_SM} disabled>
               <Loader2Icon className="size-4 animate-spin me-2" />
               {t("Preparing your export...", "جاري تجهيز التصدير...")}
-            </Button>
+            </button>
           ) : (
-            <Button
-              size="sm"
-              variant="outline"
+            <button
+              className={DT.BTN_SM}
               onClick={() => handleExport("contacts")}
             >
               <DownloadIcon className="size-4 me-2" />
               {t("Export", "تصدير")}
-            </Button>
+            </button>
           )}
         </div>
 
@@ -142,19 +141,18 @@ export function DataExport() {
               </p>
             </div>
             {exporting === "conversations" ? (
-              <Button disabled size="sm">
+              <button className={DT.BTN_SM} disabled>
                 <Loader2Icon className="size-4 animate-spin me-2" />
                 {t("Preparing your export...", "جاري تجهيز التصدير...")}
-              </Button>
+              </button>
             ) : (
-              <Button
-                size="sm"
-                variant="outline"
+              <button
+                className={DT.BTN_SM}
                 onClick={() => handleExport("conversations")}
               >
                 <DownloadIcon className="size-4 me-2" />
                 {t("Export", "تصدير")}
-              </Button>
+              </button>
             )}
           </div>
 

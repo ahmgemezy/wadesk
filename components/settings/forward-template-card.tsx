@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 export function ForwardTemplateCard() {
   const t = useT();
@@ -49,10 +49,10 @@ export function ForwardTemplateCard() {
   return (
     <div className="rounded-lg border bg-card p-5 space-y-4">
       <div>
-        <h3 className="text-base font-semibold">
+        <h3 className={DT.H3}>
           {t("Forward message", "رسالة التحويل")}
         </h3>
-        <p className="text-sm text-muted-foreground">
+        <p className={DT.MUTED}>
           {t(
             "Sent to the customer when an agent forwards their conversation to another branch.",
             "تُرسل للعميل عندما يقوم الموظف بتحويل محادثته لفرع آخر."
@@ -61,11 +61,11 @@ export function ForwardTemplateCard() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">{t("Arabic", "العربية")}</label>
+        <label className={DT.LBL}>{t("Arabic", "العربية")}</label>
         <textarea
           dir="rtl"
           rows={2}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          className={DT.TEXTAREA}
           value={ar}
           onChange={(e) => setAr(e.target.value)}
         />
@@ -78,11 +78,11 @@ export function ForwardTemplateCard() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">{t("English", "الإنجليزية")}</label>
+        <label className={DT.LBL}>{t("English", "الإنجليزية")}</label>
         <textarea
           dir="ltr"
           rows={2}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          className={DT.TEXTAREA}
           value={en}
           onChange={(e) => setEn(e.target.value)}
         />
@@ -95,15 +95,15 @@ export function ForwardTemplateCard() {
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="text-xs text-muted-foreground">
+        <span className={DT.MICRO}>
           {t("Variables:", "المتغيرات:")} <code dir="ltr">{"{{branchName}}"}</code>{" "}
           <code dir="ltr">{"{{branchNumber}}"}</code>
         </span>
         <div className="ms-auto">
-          <Button onClick={save} disabled={!valid || !dirty || saving}>
+          <button className={DT.BTN_PRIMARY} onClick={save} disabled={!valid || !dirty || saving}>
             {saving && <Loader2 className="size-4 animate-spin me-2" />}
             {t("Save", "حفظ")}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

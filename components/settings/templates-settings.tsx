@@ -6,9 +6,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
 import { useSelectedChannel } from "@/lib/hooks/channel-context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { DT } from "@/lib/design-tokens";
 import {
   Dialog,
   DialogContent,
@@ -206,10 +204,8 @@ export function TemplatesSettings() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
+          <button
+            className={`${DT.BTN_SM} gap-1.5`}
             onClick={() =>
               toast.info(
                 t("Coming soon!", "قريباً!"),
@@ -218,11 +214,11 @@ export function TemplatesSettings() {
           >
             <DownloadIcon className="size-3.5" />
             {t("Export Library", "تصدير المكتبة")}
-          </Button>
-          <Button size="sm" className="gap-1.5" onClick={() => openForCreate()}>
+          </button>
+          <button className={`${DT.BTN_SM_PRIMARY} gap-1.5`} onClick={() => openForCreate()}>
             <PlusIcon className="size-4" />
             {t("Create New Template", "قالب جديد")}
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -283,14 +279,13 @@ export function TemplatesSettings() {
                   "أنشئ قوالب رسائل بمتغيرات لتوحيد ردودك.",
                 )}
               </p>
-              <Button
-                variant="outline"
-                className="mt-4 gap-1.5"
+              <button
+                className={`${DT.BTN_SM} mt-4 gap-1.5`}
                 onClick={() => openForCreate()}
               >
                 <PlusIcon className="size-4" />
                 {t("Create your first template", "أنشئ قالبك الأول")}
-              </Button>
+              </button>
             </div>
           )}
 
@@ -399,24 +394,26 @@ export function TemplatesSettings() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("Title", "العنوان")}</label>
-              <Input
+              <label className={DT.LBL}>{t("Title", "العنوان")}</label>
+              <input
+                type="text"
                 placeholder={t("e.g. Welcome Message", "مثال: رسالة ترحيب")}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
                 dir="auto"
+                className={DT.INPUT}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">{t("Body", "النص")}</label>
-              <Textarea
+              <label className={DT.LBL}>{t("Body", "النص")}</label>
+              <textarea
                 placeholder={t(
                   "Hello {{name}}, thank you for contacting us!",
                   "مرحباً {{name}}، شكراً لتواصلك معنا!",
                 )}
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
-                className="min-h-35 resize-none"
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBody(e.target.value)}
+                className={`min-h-35 resize-none ${DT.TEXTAREA}`}
                 dir="auto"
               />
               {detectedVars.length > 0 && (
@@ -433,14 +430,16 @@ export function TemplatesSettings() {
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">
+              <label className={DT.LBL}>
                 {t("Category (optional)", "الفئة (اختياري)")}
               </label>
-              <Input
+              <input
+                type="text"
                 placeholder={t("e.g. Support", "مثال: دعم")}
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCategory(e.target.value)}
                 dir="auto"
+                className={DT.INPUT}
               />
             </div>
             <div className="space-y-2">
@@ -472,16 +471,17 @@ export function TemplatesSettings() {
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <button className={DT.BTN_OUTLINE} onClick={() => setDialogOpen(false)}>
               {t("Cancel", "إلغاء")}
-            </Button>
-            <Button
+            </button>
+            <button
+              className={DT.BTN_PRIMARY}
               onClick={handleSave}
               disabled={saving || !title.trim() || !body.trim()}
             >
               {saving && <Loader2Icon className="size-4 me-2 animate-spin" />}
               {t("Save", "حفظ")}
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

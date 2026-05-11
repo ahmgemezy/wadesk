@@ -7,7 +7,6 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ContactTimeline } from "@/components/contacts/contact-timeline";
 import { FollowUpModal } from "@/components/contacts/follow-up-modal";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { DT } from "@/lib/design-tokens";
 import {
   ArrowRight,
   ArrowLeft,
@@ -122,15 +121,13 @@ export default function ContactProfilePage({
     <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen bg-muted/10">
       {/* Header */}
       <div className="border-b bg-background px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
+          className={DT.BTN_ICON_SM}
           onClick={() => router.push("/contacts")}
           aria-label={t("Back", "رجوع")}
-          className="shrink-0"
         >
           {isRtl ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
-        </Button>
+        </button>
 
         <Avatar className="h-10 w-10 shrink-0 ring-2 ring-background shadow-sm">
           <AvatarFallback className="bg-primary/5 text-primary font-semibold">{initials}</AvatarFallback>
@@ -143,9 +140,9 @@ export default function ContactProfilePage({
           )}
         </div>
 
-        <Badge variant="secondary" className="px-3 py-1 font-semibold text-xs shrink-0 capitalize shadow-none border-border/50">
+        <span className={`${DT.BADGE_NEUTRAL} px-3 py-1 font-semibold text-xs shrink-0 capitalize`}>
           {isRtl ? stageLabel.ar : stageLabel.en}
-        </Badge>
+        </span>
 
         <Select value={stage} onValueChange={(v) => void updateStage({ contactId, stage: v as Stage })}>
           <SelectTrigger className="h-9 w-32 text-sm">
@@ -160,7 +157,7 @@ export default function ContactProfilePage({
           </SelectContent>
         </Select>
 
-        <Button
+        <button
           onClick={() => {
             if (!channelId) {
               toast.error(t("Please connect a WhatsApp channel first.", "يرجى ربط قناة واتساب أولاً."));
@@ -168,12 +165,11 @@ export default function ContactProfilePage({
             }
             setFollowUpOpen(true);
           }}
-          size="sm"
-          className="shrink-0 gap-2 shadow-sm"
+          className={`${DT.BTN_SM_PRIMARY} shrink-0 gap-2 shadow-sm`}
         >
           <CalendarClock className="h-4 w-4" />
           {t("Schedule Follow-up", "جدولة متابعة")}
-        </Button>
+        </button>
       </div>
 
       <div className="p-6">
@@ -265,7 +261,7 @@ export default function ContactProfilePage({
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {contact.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="font-normal text-xs">{tag}</Badge>
+                        <span key={tag} className={`${DT.BADGE_NEUTRAL} font-normal text-xs`}>{tag}</span>
                       ))}
                     </div>
                   </div>
@@ -312,14 +308,12 @@ export default function ContactProfilePage({
               <CardContent className="flex-1 p-6 overflow-y-auto">
                 <ContactTimeline events={events} locale={isRtl ? "ar" : "en"} />
                 {status === "CanLoadMore" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-6 w-full shadow-sm"
+                  <button
+                    className={`${DT.BTN_OUTLINE} mt-6 w-full shadow-sm`}
                     onClick={() => loadMore(20)}
                   >
                     {t("Load more", "تحميل المزيد")}
-                  </Button>
+                  </button>
                 )}
               </CardContent>
             </Card>

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -14,6 +13,7 @@ import {
 import { EVENT_LABELS } from "@/lib/notifications/eventLabels";
 import { useT } from "@/lib/i18n/context";
 import type { ToggleableEventType } from "@/convex/lib/notificationEvents";
+import { DT } from "@/lib/design-tokens";
 
 type Props = {
   eventType: ToggleableEventType;
@@ -82,12 +82,12 @@ export function NotificationsPreferencesRow({
             isPlanGated && "opacity-50",
           )}
         >
-          <Label
+          <label
             htmlFor={inAppId}
-            className="text-xs text-muted-foreground"
+            className={`${DT.MICRO}`}
           >
             {t("In-app", "داخل التطبيق")}
-          </Label>
+          </label>
           <Switch
             id={inAppId}
             checked={inAppEnabled}
@@ -104,12 +104,12 @@ export function NotificationsPreferencesRow({
             (isPlanGated || isEmailGated) && "opacity-50",
           )}
         >
-          <Label
+          <label
             htmlFor={emailId}
-            className="text-xs text-muted-foreground"
+            className={`${DT.MICRO}`}
           >
             {t("Email", "البريد الإلكتروني")}
-          </Label>
+          </label>
           <Switch
             id={emailId}
             checked={emailEnabled}
