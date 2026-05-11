@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
+import { DT } from "@/lib/design-tokens";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,12 +68,13 @@ function ContactCard({
     <div
       onClick={() => onClick(contact._id)}
       className={cn(
-        "group relative rounded-xl border bg-card p-4 cursor-pointer",
+        DT.CARD_SM,
+        "group relative p-4 cursor-pointer",
         "transition-all duration-200 ease-out",
-        "hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/30",
+        "hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]",
         "dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)]",
         "transform-3d",
-        isSelected && "border-primary ring-1 ring-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.2)]",
+        isSelected && "border-primary ring-1 ring-primary",
         contact.isArchived && "opacity-60",
       )}
       style={{ perspective: "1000px" }}
@@ -141,10 +143,10 @@ function ContactCard({
         </div>
 
         <div className="text-center min-w-0 w-full">
-          <p className="font-medium text-sm truncate">
+          <p className={`${DT.H3} truncate`}>
             {contact.customName ?? contact.displayName}
           </p>
-          <p className="text-xs text-muted-foreground font-mono mt-0.5" dir="ltr">
+          <p className={`${DT.MUTED} font-mono mt-0.5`} dir="ltr">
             {contact.phone}
           </p>
         </div>
@@ -175,14 +177,14 @@ function ContactCard({
         {contact.tags.length > 0 ? (
           <>
             {contact.tags.slice(0, 2).map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs font-normal">
+              <span key={tag} className={DT.BADGE_NEUTRAL}>
                 {tag}
-              </Badge>
+              </span>
             ))}
             {contact.tags.length > 2 && (
-              <Badge variant="outline" className="text-xs">
+              <span className={DT.BADGE_NEUTRAL}>
                 +{contact.tags.length - 2}
-              </Badge>
+              </span>
             )}
           </>
         ) : (

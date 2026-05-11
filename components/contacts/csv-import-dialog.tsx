@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import PapaParse from "papaparse";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import {
   Dialog,
   DialogContent,
@@ -276,12 +276,12 @@ export function CsvImportDialog({
               </table>
             </ScrollArea>
             <DialogFooter>
-              <Button variant="outline" onClick={handleReset}>
+              <button className={DT.BTN_OUTLINE} onClick={handleReset}>
                 {l.cancel}
-              </Button>
-              <Button onClick={() => setStep("options")}>
+              </button>
+              <button className={DT.BTN_PRIMARY} onClick={() => setStep("options")}>
                 {l.next}
-              </Button>
+              </button>
             </DialogFooter>
           </div>
          )}
@@ -308,12 +308,12 @@ export function CsvImportDialog({
                </button>
              </div>
              <DialogFooter>
-               <Button variant="outline" onClick={handleReset}>
+               <button className={DT.BTN_OUTLINE} onClick={handleReset}>
                  {l.cancel}
-               </Button>
-               <Button onClick={handleImport}>
+               </button>
+               <button className={DT.BTN_PRIMARY} onClick={handleImport}>
                  {l.startImport(totalRows)}
-               </Button>
+               </button>
              </DialogFooter>
            </div>
          )}
@@ -356,10 +356,10 @@ export function CsvImportDialog({
                </div>
              )}
              <DialogFooter>
-               <Button onClick={handleReset}>{l.importAnother}</Button>
-               <Button variant="outline" onClick={() => onOpenChange(false)}>
+               <button className={DT.BTN_PRIMARY} onClick={handleReset}>{l.importAnother}</button>
+               <button className={DT.BTN_OUTLINE} onClick={() => onOpenChange(false)}>
                  {l.done}
-               </Button>
+               </button>
              </DialogFooter>
            </div>
          )}

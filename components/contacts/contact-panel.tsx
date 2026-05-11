@@ -4,11 +4,8 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import { PencilIcon, PlusIcon, Trash2Icon, XIcon, CalendarClockIcon, StickyNoteIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT, useLocale } from "@/lib/i18n/context";
@@ -178,19 +175,19 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               {editing ? (
-                <Input
+                <input
+                  type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t("Name", "الاسم")}
-                  className="text-lg font-medium"
+                  className={`${DT.INPUT} text-lg font-medium`}
                 />
               ) : (
                 <h3 className="text-lg font-medium truncate">{displayName}</h3>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
+            <button
+              className={DT.BTN_ICON_SM}
               onClick={editing ? saveEdits : startEditing}
               aria-label={editing ? t("Save", "حفظ") : t("Edit", "تعديل")}
             >
@@ -199,11 +196,11 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
               ) : (
                 <PencilIcon className="size-4" />
               )}
-            </Button>
+            </button>
             {editing && (
-              <Button variant="ghost" size="icon-sm" onClick={() => setEditing(false)}>
+              <button className={DT.BTN_ICON_SM} onClick={() => setEditing(false)}>
                 <XIcon className="size-4" />
-              </Button>
+              </button>
             )}
           </div>
 
@@ -268,16 +265,18 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">{t("Tags", "الوسوم")}</p>
             {editing ? (
-              <Input
+              <input
+                type="text"
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder={t("Comma separated tags", "وسوم مفصولة بفواصل")}
+                className={DT.INPUT}
               />
             ) : (
               <div className="flex flex-wrap gap-1">
                 {contact.tags.length > 0 ? (
                   contact.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
+                    <span key={tag} className={DT.BADGE_NEUTRAL}>{tag}</span>
                   ))
                 ) : (
                   <span className="text-xs text-muted-foreground">{t("No tags", "بدون وسوم")}</span>
@@ -290,11 +289,12 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">{t("Notes", "ملاحظات")}</p>
             {editing ? (
-              <Textarea
+              <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={t("Add notes...", "أضف ملاحظات...")}
                 rows={3}
+                className={DT.TEXTAREA}
               />
             ) : (
               <p className="text-sm whitespace-pre-wrap">
@@ -336,14 +336,13 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
                 <p className="text-xs text-muted-foreground">{t("Follow-ups", "المتابعات")}</p>
               </div>
               {channelId && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
+                <button
+                  className={DT.BTN_ICON_SM}
                   onClick={() => setShowFollowUpModal(true)}
                   aria-label={t("Add follow-up", "إضافة متابعة")}
                 >
                   <PlusIcon className="size-4" />
-                </Button>
+                </button>
               )}
             </div>
 
@@ -384,7 +383,7 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
                     className="rounded-md border border-border bg-muted/40 p-2 text-xs space-y-1 opacity-60"
                   >
                     <p className="font-medium line-through">{formatDate(fu.scheduledAt)}</p>
-                    <Badge variant="secondary" className="text-[10px]">{fu.status}</Badge>
+                    <span className={DT.BADGE_NEUTRAL}>{fu.status}</span>
                   </div>
                 ))}
               </div>
@@ -396,14 +395,13 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">{t("Custom Fields", "حقول مخصصة")}</p>
               {!editing && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
+                <button
+                  className={DT.BTN_ICON_SM}
                   onClick={() => setShowNewField(true)}
                   aria-label={t("Add field", "إضافة حقل")}
                 >
                   <PlusIcon className="size-4" />
-                </Button>
+                </button>
               )}
             </div>
 
@@ -411,41 +409,41 @@ export function ContactPanel({ contactId, channelId, conversationId }: ContactPa
               <div key={field._id} className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground min-w-20">{field.key}</span>
                 <span className="flex-1">{field.value}</span>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
+                <button
+                  className={DT.BTN_ICON_SM}
                   onClick={() => handleDeleteField(field._id)}
                   aria-label={`${t("Delete", "حذف")} ${field.key}`}
                 >
                   <Trash2Icon className="size-3" />
-                </Button>
+                </button>
               </div>
             ))}
 
             {showNewField && (
               <div className="flex items-center gap-2">
-                <Input
+                <input
+                  type="text"
                   value={newFieldKey}
                   onChange={(e) => setNewFieldKey(e.target.value)}
                   placeholder={t("Key", "المفتاح")}
-                  className="w-24"
+                  className={`${DT.INPUT} w-24`}
                 />
-                <Input
+                <input
+                  type="text"
                   value={newFieldValue}
                   onChange={(e) => setNewFieldValue(e.target.value)}
                   placeholder={t("Value", "القيمة")}
-                  className="flex-1"
+                  className={`${DT.INPUT} flex-1`}
                 />
-                <Button variant="ghost" size="icon-sm" onClick={handleAddField}>
+                <button className={DT.BTN_ICON_SM} onClick={handleAddField}>
                   <PlusIcon className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
+                </button>
+                <button
+                  className={DT.BTN_ICON_SM}
                   onClick={() => { setShowNewField(false); setNewFieldKey(""); setNewFieldValue(""); }}
                 >
                   <XIcon className="size-4" />
-                </Button>
+                </button>
               </div>
             )}
 

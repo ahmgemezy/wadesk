@@ -21,6 +21,7 @@ import {
 import { ExternalLinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getCountryFromPhone } from "@/lib/phoneGeo";
+import { DT } from "@/lib/design-tokens";
 import type { ContactViewProps } from "./contact-view-props";
 import { type Stage, STAGE_CONFIG, STAGE_TABS } from "./contact-stage-config";
 
@@ -154,7 +155,7 @@ export function ContactTable({
 
   const sortableHeader = (col: SortCol, label: string) => (
     <TableHead
-      className="text-start cursor-pointer select-none hover:text-foreground transition-colors"
+      className={`${DT.SEC} text-start cursor-pointer select-none hover:text-foreground transition-colors`}
       onClick={() => handleSort(col)}
     >
       {label}
@@ -189,7 +190,7 @@ export function ContactTable({
           return (
             <TableRow
               key={contact._id}
-              className={cn("cursor-pointer", isSelected && "bg-primary/5")}
+              className={cn("cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02]", isSelected && "bg-primary/5")}
               onClick={() => onClick(contact._id)}
             >
               <TableCell onClick={(e) => e.stopPropagation()}>

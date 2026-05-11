@@ -1,8 +1,8 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DT } from "@/lib/design-tokens";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,8 +70,7 @@ export function ContactCompactList({
             key={contact._id}
             onClick={() => onClick(contact._id)}
             className={cn(
-              "group flex items-center gap-3 px-2 py-2.5 cursor-pointer transition-colors",
-              "hover:bg-muted/50",
+              DT.LIST_ITEM,
               isSelected && "bg-primary/5 border-s-2 border-primary",
             )}
           >
@@ -136,14 +135,14 @@ export function ContactCompactList({
 
             <div className="flex items-center gap-1 shrink-0 max-w-[160px]">
               {contact.tags.slice(0, 2).map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs font-normal truncate">
+                <span key={tag} className={`${DT.BADGE_NEUTRAL} truncate`}>
                   {tag}
-                </Badge>
+                </span>
               ))}
               {contact.tags.length > 2 && (
-                <Badge variant="outline" className="text-xs">
+                <span className={DT.BADGE_NEUTRAL}>
                   +{contact.tags.length - 2}
-                </Badge>
+                </span>
               )}
             </div>
 

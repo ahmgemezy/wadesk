@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import {
   Dialog,
   DialogContent,
@@ -86,32 +85,34 @@ export function BulkTagDialog({ open, onOpenChange, contactIds, locale = "ar", o
         </DialogHeader>
         <div className="space-y-3">
           <div className="flex gap-2">
-            <Input
+            <input
+              type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }}
               placeholder={l.placeholder}
+              className={DT.INPUT_SM}
             />
-            <Button variant="outline" size="icon" onClick={addTag}>
+            <button className={DT.BTN_ICON_SM} onClick={addTag}>
               <PlusIcon className="size-4" />
-            </Button>
+            </button>
           </div>
           <div className="flex flex-wrap gap-1.5 min-h-8">
             {tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="gap-1">
+              <span key={tag} className={`${DT.BADGE_NEUTRAL} gap-1`}>
                 {tag}
                 <button onClick={() => removeTag(tag)} className="hover:text-destructive">
                   <XIcon className="size-3" />
                 </button>
-              </Badge>
+              </span>
             ))}
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>{l.cancel}</Button>
-          <Button onClick={handleApply} disabled={saving || tags.length === 0}>
+          <button className={DT.BTN_OUTLINE} onClick={() => onOpenChange(false)} disabled={saving}>{l.cancel}</button>
+          <button className={DT.BTN_SM_PRIMARY} onClick={handleApply} disabled={saving || tags.length === 0}>
             {saving ? l.applying : l.apply}
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

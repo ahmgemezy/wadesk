@@ -5,9 +5,7 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { DT } from "@/lib/design-tokens";
 import {
   Dialog,
   DialogContent,
@@ -163,11 +161,12 @@ export function AddContactDialog({
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">{l.phone}</label>
-            <Input
+            <label className={DT.LBL}>{l.phone}</label>
+            <input type="tel"
               value={phone}
               onChange={(e) => { setPhone(e.target.value); setDuplicateError(null); }}
               placeholder="+201012345678"
+              className={DT.INPUT}
               dir="ltr"
               required
               disabled={saving}
@@ -175,18 +174,19 @@ export function AddContactDialog({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">{l.name}</label>
-            <Input
+            <label className={DT.LBL}>{l.name}</label>
+            <input type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={l.name}
+              className={DT.INPUT}
               disabled={saving}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">{l.country}</label>
+              <label className={DT.LBL}>{l.country}</label>
               <SearchableSelect
                 options={countryOptions}
                 value={country}
@@ -196,11 +196,12 @@ export function AddContactDialog({
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">{l.city}</label>
-              <Input
+              <label className={DT.LBL}>{l.city}</label>
+              <input type="text"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder={l.city}
+                className={DT.INPUT}
                 disabled={saving}
               />
             </div>
@@ -208,21 +209,22 @@ export function AddContactDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">{l.category}</label>
-              <Input
+              <label className={DT.LBL}>{l.category}</label>
+              <input type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder={l.category}
+                className={DT.INPUT}
                 disabled={saving}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">{l.spent}</label>
-              <Input
+              <label className={DT.LBL}>{l.spent}</label>
+              <input type="number"
                 value={spent}
                 onChange={(e) => setSpent(e.target.value)}
                 placeholder="0"
-                type="number"
+                className={DT.INPUT}
                 min="0"
                 dir="ltr"
                 disabled={saving}
@@ -231,21 +233,23 @@ export function AddContactDialog({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">{l.tags}</label>
-            <Input
+            <label className={DT.LBL}>{l.tags}</label>
+            <input type="text"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder={l.tagsPlaceholder}
+              className={DT.INPUT}
               disabled={saving}
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">{l.notes}</label>
-            <Textarea
+            <label className={DT.LBL}>{l.notes}</label>
+            <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={l.notesPlaceholder}
+              className={DT.TEXTAREA}
               rows={2}
               disabled={saving}
             />
@@ -259,12 +263,12 @@ export function AddContactDialog({
           )}
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={saving}>
+            <button type="button" className={DT.BTN_OUTLINE} onClick={handleClose} disabled={saving}>
               {l.cancel}
-            </Button>
-            <Button type="submit" disabled={saving || !phone.trim()}>
+            </button>
+            <button type="submit" className={DT.BTN_PRIMARY} disabled={saving || !phone.trim()}>
               {saving ? l.saving : l.save}
-            </Button>
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>

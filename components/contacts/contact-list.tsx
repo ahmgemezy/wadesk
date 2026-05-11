@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
 import { useOrganization, useAuth } from "@/lib/auth-hooks";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DT } from "@/lib/design-tokens";
 import {
   SearchIcon,
   PlusIcon,
@@ -237,34 +236,34 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <SearchIcon className="absolute inset-s-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
+            <input
+              type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={labels.search}
-              className="ps-9"
+              className={`${DT.INPUT_SM} ps-9`}
             />
           </div>
           {isAdminOrSupervisor && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)}>
+              <button className={DT.BTN_SM} onClick={() => setAddDialogOpen(true)}>
                 <PlusIcon className="size-4 me-1" />
                 {labels.add}
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
+              </button>
+              <button className={DT.BTN_SM} onClick={() => setImportDialogOpen(true)}>
                 <UploadIcon className="size-4 me-1" />
                 {labels.import}
-              </Button>
+              </button>
             </>
           )}
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            className={DT.BTN_SM}
             onClick={() => handleExportCsv()}
             disabled={contacts.length === 0}
           >
             <DownloadIcon className="size-4 me-1" />
             {labels.export}
-          </Button>
+          </button>
         </div>
 
         {/* Stage filter tabs */}
@@ -279,8 +278,8 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    ? DT.BTN_SM_PRIMARY
+                    : `${DT.BTN_SM}`,
                 )}
               >
                 {tab === "all"
@@ -294,17 +293,16 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {!isStageFiltered && (
-              <Button
-                variant={includeArchived ? "default" : "outline"}
-                size="sm"
+              <button
+                className={DT.BTN_SM}
                 onClick={() => setIncludeArchived(!includeArchived)}
               >
                 <ArchiveIcon className="size-4 me-1" />
                 {includeArchived ? labels.showAll : labels.archived}
-              </Button>
+              </button>
             )}
             {contacts.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={toggleSelectAll} className="text-muted-foreground">
+              <button className={`${DT.BTN_SM} text-muted-foreground`} onClick={toggleSelectAll}>
                 <Checkbox
                   checked={selected.size === contacts.length && contacts.length > 0}
                   className="me-2"
@@ -312,7 +310,7 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
                   onCheckedChange={toggleSelectAll}
                 />
                 {labels.selectAll}
-              </Button>
+              </button>
             )}
           </div>
 
@@ -331,8 +329,8 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
                   className={cn(
                     "p-1.5 rounded-md transition-all",
                     viewMode === mode
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                      ? `${DT.BTN_SM_PRIMARY}`
+                      : `${DT.BTN_ICON_SM}`,
                   )}
                 >
                   <Icon className="size-4" />
@@ -345,30 +343,30 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
               <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 rounded-lg px-2 py-1">
                 <span className="text-xs font-medium text-primary me-1">{labels.selected(selected.size)}</span>
                 {isAdminOrSupervisor && (
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setBulkTagOpen(true)}>
+                  <button className={`${DT.BTN_SM} h-7`} onClick={() => setBulkTagOpen(true)}>
                     <TagIcon className="size-3 me-1" />
                     {labels.bulkTag}
-                  </Button>
+                  </button>
                 )}
                 {isAdminOrSupervisor && hasActive && (
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkArchive(true)}>
+                  <button className={`${DT.BTN_SM} h-7`} onClick={() => handleBulkArchive(true)}>
                     <ArchiveIcon className="size-3 me-1" />
                     {labels.bulkArchive}
-                  </Button>
+                  </button>
                 )}
                 {isAdminOrSupervisor && hasArchived && (
-                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleBulkArchive(false)}>
+                  <button className={`${DT.BTN_SM} h-7`} onClick={() => handleBulkArchive(false)}>
                     <ArchiveRestoreIcon className="size-3 me-1" />
                     {labels.bulkUnarchive}
-                  </Button>
+                  </button>
                 )}
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleExportCsv(selectedContacts)}>
+                <button className={`${DT.BTN_SM} h-7`} onClick={() => handleExportCsv(selectedContacts)}>
                   <DownloadIcon className="size-3 me-1" />
                   {labels.bulkExport}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelected(new Set())}>
+                </button>
+                <button className={DT.BTN_ICON_SM} onClick={() => setSelected(new Set())}>
                   <XIcon className="size-3" />
-                </Button>
+                </button>
               </div>
             )}
           </div>
@@ -384,10 +382,10 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
             </div>
             <p>{labels.noContacts}</p>
             {isAdminOrSupervisor && !isSearching && (
-              <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(true)}>
+              <button className={DT.BTN_SM} onClick={() => setAddDialogOpen(true)}>
                 <PlusIcon className="size-4 me-1" />
                 {labels.addContact}
-              </Button>
+              </button>
             )}
           </div>
         ) : (
@@ -397,9 +395,9 @@ export function ContactList({ locale = "ar" }: ContactListProps) {
             {viewMode === "compact" && <ContactCompactList {...viewProps} />}
             {!isLoading && results?.status === "CanLoadMore" && (
               <div className="pt-4 text-center">
-                <Button variant="outline" size="sm" onClick={() => results.loadMore(PAGE_SIZE)}>
+                <button className={DT.BTN_SM} onClick={() => results.loadMore(PAGE_SIZE)}>
                   {labels.loadMore}
-                </Button>
+                </button>
               </div>
             )}
           </>

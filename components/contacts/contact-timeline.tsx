@@ -3,6 +3,7 @@
 import { MessageCircle, CheckCircle, RefreshCw, CalendarClock, CheckCheck, FileText, Tag, UserCheck, TrendingDown, XCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar, enUS } from "date-fns/locale";
+import { DT } from "@/lib/design-tokens";
 import { cn } from "@/lib/utils";
 
 // Type matching what Convex returns from contactEvents.getTimeline
@@ -108,11 +109,11 @@ export function ContactTimeline({ events, locale, compact = false }: Props) {
         return (
           <li key={event._id} className="flex gap-3 items-start">
             <span className={cn("mt-0.5 shrink-0", color)}>
-              <Icon className="h-4 w-4" />
+              <Icon className={`${DT.MICRO}`} />
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm">{eventLabel(event, locale)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className={DT.MUTED}>{eventLabel(event, locale)}</p>
+              <p className={`${DT.MICRO} text-muted-foreground mt-0.5`}>
                 {formatDistanceToNow(new Date(event.createdAt), {
                   addSuffix: true,
                   locale: dateLocale,

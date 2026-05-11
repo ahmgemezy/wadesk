@@ -14,9 +14,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -24,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DT } from "@/lib/design-tokens";
 import { ContactTimeline } from "./contact-timeline";
 import { FollowUpModal } from "./follow-up-modal";
 
@@ -273,7 +271,7 @@ export function ContactSidePanel({
                           {contact.tags.map((tag) => (
                             <span
                               key={tag}
-                              className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full"
+                              className={DT.BADGE_NEUTRAL}
                             >
                               {tag}
                             </span>
@@ -292,9 +290,9 @@ export function ContactSidePanel({
                     {t.stage}
                   </p>
                   <div className="flex items-center gap-2">
-                    <Badge className={`${stageLabel?.color ?? ""} border-0 text-xs`}>
+                    <span className={`${stageLabel?.color ?? ""} text-xs px-2 py-1 rounded-full`}>
                       {stageLabel?.[locale] ?? stage}
-                    </Badge>
+                    </span>
                     <Select value={stage ?? "lead"} onValueChange={(v) => v && void handleStageChange(v)}>
                       <SelectTrigger className="ms-auto h-7 w-auto text-xs px-2 py-1">
                         <SelectValue />
@@ -315,12 +313,12 @@ export function ContactSidePanel({
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                     {t.notes}
                   </p>
-                  <Textarea
+                  <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     onBlur={() => void handleNotesBlur()}
                     placeholder={t.notesPlaceholder}
-                    className="text-sm min-h-20 resize-none"
+                    className={`${DT.TEXTAREA} min-h-20 resize-none`}
                     dir={dir}
                   />
                 </section>
@@ -364,15 +362,13 @@ export function ContactSidePanel({
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       {t.followUps}
                     </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs h-7"
+                    <button
+                      className={`${DT.BTN_OUTLINE} text-xs h-7`}
                       onClick={() => setFollowUpOpen(true)}
                     >
                       <CalendarClock className="h-3 w-3 me-1" />
                       {t.scheduleFollowUp}
-                    </Button>
+                    </button>
                   </div>
                   {pendingFollowUps.length === 0 ? (
                     <p className="text-xs text-muted-foreground">{t.noFollowUps}</p>

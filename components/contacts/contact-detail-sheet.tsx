@@ -9,12 +9,10 @@ import { useOrganization } from "@/lib/auth-hooks";
 import { getCountryFromPhone } from "@/lib/phoneGeo";
 import { getCitiesForCountry, OTHER_CITY_VALUE } from "@/lib/cityData";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { DT } from "@/lib/design-tokens";
 import {
   Select,
   SelectContent,
@@ -296,7 +294,7 @@ export function ContactDetailSheet({
   return (
     <>
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-full sm:max-w-xs p-0 flex flex-col overflow-hidden">
+      <SheetContent side="left" className={`${DT.SHEET} w-full sm:max-w-xs p-0 flex flex-col overflow-hidden`}>
         <SheetHeader className="px-5 pt-5 pb-3 border-b shrink-0">
           <SheetTitle dir={dir}>
             {data === undefined ? <Skeleton className="h-5 w-36" /> : l.title}
@@ -326,11 +324,12 @@ export function ContactDetailSheet({
                   </div>
                   <div className="flex-1 min-w-0">
                     {editing ? (
-                      <Input
+                      <input
+                        type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder={l.namePlaceholder}
-                        className="text-base font-medium"
+                        className={`${DT.INPUT} text-base font-medium`}
                       />
                     ) : (
                       <h3 className="text-base font-semibold truncate">
@@ -345,31 +344,31 @@ export function ContactDetailSheet({
                     <div className="flex gap-1 shrink-0">
                       {editing ? (
                         <>
-                          <Button variant="default" size="icon-sm" onClick={saveEdits} aria-label={l.save}>
+                          <button className={DT.BTN_ICON_SM} onClick={saveEdits} aria-label={l.save}>
                             <CheckIcon className="size-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon-sm" onClick={() => setEditing(false)}>
+                          </button>
+                          <button className={DT.BTN_ICON_SM} onClick={() => setEditing(false)}>
                             <XIcon className="size-4" />
-                          </Button>
+                          </button>
                         </>
                       ) : (
-                        <Button variant="ghost" size="icon-sm" onClick={startEditing} aria-label="Edit">
+                        <button className={DT.BTN_ICON_SM} onClick={startEditing} aria-label="Edit">
                           <PencilIcon className="size-4" />
-                        </Button>
+                        </button>
                       )}
                     </div>
                   )}
                 </div>
 
                 {/* Send Message */}
-                <Button
-                  className="w-full"
+                <button
+                  className={`${DT.BTN_PRIMARY} w-full justify-center`}
                   onClick={handleSendMessageClick}
                   disabled={!channels || channels.length === 0}
                 >
                   <SendIcon className="size-4 me-2" />
                   {l.sendMessage}
-                </Button>
+                </button>
 
                 {/* Stats row */}
                 <div className="grid grid-cols-2 gap-3">
@@ -446,14 +445,15 @@ export function ContactDetailSheet({
                             const cities = getCitiesForCountry(geo?.countryIso ?? "");
                             if (cities.length === 0) {
                               return (
-                                <Input
+                                <input
+                                  type="text"
                                   value={city === OTHER_CITY_VALUE ? cityOther : city}
                                   onChange={(e) => {
                                     setCity(e.target.value);
                                     setCityOther("");
                                   }}
                                   placeholder={l.city}
-                                  className="h-8 text-sm"
+                                  className={`${DT.INPUT_SM}`}
                                 />
                               );
                             }
@@ -479,11 +479,12 @@ export function ContactDetailSheet({
                                   </SelectContent>
                                 </Select>
                                 {city === OTHER_CITY_VALUE && (
-                                  <Input
+                                  <input
+                                    type="text"
                                     value={cityOther}
                                     onChange={(e) => setCityOther(e.target.value)}
                                     placeholder={locale === "ar" ? "اكتب المدينة" : "Type city name"}
-                                    className="h-8 text-sm"
+                                    className={DT.INPUT_SM}
                                     autoFocus
                                   />
                                 )}
@@ -498,7 +499,7 @@ export function ContactDetailSheet({
 
                     <Field label={l.category} icon={<FolderIcon className="size-3.5" />}>
                       {editing ? (
-                        <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={l.category} className="h-8 text-sm" />
+                        <input type="text" value={category} onChange={(e) => setCategory(e.target.value)} placeholder={l.category} className={DT.INPUT_SM} />
                       ) : (
                         <span className="text-sm">{contact.category || "—"}</span>
                       )}
@@ -513,7 +514,7 @@ export function ContactDetailSheet({
                             placeholder="USD"
                             searchPlaceholder={locale === "ar" ? "ابحث عن العملة..." : "Search currency..."}
                           />
-                          <Input value={spent} onChange={(e) => setSpent(e.target.value)} placeholder="0" type="number" className="h-8 text-sm w-full" dir="ltr" />
+                          <input value={spent} onChange={(e) => setSpent(e.target.value)} placeholder="0" type="number" className={`${DT.INPUT_SM} w-full`} dir="ltr" />
                         </div>
                       ) : (
                         <span className="text-sm" dir="ltr">
@@ -531,7 +532,7 @@ export function ContactDetailSheet({
                 {/* Tags */}
                 <Section label={l.tags} icon={<TagIcon className="size-3.5" />}>
                   {editing ? (
-                    <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder={l.tagsPlaceholder} />
+                    <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder={l.tagsPlaceholder} className={DT.INPUT} />
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {contact.tags.length > 0 ? (
@@ -548,7 +549,7 @@ export function ContactDetailSheet({
                 {/* Notes */}
                 <Section label={l.notes}>
                   {editing ? (
-                    <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={l.notesPl} rows={3} />
+                    <textarea value={notes} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)} placeholder={l.notesPl} className={DT.TEXTAREA} rows={3} />
                   ) : (
                     <p className="text-sm whitespace-pre-wrap text-muted-foreground">
                       {contact.notes || l.noNotes}
@@ -562,9 +563,9 @@ export function ContactDetailSheet({
                 <Section
                   label={l.customFields}
                   action={canEdit && !editing ? (
-                    <Button variant="ghost" size="icon-sm" onClick={() => setShowNewField(true)}>
+                    <button className={DT.BTN_ICON_SM} onClick={() => setShowNewField(true)}>
                       <PlusIcon className="size-4" />
-                    </Button>
+                    </button>
                   ) : undefined}
                 >
                   <div className="space-y-2">
@@ -573,18 +574,18 @@ export function ContactDetailSheet({
                         <span className="text-muted-foreground text-xs w-24 shrink-0 truncate">{field.key}</span>
                         <span className="flex-1 text-xs">{field.value}</span>
                         {canEdit && (
-                          <Button variant="ghost" size="icon-sm" onClick={() => deleteField({ customFieldId: field._id })}>
+                          <button className={DT.BTN_ICON_SM} onClick={() => deleteField({ customFieldId: field._id })}>
                             <Trash2Icon className="size-3" />
-                          </Button>
+                          </button>
                         )}
                       </div>
                     ))}
                     {showNewField && (
                       <div className="flex items-center gap-2">
-                        <Input value={newFieldKey} onChange={(e) => setNewFieldKey(e.target.value)} placeholder={l.keyPl} className="w-24 h-8 text-xs" />
-                        <Input value={newFieldValue} onChange={(e) => setNewFieldValue(e.target.value)} placeholder={l.valuePl} className="flex-1 h-8 text-xs" />
-                        <Button variant="ghost" size="icon-sm" onClick={handleAddField}><PlusIcon className="size-4" /></Button>
-                        <Button variant="ghost" size="icon-sm" onClick={() => { setShowNewField(false); setNewFieldKey(""); setNewFieldValue(""); }}><XIcon className="size-4" /></Button>
+                        <input type="text" value={newFieldKey} onChange={(e) => setNewFieldKey(e.target.value)} placeholder={l.keyPl} className={`${DT.INPUT_XS} w-24`} />
+                        <input type="text" value={newFieldValue} onChange={(e) => setNewFieldValue(e.target.value)} placeholder={l.valuePl} className={`${DT.INPUT_XS} flex-1`} />
+                        <button className={DT.BTN_ICON_SM} onClick={handleAddField}><PlusIcon className="size-4" /></button>
+                        <button className={DT.BTN_ICON_SM} onClick={() => { setShowNewField(false); setNewFieldKey(""); setNewFieldValue(""); }}><XIcon className="size-4" /></button>
                       </div>
                     )}
                     {!showNewField && customFields.length === 0 && (
@@ -622,9 +623,8 @@ export function ContactDetailSheet({
                 {canEdit && contactId && (
                   <>
                     <Separator />
-                    <Button
-                      variant="outline"
-                      className="w-full"
+                    <button
+                      className={`${DT.BTN_OUTLINE} w-full justify-center`}
                       onClick={() => archiveContact({ contactId, archive: !contact.isArchived })}
                     >
                       {contact.isArchived ? (
@@ -632,7 +632,7 @@ export function ContactDetailSheet({
                       ) : (
                         <><ArchiveIcon className="size-4 me-2" />{l.archive}</>
                       )}
-                    </Button>
+                    </button>
                   </>
                 )}
               </>
@@ -670,15 +670,16 @@ export function ContactDetailSheet({
           </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => setShowChannelPicker(false)}>
+          <button className={DT.BTN_OUTLINE} onClick={() => setShowChannelPicker(false)}>
             {l.cancel}
-          </Button>
-          <Button
+          </button>
+          <button
+            className={DT.BTN_PRIMARY}
             onClick={handleStartConversation}
             disabled={!selectedChannelId || startingConversation}
           >
             {l.startConversation}
-          </Button>
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -13,9 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { DT } from "@/lib/design-tokens";
 import {
   Select,
   SelectContent,
@@ -108,9 +106,10 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <label htmlFor="fu-date" className="text-sm font-medium">{isRtl ? "التاريخ" : "Date"}</label>
-              <Input
+              <input
                 id="fu-date"
                 type="date"
+                className={DT.INPUT}
                 required
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
@@ -118,9 +117,10 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
             </div>
             <div className="space-y-1">
               <label htmlFor="fu-time" className="text-sm font-medium">{isRtl ? "الوقت" : "Time"}</label>
-              <Input
+              <input
                 id="fu-time"
                 type="time"
+                className={DT.INPUT}
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
               />
@@ -131,9 +131,10 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <label htmlFor="fu-revenue" className="text-sm font-medium">{isRtl ? "الإيراد المتوقع" : "Expected Revenue"}</label>
-              <Input
+              <input
                 id="fu-revenue"
                 type="number"
+                className={DT.INPUT}
                 min="0"
                 placeholder="0"
                 value={revenue}
@@ -155,25 +156,27 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
           {/* Internal Note */}
           <div className="space-y-1">
             <label htmlFor="fu-note" className="text-sm font-medium">{isRtl ? "ملاحظة داخلية (اختياري)" : "Internal Note (optional)"}</label>
-            <Textarea
+            <textarea
               id="fu-note"
               rows={2}
               placeholder={isRtl ? "مرئي للوكلاء فقط" : "Visible to agents only"}
               value={note}
-              onChange={(e) => setNote(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNote(e.target.value)}
+              className={DT.TEXTAREA}
             />
           </div>
 
           {/* WhatsApp Message */}
           <div className="space-y-1">
             <label htmlFor="fu-message" className="text-sm font-medium">{isRtl ? "رسالة واتساب *" : "WhatsApp Message *"}</label>
-            <Textarea
+            <textarea
               id="fu-message"
               rows={3}
               required
               placeholder={isRtl ? "الرسالة التي ستُرسل للعميل" : "Message sent to customer"}
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMessage(e.target.value)}
+              className={DT.TEXTAREA}
             />
           </div>
 
@@ -200,14 +203,14 @@ export function FollowUpModal({ open, onClose, contactId, channelId, locale }: P
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => { reset(); onClose(); }}>
+            <button type="button" className={DT.BTN_OUTLINE} onClick={() => { reset(); onClose(); }}>
               {isRtl ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="submit" disabled={submitting || !scheduledDate || !message.trim()}>
+            </button>
+            <button type="submit" className={DT.BTN_PRIMARY} disabled={submitting || !scheduledDate || !message.trim()}>
               {submitting
                 ? (isRtl ? "جاري الحفظ..." : "Saving...")
                 : (isRtl ? "جدولة" : "Schedule")}
-            </Button>
+            </button>
           </DialogFooter>
         </form>
       </DialogContent>
