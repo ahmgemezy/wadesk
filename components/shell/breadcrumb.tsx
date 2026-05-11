@@ -58,7 +58,7 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
             ) : (
               <Link
                 href={href}
-                className={`${DT.MUTED} hover:${DT.BODY} transition-colors`}
+                className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
               >
                 <DynamicSegment segment={segment} prevSegment={prevSegment} locale={locale} />
               </Link>

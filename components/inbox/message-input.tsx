@@ -28,6 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { DT } from "@/lib/design-tokens";
 
 // Lazy-load emoji picker to keep initial bundle small
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });

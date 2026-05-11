@@ -15,6 +15,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { extractVariables, renderTemplate } from "@/lib/templateHelpers";
+import { DT } from "@/lib/design-tokens";
 
 type ReplyItem = {
   _id: string;
@@ -83,17 +84,17 @@ export function QuickReplyPanel({
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="left" className="w-80 p-0 flex flex-col">
+      <SheetContent side="left" className={`w-80 p-0 flex flex-col ${DT.SHEET}`}>
         <SheetHeader className="border-b border-border/60 bg-muted/20">
           <SheetTitle>{t("Quick Replies", "ردود سريعة")}</SheetTitle>
         </SheetHeader>
         <div className="px-4 pt-3 pb-2">
-          <Input
+          <input
             placeholder={t("Search...", "بحث...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             dir="auto"
-            className="bg-muted/50 border-border/60"
+            className={DT.INPUT_SM}
           />
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 space-y-4">
@@ -102,15 +103,15 @@ export function QuickReplyPanel({
               <p className="text-sm font-medium">{t("Fill in variables", "املأ المتغيرات")}</p>
               {fillItem.variables.map((variable) => (
                 <div key={variable} className="space-y-1">
-                  <label className="text-xs text-muted-foreground">{`{{${variable}}}`}</label>
-                  <Input
+                  <label className={`block ${DT.LBL}`}>{`{{${variable}}}`}</label>
+                  <input
                     value={fillValues[variable] ?? ""}
                     onChange={(e) => {
                       setFillErrors((prev) => prev.filter((v) => v !== variable));
                       setFillValues((prev) => ({ ...prev, [variable]: e.target.value }));
                     }}
                     dir="auto"
-                    className={fillErrors.includes(variable) ? "border-destructive" : ""}
+                    className={`${DT.INPUT_SM} ${fillErrors.includes(variable) ? "border-destructive" : ""}`}
                   />
                   {fillErrors.includes(variable) && (
                     <p className="text-xs text-destructive">{t("Required", "مطلوب")}</p>
@@ -169,7 +170,7 @@ export function QuickReplyPanel({
                             onClose();
                           }
                         }}
-                        className="w-full text-start p-3 rounded-xl border border-border/50 hover:border-primary/30 hover:bg-accent/40 transition-all group"
+                        className={`w-full text-start p-3 group ${DT.LIST_ITEM_SM}`}
                       >
                         <div className="text-sm font-medium group-hover:text-primary transition-colors">{qr.title}</div>
                         <div className="text-xs text-muted-foreground truncate mt-0.5">

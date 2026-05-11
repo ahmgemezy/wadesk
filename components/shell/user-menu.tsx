@@ -93,7 +93,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
         <button
           onClick={handleSignOut}
           disabled={signingOut}
-          className={`flex items-center gap-2 px-2 py-1.5 text-sm rounded-xl transition-colors w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-full disabled:opacity-60 ${DT.MUTED} hover:${DT.BODY}`}
+          className={`flex items-center gap-2 px-2 py-1.5 text-sm rounded-xl transition-colors w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-full disabled:opacity-60 ${DT.MUTED} ${DT.MUTED_HOVER}`}
         >
           <LogOut className="size-4 shrink-0 rtl:scale-x-[-1]" />
           <span className="group-data-[collapsible=icon]:hidden">

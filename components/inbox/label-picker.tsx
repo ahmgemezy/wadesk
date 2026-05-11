@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useT, useTranslatedLabel } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 const COLOR_MAP: Record<string, string> = {
   red: "bg-red-500",
@@ -58,7 +59,7 @@ export function LabelPicker({ conversationId, activeLabels }: LabelPickerProps) 
           </span>
         )}
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-52 p-1">
+      <PopoverContent align="start" className={`w-52 p-0 ${DT.CARD}`}>
         {labels.length === 0 ? (
           <p className="text-xs text-muted-foreground px-2 py-1.5">
             {t("No labels defined yet", "لا توجد تصنيفات بعد")}
@@ -71,8 +72,8 @@ export function LabelPicker({ conversationId, activeLabels }: LabelPickerProps) 
                 key={label._id}
                 onClick={() => toggle(label.name)}
                 className={cn(
-                  "w-full flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent transition-colors",
-                  isActive && "bg-accent",
+                  "w-full flex items-center gap-2 px-2 py-1.5 text-sm transition-colors",
+                  isActive ? DT.LIST_ITEM_ACTIVE : DT.LIST_ITEM,
                 )}
               >
                 <span

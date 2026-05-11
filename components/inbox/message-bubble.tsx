@@ -4,6 +4,7 @@ import { useT, useLocale } from "@/lib/i18n/context";
 import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIcon, CalendarClockIcon, ShoppingBagIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { MessageActionMenu } from "./message-action-menu";
+import { DT } from "@/lib/design-tokens";
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
@@ -324,6 +325,8 @@ export function MessageBubble({
     { hour: "2-digit", minute: "2-digit" },
   );
 
+  const mobileBadgeClass = DT.BADGE_NEUTRAL;
+
   const canDelete =
     !message.isInternalNote &&
     message.direction === "outbound" &&
@@ -369,7 +372,7 @@ export function MessageBubble({
 
   const mobileBadge = isMobileSource && (
     <span
-      className="ms-2 inline-flex items-center gap-1 rounded bg-success/10 px-2 py-0.5 text-xs font-medium text-success"
+      className={`ms-2 ${mobileBadgeClass}`}
       title={t("Sent from the WhatsApp mobile app", "هذه الرسالة أُرسلت من تطبيق الواتساب على الهاتف")}
     >
       📱 {t("From mobile", "من الموبايل")}
@@ -377,7 +380,7 @@ export function MessageBubble({
   );
 
   const timeRow = (
-    <div className={`text-xs text-muted-foreground mt-1 flex items-center gap-1 ${isInbound ? "justify-start" : "justify-end"}`}>
+    <div className={`mt-1 flex items-center gap-1 ${DT.MICRO} ${isInbound ? "justify-start" : "justify-end"}`}>
       <span>{timeStr}</span>
       {!isInbound && (
         <StatusTick

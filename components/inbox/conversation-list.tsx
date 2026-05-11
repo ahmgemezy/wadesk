@@ -13,6 +13,7 @@ import { ConversationListItem } from "./conversation-list-item";
 import { useT, useTranslatedLabel } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 import { useSelectedChannel } from "@/lib/hooks/channel-context";
+import { DT } from "@/lib/design-tokens";
 
 type AssignmentFilter = "all" | "mine" | "unassigned" | "unread";
 type StageFilter = "all" | "lead" | "prospect" | "customer" | "retained" | "churned";
@@ -160,11 +161,11 @@ export function ConversationList({
       <div className="p-2 border-b">
         <div className="relative">
           <Search className="absolute inset-s-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <Input
+          <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("Search...", "ابحث بالاسم أو الرقم")}
-            className="ps-8 h-8 text-sm bg-muted/50 border-border/60"
+            className={cn("ps-8 h-8 text-sm", DT.INPUT_SM)}
             dir="auto"
           />
         </div>
@@ -206,8 +207,8 @@ export function ConversationList({
             className={cn(
               "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all whitespace-nowrap",
               stageFilter === tab.value
-                ? "bg-primary text-primary-foreground shadow-(--shadow-xs)"
-                : "bg-muted text-muted-foreground hover:bg-muted/80",
+                ? DT.BADGE_BLUE
+                : DT.BADGE_NEUTRAL,
             )}
           >
             {isRtl ? tab.ar : tab.en}
@@ -223,8 +224,8 @@ export function ConversationList({
             className={cn(
               "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all",
               labelFilter === null
-                ? "bg-primary text-primary-foreground shadow-(--shadow-xs)"
-                : "bg-muted text-muted-foreground hover:bg-muted/80",
+                ? DT.BADGE_BLUE
+                : DT.BADGE_NEUTRAL,
             )}
           >
             {t("All", "الكل")}
@@ -236,8 +237,8 @@ export function ConversationList({
               className={cn(
                 "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all flex items-center gap-1",
                 labelFilter === label.name
-                  ? "bg-primary text-primary-foreground shadow-(--shadow-xs)"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  ? DT.BADGE_BLUE
+                  : DT.BADGE_NEUTRAL,
               )}
             >
               {label.emoji && <span>{label.emoji}</span>}

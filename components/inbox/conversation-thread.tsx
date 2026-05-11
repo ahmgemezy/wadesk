@@ -9,6 +9,7 @@ import { MessageBubble } from "./message-bubble";
 import { LabelPicker } from "./label-picker";
 import { useLocale, useTranslatedLabel, useT } from "@/lib/i18n/context";
 import { toast } from "sonner";
+import { DT } from "@/lib/design-tokens";
 
 type MessageItem = {
   _id: string;
@@ -185,7 +186,7 @@ export function ConversationThread({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex items-center gap-1.5 px-3 py-1.5 border-b flex-wrap min-h-9">
+      <div className={`flex items-center gap-1.5 px-3 py-1.5 border-b flex-wrap min-h-9 bg-white dark:bg-[#1C1C1E]`}>
         {rawMessages !== undefined && (
           <>
             <LabelPicker

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 interface ForwardToBranchDialogProps {
   conversationId: Id<"conversations">;
@@ -92,7 +93,7 @@ export function ForwardToBranchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className={DT.DIALOG}>
         <DialogHeader>
           <DialogTitle>{t("Send to another number", "إرسال لرقم آخر")}</DialogTitle>
         </DialogHeader>
@@ -109,7 +110,7 @@ export function ForwardToBranchDialog({
               </p>
             ) : (
               <select
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                className={DT.SELECT}
                 value={targetChannelId}
                 onChange={(e) => {
                   setTargetChannelId(e.target.value);
@@ -131,7 +132,7 @@ export function ForwardToBranchDialog({
               {t("Target department (optional)", "إدارة مستهدفة (اختياري)")}
             </label>
             <select
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm disabled:opacity-50"
+              className={`${DT.SELECT} disabled:opacity-50`}
               value={targetDeptId}
               onChange={(e) => setTargetDeptId(e.target.value)}
               disabled={!targetChannelId || departments === undefined}

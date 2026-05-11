@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { ReplyIcon, SmileIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 const QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
@@ -39,14 +40,14 @@ export function MessageActionMenu({
 
   return (
     <div
-      className={`absolute -top-8 flex items-center gap-0.5 bg-background border rounded-lg shadow-[var(--shadow-md)] px-0.5 py-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-20 ${
+      className={`absolute -top-8 flex items-center gap-0.5 rounded-lg opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-20 ${DT.CARD_SM} ${
         isOutbound ? "end-0" : "start-0"
       }`}
     >
       <Button
         variant="ghost"
         size="icon"
-        className="size-7"
+        className={`${DT.BTN_ICON_SM}`}
         title={t("Reply", "رد")}
         onClick={onReply}
       >
@@ -57,7 +58,7 @@ export function MessageActionMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="size-7"
+          className={`${DT.BTN_ICON_SM}`}
           title={t("React", "تفاعل")}
           onClick={() => setShowEmojiPicker((v) => !v)}
         >
@@ -65,7 +66,7 @@ export function MessageActionMenu({
         </Button>
         {showEmojiPicker && (
           <div
-            className={`absolute bottom-full mb-1 flex gap-1 bg-background border rounded-lg shadow-[var(--shadow-md)] p-1.5 z-30 ${
+            className={`absolute bottom-full mb-1 flex gap-1 rounded-lg p-1.5 z-30 ${DT.CARD_SM} ${
               isOutbound ? "end-0" : "start-0"
             }`}
           >
@@ -89,7 +90,7 @@ export function MessageActionMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="size-7 text-destructive hover:text-destructive"
+          className={`${DT.BTN_ICON_SM} text-destructive`}
           title={t("Delete", "حذف")}
           onClick={onDelete}
         >

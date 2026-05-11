@@ -16,6 +16,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
 import { ForwardToBranchDialog } from "./forward-to-branch-dialog";
+import { DT } from "@/lib/design-tokens";
 
 interface TransferPickerProps {
   conversationId: Id<"conversations">;
@@ -129,7 +130,7 @@ export function TransferPicker({
             </Button>
           )}
         />
-        <PopoverContent align="end" className="w-72 p-0 max-h-[420px] overflow-y-auto">
+        <PopoverContent align="end" className={`w-72 p-0 max-h-[420px] overflow-y-auto ${DT.CARD}`}>
           {pendingDeptId ? (
             <div className="p-3 space-y-3">
               <p className="text-sm font-medium">

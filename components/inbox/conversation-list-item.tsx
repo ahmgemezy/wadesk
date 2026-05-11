@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useOrganization, useUser } from "@/lib/auth-hooks";
 import { useT, useLocale, useTranslatedLabel } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 import { MailOpen, MailCheck, AlertTriangle, MoreHorizontal, Trash2, Star } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -156,8 +157,8 @@ export function ConversationListItem({
     <>
     <div
       className={cn(
-        "group w-full text-start p-3 border-b border-border/60 hover:bg-muted/60 transition-colors cursor-pointer",
-        isActive && "bg-accent/40 border-s-2 border-s-primary",
+        "group w-full text-start p-3 border-b border-border/60 transition-colors cursor-pointer",
+        isActive ? DT.LIST_ITEM_ACTIVE : DT.LIST_ITEM,
         !isActive && borderClass,
         !conversation.assignedAgentId && !isActive && "bg-(--unassigned-bg)",
       )}
@@ -179,7 +180,7 @@ export function ConversationListItem({
           {/* Row 1: name + unread badge + time + actions */}
           <div className="flex items-center justify-between gap-1 mb-0.5">
             <span
-              className="text-sm font-semibold truncate"
+              className={cn("truncate", DT.H3)}
               dir="auto"
             >
               {displayName}
@@ -237,7 +238,7 @@ export function ConversationListItem({
 
           {/* Row 2: last message preview */}
           <p
-            className="text-xs text-muted-foreground truncate"
+            className={cn("truncate", DT.MUTED)}
             dir="auto"
           >
             {conversation.lastMessagePreview}
@@ -260,7 +261,7 @@ export function ConversationListItem({
           <div className="flex items-center gap-2 mt-1">
             <div className="flex items-center gap-1 shrink-0">
               <span className={cn("size-1.5 rounded-full shrink-0", statusDotClass)} />
-              <span className="text-[10px] text-muted-foreground">{statusLabel}</span>
+              <span className={DT.MICRO}>{statusLabel}</span>
             </div>
             {typeof conversation.csatScore === "number" && (
               <span
@@ -268,19 +269,19 @@ export function ConversationListItem({
                   `Customer rated ${conversation.csatScore}/5`,
                   `العميل قيّم ${conversation.csatScore}/5`,
                 )}
-                className="inline-flex items-center gap-0.5 text-[10px] font-medium text-warning"
+                className={cn("inline-flex items-center gap-0.5 font-medium text-warning", DT.MICRO)}
               >
                 <Star className="size-2.5 fill-warning" />
                 {conversation.csatScore}/5
               </span>
             )}
             {conversation.departmentName && (
-              <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0.5 truncate max-w-20">
+              <span className={cn("rounded-full px-1.5 py-0.5 truncate max-w-20", DT.BADGE_NEUTRAL, DT.MICRO)}>
                 {conversation.departmentName}
               </span>
             )}
             {conversation.assignedAgentId ? (
-              <span className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+              <span className={cn("flex items-center gap-1 truncate", DT.MICRO)}>
                 <span className="truncate">
                   {conversation.assignedAgentId === user?.id
                     ? t("You", "أنت")
@@ -294,12 +295,12 @@ export function ConversationListItem({
                 )}
               </span>
             ) : conversation.departmentName ? (
-              <span className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 truncate">
+              <span className={cn("flex items-center gap-1 truncate", DT.MICRO)}>
                 <span>⚠</span>
                 <span>{t("Unassigned", "غير معين")} · {conversation.departmentName}</span>
               </span>
             ) : (
-              <span className="text-[10px] text-[--unassigned-dot]">
+              <span className={cn("text-[--unassigned-dot]", DT.MICRO)}>
                 {t("Unassigned", "غير معين")}
               </span>
             )}

@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/context";
-
 import { ChevronDownIcon } from "lucide-react";
+import { DT } from "@/lib/design-tokens";
 
 export function StatusSelector({
   conversationId,
@@ -31,26 +31,26 @@ export function StatusSelector({
     fullName ?? user?.emailAddresses[0]?.emailAddress ?? undefined;
 
   const statuses = [
-    { value: "open" as const, label: t("Open", "مفتوح"), color: "bg-slate-500" },
-    { value: "pending" as const, label: t("Pending", "معلق"), color: "bg-warning" },
-    { value: "resolved" as const, label: t("Resolved", "مغلق"), color: "bg-success" },
+    { value: "open" as const, label: t("Open", "مفتوح"), badge: DT.BADGE_GREEN },
+    { value: "pending" as const, label: t("Pending", "معلق"), badge: DT.BADGE_AMBER },
+    { value: "resolved" as const, label: t("Resolved", "مغلق"), badge: DT.BADGE_NEUTRAL },
   ];
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="outline" size="sm" className="h-7 text-xs px-2.5 gap-1.5 rounded-full transition-all hover:border-primary/50 focus-visible:ring-1" />
+          <Button variant="outline" size="sm" className={`h-7 text-xs px-2.5 gap-1.5 rounded-full transition-all ${DT.BTN_SM}`} />
         }
       >
         {t("Status", "الحالة")}
         <ChevronDownIcon className="size-3 text-muted-foreground rtl:-scale-x-100" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent>
+      <DropdownMenuContent className={DT.CARD}>
         {statuses.map((s) => (
           <DropdownMenuItem
             key={s.value}
-            className="text-xs cursor-pointer focus:bg-primary/5"
+            className={`text-xs cursor-pointer ${DT.LIST_ITEM_SM}`}
             onClick={() =>
               setStatus({
                 conversationId: conversationId as Id<"conversations">,
@@ -59,7 +59,7 @@ export function StatusSelector({
               })
             }
           >
-            <div className={`size-2 rounded-full me-2 ${s.color}`} />
+            <span className={`size-2 rounded-full me-2 ${s.badge.split(" ")[0]}`} />
             {s.label}
           </DropdownMenuItem>
         ))}

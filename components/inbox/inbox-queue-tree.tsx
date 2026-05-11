@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
 import { useSelectedChannel } from "@/lib/hooks/channel-context";
+import { DT } from "@/lib/design-tokens";
 
 function Count({ n }: { n: number }) {
   return (
@@ -80,9 +81,7 @@ export function InboxQueueTree() {
 
   const isActive = (s: string) => scope === s;
   const linkClass = (s: string) =>
-    `flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors ${
-      isActive(s) ? "bg-primary/10 text-primary font-semibold" : ""
-    }`;
+    isActive(s) ? DT.LIST_ITEM_ACTIVE : DT.LIST_ITEM;
 
   return (
     <div className="border-b">
@@ -90,7 +89,7 @@ export function InboxQueueTree() {
       <button
         type="button"
         onClick={toggleSection}
-        className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className={`flex w-full items-center justify-between px-3 py-2 transition-colors ${DT.SEC}`}
       >
         <span>{t("Views", "العروض")}</span>
         {sectionCollapsed

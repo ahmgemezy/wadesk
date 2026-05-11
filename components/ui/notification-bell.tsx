@@ -68,7 +68,7 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
           {(unreadCount ?? 0) > 0 && (
             <button
               onClick={() => markAllRead()}
-              className={`${DT.MUTED} hover:${DT.BODY}`}
+              className={`${DT.MUTED} ${DT.MUTED_HOVER}`}
             >
               {isRtl ? "تحديد الكل كمقروء" : "Mark all read"}
             </button>
@@ -142,7 +142,7 @@ export function NotificationBell({ locale }: { locale: "ar" | "en" }) {
         <div className={DT.DIVIDER}>
           <button
             onClick={() => router.push("/settings/notifications")}
-            className={`w-full px-4 py-2.5 text-xs font-medium text-center ${DT.MUTED} hover:${DT.BODY} transition-colors`}
+            className={`w-full px-4 py-2.5 text-xs font-medium text-center ${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
           >
             {isRtl ? "عرض الكل" : "See all"}
           </button>
