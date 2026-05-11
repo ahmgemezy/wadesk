@@ -4,8 +4,6 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +18,7 @@ import { useT } from "@/lib/i18n/context";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { TriggerType } from "@/lib/automationHelpers";
+import { DT } from "@/lib/design-tokens";
 
 const TRIGGER_LABELS: Record<TriggerType, { en: string; ar: string }> = {
   keyword: { en: "Keyword", ar: "كلمة مفتاحية" },
@@ -72,39 +71,41 @@ export function AutomationRuleCard({
       ? rule.responseTemplate.slice(0, 80) + "..."
       : rule.responseTemplate;
 
+  const enabledOpacity = rule.enabled ? "" : "opacity-60";
+
   return (
     <>
       <div
-        className={`rounded-lg border p-4 transition-all ${isDragging ? "shadow-lg opacity-80" : ""} ${removing ? "opacity-0 scale-95" : ""}`}
+        className={`${DT.CARD_SM} p-4 transition-all ${enabledOpacity} ${isDragging ? "shadow-lg opacity-80" : ""} ${removing ? "opacity-0 scale-95" : ""}`}
       >
-        <div className="flex items-center gap-3">
-          <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground">
+        <div className={`${DT.LIST_ITEM} cursor-default hover:bg-transparent dark:hover:bg-transparent !px-0 !py-0`}>
+          <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-[#6E6E73] dark:text-white/50">
             <GripVertical className="size-5" />
           </div>
 
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-medium font-cairo truncate">
+              <span className="font-medium font-cairo truncate text-[#1D1D1F] dark:text-white">
                 {rule.name}
               </span>
-              <Badge variant="secondary" className="text-xs shrink-0">
+              <span className={`${DT.BADGE_BLUE} shrink-0 font-cairo`}>
                 {triggerLabel ? t(triggerLabel.en, triggerLabel.ar) : rule.triggerType}
-              </Badge>
+              </span>
               {rule.triggerType === "no_reply_timeout" && rule.timeoutMinutes && (
-                <span className="text-xs text-muted-foreground font-cairo">
+                <span className={`${DT.MICRO} font-cairo`}>
                   {t(`${rule.timeoutMinutes} min`, `بعد ${rule.timeoutMinutes} دقيقة بدون رد`)}
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground font-cairo truncate">
+            <p className={`${DT.MUTED} font-cairo truncate`}>
               {responsePreview}
             </p>
             {rule.triggerType === "keyword" && rule.keywordList && rule.keywordList.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {rule.keywordList.map((kw) => (
-                  <Badge key={kw} variant="outline" className="text-xs">
+                  <span key={kw} className={`${DT.BADGE_GREEN} font-cairo`}>
                     {kw}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             )}
@@ -112,32 +113,33 @@ export function AutomationRuleCard({
 
           <div className="flex items-center gap-2 shrink-0">
             <Switch checked={rule.enabled} onCheckedChange={handleToggle} />
-            <Button
-              variant="ghost"
-              size="icon-sm"
+            <button
+              type="button"
+              className={DT.BTN_ICON}
               onClick={() => onEdit(rule._id)}
+              aria-label={t("Edit", "تعديل")}
             >
               <Pencil className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
+            </button>
+            <button
+              type="button"
+              className={`${DT.BTN_ICON} ${DT.HOVER_RED_DESTRUCTIVE}`}
               onClick={() => setShowDeleteDialog(true)}
-              className="text-muted-foreground hover:text-destructive"
+              aria-label={t("Delete", "حذف")}
             >
               <Trash2 className="size-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
+        <DialogContent className={DT.DIALOG}>
           <DialogHeader>
-            <DialogTitle className="font-cairo">
+            <DialogTitle className={`${DT.H3} font-cairo`}>
               {t("Delete Rule?", "حذف القاعدة؟")}
             </DialogTitle>
-            <DialogDescription className="font-cairo">
+            <DialogDescription className={`${DT.MUTED} font-cairo`}>
               {t(
                 `"${rule.name}" will be permanently deleted.`,
                 `سيتم حذف "${rule.name}" نهائياً.`
@@ -145,11 +147,12 @@ export function AutomationRuleCard({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>
+            <DialogClose render={<button type="button" className={DT.BTN_OUTLINE} />}>
               {t("Cancel", "إلغاء")}
             </DialogClose>
-            <Button
-              variant="destructive"
+            <button
+              type="button"
+              className={DT.BTN_DESTRUCTIVE}
               onClick={async () => {
                 setRemoving(true);
                 setShowDeleteDialog(false);
@@ -161,7 +164,7 @@ export function AutomationRuleCard({
               }}
             >
               {t("Delete", "حذف")}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

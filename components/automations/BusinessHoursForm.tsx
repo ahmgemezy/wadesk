@@ -3,8 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useT, useLocale } from "@/lib/i18n/context";
@@ -12,6 +10,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TIMEZONES, getTimezoneLabel, type TimezoneEntry } from "@/lib/timezones";
 import type { DayKey, BusinessHoursSchedule, DaySchedule } from "@/lib/automationHelpers";
 import { Clock } from "lucide-react";
+import { DT } from "@/lib/design-tokens";
 
 const DAYS: { key: DayKey; ar: string; en: string }[] = [
   { key: "sat", ar: "السبت", en: "Saturday" },
@@ -106,11 +105,11 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
 
   if (businessHours === undefined) {
     return (
-      <div className="space-y-3">
-        <div className="h-7 w-40 rounded bg-muted animate-pulse" />
+      <div className={`${DT.CARD} p-5 space-y-3`}>
+        <div className="h-7 w-40 rounded bg-black/[0.06] dark:bg-white/[0.08] animate-pulse" />
         <div className="space-y-2">
           {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="h-10 rounded bg-muted animate-pulse" />
+            <div key={i} className="h-10 rounded bg-black/[0.06] dark:bg-white/[0.08] animate-pulse" />
           ))}
         </div>
       </div>
@@ -118,14 +117,14 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={`${DT.CARD} p-5 space-y-4`}>
       <div className="flex items-center gap-2 mb-1">
-        <Clock className="size-5 text-muted-foreground" />
-        <h2 className="text-lg font-semibold font-cairo">
+        <Clock className="size-5 text-[#6E6E73] dark:text-white/50" />
+        <h2 className={`${DT.H2} font-cairo`}>
           {t("Business Hours", "ساعات العمل")}
         </h2>
       </div>
-      <p className="text-sm text-muted-foreground font-cairo mb-4">
+      <p className={`${DT.MUTED} font-cairo mb-4`}>
         {t(
           "Used by the \"Outside Business Hours\" trigger — when a customer messages outside these hours, the automation fires automatically.",
           "تُستخدم مع قاعدة \"خارج ساعات العمل\" — عندما تصلك رسالة خارج هذه الأوقات، يتم إرسال الرد التلقائي تلقائياً."
@@ -133,7 +132,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
       </p>
 
       {!businessHours && (
-        <p className="text-sm text-muted-foreground font-cairo mb-3">
+        <p className={`${DT.MUTED} font-cairo mb-3`}>
           {t(
             "Not configured yet. Set your business hours for outside-hours rules.",
             "لم يتم الضبط بعد. اضبط ساعات العمل لاستخدام قواعد خارج أوقات العمل."
@@ -143,7 +142,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
 
       <div className="space-y-3">
         <div className="space-y-2">
-          <label className="text-sm font-medium font-cairo">
+          <label className={`${DT.LBL} font-cairo`}>
             {t("Timezone", "المنطقة الزمنية")}
           </label>
           <SearchableSelect
@@ -161,7 +160,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
             return (
               <div
                 key={day.key}
-                className="flex items-center gap-3 rounded-lg border p-3"
+                className={`${DT.LIST_ITEM} cursor-default hover:bg-transparent dark:hover:bg-transparent border border-black/[0.08] dark:border-white/[0.06]`}
               >
                 <Checkbox
                   checked={daySchedule.enabled}
@@ -170,41 +169,39 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
                   }
                   disabled={!isAdmin}
                 />
-                <span className="w-20 text-sm font-cairo font-medium">
+                <span className="w-20 text-sm font-cairo font-medium text-[#1D1D1F] dark:text-white">
                   {locale === "ar" ? day.ar : day.en}
                 </span>
                 <div className="flex items-center gap-2 ms-auto">
                   {daySchedule.open === "00:00" && daySchedule.close === "23:59" ? (
-                    <span className="text-sm font-cairo text-primary font-medium px-2">
+                    <span className={`text-sm font-cairo ${DT.TEXT_BLUE} font-medium px-2`}>
                       {t("24 hrs", "٢٤ ساعة")}
                     </span>
                   ) : (
                     <>
-                      <Input
+                      <input
                         type="time"
                         value={daySchedule.open}
                         onChange={(e) => updateDay(day.key, "open", e.target.value)}
                         dir="ltr"
-                        className="w-28 h-8 text-sm"
+                        className={`${DT.INPUT_SM} w-28`}
                         disabled={!isAdmin || !daySchedule.enabled}
                       />
-                      <span className="text-sm text-muted-foreground">—</span>
-                      <Input
+                      <span className={DT.MUTED}>—</span>
+                      <input
                         type="time"
                         value={daySchedule.close}
                         onChange={(e) => updateDay(day.key, "close", e.target.value)}
                         dir="ltr"
-                        className="w-28 h-8 text-sm"
+                        className={`${DT.INPUT_SM} w-28`}
                         disabled={!isAdmin || !daySchedule.enabled}
                       />
                     </>
                   )}
                   {isAdmin && daySchedule.enabled && (
-                    <Button
+                    <button
                       type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 text-xs font-cairo"
+                      className={`${DT.BTN_SM} h-8 px-2 text-xs font-cairo`}
                       onClick={() => {
                         if (daySchedule.open === "00:00" && daySchedule.close === "23:59") {
                           updateDay(day.key, "open", "09:00");
@@ -218,7 +215,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
                       {daySchedule.open === "00:00" && daySchedule.close === "23:59"
                         ? t("Custom", "مخصص")
                         : t("24h", "٢٤ ساعة")}
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -227,11 +224,16 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
         </div>
 
         {isAdmin && (
-          <Button onClick={handleSave} disabled={saving}>
+          <button
+            type="button"
+            className={DT.BTN_PRIMARY}
+            onClick={handleSave}
+            disabled={saving}
+          >
             {saving
               ? t("Saving...", "جاري الحفظ...")
               : t("Save Business Hours", "حفظ ساعات العمل")}
-          </Button>
+          </button>
         )}
       </div>
     </div>

@@ -5,13 +5,12 @@ import { useQuery, useMutation } from "convex/react";
 import { useOrganization } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AutomationRuleCard } from "./AutomationRuleCard";
 import { AutomationRuleForm } from "./AutomationRuleForm";
-import { cn } from "@/lib/utils";
 import { Plus, Zap, AlertTriangle, AlertCircle, RefreshCw } from "lucide-react";
+import { DT } from "@/lib/design-tokens";
 import { useT } from "@/lib/i18n/context";
 import { toast } from "sonner";
 import type { TriggerType } from "@/lib/automationHelpers";
@@ -144,26 +143,26 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
     return (
       <div className="p-6 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold font-cairo">
+          <h1 className={`${DT.H1} font-cairo`}>
             {t("Automation Rules", "قواعد الردود التلقائية")}
           </h1>
         </div>
-        <div className="rounded-lg border border-dashed p-10 text-center space-y-3">
-          <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto" />
-          <p className="font-cairo text-muted-foreground">
+        <div className="rounded-lg border border-dashed border-black/[0.12] dark:border-white/[0.10] p-10 text-center space-y-3">
+          <AlertCircle className="h-8 w-8 text-[#6E6E73] dark:text-white/50 mx-auto" />
+          <p className={`${DT.MUTED} font-cairo`}>
             {t(
               "Failed to load rules. Try again.",
               "حدث خطأ في تحميل القواعد. حاول مرة أخرى."
             )}
           </p>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            type="button"
+            className={DT.BTN_SM}
             onClick={() => window.location.reload()}
           >
             <RefreshCw className="size-4 me-1" />
             {t("Retry", "إعادة المحاولة")}
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -173,11 +172,11 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
     <div className="p-6 max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold font-cairo">
+          <h1 className={`${DT.H1} font-cairo`}>
             {t("Automation Rules", "قواعد الردود التلقائية")}
           </h1>
           {plan && rules && (
-            <p className="text-sm text-muted-foreground font-cairo mt-1">
+            <p className={`${DT.MUTED} font-cairo mt-1`}>
               {ruleLimit === Infinity
                 ? t(`${rules.length} rules`, `${rules.length} قاعدة`)
                 : t(
@@ -187,8 +186,9 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
             </p>
           )}
         </div>
-        <Button
-          size="sm"
+        <button
+          type="button"
+          className={DT.BTN_SM_PRIMARY}
           onClick={() => {
             setEditRule(null);
             setFormOpen(true);
@@ -197,7 +197,7 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
         >
           <Plus className="size-4 me-1" />
           {t("Add Rule", "إضافة قاعدة")}
-        </Button>
+        </button>
       </div>
 
       {atLimit && (
@@ -213,21 +213,21 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
       )}
 
       {rules.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center space-y-3">
-          <Zap className="h-8 w-8 text-muted-foreground mx-auto" />
-          <p className="font-semibold font-cairo">
+        <div className="rounded-lg border border-dashed border-black/[0.12] dark:border-white/[0.10] p-10 text-center space-y-3">
+          <Zap className="h-8 w-8 text-[#6E6E73] dark:text-white/50 mx-auto" />
+          <p className="font-semibold font-cairo text-[#1D1D1F] dark:text-white">
             {t("No automation rules yet", "لا توجد قواعد تلقائية بعد")}
           </p>
-          <p className="text-sm text-muted-foreground font-cairo">
+          <p className={`${DT.MUTED} font-cairo`}>
             {t(
               "Create your first rule to automate replies",
               "أنشئ أول قاعدة لأتمتة الردود"
             )}
           </p>
           {!atLimit && (
-            <Button
-              size="sm"
-              className="mt-2"
+            <button
+              type="button"
+              className={`${DT.BTN_SM_PRIMARY} mt-2`}
               onClick={() => {
                 setEditRule(null);
                 setFormOpen(true);
@@ -235,7 +235,7 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
             >
               <Plus className="size-4 me-1" />
               {t("Create first rule", "إضافة أول قاعدة")}
-            </Button>
+            </button>
           )}
         </div>
       ) : (
@@ -277,7 +277,7 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
       />
 
       {isAdmin && (
-        <div className="mt-8 pt-6 border-t">
+        <div className={`mt-8 pt-6 ${DT.DIVIDER}`}>
           <BusinessHoursForm isAdmin={isAdmin} />
         </div>
       )}

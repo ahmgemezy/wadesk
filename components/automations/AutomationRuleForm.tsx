@@ -12,10 +12,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -34,6 +31,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { DT } from "@/lib/design-tokens";
 
 const TRIGGER_OPTIONS: { value: TriggerType; ar: string; en: string }[] = [
   { value: "keyword", en: "Keyword", ar: "كلمة مفتاحية" },
@@ -215,14 +213,14 @@ export function AutomationRuleForm({
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel(); }}>
-      <SheetContent side={locale === "ar" ? "left" : "right"} className="sm:max-w-md overflow-y-auto">
+      <SheetContent side={locale === "ar" ? "left" : "right"} className={`${DT.SHEET} sm:max-w-md overflow-y-auto`}>
         <SheetHeader>
-          <SheetTitle className="font-cairo">
+          <SheetTitle className={`${DT.H2} font-cairo`}>
             {mode === "edit"
               ? t("Edit Rule", "تعديل القاعدة")
               : t("Create Rule", "إنشاء قاعدة جديدة")}
           </SheetTitle>
-          <SheetDescription className="font-cairo">
+          <SheetDescription className={`${DT.MUTED} font-cairo`}>
             {t(
               "Set up an automated reply rule",
               "إعداد قاعدة رد تلقائي"
@@ -232,10 +230,11 @@ export function AutomationRuleForm({
 
         <div className="p-4 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium font-cairo">
+            <label className={`${DT.LBL} font-cairo`}>
               {t("Rule Name", "اسم القاعدة")}
             </label>
-            <Input
+            <input
+              className={DT.INPUT}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("e.g. Welcome greeting", "مثال: تحية ترحيبية")}
@@ -245,11 +244,11 @@ export function AutomationRuleForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium font-cairo">
+            <label className={`${DT.LBL} font-cairo`}>
               {t("Trigger Type", "نوع المشغل")}
             </label>
             <Select value={triggerType} onValueChange={(v) => setTriggerType(v as TriggerType)}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={DT.SELECT}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -264,11 +263,12 @@ export function AutomationRuleForm({
 
           {triggerType === "keyword" && (
             <div className="space-y-2">
-              <label className="text-sm font-medium font-cairo">
+              <label className={`${DT.LBL} font-cairo`}>
                 {t("Keywords", "الكلمات المفتاحية")}
               </label>
               <div className="flex gap-2">
-                <Input
+                <input
+                  className={DT.INPUT}
                   value={keywordInput}
                   onChange={(e) => setKeywordInput(e.target.value)}
                   placeholder={t("Add keyword...", "أضف كلمة...")}
@@ -280,27 +280,26 @@ export function AutomationRuleForm({
                     }
                   }}
                 />
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
+                  className={DT.BTN_SM}
                   onClick={addKeyword}
                   disabled={!keywordInput.trim()}
                 >
                   {t("Add", "إضافة")}
-                </Button>
+                </button>
               </div>
               {keywordList.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {keywordList.map((kw) => (
-                    <Badge
+                    <button
                       key={kw}
-                      variant="secondary"
-                      className="cursor-pointer font-cairo"
+                      type="button"
+                      className={`${DT.BADGE_GREEN} cursor-pointer font-cairo`}
                       onClick={() => removeKeyword(kw)}
                     >
                       {kw} ×
-                    </Badge>
+                    </button>
                   ))}
                 </div>
               )}
@@ -309,10 +308,11 @@ export function AutomationRuleForm({
 
           {triggerType === "no_reply_timeout" && (
             <div className="space-y-2">
-              <label className="text-sm font-medium font-cairo">
+              <label className={`${DT.LBL} font-cairo`}>
                 {t("Timeout (minutes)", "مدة الانتظار (بالدقائق)")}
               </label>
-              <Input
+              <input
+                className={DT.INPUT}
                 type="number"
                 min={1}
                 max={1440}
@@ -324,9 +324,9 @@ export function AutomationRuleForm({
           )}
 
           {showBusinessHoursWarning && (
-            <Alert className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20 dark:border-yellow-800">
-              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-              <AlertDescription className="text-yellow-800 dark:text-yellow-300 font-cairo">
+            <Alert className={`${DT.BG_AMBER_LIGHT} ${DT.BORDER_AMBER}`}>
+              <AlertTriangle className={`h-4 w-4 ${DT.TEXT_AMBER}`} />
+              <AlertDescription className={`${DT.TEXT_AMBER} font-cairo`}>
                 {t(
                   "Business hours must be configured first.",
                   "يجب ضبط ساعات العمل أولاً."
@@ -336,10 +336,11 @@ export function AutomationRuleForm({
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium font-cairo">
+            <label className={`${DT.LBL} font-cairo`}>
               {t("Sender Name", "اسم المُرسِل")}
             </label>
-            <Input
+            <input
+              className={DT.INPUT}
               value={senderName}
               onChange={(e) => setSenderName(e.target.value)}
               placeholder={t(
@@ -349,7 +350,7 @@ export function AutomationRuleForm({
               dir="auto"
               maxLength={60}
             />
-            <p className="text-xs text-muted-foreground font-cairo">
+            <p className={`${DT.MICRO} font-cairo`}>
               {t(
                 "Used for {{agent_name}} in the message. Leave blank to use org name.",
                 "يُستخدم كـ {{agent_name}} في الرسالة. اتركه فارغاً لاستخدام اسم المؤسسة."
@@ -359,32 +360,33 @@ export function AutomationRuleForm({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium font-cairo">
+              <label className={`${DT.LBL} font-cairo !mb-0`}>
                 {t("Response Text", "نص الرد")}
               </label>
               <Popover>
-                <PopoverTrigger render={<Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-muted-foreground" />}>
+                <PopoverTrigger render={<button type="button" className={`${DT.BTN_SM} h-7 gap-1 text-xs`} />}>
                   <FileTextIcon className="size-3.5" />
                   {t("Templates", "القوالب")}
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-0" align="end">
                   <div className="p-2 max-h-64 overflow-y-auto">
                     {!messageTemplates?.length ? (
-                      <p className="text-sm text-muted-foreground p-2 text-center">
+                      <p className={`${DT.MUTED} p-2 text-center`}>
                         {t("No templates", "لا توجد قوالب")}
                       </p>
                     ) : (
                       messageTemplates.map((tpl) => (
                         <button
                           key={tpl._id}
-                          className="w-full text-start px-3 py-2 rounded-md hover:bg-muted text-sm"
+                          type="button"
+                          className={DT.LIST_ITEM_SM}
                           onClick={() => {
                             setResponseTemplate(tpl.body);
                           }}
                         >
-                          <span className="font-medium">{tpl.title}</span>
+                          <span className="font-medium text-[#1D1D1F] dark:text-white">{tpl.title}</span>
                           {tpl.category && (
-                            <span className="text-xs text-muted-foreground ms-1">
+                            <span className={`${DT.MICRO} ms-1`}>
                               · {tpl.category}
                             </span>
                           )}
@@ -403,24 +405,24 @@ export function AutomationRuleForm({
                 "Type your automated response...",
                 "اكتب الرد التلقائي..."
               )}
-              className="font-mono text-sm"
+              className={`${DT.TEXTAREA} font-mono`}
               style={{ direction: "auto" as React.CSSProperties["direction"], unicodeBidi: "plaintext" }}
               maxLength={1000}
               rows={5}
             />
             <div className="flex flex-wrap gap-1">
               {VARIABLE_CHIPS.map((v) => (
-                <Badge
+                <button
                   key={v}
-                  variant="outline"
-                  className="cursor-pointer text-xs"
+                  type="button"
+                  className={`${DT.BADGE_BLUE} cursor-pointer`}
                   onClick={() => insertVariable(v)}
                 >
                   {v}
-                </Badge>
+                </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground font-cairo">
+            <p className={`${DT.MICRO} font-cairo`}>
               {t(
                 "{{business_name}} = org name · {{agent_name}} = sender name above",
                 "{{business_name}} = اسم المؤسسة · {{agent_name}} = اسم المُرسِل أعلاه"
@@ -429,10 +431,11 @@ export function AutomationRuleForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium font-cairo">
+            <label className={`${DT.LBL} font-cairo`}>
               {t("Media Attachment (optional)", "مرفق وسائط (اختياري)")}
             </label>
-            <Input
+            <input
+              className={DT.INPUT}
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
               placeholder={t(
@@ -444,7 +447,7 @@ export function AutomationRuleForm({
             />
             {mediaUrl.trim() && (
               <Select value={mediaType} onValueChange={(v) => setMediaType(v as "image" | "video" | "document")}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className={DT.SELECT}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -458,17 +461,17 @@ export function AutomationRuleForm({
 
           {responseTemplate && (
             <div className="space-y-2">
-              <label className="text-sm font-medium font-cairo">
+              <label className={`${DT.LBL} font-cairo`}>
                 {t("Preview", "معاينة")}
               </label>
               <div
-                className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20 p-3 text-sm font-cairo whitespace-pre-wrap"
+                className={`rounded-xl border ${DT.CATALOG_BORDER_GREEN} ${DT.CATALOG_BG_GREEN} p-3 text-sm font-cairo whitespace-pre-wrap text-[#1D1D1F] dark:text-white`}
                 style={{ direction: "auto" as React.CSSProperties["direction"] }}
               >
                 {preview}
               </div>
               {mediaUrl.trim() && (
-                <p className="text-xs text-muted-foreground font-cairo">
+                <p className={`${DT.MICRO} font-cairo`}>
                   {t(`+ ${mediaType} attachment`, `+ مرفق ${mediaType === "image" ? "صورة" : mediaType === "video" ? "فيديو" : "مستند"}`)}
                 </p>
               )}
@@ -476,16 +479,25 @@ export function AutomationRuleForm({
           )}
 
           <div className="flex gap-2 pt-2">
-            <Button onClick={handleSubmit} disabled={!canSave || submitting} className="flex-1">
+            <button
+              type="button"
+              className={`${DT.BTN_PRIMARY} flex-1`}
+              onClick={handleSubmit}
+              disabled={!canSave || submitting}
+            >
               {submitting
                 ? t("Saving...", "جاري الحفظ...")
                 : mode === "edit"
                   ? t("Update", "تحديث")
                   : t("Create", "إنشاء")}
-            </Button>
-            <Button variant="outline" onClick={onCancel}>
+            </button>
+            <button
+              type="button"
+              className={DT.BTN_OUTLINE}
+              onClick={onCancel}
+            >
               {t("Cancel", "إلغاء")}
-            </Button>
+            </button>
           </div>
         </div>
       </SheetContent>
