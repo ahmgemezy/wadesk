@@ -34,7 +34,7 @@ function PricingSection({
   return (
     <section id="pricing" className="bg-[#F5F5F7] dark:bg-[#111111] px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl">
-        <h2 className="mb-12 text-center text-[34px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+        <h2 className={`mb-12 text-center text-[34px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>
           {t(locale, "pricing.heading")}
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -43,7 +43,7 @@ function PricingSection({
               key={plan.id}
               className={`relative flex flex-col p-6 ${
                 plan.highlighted
-                  ? `${DT.CARD} ring-2 ring-[#0071E3] dark:ring-[#0A84FF]`
+                  ? `${DT.CARD} ${DT.RING_BLUE}`
                   : DT.CARD
               }`}
             >
@@ -61,12 +61,12 @@ function PricingSection({
 
               <div className="mb-4">
                 {plan.isFree ? (
-                  <span className="text-[40px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+                  <span className={`text-[40px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>
                     {locale === "ar" ? "مجاني" : "Free"}
                   </span>
                 ) : (
                   <p className={`${DT.BODY} leading-relaxed`}>
-                    <span className="text-[40px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+                    <span className={`text-[40px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>
                       {formatPrices(plan.price)}
                     </span>
                     <span className={DT.MUTED}>

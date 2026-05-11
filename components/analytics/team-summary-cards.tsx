@@ -129,7 +129,7 @@ export function TeamSummaryCards({ dateRange, locale = "ar" }: TeamSummaryCardsP
             <div className={`${DT.MICRO} mb-2`}>
               {card.label}
             </div>
-            <div className="text-[32px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+            <div className={`text-[32px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>
               {card.isNumeric ? <AnimatedCounter value={card.value as number} /> : card.value}
               {card.suffix && (
                 <span className={`${DT.MUTED} ms-1`}>{card.suffix}</span>

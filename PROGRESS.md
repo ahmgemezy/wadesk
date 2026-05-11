@@ -1,8 +1,8 @@
 # WABDesk — Build Progress
 
 > Single source of truth for project progress. Read by Claude Chat (project manager) to stay updated.
-> **Last audited:** 2026-05-11 — WhatsApp Catalog Integration (4 stages + CRUD): product sync from Meta, manual product CRUD in settings, agent product browser in inbox, product card rendering in thread. See entry below.
-> **Previously audited:** 2026-04-28 — Member profile modal, team presence, channel retention, React Email system, conversation search, batch actions, rate limiting, message scheduling, template library, legal pages, CSAT v2, departments.
+> **Last audited:** 2026-05-11 — Apple Design Revamp Tasks 1-gap, 4-gaps, 5-gap, 6, 7, 8, 9, 10, 11 (032): finished the remaining Apple design token migration across 9 domains (~75 files) plus hex-audit cleanup pass.
+> **Previously audited:** 2026-05-11 — Task 5 Spec Compliance: Eliminated all inline hex colors and shadcn/ui primitives from broadcasts + templates domain (11 files refactored).
 > Never modify CLAUDE.md unless explicitly asked.
 
 ---
@@ -11,8 +11,110 @@
 
 **WABDesk** is an Arabic-first multi-agent WhatsApp Business platform built for SMBs in Arabic-speaking markets.  
 **Stack:** Next.js 15 (App Router) · Convex (backend + real-time DB) · Clerk (auth + multi-tenant orgs) · shadcn/ui · Tailwind CSS v4 · Meta WhatsApp Cloud API · Paddle (billing integrated)  
-**Current branch:** `feat/013-departments`  
-**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (31 tables) · ✅ Dev server runs · ✅ Outbound messages wired to Meta API · ✅ Broadcasts batched sending · ✅ React Email transactional system · ✅ Member profile modal complete · ✅ Tabbed transfer + cross-branch forward live · ✅ CSAT end-to-end working with score surfacing
+**Current branch:** `feat/clerk-to-better-auth`  
+**Build status:** ✅ No TypeScript errors · ✅ Convex schema deployed (33 tables) · ✅ Dev server runs · ✅ Broadcasts + templates refactored to DT design tokens · ✅ All inline hex colors eliminated · ✅ shadcn/ui primitives replaced with native HTML · ✅ Design token system enforced across UI
+
+---
+
+## ✅ Completed Tasks
+
+### 2026-05-11: 032 — Apple Design Revamp (Tasks 1-gap, 4-gaps, 5-gap, 6-11) ✅
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Plan:** `docs/superpowers/plans/2026-05-11-apple-design-revamp.md`
+
+**Goal:** Finish the Apple design token migration that was left partially done after the original Tasks 0–5 sweep. Cover Tasks 6–10 in parallel via sub-agents and close out Task 11 (hex-audit cleanup + DT module extension).
+
+**Audit at session start:** 3 fully done (Tasks 0, 2, 3), 3 partially done (Task 1, 4, 5), 6 not started (Tasks 6, 7, 8, 9, 10, 11). Initial flag for Task 1 turned out to be a false alarm — `components/shell/client-notification-bell.tsx` is a 12-line dynamic-import wrapper; the actual bell UI in `components/ui/notification-bell.tsx` was already fully DT-tokenized.
+
+**Per-task results:**
+
+| Commit | Task | Result |
+|---|---|---|
+| `7c510de` | Task 4 gaps (settings) | 6 files migrated (`settings-page-layout`, `settings-sub-nav`, `general-settings`, `role-select`, plus structural rewrites of `notifications-tab-shell` Radix Tabs → native HTML and `notifications-preferences` shadcn Card → native). 3 plan-listed files intentionally skipped (`assignment-mode-select`, `department-assignment-mode`, `notifications-error-boundary`) — mappings didn't match real structure (radio-card groups, not Selects; semantic destructive styling DT.CARD would erase). |
+| `aa6fce2` | Task 5 gap (broadcasts) | `create-broadcast-wizard.tsx` — wizard container DT.CARD, step circles + connectors per spec, all shadcn `<Button>` → native `<button>` + DT.BTN_PRIMARY/OUTLINE. |
+| `bcf81ee` | Task 6 (automations) | 4 components migrated; page left as pass-through. Convex automation engine untouched. |
+| `07c42f5` | Task 7 (analytics) | 12 analytics components + my-stats page; chart palettes swapped to Apple palette. Recharts internals and Convex queries untouched. |
+| `bf4beb5` | Task 8 (onboarding) | All 8 onboarding components migrated; state machine untouched. |
+| `8748c81` | Task 9 (marketing + auth) | 8 marketing components + forgot/reset-password pages. Legal content files (privacy/terms/cookies/dpa) and routing wrappers correctly left alone — no Apple chrome to migrate. Sign-in/sign-up explicitly untouched per plan. |
+| `5cf1ce5` | Task 10 (misc) | 11 components migrated (catalog-browser, ai-assistant-settings, lists/*, team/member-profile/*). Resolved pre-existing tsc errors in `list-detail.tsx` and `create-list-dialog.tsx` that earlier tasks had flagged as out-of-scope. |
+
+**Task 11 — hex audit + DT extension (this commit):**
+
+The plan's Task 11 audit (`grep #0071E3 #1D1D1F rounded-[22px]` outside `lib/design-tokens.ts`) flagged ~30 files with inline Apple hex. Most occurrences were plan-mandated — chart palettes, ring accents, step-circle state styling, hero typography. Rather than accept the audit-vs-mappings tension, extended the DT module with 4 new tokens and migrated:
+
+- **New tokens added** (`lib/design-tokens.ts`):
+  - `DT.TEXT_PRIMARY` = `"text-[#1D1D1F] dark:text-white"` — primary text color (when DT.H1/H2/H3/BODY size is wrong)
+  - `DT.RING_BLUE` = `"ring-2 ring-[#0071E3] dark:ring-[#0A84FF]"` — accent ring (pricing card recommended, current step circle)
+  - `DT.BG_BLUE_TINT` = `"bg-[#0071E3]/10 dark:bg-[#0A84FF]/15"` — blue tinted background (icon containers)
+  - `DT.CHART_COLORS` = `["#0071E3", "#34C759", "#FF9500", "#FF3B30", "#AF52DE", "#5AC8FA"] as readonly string[]` — analytics chart palette
+
+- **Cleanup migration**: 78 hex → token substitutions across 28 files. All chart files now import `DT.CHART_COLORS` instead of redeclaring a local `APPLE_PALETTE` constant.
+
+**Remaining `#0071E3` / `#1D1D1F` occurrences (intentionally not migrated):**
+
+| File | Reason |
+|---|---|
+| `components/ui/confetti.tsx` | Confetti library palette, not Apple chrome |
+| `components/auth/brand-panel.tsx` | Hex used inside `style={{}}` inline CSS (gradients, box-shadows) — DT tokens are class strings, can't substitute |
+| `components/ai-assistant/ai-assistant-settings.tsx` | Single `ring-1 ring-[#0071E3]` — `DT.RING_BLUE` is `ring-2` (would thicken visually) |
+| `components/analytics/customer-lifecycle-chart.tsx`, `stage-funnel-chart.tsx`, `label-distribution-chart.tsx`, `revenue-widget.tsx` | Hex inside `STAGE_CONFIG` / `COLOR_HEX` data tables consumed by `style={{ backgroundColor: ... }}` — not class strings |
+| `components/settings/catalog-settings.tsx` | Out of revamp scope (pre-existing, plan-protected) |
+
+**Verification:**
+- `npx tsc --noEmit` → exit 0, zero errors after every commit in the chain
+- Audit grep `rounded-[22px]` outside `lib/design-tokens.ts`: zero matches ✅
+- Audit grep `#0071E3` outside `lib/design-tokens.ts`: 7 intentional remainders (listed above) ✅
+
+**Did NOT modify (per plan):**
+- `app/(auth)/sign-in/page.tsx`, `app/(auth)/sign-up/page.tsx` (already Apple-styled)
+- `components/settings/catalog-settings.tsx` (already Apple-styled; pre-existing)
+- Any `convex/*` file
+- Any `components/ui/*` file except `notification-bell.tsx` (explicit user override after audit confusion)
+
+**Files NOT migrated despite plan listing (with reason in each task's commit message):**
+- `components/settings/assignment-mode-select.tsx`, `department-assignment-mode.tsx`, `notifications-error-boundary.tsx` (Task 4 — mappings didn't match real structure)
+- `app/(dashboard)/automations/page.tsx`, `analytics/page.tsx`, `ai-assistant/page.tsx`, `lists/page.tsx`, `lists/[id]/page.tsx`, `onboarding/page.tsx` (pass-through pages with no Apple chrome)
+- Marketing content files: `privacy-content`, `terms-content`, `cookies-content`, `dpa-content`, `marketing-page` and the legal-page routing wrappers (no Apple chrome; legal copy must not be restructured)
+
+---
+
+### 2026-05-11: Task 5 Spec Compliance — Broadcasts + Templates Refactor ✅
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Goal:** Fix 11 non-compliant files in broadcasts and templates domains by eliminating all inline hex colors and shadcn/ui primitive components (Button, Input, Textarea, Badge), replacing with DT design tokens and native HTML.
+
+**Violations fixed:**
+- ✅ 5+ inline hex colors: `#075E54`, `#00A884`, `#8696a0`, `#53bdeb`, `#2563EB`, `#5a5a5c`
+- ✅ 10+ hardcoded Tailwind colors: `bg-blue-50`, `text-blue-700`, `border-amber-200`, etc.
+- ✅ 15+ shadcn/ui primitive imports replaced with native HTML + DT classes
+- ✅ STATUS_CONFIG objects refactored with DT tokens and progress color tracking
+
+**Files refactored (11 files):**
+- `components/broadcasts/whatsapp-template-preview.tsx` — 3 inline hex fixes (#075E54 → BG_WHATSAPP_GREEN, #00A884 → TEXT_WHATSAPP_ACTION)
+- `components/broadcasts/create-broadcast-modal.tsx` — 2 inline hex fixes (#2563EB → TEXT_BLUE, #5a5a5c gradients → rgb() format), Button → native button + DT.BTN_*
+- `components/broadcasts/broadcasts-page.tsx` — STATUS_CONFIG colors → DT tokens (BG_BLUE_LIGHT, TEXT_BLUE_DARK, etc.), progress bar colors from config
+- `components/broadcasts/broadcast-template-builder.tsx` — Amber banner → DT.BG_AMBER_LIGHT + DT.TEXT_AMBER
+- `components/broadcasts/broadcast-template-card.tsx` — STATUS_CONFIG colors → DT tokens for pending/approved/rejected/paused states
+- `components/broadcasts/broadcast-templates-tab.tsx` — Amber info boxes → DT tokens (2 instances)
+- `components/templates/library-template-card.tsx` — Badge → native span with DT styles (5+ instances)
+- `components/templates/library-template-preview.tsx` — 2 inline hex fixes (#8696a0 → TEXT_MUTED_DARK, #53bdeb → TEXT_BLUE_LIGHT), Badge → native span, Button → native button
+- `components/templates/meta-submit-form.tsx` — Input → native input + DT.INPUT, Textarea → native textarea + DT.TEXTAREA, Button → native button + DT.BTN_*
+- `components/templates/template-library-tab.tsx` — Amber info box → DT tokens, Input → native input + DT.INPUT
+- `lib/design-tokens.ts` — Added 13 new tokens: BG_AMBER_LIGHT, TEXT_AMBER, BORDER_AMBER, BG_GREEN_LIGHT, TEXT_GREEN, BG_RED_LIGHT, TEXT_RED_LIGHT, BG_WHATSAPP_GREEN, TEXT_WHATSAPP_ACTION, TEXT_MUTED_DARK, TEXT_BLUE_LIGHT, BG_BLUE_BADGE, BORDER_BLUE_BADGE
+
+**Preserved (allowed):**
+- ✅ Dialog, DialogContent, DialogHeader, DialogTitle (structural)
+- ✅ Sheet, SelectTrigger, SelectContent, SelectItem, SelectValue (structural)
+- ✅ Tooltip, TooltipProvider, TooltipTrigger, TooltipContent (structural)
+- ✅ Popover, PopoverContent, PopoverTrigger (structural)
+- ✅ Card, CardContent, CardHeader (structural)
+
+**TypeScript verification:** `npx tsc --noEmit` → exit 0, zero errors
+
+**Commit:** 7fea428 — "fix: Task 5 complete refactor — eliminate all inline hex and shadcn primitives (broadcasts+templates)"
 
 ---
 

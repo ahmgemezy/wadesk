@@ -59,9 +59,9 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
             return (
               <div key={stage.stage}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[13px] font-medium text-[#1D1D1F] dark:text-white">{label}</span>
+                  <span className={`text-[13px] font-medium ${DT.TEXT_PRIMARY}`}>{label}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-semibold text-[#1D1D1F] dark:text-white">{stage.count}</span>
+                    <span className={`text-[13px] font-semibold ${DT.TEXT_PRIMARY}`}>{stage.count}</span>
                     {i > 0 && (
                       <span className={`${DT.MICRO} bg-black/[0.06] dark:bg-white/[0.08] px-1.5 py-0.5 rounded`}>
                         {stage.conversionRate}%
@@ -103,12 +103,12 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
           {data.churned > 0 && (
             <div className={`mt-4 pt-4 ${DT.DIVIDER}`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[13px] font-medium flex items-center gap-1.5 text-[#1D1D1F] dark:text-white">
-                  <span className="size-2.5 rounded-full bg-[#FF3B30] dark:bg-[#FF453A]" />
+                <span className={`text-[13px] font-medium flex items-center gap-1.5 ${DT.TEXT_PRIMARY}`}>
+                  <span className={`size-2.5 rounded-full ${DT.BG_RED}`} />
                   {STAGE_CONFIG.churned[locale === "ar" ? "ar" : "en"]}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold text-[#FF3B30] dark:text-[#FF453A]">{data.churned}</span>
+                  <span className={`text-[13px] font-semibold ${DT.TEXT_RED}`}>{data.churned}</span>
                   <span className={DT.MICRO}>
                     {data.total > 0 ? `${Math.round((data.churned / data.total) * 100)}%` : "0%"}
                   </span>
@@ -133,13 +133,13 @@ export function StageFunnelChart({ locale = "ar" }: StageFunnelChartProps) {
               <p className={DT.MICRO}>
                 {locale === "ar" ? "إجمالي العملاء" : "Total Contacts"}
               </p>
-              <p className="text-[17px] font-semibold text-[#1D1D1F] dark:text-white">{data.total}</p>
+              <p className={`text-[17px] font-semibold ${DT.TEXT_PRIMARY}`}>{data.total}</p>
             </div>
             <div className={`${DT.CARD_FLAT} p-3`}>
               <p className={DT.MICRO}>
                 {locale === "ar" ? "معدل الاحتفاظ" : "Retention Rate"}
               </p>
-              <p className="text-[17px] font-semibold text-[#1D1D1F] dark:text-white">
+              <p className={`text-[17px] font-semibold ${DT.TEXT_PRIMARY}`}>
                 {data.total > 0
                   ? `${Math.round(((data.distribution.find((d) => d.stage === "retained")?.count ?? 0) / data.total) * 100)}%`
                   : "0%"}

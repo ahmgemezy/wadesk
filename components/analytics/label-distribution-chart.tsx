@@ -17,8 +17,6 @@ import {
 import type { DateRange } from "./date-range-picker";
 import { useTranslatedLabel } from "@/lib/i18n/context";
 
-const APPLE_PALETTE = ["#0071E3", "#34C759", "#FF9500", "#FF3B30", "#AF52DE", "#5AC8FA"];
-
 // Map legacy semantic color names → Apple palette equivalents so existing
 // data flowing through still renders with a consistent token-driven palette.
 const COLOR_HEX: Record<string, string> = {
@@ -80,7 +78,7 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
             >
               <defs>
                 {data.map((entry, index) => {
-                  const fill = COLOR_HEX[entry.color] ?? APPLE_PALETTE[index % APPLE_PALETTE.length];
+                  const fill = COLOR_HEX[entry.color] ?? DT.CHART_COLORS[index % DT.CHART_COLORS.length];
                   return (
                     <linearGradient
                       key={`gradient-${index}`}
@@ -128,16 +126,16 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
                       emoji?: string;
                       color: string;
                     };
-                    const dot = COLOR_HEX[item.color] ?? APPLE_PALETTE[0];
+                    const dot = COLOR_HEX[item.color] ?? DT.CHART_COLORS[0];
                     return (
                       <div className="rounded-xl border border-black/[0.08] bg-white/95 backdrop-blur-xl p-3 shadow-xl dark:bg-[#1C1C1E]/95 dark:border-white/[0.08]">
-                        <p className="text-[13px] font-medium mb-1.5 text-[#1D1D1F] dark:text-white">
+                        <p className={`text-[13px] font-medium mb-1.5 ${DT.TEXT_PRIMARY}`}>
                           {item.emoji ? `${item.emoji} ` : ""}
                           {translateLabel(item.name)}
                         </p>
                         <div className="flex items-center gap-2">
                           <div className="size-2.5 rounded-full" style={{ backgroundColor: dot }} />
-                          <p className="text-[13px] text-[#1D1D1F] dark:text-white">
+                          <p className={`text-[13px] ${DT.TEXT_PRIMARY}`}>
                             {item.count}{" "}
                             <span className="text-[#6E6E73] dark:text-white/50">
                               {locale === "ar" ? "محادثات" : "conversations"}
@@ -174,9 +172,9 @@ export function LabelDistributionChart({ dateRange, locale = "ar" }: LabelDistri
             <div key={item.name} className={`flex items-center gap-1.5 ${DT.MICRO}`}>
               <span
                 className="size-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: COLOR_HEX[item.color] ?? APPLE_PALETTE[index % APPLE_PALETTE.length] }}
+                style={{ backgroundColor: COLOR_HEX[item.color] ?? DT.CHART_COLORS[index % DT.CHART_COLORS.length] }}
               />
-              <span className="font-medium text-[#1D1D1F] dark:text-white">
+              <span className={`font-medium ${DT.TEXT_PRIMARY}`}>
                 {item.emoji ? `${item.emoji} ` : ""}
                 {translateLabel(item.name)}
               </span>

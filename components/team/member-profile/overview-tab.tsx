@@ -159,7 +159,7 @@ function StatCard({ label, value, icon }: { label: string; value: string; icon: 
         {icon}
         {label}
       </div>
-      <p className="text-[17px] font-semibold text-[#1D1D1F] dark:text-white">{value}</p>
+      <p className={`text-[17px] font-semibold ${DT.TEXT_PRIMARY}`}>{value}</p>
     </div>
   );
 }

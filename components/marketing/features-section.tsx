@@ -28,7 +28,7 @@ function FeaturesSection({
   return (
     <section id="features" className="bg-white dark:bg-[#000000] px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl">
-        <h2 className="mb-12 text-center text-[34px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+        <h2 className={`mb-12 text-center text-[34px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>
           {t(locale, "features.heading")}
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -37,7 +37,7 @@ function FeaturesSection({
             return (
               <div key={feature.id} className={`${DT.CARD_SM} p-6`}>
                 {Icon && (
-                  <div className="mb-4 inline-flex rounded-2xl bg-[#0071E3]/10 dark:bg-[#0A84FF]/15 p-3 text-[#0071E3] dark:text-[#0A84FF]">
+                  <div className={`mb-4 inline-flex rounded-2xl ${DT.BG_BLUE_TINT} p-3 ${DT.TEXT_BLUE}`}>
                     <Icon className="size-5" />
                   </div>
                 )}

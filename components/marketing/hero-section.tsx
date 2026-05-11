@@ -14,7 +14,7 @@ function HeroSection({
   return (
     <section className="flex min-h-[70vh] items-center justify-center bg-[#F5F5F7] dark:bg-[#111111] px-4 py-16 sm:py-24">
       <div className="mx-auto max-w-3xl text-center">
-        <h1 className="text-[48px] font-semibold tracking-[-1px] leading-tight text-[#1D1D1F] dark:text-white">
+        <h1 className={`text-[48px] font-semibold tracking-[-1px] leading-tight ${DT.TEXT_PRIMARY}`}>
           {t(locale, "hero.title")}
         </h1>
         <p className={`mt-6 ${DT.MUTED} text-[18px] leading-relaxed`}>

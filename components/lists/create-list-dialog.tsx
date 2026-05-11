@@ -583,7 +583,7 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
                 <div className="flex flex-col gap-1">
                   <div className="flex items-baseline gap-1.5">
                     <UsersIcon className={`size-4 ${DT.TEXT_BLUE} mb-0.5 shrink-0`} />
-                    <span className="text-[30px] font-semibold text-[#1D1D1F] dark:text-white tabular-nums leading-none">
+                    <span className={`text-[30px] font-semibold ${DT.TEXT_PRIMARY} tabular-nums leading-none`}>
                       {preview === undefined ? "—" : preview.count.toLocaleString()}
                     </span>
                   </div>
@@ -598,7 +598,7 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
                         <span className={`${DT.MICRO} truncate`}>
                           {(STAGE_LABELS as Record<string, { ar: string; en: string }>)[stage]?.[locale] ?? stage}
                         </span>
-                        <span className="text-[12px] font-semibold tabular-nums shrink-0 text-[#1D1D1F] dark:text-white">{count}</span>
+                        <span className={`text-[12px] font-semibold tabular-nums shrink-0 ${DT.TEXT_PRIMARY}`}>{count}</span>
                       </div>
                     ))}
                   </div>

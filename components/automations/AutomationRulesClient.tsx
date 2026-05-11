@@ -215,7 +215,7 @@ export function AutomationRulesClient({ isAdmin }: { isAdmin: boolean }) {
       {rules.length === 0 ? (
         <div className="rounded-lg border border-dashed border-black/[0.12] dark:border-white/[0.10] p-10 text-center space-y-3">
           <Zap className="h-8 w-8 text-[#6E6E73] dark:text-white/50 mx-auto" />
-          <p className="font-semibold font-cairo text-[#1D1D1F] dark:text-white">
+          <p className={`font-semibold font-cairo ${DT.TEXT_PRIMARY}`}>
             {t("No automation rules yet", "لا توجد قواعد تلقائية بعد")}
           </p>
           <p className={`${DT.MUTED} font-cairo`}>

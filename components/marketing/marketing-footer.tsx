@@ -10,25 +10,25 @@ function MarketingFooter({ locale }: { locale: MarketingLocale }) {
     <footer className="bg-[#F5F5F7] dark:bg-[#111111] border-t border-black/[0.06] dark:border-white/[0.05]">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-8 sm:flex-row sm:justify-between">
         <div className="flex flex-wrap items-center gap-4">
-          <Link href="/sign-up" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+          <Link href="/sign-up" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
             {t(locale, "footer.signUp")}
           </Link>
-          <Link href="/sign-in" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+          <Link href="/sign-in" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
             {t(locale, "footer.signIn")}
           </Link>
-          <Link href="#pricing" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+          <Link href="#pricing" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
             {t(locale, "footer.pricing")}
           </Link>
-          <Link href="/privacy" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+          <Link href="/privacy" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
             {t(locale, "footer.privacy")}
           </Link>
-          <Link href="/terms" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+          <Link href="/terms" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
             {t(locale, "footer.terms")}
           </Link>
-          <Link href="/dpa" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+          <Link href="/dpa" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
             {t(locale, "footer.dpa")}
           </Link>
-          <Link href="/cookies" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+          <Link href="/cookies" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
             {t(locale, "footer.cookies")}
           </Link>
           <CookieSettingsButton />

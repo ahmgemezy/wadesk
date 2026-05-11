@@ -241,6 +241,12 @@ export const DT = {
   TEXT_WHATSAPP_ACTION: "text-[#00A884] dark:text-[#31A24C]",
   TEXT_MUTED_DARK: "text-[#8696a0] dark:text-[#a0a7b0]",
   TEXT_BLUE_LIGHT: "text-[#53bdeb] dark:text-[#6bc5f0]",
+
+  TEXT_PRIMARY: "text-[#1D1D1F] dark:text-white",
+  RING_BLUE: "ring-2 ring-[#0071E3] dark:ring-[#0A84FF]",
+  BG_BLUE_TINT: "bg-[#0071E3]/10 dark:bg-[#0A84FF]/15",
+
+  CHART_COLORS: ["#0071E3", "#34C759", "#FF9500", "#FF3B30", "#AF52DE", "#5AC8FA"] as readonly string[],
 } as const;
 
 export type DTKey = keyof typeof DT;

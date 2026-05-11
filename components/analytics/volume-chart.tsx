@@ -15,8 +15,6 @@ import {
 } from "recharts";
 import type { DateRange } from "./date-range-picker";
 
-const APPLE_PALETTE = ["#0071E3", "#34C759", "#FF9500", "#FF3B30", "#AF52DE", "#5AC8FA"];
-
 interface VolumeChartProps {
   dateRange: DateRange;
   locale?: "ar" | "en";
@@ -50,7 +48,7 @@ export function VolumeChart({ dateRange, locale = "ar" }: VolumeChartProps) {
     );
   }
 
-  const accent = APPLE_PALETTE[0];
+  const accent = DT.CHART_COLORS[0];
 
   return (
     <div className={`${DT.CARD} p-6`}>
@@ -109,10 +107,10 @@ export function VolumeChart({ dateRange, locale = "ar" }: VolumeChartProps) {
                 if (active && payload && payload.length) {
                   return (
                     <div className="rounded-xl border border-black/[0.08] bg-white/95 backdrop-blur-xl p-3 shadow-xl dark:bg-[#1C1C1E]/95 dark:border-white/[0.08]">
-                      <p className="text-[13px] font-medium mb-1.5 text-[#1D1D1F] dark:text-white">{label}</p>
+                      <p className={`text-[13px] font-medium mb-1.5 ${DT.TEXT_PRIMARY}`}>{label}</p>
                       <div className="flex items-center gap-2">
                         <div className="size-2.5 rounded-full" style={{ backgroundColor: accent }} />
-                        <p className="text-[13px] text-[#1D1D1F] dark:text-white">
+                        <p className={`text-[13px] ${DT.TEXT_PRIMARY}`}>
                           {payload[0].value} <span className="text-[#6E6E73] dark:text-white/50">{locale === "ar" ? "محادثات" : "Conversations"}</span>
                         </p>
                       </div>

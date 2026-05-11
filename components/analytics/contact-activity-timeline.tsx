@@ -11,7 +11,7 @@ import { DT } from "@/lib/design-tokens";
 import { ContactTimeline } from "@/components/contacts/contact-timeline";
 
 const STAGE_BADGE: Record<string, { en: string; ar: string; cls: string }> = {
-  lead:     { en: "Lead",     ar: "عميل محتمل", cls: "bg-[#0071E3]/10 text-[#0071E3] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]" },
+  lead:     { en: "Lead",     ar: "عميل محتمل", cls: `${DT.BG_BLUE_TINT} ${DT.TEXT_BLUE}` },
   prospect: { en: "Prospect", ar: "مرشح",       cls: "bg-[#AF52DE]/10 text-[#AF52DE] dark:bg-[#BF5AF2]/15 dark:text-[#BF5AF2]" },
   customer: { en: "Customer", ar: "عميل",       cls: "bg-[#34C759]/10 text-[#34C759] dark:bg-[#30D158]/15 dark:text-[#30D158]" },
   retained: { en: "Retained", ar: "عميل دائم", cls: "bg-[#5AC8FA]/10 text-[#5AC8FA] dark:bg-[#64D2FF]/15 dark:text-[#64D2FF]" },
@@ -92,7 +92,7 @@ export function ContactActivityTimeline({ locale = "ar" }: ContactActivityTimeli
                   )}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="truncate font-medium text-[#1D1D1F] dark:text-white">
+                    <span className={`truncate font-medium ${DT.TEXT_PRIMARY}`}>
                       {contact.customName ?? contact.displayName}
                     </span>
                     <span className={`${DT.MICRO} truncate`}>
@@ -136,7 +136,7 @@ export function ContactActivityTimeline({ locale = "ar" }: ContactActivityTimeli
       {selectedContactId && activity && (
         <div>
           <div className={`flex items-center gap-3 mb-4 pb-3 ${DT.DIVIDER}`}>
-            <div className="flex items-center justify-center size-10 rounded-full bg-black/[0.06] dark:bg-white/[0.08] text-[14px] font-semibold text-[#1D1D1F] dark:text-white">
+            <div className={`flex items-center justify-center size-10 rounded-full bg-black/[0.06] dark:bg-white/[0.08] text-[14px] font-semibold ${DT.TEXT_PRIMARY}`}>
               {(activity.contact.displayName ?? "?")[0].toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">

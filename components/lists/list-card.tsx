@@ -130,7 +130,7 @@ export function ListCard({ list, stats, locale }: Props) {
       {/* Contact count */}
       <div className="flex items-end gap-1.5">
         <UsersIcon className="size-4 text-[#6E6E73] dark:text-white/50 mb-0.5" />
-        <span className="text-[24px] font-semibold text-[#1D1D1F] dark:text-white leading-none tabular-nums">
+        <span className={`text-[24px] font-semibold ${DT.TEXT_PRIMARY} leading-none tabular-nums`}>
           {stats === null ? "—" : stats.total.toLocaleString()}
         </span>
         <span className={`${DT.MICRO} mb-0.5`}>

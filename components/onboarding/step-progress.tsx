@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { DT } from "@/lib/design-tokens";
 
 const STEPS = [
   { key: "workspace_named",         ar: "مساحة العمل", en: "Workspace" },
@@ -28,19 +29,19 @@ export function StepProgress({ completedSteps, currentStep, locale }: StepProgre
 
         const circleBase = "size-8 rounded-full flex items-center justify-center text-[13px] font-semibold transition-colors";
         const circleState = isCompleted
-          ? "bg-[#0071E3] dark:bg-[#0A84FF] text-white"
+          ? `${DT.BG_BLUE} text-white`
           : isCurrent
-            ? "ring-2 ring-[#0071E3] dark:ring-[#0A84FF] bg-white dark:bg-[#1C1C1E] text-[#0071E3] dark:text-[#0A84FF]"
+            ? `${DT.RING_BLUE} bg-white dark:bg-[#1C1C1E] ${DT.TEXT_BLUE}`
             : "bg-black/[0.06] dark:bg-white/[0.08] text-[#6E6E73]";
 
         const labelState = isCurrent
-          ? "text-[#1D1D1F] dark:text-white font-semibold"
+          ? `${DT.TEXT_PRIMARY} font-semibold`
           : isCompleted
-            ? "text-[#0071E3] dark:text-[#0A84FF]"
+            ? DT.TEXT_BLUE
             : "text-[#6E6E73] dark:text-white/50";
 
         const trackState = isCompleted
-          ? "bg-[#0071E3] dark:bg-[#0A84FF]"
+          ? DT.BG_BLUE
           : "bg-black/[0.08] dark:bg-white/[0.10]";
 
         return (

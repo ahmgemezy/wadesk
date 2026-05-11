@@ -90,7 +90,7 @@ export function ListsPage({ locale }: { locale: "ar" | "en" }) {
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="group border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-[#6E6E73] dark:text-white/50 hover:border-[#0071E3]/40 dark:hover:border-[#0A84FF]/40 hover:text-[#0071E3] dark:hover:text-[#0A84FF] transition-all duration-200 min-h-40"
+              className={`group border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-[#6E6E73] dark:text-white/50 ${DT.HOVER_BORDER_BLUE_LT} ${DT.HOVER_TEXT_BLUE} transition-all duration-200 min-h-40`}
             >
               <div className="size-9 rounded-xl border-2 border-current flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                 <PlusIcon className="size-4" />

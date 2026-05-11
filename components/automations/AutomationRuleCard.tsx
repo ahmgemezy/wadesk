@@ -85,7 +85,7 @@ export function AutomationRuleCard({
 
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-medium font-cairo truncate text-[#1D1D1F] dark:text-white">
+              <span className={`font-medium font-cairo truncate ${DT.TEXT_PRIMARY}`}>
                 {rule.name}
               </span>
               <span className={`${DT.BADGE_BLUE} shrink-0 font-cairo`}>

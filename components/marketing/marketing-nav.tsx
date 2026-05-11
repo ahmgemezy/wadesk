@@ -33,19 +33,19 @@ function MarketingNav({
         <div className="hidden items-center gap-4 md:flex">
           <Link
             href="#features"
-            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+            className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
           >
             {t(locale, "nav.features")}
           </Link>
           <Link
             href="#pricing"
-            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+            className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
           >
             {t(locale, "nav.pricing")}
           </Link>
           <Link
             href="#why-wabdesk"
-            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+            className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
           >
             {t(locale, "nav.whyWABDesk")}
           </Link>
@@ -53,7 +53,7 @@ function MarketingNav({
           <button
             type="button"
             onClick={toggleLocale}
-            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+            className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
           >
             {locale === "ar" ? "EN" : "ع"}
           </button>
@@ -66,7 +66,7 @@ function MarketingNav({
             <>
               <Link
                 href="/sign-in"
-                className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+                className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
               >
                 {t(locale, "nav.signIn")}
               </Link>
@@ -81,7 +81,7 @@ function MarketingNav({
           <button
             type="button"
             onClick={toggleLocale}
-            className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors px-2`}
+            className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors px-2`}
           >
             {locale === "ar" ? "EN" : "ع"}
           </button>

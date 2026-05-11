@@ -285,9 +285,9 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                   isDone
-                    ? "bg-[#0071E3] text-white dark:bg-[#0A84FF]"
+                    ? `${DT.BG_BLUE} text-white`
                     : active
-                    ? "ring-2 ring-[#0071E3] dark:ring-[#0A84FF] text-[#0071E3] dark:text-[#0A84FF]"
+                    ? `${DT.RING_BLUE} ${DT.TEXT_BLUE}`
                     : "bg-black/[0.06] dark:bg-white/[0.08] text-[#6E6E73] dark:text-white/50"
                 }`}
               >

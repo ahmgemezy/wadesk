@@ -384,7 +384,7 @@ export function AutomationRuleForm({
                             setResponseTemplate(tpl.body);
                           }}
                         >
-                          <span className="font-medium text-[#1D1D1F] dark:text-white">{tpl.title}</span>
+                          <span className={`font-medium ${DT.TEXT_PRIMARY}`}>{tpl.title}</span>
                           {tpl.category && (
                             <span className={`${DT.MICRO} ms-1`}>
                               · {tpl.category}
@@ -465,7 +465,7 @@ export function AutomationRuleForm({
                 {t("Preview", "معاينة")}
               </label>
               <div
-                className={`rounded-xl border ${DT.CATALOG_BORDER_GREEN} ${DT.CATALOG_BG_GREEN} p-3 text-sm font-cairo whitespace-pre-wrap text-[#1D1D1F] dark:text-white`}
+                className={`rounded-xl border ${DT.CATALOG_BORDER_GREEN} ${DT.CATALOG_BG_GREEN} p-3 text-sm font-cairo whitespace-pre-wrap ${DT.TEXT_PRIMARY}`}
                 style={{ direction: "auto" as React.CSSProperties["direction"] }}
               >
                 {preview}

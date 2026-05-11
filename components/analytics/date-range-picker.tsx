@@ -64,7 +64,7 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
               className={cn(
                 "rounded-lg px-3 py-1.5 text-[12px] font-medium transition-all",
                 isActive
-                  ? "bg-white shadow-sm text-[#0071E3] dark:bg-white/[0.10] dark:text-[#0A84FF]"
+                  ? `bg-white shadow-sm ${DT.TEXT_BLUE} dark:bg-white/[0.10]`
                   : DT.MUTED
               )}
             >
@@ -92,7 +92,7 @@ export function DateRangePicker({ value, onChange, locale = "ar" }: DateRangePic
       </Popover>
 
       {error && (
-        <p className="text-[13px] text-[#FF3B30] dark:text-[#FF453A]">{error}</p>
+        <p className={`text-[13px] ${DT.TEXT_RED}`}>{error}</p>
       )}
     </div>
   );

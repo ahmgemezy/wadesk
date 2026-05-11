@@ -94,8 +94,8 @@ export function AgentPerformanceTable({ dateRange, locale = "ar" }: AgentPerform
         <TableBody>
           {data.map((agent) => (
             <TableRow key={agent.agentId ?? "unassigned"} className="border-black/[0.06] dark:border-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.05]">
-              <TableCell className="font-medium text-[14px] text-[#1D1D1F] dark:text-white text-start">{agent.agentName}</TableCell>
-              <TableCell className="text-center text-[14px] font-medium text-[#1D1D1F] dark:text-white">{agent.conversationsHandled}</TableCell>
+              <TableCell className={`font-medium text-[14px] ${DT.TEXT_PRIMARY} text-start`}>{agent.agentName}</TableCell>
+              <TableCell className={`text-center text-[14px] font-medium ${DT.TEXT_PRIMARY}`}>{agent.conversationsHandled}</TableCell>
               <TableCell className={`text-center ${DT.BODY}`}>
                 {formatResponseTime(agent.avgFirstResponseTimeSeconds, locale)}
               </TableCell>

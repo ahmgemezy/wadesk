@@ -85,8 +85,8 @@ function RevenueDrillDown({
                   className={`flex items-center justify-between ${DT.CARD_FLAT} px-4 py-3 gap-3`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="size-8 rounded-full bg-[#0071E3]/10 dark:bg-[#0A84FF]/15 flex items-center justify-center shrink-0">
-                      <UserIcon className="size-4 text-[#0071E3] dark:text-[#0A84FF]" />
+                    <div className={`size-8 rounded-full ${DT.BG_BLUE_TINT} flex items-center justify-center shrink-0`}>
+                      <UserIcon className={`size-4 ${DT.TEXT_BLUE}`} />
                     </div>
                     <div className="min-w-0">
                       <p className={`${DT.BODY} font-medium truncate`}>{contact.displayName}</p>
@@ -188,7 +188,7 @@ export function RevenueWidget({ dateRange, locale = "ar" }: RevenueWidgetProps) 
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-baseline gap-1.5" dir="ltr">
-                      <span className="text-[32px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">
+                      <span className={`text-[32px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>
                         {formatAmount(amount)}
                       </span>
                       <span className={DT.MUTED}>{meta.symbol}</span>

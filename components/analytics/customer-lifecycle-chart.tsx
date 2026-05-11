@@ -89,9 +89,9 @@ export function CustomerLifecycleChart({ locale = "ar" }: CustomerLifecycleChart
                             className="size-2.5 rounded-full"
                             style={{ backgroundColor: item.color }}
                           />
-                          <p className="text-[13px] font-medium text-[#1D1D1F] dark:text-white">{item.name}</p>
+                          <p className={`text-[13px] font-medium ${DT.TEXT_PRIMARY}`}>{item.name}</p>
                         </div>
-                        <p className="text-[13px] text-[#1D1D1F] dark:text-white">
+                        <p className={`text-[13px] ${DT.TEXT_PRIMARY}`}>
                           {item.value}{" "}
                           <span className="text-[#6E6E73] dark:text-white/50">
                             {locale === "ar" ? "جهة اتصال" : "contacts"} ({item.percentage}%)
@@ -106,7 +106,7 @@ export function CustomerLifecycleChart({ locale = "ar" }: CustomerLifecycleChart
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-[32px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">{data.total}</span>
+            <span className={`text-[32px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>{data.total}</span>
             <span className={DT.MICRO}>
               {locale === "ar" ? "إجمالي العملاء" : "Total Contacts"}
             </span>
@@ -120,7 +120,7 @@ export function CustomerLifecycleChart({ locale = "ar" }: CustomerLifecycleChart
                 className="size-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="font-medium text-[#1D1D1F] dark:text-white">{item.name}</span>
+              <span className={`font-medium ${DT.TEXT_PRIMARY}`}>{item.name}</span>
               <span>
                 {item.value} ({item.percentage}%)
               </span>

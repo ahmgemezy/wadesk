@@ -48,7 +48,7 @@ export function LegalPageWrapper({ children, currentPage }: LegalPageWrapperProp
               <Link
                 key={page}
                 href={labels[page].href}
-                className={`hidden sm:inline ${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}
+                className={`hidden sm:inline ${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}
               >
                 {isAr ? labels[page].ar : labels[page].en}
               </Link>
@@ -62,7 +62,7 @@ export function LegalPageWrapper({ children, currentPage }: LegalPageWrapperProp
               {isAr ? "EN" : "ع"}
             </button>
 
-            <Link href="/" className={`${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white transition-colors`}>
+            <Link href="/" className={`${DT.MUTED} ${DT.MUTED_HOVER} transition-colors`}>
               {isAr ? "→ الرئيسية" : "← Home"}
             </Link>
           </nav>
@@ -89,8 +89,8 @@ export function LegalPageWrapper({ children, currentPage }: LegalPageWrapperProp
                 href={labels[page].href}
                 className={`transition-colors ${
                   currentPage === page
-                    ? "text-[#1D1D1F] dark:text-white font-medium text-[13px]"
-                    : `${DT.MUTED} hover:text-[#1D1D1F] dark:hover:text-white`
+                    ? `${DT.TEXT_PRIMARY} font-medium text-[13px]`
+                    : `${DT.MUTED} ${DT.MUTED_HOVER}`
                 }`}
               >
                 {isAr ? labels[page].ar : labels[page].en}

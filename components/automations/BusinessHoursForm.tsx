@@ -169,7 +169,7 @@ export function BusinessHoursForm({ isAdmin }: BusinessHoursFormProps) {
                   }
                   disabled={!isAdmin}
                 />
-                <span className="w-20 text-sm font-cairo font-medium text-[#1D1D1F] dark:text-white">
+                <span className={`w-20 text-sm font-cairo font-medium ${DT.TEXT_PRIMARY}`}>
                   {locale === "ar" ? day.ar : day.en}
                 </span>
                 <div className="flex items-center gap-2 ms-auto">

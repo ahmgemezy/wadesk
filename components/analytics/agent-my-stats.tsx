@@ -66,7 +66,7 @@ export function AgentMyStats({ locale = "ar" }: AgentMyStatsProps) {
           <div className={`${DT.MICRO} mb-2`}>
             {card.label}
           </div>
-          <div className="text-[32px] font-semibold tracking-[-0.5px] text-[#1D1D1F] dark:text-white">{card.value}</div>
+          <div className={`text-[32px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>{card.value}</div>
         </div>
       ))}
     </div>
