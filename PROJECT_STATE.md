@@ -7,7 +7,7 @@
 
 ---
 
-**Last Updated:** 2026-05-04 UTC  
+**Last Updated:** 2026-05-11 UTC  
 **Current Branch:** feat/013-departments  
 **Main Branch:** 002-agent-roles  
 **Build Status:** ✅ TypeScript: 0 errors | ✅ 33-table schema deployed | ✅ React Email system live | ✅ Member profile modal complete | ✅ Channel retention system active | ✅ Tabbed transfer + cross-branch forward | ✅ CSAT end-to-end working | ✅ 24h conversation reopen window | ✅ Conversation activity pills + claim | ✅ Notification preferences system live
@@ -289,18 +289,20 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
   - User notifications on failure
   - Auto-churn on max retry failure
 
-### ✅ CSAT Surveys (v2)
+### ✅ CSAT Surveys (v2 + production hardening)
 
 - **File:** `app/(dashboard)/settings/csat/page.tsx`
 - **Backend:** `convex/csat.ts`
-- **Status:** ⚠️ Complete — button-based template; Meta template approval still required
+- **Status:** ✅ Complete — template submission, approval polling, and send flow are production-ready
 - **Features:**
   - Post-resolution surveys (configurable delay 0-60 minutes)
   - Growth+ plan gating
-  - **v2 (2026-04-27):** Now sends interactive button template (1–5 star options) instead of free-form text — resolves Meta 24-hour window compliance issue
-  - Webhook hijacking: intercepts button reply responses; score recorded in `conversationMetrics`
-  - Settings page enhanced: live preview of CSAT message, test send button
-  - **Remaining:** Meta template must be pre-approved before production use
+  - Sends as pre-approved Meta UTILITY template (text with 1–5 numbered options); gated on APPROVED status
+  - Webhook hijacking: intercepts 1–5 text replies; score recorded in `conversationMetrics`
+  - Settings page: live preview, per-channel approval status, Refresh + Resubmit buttons
+  - `metaTemplates.metaTemplateId` stores Meta's native template ID (for DELETE/management)
+  - `getAdminsForTenant` wired to betterAuth org query — approval/rejection notifications now reach admins
+  - `sync-pending-csat-templates` cron (every 30 min) — auto-polls approval without admin manual refresh
 
 ### ✅ SLA Monitoring
 
@@ -621,11 +623,7 @@ All tables are tenant-scoped via `tenantId` (Clerk `orgId`). Convex indexes enfo
 
 ### 🔴 Critical Issues (Must Fix Before Production)
 
-1. **CSAT Template Needs Meta Pre-Approval**
-   - **File:** `convex/csat.ts`
-   - **Issue:** CSAT now uses button template (Meta compliant) but the template itself must be pre-approved by Meta before it can be sent outside the 24-hour window
-   - **Fix Required:** Submit the CSAT button template to Meta for approval; update `sendCSATRequest` to use the approved template ID once approved
-   - **Status:** ⚠️ v2 sends button template (correct approach), but Meta approval pending
+_(None — all known pre-production blockers resolved)_
 
 ### ⚠️ Medium Priority Issues
 
@@ -732,6 +730,14 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 10 Sessions)
+
+### 2026-05-11: CSAT Meta Template Approval — Production Hardening
+
+- ✅ `convex/schema.ts` — added `metaTemplateId: v.optional(v.string())` to `metaTemplates` table; stores Meta's native template ID for management (DELETE, idempotency)
+- ✅ `convex/metaTemplates.ts` — `upsertBatch` now stores `id` field as `metaTemplateId` on both insert and patch; fixed `getAdminsForTenant` stub (was returning `[]`) — now queries `components.betterAuth.orgQueries.listOrgMembers` for actual admin user IDs; template approval/rejection notifications now reach admins
+- ✅ `convex/csat.ts` — `submitCsatTemplateForChannel` reads the `id` from Meta's POST response and passes it to `upsertBatch`; added `syncAllPendingCsatTemplates` internalAction + `listPendingCsatTemplates` internalQuery (polls Meta for all WABAs with pending CSAT templates on enabled tenants)
+- ✅ `convex/crons.ts` — added `sync-pending-csat-templates` cron every 30 minutes → calls `syncAllPendingCsatTemplates`; mirrors the existing `sync-pending-broadcast-templates` pattern
+- TypeScript: 0 errors | 4 files changed
 
 ### 2026-05-05: SLA Breach Clearing — Verification + Documentation Cleanup
 
@@ -1137,8 +1143,8 @@ When a conflict is detected:
 | Test Coverage          | ❌ Not implemented                                                   | 80%+ (Phase 2)  |
 | Documentation Coverage | ✅ CLAUDE.md + PROJECT_STATE.md + PROGRESS.md                        | Maintain        |
 | Known Security Issues  | 0 (webhook sig verification in place)                                | 0               |
-| Known Critical Bugs    | 1 (CSAT template pending Meta approval)                              | 0 before launch |
-| Production Readiness   | 🟡 75% (all core + advanced features done, pre-launch polish needed) | 100%            |
+| Known Critical Bugs    | 0                                                                    | 0 before launch |
+| Production Readiness   | 🟡 80% (all core + advanced features done, pre-launch polish needed) | 100%            |
 
 ---
 

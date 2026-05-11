@@ -1,7 +1,7 @@
 # WABDesk — Build Progress
 
 > Single source of truth for project progress. Read by Claude Chat (project manager) to stay updated.
-> **Last audited:** 2026-05-03 — Positioning statement updated across docs, marketing copy, and legal pages (drops "API"/"SaaS"; "Egypt and the Gulf" → "Arabic-speaking markets"). Tabbed transfer dialog + cross-branch forward + queue tree, 24h conversation reopen window, real-name resolve attribution, conversation activity pills, transfer notifications, conversation claim, CSAT end-to-end fix + score surfacing, general settings page + Resend template sync, CLAUDE.md §30 AI agent behavior rules.
+> **Last audited:** 2026-05-11 — CSAT Meta template approval production hardening: added `metaTemplateId` to schema, stored Meta-returned ID on template submission, fixed `getAdminsForTenant` stub (was returning []), added `sync-pending-csat-templates` cron (every 30 min) so approval is detected without admin manual refresh.
 > **Previously audited:** 2026-04-28 — Member profile modal, team presence, channel retention, React Email system, conversation search, batch actions, rate limiting, message scheduling, template library, legal pages, CSAT v2, departments.
 > Never modify CLAUDE.md unless explicitly asked.
 

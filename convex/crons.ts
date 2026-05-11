@@ -28,6 +28,12 @@ crons.interval(
 );
 
 crons.interval(
+  "sync-pending-csat-templates",
+  { minutes: 30 },
+  internal.csat.syncAllPendingCsatTemplates,
+);
+
+crons.interval(
   "process-scheduled-messages",
   { minutes: 1 },
   internal.messageScheduling.processScheduledMessages,

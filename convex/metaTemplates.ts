@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { action, internalMutation, internalQuery, query } from "./_generated/server";
 import { ConvexError } from "convex/values";
-import { internal } from "./_generated/api";
+import { internal, components } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { getCallerRole, assertAdminOrSupervisor } from "./lib/auth";
 import { assertPlanAtLeast, type Plan } from "./lib/planLimits";
@@ -131,6 +131,7 @@ export const upsertBatch = internalMutation({
           category: tpl.category,
           components: tpl.components,
           lastSyncedAt: now,
+          ...(tpl.id ? { metaTemplateId: tpl.id } : {}),
         });
       } else {
         await ctx.db.insert("metaTemplates", {
@@ -143,6 +144,7 @@ export const upsertBatch = internalMutation({
           category: tpl.category,
           components: tpl.components,
           lastSyncedAt: now,
+          ...(tpl.id ? { metaTemplateId: tpl.id } : {}),
         });
       }
     }
@@ -174,12 +176,20 @@ export const updateStatusFromWebhook = internalMutation({
   },
 });
 
-// Placeholder — returns empty until admin user IDs are tracked in Convex.
-// Template status updates still happen; per-user notifications deferred.
 export const getAdminsForTenant = internalQuery({
   args: { tenantId: v.string() },
-  handler: async (_ctx, _args): Promise<Array<{ userId: string }>> => {
-    return [];
+  handler: async (ctx, args): Promise<Array<{ userId: string }>> => {
+    try {
+      const members = await ctx.runQuery(
+        components.betterAuth.orgQueries.listOrgMembers,
+        { organizationId: args.tenantId },
+      );
+      return (members as Array<{ userId: string; role: string }>)
+        .filter((m) => m.role === "org:admin")
+        .map((m) => ({ userId: m.userId }));
+    } catch {
+      return [];
+    }
   },
 });
 

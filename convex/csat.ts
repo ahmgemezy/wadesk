@@ -403,6 +403,13 @@ export const submitCsatTemplateForChannel = internalAction({
       );
 
       const newStatus = postRes.ok ? "PENDING" : "REJECTED";
+      let newMetaId: string | undefined;
+      if (postRes.ok) {
+        try {
+          const responseData = await postRes.json() as { id?: string };
+          if (responseData.id) newMetaId = responseData.id;
+        } catch { /* ignore parse errors */ }
+      }
 
       await ctx.runMutation(internal.metaTemplates.upsertBatch, {
         tenantId: args.tenantId,
@@ -410,6 +417,7 @@ export const submitCsatTemplateForChannel = internalAction({
         wabaId: args.wabaId,
         templates: [
           {
+            id: newMetaId,
             name: CSAT_TEMPLATE_NAME,
             language: metaLanguage,
             status: newStatus,
@@ -752,5 +760,105 @@ export const getTemplatePreview = query({
       body: config.body.replace("{{1}}", config.previewPlaceholder),
       dir: args.language === "ar" ? "rtl" : "ltr",
     };
+  },
+});
+
+// ── Internal: auto-poll pending CSAT template statuses (called by cron) ──────
+
+export const syncAllPendingCsatTemplates = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    const token = process.env.META_SYSTEM_USER_TOKEN;
+    if (!token) return;
+
+    // Find all unique WABAs that have a CSAT template in PENDING state
+    const pendingTemplates = await ctx.runQuery(
+      internal.csat.listPendingCsatTemplates,
+      {},
+    );
+
+    for (const entry of pendingTemplates) {
+      try {
+        const res = await fetch(
+          `${META_API_BASE}/${entry.wabaId}/message_templates?name=${CSAT_TEMPLATE_NAME}&fields=id,name,language,status,category,components&limit=10`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok) continue;
+
+        const data = await res.json() as {
+          data?: Array<{ id?: string; name: string; language: string; status: string; category?: string; components: unknown }>;
+        };
+
+        if (!data.data?.length) continue;
+
+        await ctx.runMutation(internal.metaTemplates.upsertBatch, {
+          tenantId: entry.tenantId,
+          channelId: entry.channelId,
+          wabaId: entry.wabaId,
+          templates: data.data.map((t) => ({
+            id: t.id,
+            name: t.name,
+            language: t.language,
+            status: t.status,
+            category: t.category,
+            components: t.components,
+          })),
+        });
+      } catch {
+        // Continue to next WABA on error
+      }
+    }
+  },
+});
+
+// ── Internal query: list WABAs with pending CSAT templates ───────────────────
+
+export const listPendingCsatTemplates = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    // Find all enabled CSAT tenants
+    const settings = await ctx.db
+      .query("csatSettings")
+      .collect();
+
+    const enabledTenantIds = new Set(
+      settings.filter((s) => s.enabled).map((s) => s.tenantId),
+    );
+
+    if (enabledTenantIds.size === 0) return [];
+
+    // Find all channels with a CSAT template in non-APPROVED state
+    const results: Array<{ tenantId: string; channelId: import("./_generated/dataModel").Id<"channels">; wabaId: string }> = [];
+    const seen = new Set<string>();
+
+    for (const tenantId of enabledTenantIds) {
+      const channels = await ctx.db
+        .query("channels")
+        .withIndex("by_tenant", (q) => q.eq("tenantId", tenantId))
+        .collect();
+
+      for (const channel of channels) {
+        if (seen.has(channel.wabaId)) continue;
+
+        const template = await ctx.db
+          .query("metaTemplates")
+          .withIndex("by_waba_name_lang", (q) =>
+            q.eq("wabaId", channel.wabaId).eq("name", CSAT_TEMPLATE_NAME),
+          )
+          .first();
+
+        // Only poll if template exists but isn't yet APPROVED
+        if (template && template.status !== "APPROVED") {
+          seen.add(channel.wabaId);
+          results.push({
+            tenantId,
+            channelId: channel._id,
+            wabaId: channel.wabaId,
+          });
+        }
+      }
+    }
+
+    return results;
   },
 });

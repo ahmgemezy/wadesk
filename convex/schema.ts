@@ -426,6 +426,7 @@ export default defineSchema({
     category: v.optional(v.string()),
     components: v.any(),
     lastSyncedAt: v.number(),
+    metaTemplateId: v.optional(v.string()), // Meta's native template ID (for DELETE/management)
   })
     .index("by_tenant", ["tenantId"])
     .index("by_channel", ["channelId"])
