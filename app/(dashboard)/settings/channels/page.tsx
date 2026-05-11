@@ -6,9 +6,8 @@ import { useAuth } from "@/lib/auth-hooks";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChannelStatusBadge } from "@/components/onboarding/channel-status-badge";
 import { EmbeddedSignupButton } from "@/components/onboarding/embedded-signup-button";
@@ -134,15 +133,15 @@ export default function ChannelsListPage() {
         <h1 className="text-2xl font-bold font-cairo">{t("WhatsApp Numbers", "أرقام واتساب")}</h1>
         {isAdmin && (
           atLimit ? (
-            <Button size="sm" variant="outline" onClick={() => router.push("/settings/billing")}>
+            <button className={DT.BTN_OUTLINE} onClick={() => router.push("/settings/billing")}>
               <Plus className="size-4 me-1" />
               {t("Upgrade Plan to Add Number", "ترقية الباقة لإضافة رقم جديد")}
-            </Button>
+            </button>
           ) : (
-            <Button size="sm" onClick={() => { setShowSignup(true); setSignupError(null); }}>
+            <button className={DT.BTN_PRIMARY} onClick={() => { setShowSignup(true); setSignupError(null); }}>
               <Plus className="size-4 me-1" />
               {t("Connect Number", "ربط رقم جديد")}
-            </Button>
+            </button>
           )
         )}
       </div>
@@ -168,9 +167,9 @@ export default function ChannelsListPage() {
               onSuccess={handleSignupSuccess}
               onError={handleSignupError}
             />
-            <Button variant="outline" onClick={() => setShowSignup(false)}>
+            <button className={DT.BTN_OUTLINE} onClick={() => setShowSignup(false)}>
               {t("Cancel", "إلغاء")}
-            </Button>
+            </button>
           </div>
         </div>
       )}
@@ -179,10 +178,10 @@ export default function ChannelsListPage() {
       {IS_DEV && isAdmin && (
         <div className="mb-6">
           {!showDevForm ? (
-            <Button variant="outline" size="sm" className="gap-2 text-muted-foreground border-dashed" onClick={() => setShowDevForm(true)}>
+            <button className={`${DT.BTN_OUTLINE} gap-2 text-muted-foreground border-dashed`} onClick={() => setShowDevForm(true)}>
               <Terminal className="size-3.5" />
               Dev: Connect with credentials
-            </Button>
+            </button>
           ) : (
             <div className="rounded-lg border border-dashed border-amber-400 bg-amber-50 dark:bg-amber-950/20 p-5 space-y-4">
               <div className="flex items-center gap-2">
@@ -193,26 +192,26 @@ export default function ChannelsListPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">Phone Number ID</Label>
-                  <Input placeholder="123456789012345" value={devFields.phoneNumberId} onChange={e => setDevFields(f => ({ ...f, phoneNumberId: e.target.value }))} />
+                  <input placeholder="123456789012345" value={devFields.phoneNumberId} onChange={e => setDevFields(f => ({ ...f, phoneNumberId: e.target.value }))} className={DT.INPUT} />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">WABA ID</Label>
-                  <Input placeholder="123456789012345" value={devFields.wabaId} onChange={e => setDevFields(f => ({ ...f, wabaId: e.target.value }))} />
+                  <input placeholder="123456789012345" value={devFields.wabaId} onChange={e => setDevFields(f => ({ ...f, wabaId: e.target.value }))} className={DT.INPUT} />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Display Phone</Label>
-                  <Input placeholder="+20 100 000 0000" dir="ltr" value={devFields.displayPhone} onChange={e => setDevFields(f => ({ ...f, displayPhone: e.target.value }))} />
+                  <input placeholder="+20 100 000 0000" dir="ltr" value={devFields.displayPhone} onChange={e => setDevFields(f => ({ ...f, displayPhone: e.target.value }))} className={DT.INPUT} />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Display Name</Label>
-                  <Input placeholder="My Business" value={devFields.displayName} onChange={e => setDevFields(f => ({ ...f, displayName: e.target.value }))} />
+                  <input placeholder="My Business" value={devFields.displayName} onChange={e => setDevFields(f => ({ ...f, displayName: e.target.value }))} className={DT.INPUT} />
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" disabled={devLoading} onClick={handleDevConnect}>
+                <button className={DT.BTN_SM} disabled={devLoading} onClick={handleDevConnect}>
                   {devLoading ? "Connecting…" : "Connect"}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setShowDevForm(false)}>Cancel</Button>
+                </button>
+                <button className={DT.BTN_OUTLINE} onClick={() => setShowDevForm(false)}>Cancel</button>
               </div>
             </div>
           )}
@@ -228,10 +227,10 @@ export default function ChannelsListPage() {
             {t("Connect a WhatsApp Business number to start receiving messages", "اربط رقم واتساب بيزنس لتبدأ في استقبال الرسائل")}
           </p>
           {isAdmin && !atLimit && (
-            <Button size="sm" onClick={() => setShowSignup(true)} className="mt-2">
+            <button onClick={() => setShowSignup(true)} className={`${DT.BTN_PRIMARY} mt-2`}>
               <Plus className="size-4 me-1" />
               {t("Connect Now", "ربط رقم الآن")}
-            </Button>
+            </button>
           )}
         </div>
       ) : (
@@ -267,14 +266,12 @@ export default function ChannelsListPage() {
                   {/* Admin actions */}
                   {isAdmin && channel.status !== "disconnected" && channel.status !== "reconnect_required" && (
                     <div className="pt-2 border-t flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs text-muted-foreground hover:text-destructive"
+                      <button
+                        className="text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/5 px-3 py-1.5 rounded-md transition-colors inline-flex items-center gap-1"
                         onClick={() => handleDisconnect(channel._id as Id<"channels">, channel.displayName)}
                       >
                         {t("Disconnect", "قطع الاتصال")}
-                      </Button>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -346,14 +343,12 @@ export default function ChannelsListPage() {
                               />
                             </>
                           ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                            <button
+                              className={`${DT.BTN_OUTLINE} border-destructive/50 text-destructive hover:bg-destructive/10`}
                               onClick={() => { setReconnectChannelId(channel._id); setSignupError(null); }}
                             >
                               {t("Reconnect to prevent deletion", "أعد الاتصال لمنع الحذف")}
-                            </Button>
+                            </button>
                           )}
                         </div>
                       )}

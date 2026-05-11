@@ -5,9 +5,7 @@ import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { DT } from "@/lib/design-tokens";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
@@ -92,10 +90,10 @@ export default function QuickRepliesPage() {
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("Quick Replies", "الردود السريعة")}</h1>
-        <Button onClick={openForCreate}>
+        <button onClick={openForCreate} className={DT.BTN_PRIMARY}>
           <Plus className="me-2 size-4" />
           {t("Add Reply", "إضافة رد")}
-        </Button>
+        </button>
       </div>
 
       {quickReplies === undefined ? (
@@ -119,24 +117,22 @@ export default function QuickRepliesPage() {
           <p className="text-sm text-muted-foreground mb-4 max-w-md">
             {t("Create templates for common answers to reply faster to your customers.", "قم بإنشاء قوالب للإجابات الشائعة للرد بشكل أسرع على عملائك.")}
           </p>
-          <Button variant="outline" onClick={openForCreate}>
+          <button onClick={openForCreate} className={DT.BTN_OUTLINE}>
             <Plus className="me-2 size-4" />
             {t("Create your first reply", "أنشئ ردك الأول")}
-          </Button>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {quickReplies?.map((qr) => (
             <Card key={qr._id} className="relative group overflow-hidden flex flex-col">
               <div className="absolute top-2 inset-e-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon-sm" onClick={() => openForEdit(qr)}>
+                <button onClick={() => openForEdit(qr)} className={DT.BTN_ICON}>
                   <Pencil className="size-3.5" />
                   <span className="sr-only">Edit</span>
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon-sm" 
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                </button>
+                <button
+                  className={`${DT.BTN_ICON} text-destructive hover:bg-destructive/10 hover:text-destructive`}
                   onClick={async () => {
                     if (!confirm(t("Delete this reply?", "حذف هذا الرد؟"))) return;
                     try {
@@ -148,7 +144,7 @@ export default function QuickRepliesPage() {
                 >
                   <Trash2 className="size-3.5" />
                   <span className="sr-only">Delete</span>
-                </Button>
+                </button>
               </div>
               
               <CardHeader className="pb-2 pe-16 space-y-0 text-start">
@@ -184,10 +180,10 @@ export default function QuickRepliesPage() {
               <FileText className="size-5 text-muted-foreground" />
               <h2 className="text-lg font-semibold">{t("Message Templates", "قوالب الرسائل")}</h2>
             </div>
-            <Button variant="outline" size="sm" nativeButton={false} render={<Link href="/settings/templates" />}>
+            <Link href="/settings/templates" className={DT.BTN_OUTLINE}>
               {t("Manage Templates", "إدارة القوالب")}
               <ExternalLink className="ms-2 size-3.5" />
-            </Button>
+            </Link>
           </div>
           <p className="text-sm text-muted-foreground">
             {t(
@@ -228,43 +224,45 @@ export default function QuickRepliesPage() {
           <div className="space-y-5 flex-1 overflow-y-auto px-6 pb-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("Title", "العنوان")}</label>
-              <Input
+              <input
                 placeholder={t("e.g. Greeting", "مثال: ترحيب")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 dir="auto"
+                className={DT.INPUT}
               />
             </div>
-            
+
             <div className="space-y-2 flex flex-col min-h-50">
               <label className="text-sm font-medium">{t("Reply body", "نص الرد")}</label>
-              <Textarea
+              <textarea
                 placeholder={t("Hello, how can I help you?", "مرحباً، كيف يمكنني مساعدتك؟")}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                className="flex-1 resize-none"
+                className={`${DT.TEXTAREA} flex-1 resize-none`}
                 dir="auto"
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">{t("Category (optional)", "الفئة (اختياري)")}</label>
-              <Input
+              <input
                 placeholder={t("e.g. Support", "مثال: دعم")}
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 dir="auto"
+                className={DT.INPUT}
               />
             </div>
           </div>
 
           <div className="px-6 py-4 border-t border-border/60 bg-muted/30 mt-auto flex flex-col gap-2">
-            <Button onClick={handleSave} disabled={saving || !title.trim() || !body.trim()} className="w-full">
+            <button onClick={handleSave} disabled={saving || !title.trim() || !body.trim()} className={`${DT.BTN_PRIMARY} w-full`}>
               {saving ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
-            </Button>
-            <Button variant="outline" onClick={() => setIsSheetOpen(false)} className="w-full">
+            </button>
+            <button onClick={() => setIsSheetOpen(false)} className={`${DT.BTN_OUTLINE} w-full`}>
               {t("Cancel", "إلغاء")}
-            </Button>
+            </button>
           </div>
         </SheetContent>
       </Sheet>
