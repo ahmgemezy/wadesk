@@ -225,15 +225,13 @@ export function NotificationsSettings() {
                 </p>
               </button>
               {isAdmin && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-muted-foreground hover:text-destructive shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                <button
+                  className={`${DT.BTN_ICON} size-7 text-muted-foreground hover:text-destructive shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity`}
                   onClick={() => handleDelete(n._id)}
                   aria-label={t("Delete", "حذف")}
                 >
                   <Trash2 className="size-3.5" />
-                </Button>
+                </button>
               )}
             </li>
           ))}

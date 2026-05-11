@@ -348,7 +348,7 @@ export function InviteModal({ open, onClose, onInvited }: InviteModalProps) {
                 className={`w-full ${DT.BTN_PRIMARY}`}
               >
                 {t("Generate Link", "إنشاء رابط")}
-              </Button>
+              </button>
             )}
           </div>
         )}
