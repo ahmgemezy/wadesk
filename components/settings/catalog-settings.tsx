@@ -83,7 +83,7 @@ function VariantRowInput({
       <button
         type="button"
         onClick={onRemove}
-        className="size-7 flex items-center justify-center text-[#6E6E73] hover:text-[#FF3B30] rounded-lg transition-colors"
+        className={`size-7 flex items-center justify-center ${DT.TEXT_GRAY} ${DT.TEXT_RED_HOVER} rounded-lg`}
       >
         <XIcon className="size-3.5" />
       </button>
@@ -497,7 +497,7 @@ function ProductFormDialog({
           <DialogTitle className="text-[17px] font-semibold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">
             {isEdit ? t("Edit Product", "تعديل المنتج") : t("Add Product", "إضافة منتج")}
           </DialogTitle>
-          <p className="text-[13px] text-[#6E6E73] mt-0.5">
+          <p className="text-[13px] ${DT.TEXT_GRAY} mt-0.5">
             {t(
               "Fields marked * are required by Meta's catalog schema.",
               "الحقول المحددة بـ * مطلوبة في مخطط كتالوج Meta.",
@@ -512,12 +512,12 @@ function ProductFormDialog({
             <div className="flex gap-4">
               <div className="shrink-0">
                 <div
-                  className="size-36 rounded-2xl border-2 border-dashed border-black/[0.12] bg-black/[0.03] flex items-center justify-center overflow-hidden relative cursor-pointer group hover:border-[#0071E3]/50 transition-colors dark:border-white/[0.10] dark:bg-white/[0.03]"
+                  className="size-36 rounded-2xl border-2 border-dashed border-black/[0.12] bg-black/[0.03] flex items-center justify-center overflow-hidden relative cursor-pointer group ${DT.HOVER_BORDER_BLUE} transition-colors dark:border-white/[0.10] dark:bg-white/[0.03]"
                   onClick={() => !imageUploading && fileInputRef.current?.click()}
                 >
                   {imageUploading && (
                     <div className="absolute inset-0 bg-white/70 dark:bg-black/50 flex items-center justify-center z-10">
-                      <Loader2Icon className="size-5 animate-spin text-[#0071E3]" />
+                      <Loader2Icon className="size-5 animate-spin ${DT.CATALOG_LOADING}" />
                     </div>
                   )}
                   {imagePreview && !imageError ? (
@@ -534,7 +534,7 @@ function ProductFormDialog({
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center gap-1.5 text-[#6E6E73] group-hover:text-[#0071E3] transition-colors">
+                    <div className="flex flex-col items-center gap-1.5 ${DT.TEXT_GRAY} ${DT.CATALOG_TEXT_HOVER} transition-colors">
                       <ImageIcon className="size-7" />
                       <span className="text-[10px] font-medium">
                         {t("Click to upload", "انقر للرفع")}
@@ -550,7 +550,7 @@ function ProductFormDialog({
                         setImagePreview(null);
                         setImageError(false);
                       }}
-                      className="absolute top-1.5 end-1.5 size-5 rounded-full bg-white/90 dark:bg-black/60 flex items-center justify-center hover:bg-[#FF3B30] hover:text-white transition-colors z-10 shadow-sm"
+                      className="absolute top-1.5 end-1.5 size-5 rounded-full bg-white/90 dark:bg-black/60 flex items-center justify-center ${DT.CATALOG_ICON_REMOVE} hover:text-white transition-colors z-10 shadow-sm"
                     >
                       <XIcon className="size-3" />
                     </button>
@@ -574,10 +574,10 @@ function ProductFormDialog({
                     onChange={handleUrlChange}
                     placeholder="https://example.com/product.jpg"
                     dir="ltr"
-                    className={`${DT.INPUT}${imageError ? " !border-[#FF3B30]" : ""}`}
+                    className={`${DT.INPUT}${imageError ? " !border-[#FF3B30] dark:!border-[#FF453A]" : ""}`}
                   />
                   {imageError && (
-                    <p className="text-[12px] text-[#FF3B30]">
+                    <p className="text-[12px] ${DT.TEXT_RED}">
                       {t("Could not load image from this URL", "تعذّر تحميل الصورة من هذا الرابط")}
                     </p>
                   )}
@@ -586,14 +586,14 @@ function ProductFormDialog({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={imageUploading}
-                  className="inline-flex items-center gap-1.5 text-[13px] text-[#0071E3] hover:text-[#0077ED] disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-[13px] ${DT.TEXT_BLUE_INTERACTIVE} disabled:opacity-50 transition-colors"
                 >
                   <UploadCloudIcon className="size-3.5" />
                   {imageUploading
                     ? t("Uploading…", "جارٍ الرفع…")
                     : t("Or upload from your device", "أو ارفع من جهازك")}
                 </button>
-                <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] text-[#6E6E73] space-y-1">
+                <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] ${DT.TEXT_GRAY} space-y-1">
                   <p className="font-medium text-[#1D1D1F] dark:text-white/70">{t("Meta image requirements", "متطلبات صورة Meta")}</p>
                   <p>· {t("Min 500 × 500 px (1024 × 1024 recommended)", "الحد الأدنى 500 × 500 بكسل (يوصى بـ 1024 × 1024)")}</p>
                   <p>· {t("JPG, PNG or GIF — max 8 MB", "JPG أو PNG أو GIF — الحد الأقصى 8 ميجابايت")}</p>
@@ -606,7 +606,7 @@ function ProductFormDialog({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className={DT.SEC}>{t("Additional Images", "صور إضافية")}</p>
-                <span className="text-[12px] text-[#6E6E73]">{draft.additionalImages.length}/9</span>
+                <span className="text-[12px] ${DT.TEXT_GRAY}">{draft.additionalImages.length}/9</span>
               </div>
               <div className="flex flex-wrap gap-2 items-center">
                 {draft.additionalImages.map((url, idx) => (
@@ -616,7 +616,7 @@ function ProductFormDialog({
                     <button
                       type="button"
                       onClick={() => removeAdditionalImage(idx)}
-                      className="absolute top-0.5 end-0.5 size-4 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#FF3B30] hover:text-white"
+                      className="absolute top-0.5 end-0.5 size-4 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${DT.CATALOG_ICON_REMOVE} hover:text-white"
                     >
                       <XIcon className="size-2.5" />
                     </button>
@@ -627,7 +627,7 @@ function ProductFormDialog({
                     type="button"
                     onClick={() => additionalFileInputRef.current?.click()}
                     disabled={additionalImageUploading}
-                    className="size-16 rounded-xl border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] flex flex-col items-center justify-center gap-0.5 text-[#6E6E73] hover:text-[#0071E3] hover:border-[#0071E3]/40 transition-colors disabled:opacity-50"
+                    className={`size-16 rounded-xl border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] flex flex-col items-center justify-center gap-0.5 ${DT.TEXT_GRAY} hover:text-[#0071E3] dark:hover:text-[#0A84FF] hover:border-[#0071E3]/40 dark:hover:border-[#0A84FF]/40 transition-colors disabled:opacity-50`}
                   >
                     {additionalImageUploading ? (
                       <Loader2Icon className="size-4 animate-spin" />
@@ -668,7 +668,7 @@ function ProductFormDialog({
                     required
                     maxLength={100}
                   />
-                  <p className="text-[12px] text-[#6E6E73]">
+                  <p className="text-[12px] ${DT.TEXT_GRAY}">
                     {t(
                       "Must match product_retailer_id in your Meta catalog. Max 100 chars.",
                       "يجب أن يطابق product_retailer_id في كتالوج Meta الخاص بك. الحد الأقصى 100 حرف.",
@@ -680,7 +680,7 @@ function ProductFormDialog({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className={DT.LBL} htmlFor="pf-name">{t("Product Name", "اسم المنتج")} *</label>
-                  <span className={`text-[12px] ${nameLen > 170 ? "text-amber-500" : "text-[#6E6E73]"}`}>
+                  <span className={`text-[12px] ${nameLen > 170 ? "text-amber-500" : "${DT.TEXT_GRAY}"}`}>
                     {nameLen}/200
                   </span>
                 </div>
@@ -698,7 +698,7 @@ function ProductFormDialog({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className={DT.LBL} htmlFor="pf-desc">{t("Description", "الوصف")} *</label>
-                  <span className={`text-[12px] ${descLen > 9000 ? "text-amber-500" : "text-[#6E6E73]"}`}>
+                  <span className={`text-[12px] ${descLen > 9000 ? "text-amber-500" : "${DT.TEXT_GRAY}"}`}>
                     {descLen}/9,999
                   </span>
                 </div>
@@ -707,7 +707,7 @@ function ProductFormDialog({
                   value={draft.description}
                   onChange={field("description")}
                   placeholder={t("Describe the product — material, size, features…", "صف المنتج — الخامة، الحجم، المميزات…")}
-                  className="min-h-20 resize-none rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40"
+                  className={`min-h-20 resize-none rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40`}
                   maxLength={9999}
                 />
               </div>
@@ -756,7 +756,7 @@ function ProductFormDialog({
                   />
                 </div>
               </div>
-              <p className="text-[12px] text-[#6E6E73]">
+              <p className="text-[12px] ${DT.TEXT_GRAY}">
                 {t(
                   "Sale price must be lower than the regular price. Currency: ISO-4217 code (e.g. EGP, USD).",
                   "سعر التخفيض يجب أن يكون أقل من السعر الأصلي. العملة: رمز ISO-4217 (مثال: EGP، USD).",
@@ -858,7 +858,7 @@ function ProductFormDialog({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className={DT.SEC}>{t("Variants", "المتغيرات")}</p>
-                  <p className="text-[12px] text-[#6E6E73] mt-0.5">
+                  <p className="text-[12px] ${DT.TEXT_GRAY} mt-0.5">
                     {draft.hasVariants && !isEdit
                       ? t(
                           "Each row below creates a separate product. All share the same name, price, and image.",
@@ -907,7 +907,7 @@ function ProductFormDialog({
                       t("Pattern", "النمط"),
                       "",
                     ].map((h, i) => (
-                      <span key={i} className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-wider">{h}</span>
+                      <span key={i} className="text-[10px] font-semibold ${DT.TEXT_GRAY} uppercase tracking-wider">{h}</span>
                     ))}
                   </div>
 
@@ -931,7 +931,7 @@ function ProductFormDialog({
                       />
                     ))}
                     {draft.variantRows.length === 0 && (
-                      <p className="text-[13px] text-[#6E6E73] text-center py-3 border border-dashed border-black/[0.10] dark:border-white/[0.10] rounded-xl">
+                      <p className="text-[13px] ${DT.TEXT_GRAY} text-center py-3 border border-dashed border-black/[0.10] dark:border-white/[0.10] rounded-xl">
                         {t("No variants yet — click Add Variant below", "لا توجد متغيرات بعد — انقر على إضافة متغير أدناه")}
                       </p>
                     )}
@@ -961,7 +961,7 @@ function ProductFormDialog({
                     {t("Add Variant", "إضافة متغير")}
                   </button>
 
-                  <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] text-[#6E6E73] space-y-1">
+                  <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] ${DT.TEXT_GRAY} space-y-1">
                     <p>
                       · {t(
                         'Suffix appended to Retailer ID — e.g. base "SKU-001" + suffix "red-xl" → "SKU-001-red-xl"',
@@ -989,7 +989,7 @@ function ProductFormDialog({
                       className={`${DT.INPUT} font-mono`}
                       maxLength={100}
                     />
-                    <p className="text-[12px] text-[#6E6E73]">
+                    <p className="text-[12px] ${DT.TEXT_GRAY}">
                       {t("Leave empty if this product has no variants.", "اتركه فارغاً إذا لم تكن لهذا المنتج متغيرات.")}
                     </p>
                   </div>
@@ -1055,7 +1055,7 @@ function ProductFormDialog({
                 <label className={DT.LBL}>{t("Sale Price Effective Date", "فترة سريان سعر التخفيض")}</label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <p className="text-[12px] text-[#6E6E73]">{t("Start", "البداية")}</p>
+                    <p className="text-[12px] ${DT.TEXT_GRAY}">{t("Start", "البداية")}</p>
                     <input
                       type="datetime-local"
                       dir="ltr"
@@ -1069,7 +1069,7 @@ function ProductFormDialog({
                     />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[12px] text-[#6E6E73]">{t("End", "النهاية")}</p>
+                    <p className="text-[12px] ${DT.TEXT_GRAY}">{t("End", "النهاية")}</p>
                     <input
                       type="datetime-local"
                       dir="ltr"
@@ -1083,7 +1083,7 @@ function ProductFormDialog({
                     />
                   </div>
                 </div>
-                <p className="text-[12px] text-[#6E6E73]">
+                <p className="text-[12px] ${DT.TEXT_GRAY}">
                   {t("Leave both empty for an indefinite sale.", "اتركهما فارغَين للبيع المفتوح.")}
                 </p>
               </div>
@@ -1102,7 +1102,7 @@ function ProductFormDialog({
               </div>
 
               <div className="space-y-2">
-                <p className="text-[12px] text-[#6E6E73] font-medium">
+                <p className="text-[12px] ${DT.TEXT_GRAY} font-medium">
                   {t("Custom Labels (custom_label_0 … 4)", "تسميات مخصصة (custom_label_0 … 4)")}
                 </p>
                 <div className="grid grid-cols-5 gap-2">
@@ -1110,7 +1110,7 @@ function ProductFormDialog({
                     const key = `customLabel${i}` as keyof ProductDraft;
                     return (
                       <div key={i} className="space-y-0.5">
-                        <span className="text-[10px] text-[#6E6E73] font-medium">{i}</span>
+                        <span className="text-[10px] ${DT.TEXT_GRAY} font-medium">{i}</span>
                         <input
                           value={draft[key] as string}
                           onChange={field(key)}
@@ -1125,7 +1125,7 @@ function ProductFormDialog({
               </div>
 
               <div className="space-y-2">
-                <p className="text-[12px] text-[#6E6E73] font-medium">
+                <p className="text-[12px] ${DT.TEXT_GRAY} font-medium">
                   {t("Custom Numbers (custom_number_0 … 4)", "أرقام مخصصة (custom_number_0 … 4)")}
                 </p>
                 <div className="grid grid-cols-5 gap-2">
@@ -1133,7 +1133,7 @@ function ProductFormDialog({
                     const key = `customNumber${i}` as keyof ProductDraft;
                     return (
                       <div key={i} className="space-y-0.5">
-                        <span className="text-[10px] text-[#6E6E73] font-medium">{i}</span>
+                        <span className="text-[10px] ${DT.TEXT_GRAY} font-medium">{i}</span>
                         <input
                           value={draft[key] as string}
                           onChange={field(key)}
@@ -1152,7 +1152,7 @@ function ProductFormDialog({
             <div className="h-2" />
           </div>
 
-          <div className="shrink-0 border-t border-black/[0.06] dark:border-white/[0.06] px-6 py-4 flex items-center justify-end gap-2 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-sm">
+          <div className="shrink-0 border-t border-black/[0.06] dark:border-white/[0.06] px-6 py-4 flex items-center justify-end gap-2 bg-white/80 dark:bg-[#1C1C1E]/80 dark:bg-opacity-80 backdrop-blur-sm">
             <button type="button" className={DT.BTN_OUTLINE} onClick={() => onOpenChange(false)}>
               {t("Cancel", "إلغاء")}
             </button>
@@ -1259,7 +1259,7 @@ function ProductRow({
         />
       ) : (
         <div className="size-10 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] flex items-center justify-center shrink-0">
-          <ShoppingBagIcon className="size-4 text-[#6E6E73]" />
+          <ShoppingBagIcon className="size-4 ${DT.TEXT_GRAY}" />
         </div>
       )}
 
@@ -1272,7 +1272,7 @@ function ProductRow({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-[12px] text-[#6E6E73]">
+        <div className="flex items-center gap-2 text-[12px] ${DT.TEXT_GRAY}">
           <span dir="ltr" className="font-mono">{product.retailerId}</span>
           {product.price && (
             <span>
@@ -1296,7 +1296,7 @@ function ProductRow({
           <PencilIcon className="size-3.5" />
         </button>
         <AlertDialog>
-          <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]`}>
+          <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 dark:hover:!bg-[#FF453A]/10 hover:!text-[#FF3B30] dark:hover:!text-[#FF453A]`}>
             <Trash2Icon className="size-3.5" />
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -1479,9 +1479,9 @@ function CatalogCard({
             className="flex items-center gap-2 flex-1 min-w-0 text-start"
           >
             {expanded ? (
-              <ChevronUpIcon className="size-4 shrink-0 text-[#6E6E73]" />
+              <ChevronUpIcon className="size-4 shrink-0 ${DT.TEXT_GRAY}" />
             ) : (
-              <ChevronDownIcon className="size-4 shrink-0 text-[#6E6E73]" />
+              <ChevronDownIcon className="size-4 shrink-0 ${DT.TEXT_GRAY}" />
             )}
             {renaming ? (
               <input
@@ -1492,7 +1492,7 @@ function CatalogCard({
                   if (e.key === "Enter") handleRename();
                   if (e.key === "Escape") setRenaming(false);
                 }}
-                className="h-7 flex-1 rounded-lg border border-black/[0.12] bg-black/[0.04] px-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white"
+                className={`h-7 flex-1 rounded-lg border border-black/[0.12] bg-black/[0.04] px-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] dark:focus:border-[#0A84FF] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white`}
                 autoFocus
                 onClick={(e) => e.stopPropagation()}
               />
@@ -1519,7 +1519,7 @@ function CatalogCard({
             )}
 
             <span
-              className="font-mono text-[11px] text-[#6E6E73] bg-black/[0.04] dark:bg-white/[0.05] rounded-lg px-2 py-1 cursor-pointer hover:bg-black/[0.07] transition-colors"
+              className="font-mono text-[11px] ${DT.TEXT_GRAY} bg-black/[0.04] dark:bg-white/[0.05] rounded-lg px-2 py-1 cursor-pointer hover:bg-black/[0.07] transition-colors"
               dir="ltr"
               title={t("Click to copy Catalog ID", "انقر لنسخ معرّف الكتالوج")}
               onClick={() => {
@@ -1531,7 +1531,7 @@ function CatalogCard({
             </span>
 
             {syncStatus !== undefined && (
-              <span className="text-[12px] text-[#6E6E73]">
+              <span className="text-[12px] ${DT.TEXT_GRAY}">
                 {syncStatus?.productCount ?? 0} {t("items", "منتج")}
               </span>
             )}
@@ -1554,7 +1554,7 @@ function CatalogCard({
             </button>
 
             <AlertDialog>
-              <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]`}>
+              <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 dark:hover:!bg-[#FF453A]/10 hover:!text-[#FF3B30] dark:hover:!text-[#FF453A]`}>
                 <Trash2Icon className="size-3.5" />
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -1585,7 +1585,7 @@ function CatalogCard({
 
         {/* WhatsApp commerce settings strip */}
         {isActive && (
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 bg-[#F0FBF0] dark:bg-green-950/20 border-t border-green-200/60 dark:border-green-900/40 text-[13px]">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 ${DT.CATALOG_BG_GREEN} dark:bg-green-950/20 border-t border-green-200/60 dark:border-green-900/40 text-[13px]">
             <p className="text-[#1D1D1F] dark:text-white/70 font-medium shrink-0">
               {t("WhatsApp Storefront", "واجهة المتجر")}
             </p>
@@ -1597,7 +1597,7 @@ function CatalogCard({
                 disabled={togglingVisibility}
                 className={`w-4 h-4 rounded cursor-pointer ${DT.CHECKBOX_ACCENT} disabled:opacity-50`}
               />
-              <span className="flex items-center gap-1 text-[#6E6E73]">
+              <span className="flex items-center gap-1 ${DT.TEXT_GRAY}">
                 <EyeIcon className="size-3.5" />
                 {t("Visible to customers", "مرئي للعملاء")}
               </span>
@@ -1610,7 +1610,7 @@ function CatalogCard({
                 disabled={togglingCart}
                 className={`w-4 h-4 rounded cursor-pointer ${DT.CHECKBOX_ACCENT} disabled:opacity-50`}
               />
-              <span className="flex items-center gap-1 text-[#6E6E73]">
+              <span className="flex items-center gap-1 ${DT.TEXT_GRAY}">
                 <ShoppingCartIcon className="size-3.5" />
                 {t("Cart enabled", "عربة التسوق")}
               </span>
@@ -1622,7 +1622,7 @@ function CatalogCard({
         {expanded && (
           <div className="border-t border-black/[0.06] dark:border-white/[0.05] p-3.5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[12px] text-[#6E6E73]">{t("Last sync", "آخر تزامن")}: {lastSynced}</span>
+              <span className="text-[12px] ${DT.TEXT_GRAY}">{t("Last sync", "آخر تزامن")}: {lastSynced}</span>
               <button className={DT.BTN_SM} onClick={openCreate}>
                 <PlusIcon className="size-3.5" />
                 {t("Add Product", "إضافة منتج")}
@@ -1638,12 +1638,12 @@ function CatalogCard({
 
             {products === undefined ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2Icon className="size-4 animate-spin text-[#6E6E73]" />
+                <Loader2Icon className="size-4 animate-spin ${DT.TEXT_GRAY}" />
               </div>
             ) : products.length === 0 ? (
               <div className="flex flex-col items-center gap-2 py-8 text-center">
-                <ShoppingBagIcon className="size-9 text-[#6E6E73]/40" />
-                <p className="text-[14px] text-[#6E6E73]">
+                <ShoppingBagIcon className="size-9 ${DT.TEXT_GRAY}/40" />
+                <p className="text-[14px] ${DT.TEXT_GRAY}">
                   {q
                     ? t("No products found", "لا توجد منتجات")
                     : t("No products yet — add one or sync from Meta", "لا توجد منتجات — أضف منتجًا أو تزامن من Meta")}
@@ -1766,7 +1766,7 @@ function AddCatalogForm({
 
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.08]" />
-        <span className="text-[12px] text-[#6E6E73]">{t("or", "أو")}</span>
+        <span className="text-[12px] ${DT.TEXT_GRAY}">{t("or", "أو")}</span>
         <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.08]" />
       </div>
 
@@ -1789,7 +1789,7 @@ function AddCatalogForm({
           {t("Create in Meta", "إنشاء في Meta")}
         </button>
       </div>
-      <p className="text-[12px] text-[#6E6E73]">
+      <p className="text-[12px] ${DT.TEXT_GRAY}">
         {t(
           "Creates a catalog in your Meta Business Manager and links it automatically.",
           "ينشئ كتالوجًا في Meta Business Manager ويربطه تلقائيًا.",
@@ -1821,7 +1821,7 @@ function ChannelCatalogCard({
       <div className={`${DT.CARD} p-5`}>
         <p className="text-[16px] font-semibold text-[#1D1D1F] dark:text-white">{channel.displayName}</p>
         <div className="flex items-center justify-center py-6">
-          <Loader2Icon className="size-4 animate-spin text-[#6E6E73]" />
+          <Loader2Icon className="size-4 animate-spin ${DT.TEXT_GRAY}" />
         </div>
       </div>
     );
@@ -1839,7 +1839,7 @@ function ChannelCatalogCard({
       <div className="px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.05]">
         <p className="text-[16px] font-semibold tracking-[-0.2px] text-[#1D1D1F] dark:text-white">{channel.displayName}</p>
         {channel.displayPhone && (
-          <p className="text-[13px] text-[#6E6E73] mt-0.5" dir="ltr">
+          <p className="text-[13px] ${DT.TEXT_GRAY} mt-0.5" dir="ltr">
             {channel.displayPhone}
           </p>
         )}
@@ -1848,7 +1848,7 @@ function ChannelCatalogCard({
       {/* Catalog list */}
       <div className="p-4 space-y-2">
         {catalogs.length === 0 && !legacyCatalogId ? (
-          <p className="text-[14px] text-[#6E6E73] text-center py-3">
+          <p className="text-[14px] ${DT.TEXT_GRAY} text-center py-3">
             {t("No catalogs added yet", "لا توجد كتالوجات مضافة بعد")}
           </p>
         ) : (
@@ -1882,14 +1882,14 @@ export function CatalogSettings() {
   if (channels === undefined) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2Icon className="size-5 animate-spin text-[#6E6E73]" />
+        <Loader2Icon className="size-5 animate-spin ${DT.TEXT_GRAY}" />
       </div>
     );
   }
 
   if (channels.length === 0) {
     return (
-      <p className="text-[14px] text-[#6E6E73]">
+      <p className="text-[14px] ${DT.TEXT_GRAY}">
         {t("No WhatsApp channels configured yet.", "لا توجد أرقام واتساب مضافة بعد.")}
       </p>
     );
@@ -1897,7 +1897,7 @@ export function CatalogSettings() {
 
   return (
     <div className="space-y-4">
-      <p className="text-[14px] text-[#6E6E73] leading-relaxed">
+      <p className="text-[14px] ${DT.TEXT_GRAY} leading-relaxed">
         {t(
           "Connect Meta Commerce Manager catalogs to enable product browsing in conversations. You can add multiple catalogs per channel. Available on Growth plan and above.",
           "اربط كتالوجات Meta Commerce Manager لتفعيل تصفح المنتجات في المحادثات. يمكنك إضافة عدة كتالوجات لكل رقم. متاح في خطة Growth وما فوقها.",

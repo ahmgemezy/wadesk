@@ -197,10 +197,21 @@ export const DT = {
   BORDER_RED:   "border-[#FF3B30] dark:border-[#FF453A]",
   BG_RED_HOVER: "hover:bg-[#FF3B30]/10 dark:hover:bg-[#FF453A]/10",
   TEXT_RED:     "text-[#FF3B30] dark:text-[#FF453A]",
+  TEXT_RED_HOVER: "hover:text-[#FF3B30] dark:hover:text-[#FF453A] transition-colors",
   TEXT_GRAY:    "text-[#6E6E73] dark:text-white/50",
+  TEXT_BLUE_INTERACTIVE: "text-[#0071E3] hover:text-[#0077ED] dark:text-[#0A84FF] dark:hover:text-[#1A91FF] transition-colors disabled:opacity-50",
+  TEXT_GRAY_HOVER: "hover:text-[#0071E3] dark:hover:text-[#0A84FF] transition-colors",
 
   // ── Info box ──────────────────────────────────────────────────────────────
   INFO_BOX: "rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] text-[#6E6E73] dark:text-white/50",
+
+  // ── Catalog specific ────────────────────────────────────────────────────────
+  CATALOG_BG_GREEN: "bg-[#F0FBF0] dark:bg-green-950/20",
+  CATALOG_BORDER_GREEN: "border-green-200/60 dark:border-green-900/40",
+  CATALOG_ICON_REMOVE: "hover:bg-[#FF3B30] hover:text-white dark:hover:bg-[#FF453A] transition-colors",
+  CATALOG_BORDER_UPLOAD: "hover:border-[#0071E3]/50 dark:hover:border-[#0A84FF]/50 transition-colors",
+  CATALOG_TEXT_HOVER: "group-hover:text-[#0071E3] dark:group-hover:text-[#0A84FF] transition-colors",
+  CATALOG_LOADING: "text-[#0071E3] dark:text-[#0A84FF]",
 
   // ── Form inputs ───────────────────────────────────────────────────────────
   CHECKBOX_ACCENT: "accent-[#0071E3] dark:accent-[#0A84FF]",
