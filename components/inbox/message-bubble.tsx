@@ -1,7 +1,7 @@
 "use client";
 
 import { useT, useLocale } from "@/lib/i18n/context";
-import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIcon, CalendarClockIcon } from "lucide-react";
+import { FileIcon, DownloadIcon, MapPinIcon, MicIcon, XIcon, Trash2Icon, ReplyIcon, CalendarClockIcon, ShoppingBagIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { MessageActionMenu } from "./message-action-menu";
 
@@ -77,7 +77,7 @@ export type Message = {
   _id: string;
   direction: "inbound" | "outbound";
   content: string;
-  contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template" | "system_event";
+  contentType: "text" | "image" | "document" | "unsupported" | "audio" | "video" | "sticker" | "location" | "template" | "system_event" | "product";
   isInternalNote: boolean;
   authorId: string | undefined;
   source?: "customer" | "api" | "mobile";
@@ -654,6 +654,51 @@ export function MessageBubble({
               <MapPinIcon className="size-4 text-destructive shrink-0" />
               <span className="text-sm font-medium">{locationName}</span>
             </a>
+            {timeRow}
+            {reactionBadges}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (message.contentType === "product") {
+    let product: {
+      name?: string;
+      description?: string;
+      price?: string;
+      currency?: string;
+      imageUrl?: string;
+    } = {};
+    try { product = JSON.parse(message.content) as typeof product; } catch { /* ignore */ }
+
+    return (
+      <div className={`relative group ${isInbound ? "flex justify-start" : "flex justify-end"} animate-bubble-in`}>
+        {actionMenu}
+        <div className={bubbleBase + " p-0 overflow-hidden w-52"}>
+          {product.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt={product.name ?? t("Product", "منتج")}
+              className="w-full h-36 object-cover"
+              loading="lazy"
+            />
+          )}
+          <div className="p-2.5">
+            <div className="flex items-start gap-1 mb-0.5">
+              <ShoppingBagIcon className="size-3.5 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-sm font-semibold leading-tight">{product.name ?? t("Product", "منتج")}</p>
+            </div>
+            {product.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{product.description}</p>
+            )}
+            {product.price && (
+              <p className="text-sm font-medium mt-1">
+                {product.price}
+                {product.currency ? ` ${product.currency}` : ""}
+              </p>
+            )}
             {timeRow}
             {reactionBadges}
           </div>

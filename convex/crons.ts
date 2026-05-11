@@ -69,4 +69,11 @@ crons.interval(
   internal.broadcasts.processScheduledBroadcastsInternal,
 );
 
+crons.interval(
+  "sync-catalog-products",
+  { hours: 24 },
+  internal.actions.syncCatalog.syncAllCatalogs,
+  {},
+);
+
 export default crons;

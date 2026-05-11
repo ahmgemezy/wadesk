@@ -44,9 +44,11 @@ export function PlanSelector() {
         });
       } else {
         await updateSubscription({ plan: planId });
+        toast.success(t("Plan update requested. This may take a few seconds.", "تم طلب تحديث الخطة. قد يستغرق ذلك بضع ثوانٍ."));
       }
     } catch (err) {
       console.error("[PlanSelector] plan change failed:", err);
+      toast.error(t("Something went wrong. Please try again.", "حدث خطأ ما. يرجى المحاولة مرة أخرى."));
     } finally {
       setLoading(null);
     }

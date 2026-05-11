@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { TemplatePicker } from "@/components/templates/template-picker";
+import { CatalogBrowser } from "@/components/catalog/catalog-browser";
 import { ReplyContextBanner } from "./reply-context-banner";
 import {
   Popover,
@@ -446,6 +447,11 @@ export function MessageInput({
           {/* Template picker — hidden in note mode */}
           {!isNote && (
             <TemplatePicker onSelect={(text) => setTemplateContent(text)} />
+          )}
+
+          {/* Catalog browser — hidden in note mode; invisible when channel has no catalog */}
+          {!isNote && (
+            <CatalogBrowser conversationId={conversationId} />
           )}
 
           {/* Attachment & extras — hidden in note mode */}

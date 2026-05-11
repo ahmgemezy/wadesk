@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetTrigger,
@@ -16,7 +17,7 @@ import { type MarketingLocale, t } from "@/lib/marketing/i18n";
 function MobileNavSheet({ isAuthenticated, locale }: { isAuthenticated: boolean; locale: MarketingLocale }) {
   return (
     <Sheet>
-      <SheetTrigger render={<Button variant="ghost" size="icon" className="md:hidden" />}>
+      <SheetTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "md:hidden")}>
         <Menu />
       </SheetTrigger>
       <SheetContent side="right" className="w-72">

@@ -95,6 +95,15 @@ export const getById = internalQuery({
   },
 });
 
+export const listChannelsWithCatalog = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    // Bounded scan: channels table is small across all tenants at SMB scale
+    const channels = await ctx.db.query("channels").take(2000);
+    return channels.filter(c => c.status === "active" && c.catalogId !== undefined);
+  },
+});
+
 export const get = query({
   args: { channelId: v.id("channels") },
   handler: async (ctx, args) => {

@@ -150,3 +150,7 @@ export function assertBroadcastTemplateLimitNotReached(
 export function getBroadcastTemplateLimit(plan: Plan): number {
   return BROADCAST_TEMPLATE_LIMITS[plan] ?? BROADCAST_TEMPLATE_LIMITS.free;
 }
+
+export function assertCatalogAllowed(plan: Plan): void {
+  assertPlanAtLeast(plan, "growth");
+}

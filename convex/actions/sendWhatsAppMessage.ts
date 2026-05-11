@@ -262,6 +262,69 @@ export const sendReaction = internalAction({
   },
 });
 
+export const sendProduct = internalAction({
+  args: {
+    messageId: v.id("messages"),
+    phoneNumberId: v.string(),
+    contactPhone: v.string(),
+    catalogId: v.string(),
+    retailerId: v.string(),
+    tenantId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    try {
+      const token = await getChannelToken(ctx, args.phoneNumberId, args.tenantId);
+      const response = await fetch(
+        `${BASE}/${args.phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: args.contactPhone,
+            type: "interactive",
+            interactive: {
+              type: "product",
+              action: {
+                catalog_id: args.catalogId,
+                product_retailer_id: args.retailerId,
+              },
+            },
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => "");
+        await markFailed(ctx, args.messageId, args.tenantId, errBody);
+        return;
+      }
+
+      const data = (await response.json()) as { messages?: { id: string }[] };
+      const metaId = data.messages?.[0]?.id;
+      if (metaId) {
+        await ctx.runMutation(internal.messages.setMetaMessageId, {
+          messageId: args.messageId,
+          metaMessageId: metaId,
+          tenantId: args.tenantId,
+        });
+      }
+
+      await ctx.runMutation(internal.messages.updateStatus, {
+        messageId: args.messageId,
+        status: "sent",
+        tenantId: args.tenantId,
+      });
+    } catch (err) {
+      await markFailed(ctx, args.messageId, args.tenantId, String(err));
+    }
+  },
+});
+
 export const sendMediaMessage = internalAction({
   args: {
     messageId: v.id("messages"),

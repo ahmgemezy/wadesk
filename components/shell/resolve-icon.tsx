@@ -19,6 +19,7 @@ import {
   Bell,
   Bot,
   ShieldCheck,
+  ShoppingBag,
 } from "lucide-react";
 import type { IconName } from "@/lib/shell/types";
 import type { LucideIcon } from "lucide-react";
@@ -44,6 +45,7 @@ const ICON_MAP: Record<IconName, LucideIcon> = {
   Bell,
   Bot,
   ShieldCheck,
+  ShoppingBag,
 };
 
 export function resolveIcon(name: IconName): LucideIcon {

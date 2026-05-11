@@ -108,6 +108,13 @@ export const NAV_ITEMS: NavItem[] = [
         minRole: "admin",
       },
       {
+        href: "/settings/catalog",
+        labelAr: "كتالوج المنتجات",
+        labelEn: "Product Catalog",
+        icon: "ShoppingBag",
+        minRole: "admin",
+      },
+      {
         href: "/settings/notifications",
         labelAr: "الإشعارات",
         labelEn: "Notifications",

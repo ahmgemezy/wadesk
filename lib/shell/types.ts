@@ -20,7 +20,8 @@ export type IconName =
   | "SlidersHorizontal"
   | "Bell"
   | "Bot"
-  | "ShieldCheck";
+  | "ShieldCheck"
+  | "ShoppingBag";
 
 export interface NavItem {
   href: string;

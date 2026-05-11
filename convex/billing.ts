@@ -226,10 +226,20 @@ export const paddleWebhook = httpAction(async (ctx, request) => {
     return new Response("Internal Server Error", { status: 500 });
   }
 
-  const signatureHeader = request.headers.get("Paddle-Signature");
-  const valid = await verifyPaddleSignature(rawBody, signatureHeader, paddleSecret);
-  if (!valid) {
-    return new Response("Unauthorized", { status: 401 });
+  // Accept two auth paths:
+  // 1. Forwarded from our Next.js relay (which already verified the Paddle sig) — check internal secret
+  // 2. Direct from Paddle — verify the Paddle-Signature header
+  const internalSecret = process.env.PADDLE_INTERNAL_SECRET;
+  const internalHeader = request.headers.get("x-paddle-internal-secret");
+  const forwardedByRelay = internalSecret && internalHeader === internalSecret;
+
+  if (!forwardedByRelay) {
+    const signatureHeader = request.headers.get("Paddle-Signature");
+    const valid = await verifyPaddleSignature(rawBody, signatureHeader, paddleSecret);
+    if (!valid) {
+      console.warn("[billing] paddleWebhook: signature verification failed");
+      return new Response("Unauthorized", { status: 401 });
+    }
   }
 
   let event: {

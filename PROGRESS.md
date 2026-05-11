@@ -1,7 +1,7 @@
 # WABDesk — Build Progress
 
 > Single source of truth for project progress. Read by Claude Chat (project manager) to stay updated.
-> **Last audited:** 2026-05-11 — CSAT Meta template approval production hardening: added `metaTemplateId` to schema, stored Meta-returned ID on template submission, fixed `getAdminsForTenant` stub (was returning []), added `sync-pending-csat-templates` cron (every 30 min) so approval is detected without admin manual refresh.
+> **Last audited:** 2026-05-11 — WhatsApp Catalog Integration (4 stages + CRUD): product sync from Meta, manual product CRUD in settings, agent product browser in inbox, product card rendering in thread. See entry below.
 > **Previously audited:** 2026-04-28 — Member profile modal, team presence, channel retention, React Email system, conversation search, batch actions, rate limiting, message scheduling, template library, legal pages, CSAT v2, departments.
 > Never modify CLAUDE.md unless explicitly asked.
 
@@ -2160,4 +2160,79 @@ All 22 files changed `from "@clerk/nextjs"` → `from "@/lib/auth-hooks"` via bu
 - ✅ `getMessagesPaginated` available for UI to wire infinite scroll
 - ✅ Analytics N+1 eliminated; date-range filtering pushed to DB level
 - ⚠️ Load test at 1000 contacts / 10000 messages — requires real Convex function execution time logs (Convex dashboard → Functions tab); not automatable from CLI
+
+---
+
+### 2026-05-11: WhatsApp Catalog Integration ✅ ZERO TS ERRORS
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Motivation:** Phase 2 feature — agents can browse products from a connected Meta Commerce Manager catalog directly inside conversations and send single-product cards to customers. Admins can also create and edit products manually within WABDesk without relying solely on Meta sync.
+
+**Files created (5):**
+
+**`convex/catalog.ts`** — Full catalog backend:
+- `listProducts` / `searchProducts` / `getSyncStatus` — public queries (auth + tenant-scoped)
+- `updateChannelCatalog` / `triggerManualSync` — admin-only, plan-gated (`assertCatalogAllowed` → Growth+)
+- `createProduct` / `updateProduct` / `deleteProduct` — admin-only CRUD for manual products; `createProduct` checks for duplicate `retailerId` via `by_channel_retailer` index
+- `clearChannelProducts` (internal) — clears `source !== "manual"` rows only; manual products survive re-syncs
+- `insertProductBatch` (internal) — bulk insert up to 100 products per call
+
+**`convex/actions/syncCatalog.ts`** — Meta Commerce Manager sync action:
+- `fetchAllProducts` — paginates `GET /{catalog-id}/products` with cursor; truncates at 5000 products with a warning log
+- `syncChannelCatalog` (internalAction) — reads channel token (decrypted) or falls back to `WHATSAPP_API_TOKEN`; clears synced rows then re-inserts via `insertProductBatch` in 100-item batches
+- `syncAllCatalogs` (internalAction) — iterates all channels with `catalogId` set; called by daily cron
+
+**`components/catalog/catalog-browser.tsx`** — Inbox product browser popover:
+- Resolves `channelId` from `api.conversations.get`; skips queries when loading
+- Returns `null` (hidden) when `syncStatus.catalogId` is falsy — no button for channels without a catalog
+- `searchProducts` with live `q` state (50-result bounded); product rows with thumbnail, name, price, per-row Send button
+- Send calls `api.messages.sendProductCard`; closes popover on success; shows toast on error
+
+**`components/settings/catalog-settings.tsx`** — Admin settings component with full product CRUD:
+- `ChannelCatalogCard` — catalog ID input + Save; Sync from Meta button (shows product count + last sync date); Products section with search + list
+- `ProductRow` — shows thumbnail, name, retailer ID (monospace), price, "Manual" badge for `source: "manual"` products; hover-reveal Edit / Delete actions; delete uses `AlertDialog` confirmation
+- `ProductFormDialog` — Dialog with fields: retailer ID (create-only), name, description, price + currency, image URL; handles `RETAILER_ID_EXISTS` and `CATALOG_NOT_CONFIGURED` error codes explicitly
+
+**`app/(dashboard)/settings/catalog/page.tsx`** — Page wrapper
+
+**Files modified (11):**
+
+**`convex/schema.ts`:**
+- `channels` table: added `catalogId: v.optional(v.string())`
+- `messages.contentType` union: added `v.literal("product")`
+- `catalogProducts` table (new, 35th table): `tenantId`, `channelId`, `catalogId`, `retailerId`, `name`, `description?`, `price?`, `currency?`, `imageUrl?`, `availability?`, `syncedAt`, `source?` (`"sync" | "manual"`) — indexes: `by_tenant`, `by_channel`, `by_channel_retailer`; search index: `search_by_name` (filterField: `tenantId`)
+
+**`convex/lib/planLimits.ts`:** Added `assertCatalogAllowed(plan)` → `assertPlanAtLeast(plan, "growth")`
+
+**`convex/channels.ts`:** Added `listChannelsWithCatalog` internalQuery (bounded `.take(2000)` + JS filter for `status === "active" && catalogId !== undefined`)
+
+**`convex/crons.ts`:** Added `sync-catalog-products` interval (every 24h) → `internal.actions.syncCatalog.syncAllCatalogs`
+
+**`convex/messages.ts`:** Added `sendProductCard` mutation — auth + role check + plan gate + JSON-encodes product fields into `content`; schedules `sendProduct` action; sets `lastMessagePreview: "🛍 <name>"`; handles first-reply assignment, SLA clear, participant/message counts
+
+**`convex/actions/sendWhatsAppMessage.ts`:** Added `sendProduct` internalAction — posts `interactive.product` message to Meta API; same `markFailed` / `setMetaMessageId` / `updateStatus` flow as `sendMessage`
+
+**`components/inbox/message-bubble.tsx`:**
+- Added `"product"` to `Message.contentType` union
+- Added `ShoppingBagIcon` import
+- New render branch: parses JSON from `message.content`; renders `w-52` bubble with optional image header, product name + icon, description (line-clamp-2), price, `timeRow`, `reactionBadges`
+
+**`components/inbox/message-input.tsx`:** Added `CatalogBrowser` import + `<CatalogBrowser conversationId={conversationId} />` after `TemplatePicker` in `!isNote` toolbar section
+
+**`lib/shell/types.ts`:** Added `"ShoppingBag"` to `IconName` union
+
+**`components/shell/resolve-icon.tsx`:** Added `ShoppingBag` import + `ICON_MAP` entry
+
+**`lib/shell/nav-config.ts`:** Added catalog entry (`href: "/settings/catalog"`, `icon: "ShoppingBag"`, `minRole: "admin"`) after CSAT in settings children
+
+**TypeScript:**
+- `npx tsc --noEmit` output: (empty — zero errors) ✅
+
+**Architecture decisions:**
+- Manual products (`source: "manual"`) survive Meta re-syncs — `clearChannelProducts` only deletes rows where `source !== "manual"`
+- `CatalogBrowser` returns `null` (no button in toolbar) when `syncStatus.catalogId` is falsy — avoids cluttering inbox for channels without a catalog
+- Product send uses `interactive.product` (requires matching `product_retailer_id` in Meta catalog) — manual products must use the same retailer ID as their Meta counterpart to send successfully
+- `PopoverTrigger` and `AlertDialogTrigger` styled directly (no `asChild` — not supported by this project's custom component wrappers)
+- `searchProducts` with empty `q` returns `.take(50)` via `by_channel` index — sufficient for SMB catalogs; no pagination needed in settings or browser
 

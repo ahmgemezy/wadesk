@@ -3,6 +3,7 @@ import { query, mutation, internalMutation, internalQuery, action } from "./_gen
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { getCallerIdentity, isAdminOrSupervisor } from "./lib/auth";
+import { assertCatalogAllowed } from "./lib/planLimits";
 import { enforceRateLimit, makeUserMutationKey } from "./lib/rateLimit";
 import {
   incrementParticipantMessageCount,
@@ -122,6 +123,126 @@ export const sendReply = mutation({
       phoneNumberId: channel.phoneNumberId,
       contactPhone: contact.phone,
       content: args.content,
+      tenantId,
+    });
+
+    await incrementParticipantMessageCount(ctx, {
+      tenantId,
+      conversationId: args.conversationId,
+      agentId: callerId,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.conversationMetrics.recordFirstResponse, {
+      conversationId: args.conversationId,
+      firstResponseAt: Date.now(),
+    });
+
+    await ctx.scheduler.runAfter(0, internal.conversationMetrics.incrementMessageCount, {
+      conversationId: args.conversationId,
+    });
+
+    return messageId;
+  },
+});
+
+export const sendProductCard = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    catalogId: v.string(),
+    retailerId: v.string(),
+    name: v.string(),
+    description: v.optional(v.string()),
+    price: v.optional(v.string()),
+    currency: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId)
+      throw new ConvexError("NOT_FOUND");
+
+    if (
+      !isAdminOrSupervisor(orgRole) &&
+      conversation.assignedAgentId !== callerId &&
+      conversation.assignedAgentId !== undefined
+    ) {
+      throw new ConvexError("FORBIDDEN");
+    }
+
+    const tenant = await ctx.db
+      .query("tenants")
+      .withIndex("by_tenantId", q => q.eq("tenantId", tenantId))
+      .unique();
+    if (!tenant) throw new ConvexError("TENANT_NOT_FOUND");
+    assertCatalogAllowed(tenant.plan);
+
+    const content = JSON.stringify({
+      catalogId: args.catalogId,
+      retailerId: args.retailerId,
+      name: args.name,
+      description: args.description,
+      price: args.price,
+      currency: args.currency,
+      imageUrl: args.imageUrl,
+    });
+
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      tenantId,
+      direction: "outbound",
+      content,
+      contentType: "product",
+      isInternalNote: false,
+      authorId: callerId,
+      status: "sending",
+      timestamp: Date.now(),
+      createdAt: Date.now(),
+    });
+
+    const channel = await ctx.db.get(conversation.channelId);
+    if (!channel) throw new ConvexError("CHANNEL_NOT_FOUND");
+
+    const contact = await ctx.db.get(conversation.contactId);
+    if (!contact) throw new ConvexError("CONTACT_NOT_FOUND");
+
+    let assignedAgentId = conversation.assignedAgentId;
+    if (!assignedAgentId) {
+      let effectiveMode: string | undefined;
+      if (conversation.departmentId) {
+        const dept = await ctx.db.get(conversation.departmentId);
+        effectiveMode = dept?.assignmentMode ?? "manual";
+      } else {
+        effectiveMode = channel.assignmentMode;
+      }
+      if (effectiveMode === "first_reply") {
+        assignedAgentId = callerId;
+      }
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      lastMessageAt: Date.now(),
+      lastMessagePreview: `🛍 ${args.name.slice(0, 95)}`,
+      assignedAgentId,
+      ...(conversation.slaBreachedAt !== undefined ? { slaBreachedAt: undefined } : {}),
+    });
+
+    if (!conversation.assignedAgentId && assignedAgentId === callerId) {
+      await openParticipantStint(ctx, {
+        tenantId,
+        conversationId: args.conversationId,
+        agentId: callerId,
+        departmentId: conversation.departmentId,
+      });
+    }
+
+    await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendProduct, {
+      messageId,
+      phoneNumberId: channel.phoneNumberId,
+      contactPhone: contact.phone,
+      catalogId: args.catalogId,
+      retailerId: args.retailerId,
       tenantId,
     });
 

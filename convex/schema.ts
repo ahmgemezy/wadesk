@@ -54,6 +54,7 @@ export default defineSchema({
     slaThresholdMinutes: v.optional(v.number()),
     slaEnabled: v.optional(v.boolean()),
     reopenWindowHours: v.optional(v.number()),  // window after resolution where a new inbound reopens the same conversation; default 24h
+    catalogId: v.optional(v.string()),            // Meta Commerce Manager catalog ID for product browsing
 
     pendingDisplayName: v.optional(v.string()),
     displayNameStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),
@@ -240,6 +241,7 @@ export default defineSchema({
       v.literal("location"),
       v.literal("template"),
       v.literal("system_event"),
+      v.literal("product"),
     ),
     isInternalNote: v.boolean(),
     authorId: v.optional(v.string()),
@@ -777,4 +779,39 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_email_tenant", ["email", "tenantId"]),
+
+  catalogProducts: defineTable({
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+    catalogId: v.string(),
+    retailerId: v.string(),              // Meta product_retailer_id (used for sending)
+    name: v.string(),
+    description: v.optional(v.string()),
+    price: v.optional(v.string()),       // as returned by Meta ("19.99")
+    currency: v.optional(v.string()),
+    imageUrl: v.optional(v.string()),
+    availability: v.optional(v.string()),
+    syncedAt: v.number(),
+    source: v.optional(v.union(v.literal("sync"), v.literal("manual"))),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_channel", ["channelId"])
+    .index("by_channel_retailer", ["channelId", "retailerId"])
+    .index("by_channel_catalog", ["channelId", "catalogId"])
+    .searchIndex("search_by_name", {
+      searchField: "name",
+      filterFields: ["tenantId"],
+    }),
+
+  catalogs: defineTable({
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+    metaCatalogId: v.string(),
+    name: v.string(),
+    createdAt: v.number(),
+    lastSyncedAt: v.optional(v.number()),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_channel", ["channelId"])
+    .index("by_channel_meta", ["channelId", "metaCatalogId"]),
 });
