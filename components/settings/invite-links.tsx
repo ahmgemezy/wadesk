@@ -464,18 +464,17 @@ export function InviteLinks() {
       <div className="space-y-4">
         {/* Section header */}
         <div className="flex items-center justify-between gap-4">
-          <h3 className="text-base font-semibold">
+          <h3 className={DT.H3}>
             {t("Invite Links", "روابط الدعوة")}
           </h3>
           {isAdminOrSupervisor && (
-            <Button
-              size="sm"
+            <button
+              className={`${DT.BTN_SM} flex items-center gap-1.5`}
               onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-1.5"
             >
               <Plus className="size-4" />
               {t("Create New Link", "إنشاء رابط جديد")}
-            </Button>
+            </button>
           )}
         </div>
 
@@ -495,15 +494,13 @@ export function InviteLinks() {
               </p>
             </div>
             {isAdminOrSupervisor && (
-              <Button
-                size="sm"
-                variant="outline"
+              <button
+                className={`${DT.BTN_SM} mt-1 flex items-center gap-1.5`}
                 onClick={() => setCreateOpen(true)}
-                className="mt-1 flex items-center gap-1.5"
               >
                 <Plus className="size-4" />
                 {t("Create First Link", "إنشاء أول رابط")}
-              </Button>
+              </button>
             )}
           </div>
         ) : (
