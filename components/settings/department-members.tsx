@@ -5,7 +5,7 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { useOrganization, useUser } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { Badge } from "@/components/ui/badge";
 import {
   Command,
@@ -134,12 +134,12 @@ export function DepartmentMembers({ departmentId }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">
+        <h3 className={DT.H3}>
           {t("Department Members", "أعضاء الإدارة")}
         </h3>
         {canManage && (
           <Popover open={addOpen} onOpenChange={setAddOpen}>
-            <PopoverTrigger render={<Button size="sm" variant="outline" />}>
+            <PopoverTrigger className={DT.BTN_OUTLINE}>
               <UserPlus className="size-4 me-1.5" />
               {t("Add Member", "إضافة عضو")}
               <ChevronDown className="size-3 ms-1 opacity-50" />
@@ -296,15 +296,13 @@ function MemberRow({ member, canRemove, isRemoving, isSelf, onRemove, t }: Membe
         {member.role === "org:supervisor" ? t("Supervisor", "مشرف") : t("Agent", "وكيل")}
       </Badge>
       {canRemove && !isSelf && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="text-muted-foreground hover:text-destructive shrink-0"
+        <button
+          className={`${DT.BTN_ICON} text-muted-foreground hover:text-destructive shrink-0`}
           disabled={isRemoving}
           onClick={onRemove}
         >
           <X className="size-4" />
-        </Button>
+        </button>
       )}
     </div>
   );

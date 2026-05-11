@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { useT } from "@/lib/i18n/context";
 
@@ -69,31 +68,34 @@ export function AddDepartmentDialog({ open, onClose }: AddDepartmentDialogProps)
           <DialogTitle>{t("Add Department", "إضافة إدارة")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <Input
+          <input
             placeholder={t("Department name", "اسم الإدارة")}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            className={DT.INPUT}
           />
-          <Input
+          <input
             placeholder="Phone Number ID"
             value={phoneNumberId}
             onChange={(e) => setPhoneNumberId(e.target.value)}
             dir="ltr"
+            className={DT.INPUT}
           />
-          <Input
+          <input
             placeholder="WABA ID"
             value={wabaId}
             onChange={(e) => setWabaId(e.target.value)}
             dir="ltr"
+            className={DT.INPUT}
           />
-          <Button
+          <button
             onClick={handleCreate}
             disabled={!name.trim() || !phoneNumberId.trim() || !wabaId.trim() || saving}
-            className="w-full"
+            className={`${DT.BTN_PRIMARY} w-full`}
           >
             <Plus className="size-4 me-1" />
             {saving ? t("Adding...", "جارٍ الإضافة...") : t("Add", "إضافة")}
-          </Button>
+          </button>
           {error && (
             <div className="text-sm text-destructive bg-destructive/10 rounded-md p-2">
               {error}

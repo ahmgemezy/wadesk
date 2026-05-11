@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -99,11 +98,11 @@ export function DepartmentList({ channelId }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">
+        <h3 className={DT.H3}>
           {t("Departments", "الإدارات")}
         </h3>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger render={<Button size="sm" variant="outline" />}>
+          <DialogTrigger className={DT.BTN_OUTLINE}>
             <Plus className="size-4 me-1" />
             {t("Add Department", "إضافة إدارة")}
           </DialogTrigger>
@@ -112,19 +111,21 @@ export function DepartmentList({ channelId }: Props) {
               <DialogTitle>{t("Create Department", "إنشاء إدارة")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 pt-2">
-              <Input
+              <input
                 placeholder={t("Department name", "اسم الإدارة")}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
+                className={DT.INPUT}
               />
-              <Input
+              <input
                 placeholder={t("Description (optional)", "الوصف (اختياري)")}
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
+                className={DT.INPUT}
               />
-              <Button onClick={handleCreate} disabled={creating || !newName.trim()} className="w-full">
+              <button onClick={handleCreate} disabled={creating || !newName.trim()} className={`${DT.BTN_PRIMARY} w-full`}>
                 {creating ? t("Creating...", "جاري الإنشاء...") : t("Create", "إنشاء")}
-              </Button>
+              </button>
             </div>
           </DialogContent>
         </Dialog>
@@ -164,37 +165,32 @@ export function DepartmentList({ channelId }: Props) {
 
               <div className="flex items-center gap-1 shrink-0">
                 {!dept.isDefault && (
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  <button
+                    className={`${DT.BTN_ICON} opacity-0 group-hover:opacity-100 transition-opacity`}
                     onClick={() => handleSetDefault(dept._id)}
                     title={t("Set as default", "تعيين كافتراضية")}
                   >
                     <Star className="size-3.5" />
-                  </Button>
+                  </button>
                 )}
                 {!dept.isDefault && (
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                  <button
+                    className={`${DT.BTN_ICON} opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity`}
                     onClick={() => handleArchive(dept._id, dept.name)}
                     title={t("Archive", "أرشفة")}
                   >
                     <Archive className="size-3.5" />
-                  </Button>
+                  </button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
+                <button
+                  className={DT.BTN_ICON}
                   onClick={() =>
                     router.push(`/settings/channels/${channelId}/departments/${dept._id}`)
                   }
                   title={t("Manage members", "إدارة الأعضاء")}
                 >
                   <ChevronRight className="size-4" />
-                </Button>
+                </button>
               </div>
             </div>
           ))}
