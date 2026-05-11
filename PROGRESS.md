@@ -2114,3 +2114,50 @@ All 22 files changed `from "@clerk/nextjs"` → `from "@/lib/auth-hooks"` via bu
 - `app/accept-invite/[invitationId]/page.tsx` — verify `authClient.organization.acceptInvitation({ invitationId })` method name + return shape
 
 ---
+
+
+---
+
+### 2026-05-11: Query Performance Optimization — Scale Hardening ✅ ZERO TS ERRORS
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Motivation:** 33-table schema with unbounded `.collect()` calls in hot-path queries (inbox list, sidebar counts, analytics) would degrade the real-time experience at tenant scale (1000+ contacts, 10000+ messages). The worst offenders were O(N) full-tenant scans that load every document then discard most, and an N+1 pattern in analytics that issued one `ctx.db.get()` per metric row.
+
+**Files changed (4):**
+
+**`convex/schema.ts` — 2 additive indexes:**
+- `conversations.by_tenant_status_last_message` on `["tenantId", "status", "lastMessageAt"]` — enables the inbox list to skip to only open/pending/resolved rows and return them sorted by recency in a single bounded read; previously required a full-tenant `by_last_message` scan + in-memory status filter
+- `contacts.by_tenant_created` on `["tenantId", "createdAt"]` — enables date-range analytics queries (revenue, contact growth) to be pushed to the database index instead of filtering in memory after a full tenant scan
+
+**`convex/inbox.ts` — 6 changes:**
+- `listConversations`: `collect()` → when `args.status` is provided, uses new `by_tenant_status_last_message` index (reads only matching rows, ordered); all other cases bounded with `take(1000)`. Previously loaded all conversations for the tenant on every inbox render.
+- `getMessages`: `collect()` → `take(200)` — bounds per-conversation message load
+- `getMessagesPaginated`: new query — exposes `paginationOptsValidator` for cursor-based infinite scroll in the conversation thread UI
+- `getInternalNotesByContact`: conversations `collect()` → `take(20)`
+- `queueCounts` open/pending scans: `collect()` → `take(5000)` — these feed per-channel/per-dept counts in the sidebar tree; bounded to prevent unbounded transaction reads
+- `queueCounts` resolved/forwarded scans: `collect()` → `take(9999)` — sidebar counts only; unread notifications: `collect()` → `take(999)`
+
+**`convex/messages.ts` — 1 change:**
+- `listForConversation`: replaced `messages.some(m => m.followUpId !== undefined)` full-array scan (required loading all messages first) with `conversation.hasFollowUp` — the denormalized flag already maintained by `followUps` mutations. `collect()` → `take(500)`. The follow-up visibility check now costs 0 extra reads instead of N.
+
+**`convex/analytics.ts` — 5 changes:**
+- `getMyStats` admin path: added `.gte("createdAt", startOfMonth)` to `by_tenant_created` index query — was iterating ALL metrics for the tenant then discarding those before start-of-month in memory
+- `getLabelDistribution`: eliminated N+1 (`metrics → ctx.db.get(conversationId)` per row); now queries `conversations` directly via the existing `by_last_message` index with `startTs`/`endTs` range — no extra reads per conversation
+- `getRevenueByCurrency`: uses new `by_tenant_created` index with `startTs`/`endTs` range; `isArchived` filter applied in memory (post-range, cheap). Was: full `by_tenant_archived` scan → date filter in memory.
+- `getContactsByRevenueCurrency`: same fix as above
+- `getContactActivity`: unbounded `for await` → `.take(100)`
+
+**TypeScript:**
+- Pre: 0 errors (baseline from previous session)
+- Post: **0 errors** ✅
+- `npx tsc --noEmit` output: (empty — zero errors)
+
+**Acceptance criteria status:**
+- ✅ No query scans entire table — all hot-path queries now use indexed fields with explicit bounds
+- ✅ Contact list paginates correctly — `contacts.listForTenant` already used `paginationOptsValidator`; `by_tenant_created` index added for analytics
+- ✅ Conversation list bounded — `take(1000)` with status-indexed fast path
+- ✅ `getMessagesPaginated` available for UI to wire infinite scroll
+- ✅ Analytics N+1 eliminated; date-range filtering pushed to DB level
+- ⚠️ Load test at 1000 contacts / 10000 messages — requires real Convex function execution time logs (Convex dashboard → Functions tab); not automatable from CLI
+

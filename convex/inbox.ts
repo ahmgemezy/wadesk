@@ -4,6 +4,7 @@
 
 import { v, ConvexError } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import { internal } from "./_generated/api";
 import { getCallerIdentity, assertAdminOrSupervisor, isAdminOrSupervisor, type OrgRole } from "./lib/auth";
 import type { Id } from "./_generated/dataModel";
@@ -36,11 +37,21 @@ export const listConversations = query({
   },
   handler: async (ctx, args) => {
     const { tenantId, callerId, orgRole } = await getCallerIdentity(ctx);
-    const all = await ctx.db
-      .query("conversations")
-      .withIndex("by_last_message", (q) => q.eq("tenantId", tenantId))
-      .order("desc")
-      .collect();
+    // When status is known, use the composite index to skip full-tenant scan.
+    // Without status, fall back to by_last_message bounded to 1000 rows.
+    const all = args.status
+      ? await ctx.db
+          .query("conversations")
+          .withIndex("by_tenant_status_last_message", (q) =>
+            q.eq("tenantId", tenantId).eq("status", args.status!)
+          )
+          .order("desc")
+          .take(1000)
+      : await ctx.db
+          .query("conversations")
+          .withIndex("by_last_message", (q) => q.eq("tenantId", tenantId))
+          .order("desc")
+          .take(1000);
 
     let filtered = all;
     if (args.filter === "mine") {
@@ -168,7 +179,28 @@ export const getMessages = query({
         q.eq("conversationId", args.conversationId),
       )
       .order("asc")
-      .collect();
+      .take(200);
+  },
+});
+
+export const getMessagesPaginated = query({
+  args: {
+    conversationId: v.id("conversations"),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const { tenantId } = await getCallerIdentity(ctx);
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.tenantId !== tenantId) {
+      return { page: [], isDone: true, continueCursor: "" };
+    }
+    return ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .order("asc")
+      .paginate(args.paginationOpts);
   },
 });
 
@@ -362,7 +394,7 @@ export const getInternalNotesByContact = query({
     const conversations = await ctx.db
       .query("conversations")
       .withIndex("by_contact", (q) => q.eq("contactId", args.contactId))
-      .collect();
+      .take(20);
 
     const notesList: { _id: string; content: string; timestamp: number; authorId?: string }[] = [];
     for (const conv of conversations) {
@@ -448,14 +480,14 @@ export const queueCounts = query({
       .withIndex("by_tenant_status", (q) =>
         q.eq("tenantId", tenantId).eq("status", "open")
       )
-      .collect();
+      .take(5000);
 
     const allPending = await ctx.db
       .query("conversations")
       .withIndex("by_tenant_status", (q) =>
         q.eq("tenantId", tenantId).eq("status", "pending")
       )
-      .collect();
+      .take(5000);
 
     const allActive = [...allOpen, ...allPending];
 
@@ -505,20 +537,20 @@ export const queueCounts = query({
       .withIndex("by_user", (q) =>
         q.eq("tenantId", tenantId).eq("userId", callerId).eq("read", false)
       )
-      .collect();
+      .take(999);
 
     const forwardedAll = await ctx.db
       .query("conversations")
       .withIndex("by_tenant_status", (q) =>
         q.eq("tenantId", tenantId).eq("status", "forwarded")
       )
-      .collect();
+      .take(9999);
     const resolvedAll = await ctx.db
       .query("conversations")
       .withIndex("by_tenant_status", (q) =>
         q.eq("tenantId", tenantId).eq("status", "resolved")
       )
-      .collect();
+      .take(9999);
 
     const forwarded = isPrivileged
       ? forwardedAll.length

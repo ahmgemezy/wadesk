@@ -17,30 +17,24 @@ export const listForConversation = query({
     const conversation = await ctx.db.get(args.conversationId);
     if (!conversation || conversation.tenantId !== tenantId) return [];
 
-    const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_conversation", (q) =>
-        q.eq("conversationId", args.conversationId),
-      )
-      .order("asc")
-      .collect();
-
-    // Follow-up carve-out: a conversation that contains a scheduled follow-up
-    // is shared work — every team member needs visibility on it (regardless
-    // of department or current assignment) so we don't double-message a
-    // customer. Admin/Supervisor and the assigned agent see everything as
-    // before; everyone else sees the conversation only when it has a
-    // follow-up message in it.
+    // Follow-up carve-out: conversations with a follow-up are shared work
+    // visible to the whole team. Use the denormalized flag on conversations
+    // (maintained by followUps mutations) to avoid scanning all messages.
     if (
       !isAdminOrSupervisor(orgRole) &&
       conversation.assignedAgentId !== callerId &&
       conversation.assignedAgentId !== undefined
     ) {
-      const hasFollowUp = messages.some((m) => m.followUpId !== undefined);
-      if (!hasFollowUp) return [];
+      if (!conversation.hasFollowUp) return [];
     }
 
-    return messages;
+    return ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .order("asc")
+      .take(500);
   },
 });
 

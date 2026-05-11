@@ -8,9 +8,9 @@
 ---
 
 **Last Updated:** 2026-05-11 UTC  
-**Current Branch:** feat/013-departments  
+**Current Branch:** feat/clerk-to-better-auth  
 **Main Branch:** 002-agent-roles  
-**Build Status:** ✅ TypeScript: 0 errors | ✅ 33-table schema deployed | ✅ React Email system live | ✅ Member profile modal complete | ✅ Channel retention system active | ✅ Tabbed transfer + cross-branch forward | ✅ CSAT end-to-end working | ✅ 24h conversation reopen window | ✅ Conversation activity pills + claim | ✅ Notification preferences system live
+**Build Status:** ✅ TypeScript: 0 errors | ✅ 33-table schema deployed | ✅ React Email system live | ✅ Member profile modal complete | ✅ Channel retention system active | ✅ Tabbed transfer + cross-branch forward | ✅ CSAT end-to-end working | ✅ 24h conversation reopen window | ✅ Conversation activity pills + claim | ✅ Notification preferences system live | ✅ Query performance optimization complete
 
 ---
 
@@ -730,6 +730,27 @@ CONVEX_ENCRYPTION_KEY=           # 32-byte hex string for AES-256-GCM
 ---
 
 ## 8. Recent Changes (Last 10 Sessions)
+
+### 2026-05-11: Query Performance Optimization (Scale Hardening)
+
+- ✅ `convex/schema.ts` — added 2 new indexes:
+  - `conversations.by_tenant_status_last_message` `["tenantId", "status", "lastMessageAt"]` — enables O(matched) inbox queries when status filter is active; eliminates full-tenant scan
+  - `contacts.by_tenant_created` `["tenantId", "createdAt"]` — enables date-range analytics queries at DB level
+- ✅ `convex/inbox.ts`:
+  - `listConversations` — `collect()` → `take(1000)`; when `status` arg present, uses new composite index (1 indexed read vs full scan)
+  - `getMessages` — `collect()` → `take(200)` to bound single-conversation message load
+  - `getMessagesPaginated` — new query with `paginationOptsValidator` for UI infinite-scroll
+  - `getInternalNotesByContact` — conversations `collect()` → `take(20)`
+  - `queueCounts` — 4 `collect()` calls bounded: `allOpen`/`allPending` → `take(5000)`, `forwardedAll`/`resolvedAll` → `take(9999)`
+- ✅ `convex/messages.ts`:
+  - `listForConversation` — replaced `messages.some(m => m.followUpId)` full scan with `conversation.hasFollowUp` (denormalized flag already maintained); `collect()` → `take(500)`
+- ✅ `convex/analytics.ts`:
+  - `getMyStats` admin path — added `.gte("createdAt", startOfMonth)` to index query (was filtering full-tenant scan in memory)
+  - `getLabelDistribution` — eliminated N+1 (`metrics → ctx.db.get(conversationId)` per row); now queries `conversations` directly via `by_last_message` index with date range
+  - `getRevenueByCurrency` — uses new `by_tenant_created` index for date-range filtering (was post-filtering full tenant contact scan)
+  - `getContactsByRevenueCurrency` — same fix
+  - `getContactActivity` — `for await` unbounded scan → `.take(100)`
+- TypeScript: 0 errors | 4 files changed
 
 ### 2026-05-11: CSAT Meta Template Approval — Production Hardening
 

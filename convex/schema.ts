@@ -109,6 +109,7 @@ export default defineSchema({
     .index("by_tenant_stage", ["tenantId", "stage"])
     .index("by_tenant_assigned", ["tenantId", "assignedAgentId"])
     .index("by_org_department", ["tenantId", "departmentId"])
+    .index("by_tenant_created", ["tenantId", "createdAt"])
     .searchIndex("search_by_name", {
       searchField: "displayName",
       filterFields: ["tenantId"],
@@ -215,6 +216,7 @@ export default defineSchema({
     .index("by_tenant_agent", ["tenantId", "assignedAgentId"])
     .index("by_tenant_channel", ["tenantId", "channelId"])
     .index("by_last_message", ["tenantId", "lastMessageAt"])
+    .index("by_tenant_status_last_message", ["tenantId", "status", "lastMessageAt"])
     .index("by_contact", ["contactId"])
     .index("by_tenant_department", ["tenantId", "departmentId"])
     .searchIndex("search_preview", {

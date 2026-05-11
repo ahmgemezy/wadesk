@@ -190,15 +190,16 @@ export const getLabelDistribution = query({
 
     const counts = new Map<string, number>();
 
-    for await (const metric of ctx.db
-      .query("conversationMetrics")
-      .withIndex("by_tenant_created", (q) =>
-        q.eq("tenantId", tenantId).gte("createdAt", args.startTs).lte("createdAt", args.endTs),
+    // Use the by_last_message index for date-range filtering on conversations
+    // directly — avoids the N+1 pattern of iterating metrics then fetching each conversation.
+    for await (const conversation of ctx.db
+      .query("conversations")
+      .withIndex("by_last_message", (q) =>
+        q.eq("tenantId", tenantId)
+          .gte("lastMessageAt", args.startTs)
+          .lte("lastMessageAt", args.endTs),
       )
     ) {
-      const conversation = await ctx.db.get(metric.conversationId);
-      if (!conversation) continue;
-
       for (const labelName of conversation.labels) {
         counts.set(labelName, (counts.get(labelName) ?? 0) + 1);
       }
@@ -278,27 +279,25 @@ export const getContactActivity = query({
     const contact = await ctx.db.get(args.contactId);
     if (!contact || contact.tenantId !== tenantId) return null;
 
+    const rawEvents = await ctx.db
+      .query("contactEvents")
+      .withIndex("by_contact", (q) => q.eq("contactId", args.contactId))
+      .order("desc")
+      .take(100);
+
     const events: Array<{
       _id: string;
       type: string;
       actorId?: string;
       metadata: Record<string, unknown>;
       createdAt: number;
-    }> = [];
-
-    for await (const event of ctx.db
-      .query("contactEvents")
-      .withIndex("by_contact", (q) => q.eq("contactId", args.contactId))
-      .order("desc")
-    ) {
-      events.push({
-        _id: event._id,
-        type: event.type,
-        actorId: event.actorId ?? undefined,
-        metadata: event.metadata as Record<string, unknown>,
-        createdAt: event.createdAt,
-      });
-    }
+    }> = rawEvents.map((event) => ({
+      _id: event._id,
+      type: event.type,
+      actorId: event.actorId ?? undefined,
+      metadata: event.metadata as Record<string, unknown>,
+      createdAt: event.createdAt,
+    }));
 
     return {
       contact: {
@@ -334,11 +333,13 @@ export const getContactsByRevenueCurrency = query({
 
     for await (const contact of ctx.db
       .query("contacts")
-      .withIndex("by_tenant_archived", (q) =>
-        q.eq("tenantId", tenantId).eq("isArchived", false),
+      .withIndex("by_tenant_created", (q) =>
+        q.eq("tenantId", tenantId)
+          .gte("createdAt", args.startTs)
+          .lte("createdAt", args.endTs),
       )
     ) {
-      if (contact.createdAt < args.startTs || contact.createdAt > args.endTs) continue;
+      if (contact.isArchived) continue;
       if (contact.spent == null || contact.spent <= 0) continue;
       const contactCurrency = contact.spentCurrency ?? "USD";
       if (contactCurrency !== args.currency) continue;
@@ -378,11 +379,13 @@ export const getRevenueByCurrency = query({
 
     for await (const contact of ctx.db
       .query("contacts")
-      .withIndex("by_tenant_archived", (q) =>
-        q.eq("tenantId", tenantId).eq("isArchived", false),
+      .withIndex("by_tenant_created", (q) =>
+        q.eq("tenantId", tenantId)
+          .gte("createdAt", args.startTs)
+          .lte("createdAt", args.endTs),
       )
     ) {
-      if (contact.createdAt < args.startTs || contact.createdAt > args.endTs) continue;
+      if (contact.isArchived) continue;
       totalContacts++;
       if (contact.spent != null && contact.spent > 0) {
         contactsWithRevenue++;
@@ -421,10 +424,9 @@ export const getMyStats = query({
       for await (const doc of ctx.db
         .query("conversationMetrics")
         .withIndex("by_tenant_created", (q) =>
-          q.eq("tenantId", tenantId),
+          q.eq("tenantId", tenantId).gte("createdAt", startOfMonth),
         )
       ) {
-        if (doc.createdAt < startOfMonth) continue;
         conversationsHandled += 1;
         if (doc.firstResponseTimeSeconds !== undefined && doc.firstResponseTimeSeconds !== null) {
           responseTimes.push(doc.firstResponseTimeSeconds);
