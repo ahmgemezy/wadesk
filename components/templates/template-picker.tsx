@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n/context";
 import { FileTextIcon } from "lucide-react";
 import { extractVariables, renderTemplate } from "@/lib/templateHelpers";
@@ -79,14 +78,14 @@ export function TemplatePicker({ onSelect }: { onSelect: (text: string) => void 
                 <label className="text-xs text-muted-foreground">
                   {`{{${variable}}}`}
                 </label>
-                <Input
+                <input
                   value={values[variable] ?? ""}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setApplyErrors((prev) => prev.filter((v) => v !== variable));
                     setValues((prev) => ({ ...prev, [variable]: e.target.value }));
                   }}
                   dir="auto"
-                  className={applyErrors.includes(variable) ? "border-destructive" : ""}
+                  className={`${DT.INPUT} ${applyErrors.includes(variable) ? DT.BORDER_ERROR : ""}`}
                 />
                 {applyErrors.includes(variable) && (
                   <p className="text-xs text-destructive">

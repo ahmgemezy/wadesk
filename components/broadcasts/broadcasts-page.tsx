@@ -3,9 +3,9 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import { PlanGate } from "@/components/ui/plan-gate";
 import { usePlan } from "@/lib/hooks/use-plan";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   PlusIcon,
@@ -323,25 +323,22 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
               <input
                 type="text"
                 placeholder={t.search}
-                className="h-9 rounded-lg border bg-background ps-9 pe-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-52"
+                className={`${DT.INPUT} h-9 w-52`}
               />
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              className="size-9 shrink-0 hidden md:flex"
+            <button
+              className={`${DT.BTN_ICON} size-9 shrink-0 hidden md:flex`}
             >
               <SlidersHorizontalIcon className="size-4" />
-            </Button>
-            <Button
-              size="sm"
-              className="shrink-0 gap-1.5"
+            </button>
+            <button
+              className={`${DT.BTN_SM_PRIMARY} shrink-0 gap-1.5`}
               disabled={!canBroadcast}
               onClick={() => canBroadcast && setModalOpen(true)}
             >
               <PlusIcon className="size-4" />
               {t.create}
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -355,10 +352,10 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
               <p className="font-semibold">{t.emptyTitle}</p>
               <p className="text-sm text-muted-foreground mt-1">{t.emptyHint}</p>
             </div>
-            <Button onClick={() => canBroadcast && setModalOpen(true)} disabled={!canBroadcast} className="gap-1.5">
+            <button onClick={() => canBroadcast && setModalOpen(true)} disabled={!canBroadcast} className={`${DT.BTN_PRIMARY} gap-1.5`}>
               <PlusIcon className="size-4" />
               {t.emptyBtn}
-            </Button>
+            </button>
           </div>
         )}
 
@@ -379,7 +376,7 @@ export function BroadcastsPage({ locale }: { locale: "ar" | "en" }) {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold">{t.history}</h2>
-              <button className="text-sm text-primary hover:underline">
+              <button className={`${DT.TEXT_BLUE_INTERACTIVE} text-sm hover:underline`}>
                 {t.viewAll}
               </button>
             </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BroadcastTemplateCard } from "@/components/broadcasts/broadcast-template-card";
@@ -78,10 +78,10 @@ export function BroadcastTemplatesTab({ onCreateClick, onEditTemplate }: Props) 
   }
 
   const importButton = (
-    <Button variant="outline" onClick={openImportDialog} disabled={!channels || channels.length === 0}>
+    <button onClick={openImportDialog} disabled={!channels || channels.length === 0} className={DT.BTN_OUTLINE}>
       <DownloadIcon className="size-4 me-2" />
       {t("Import from Meta", "استيراد من ميتا")}
-    </Button>
+    </button>
   );
 
   const usagePercentage =
@@ -149,16 +149,17 @@ export function BroadcastTemplatesTab({ onCreateClick, onEditTemplate }: Props) 
         )}
 
         <div className="flex justify-end gap-2 pt-1">
-          <Button variant="outline" onClick={() => setImportDialogOpen(false)} disabled={importing}>
+          <button onClick={() => setImportDialogOpen(false)} disabled={importing} className={DT.BTN_OUTLINE}>
             {t("Cancel", "إلغاء")}
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={handleImport}
             disabled={importing || (channels && channels.length > 1 && !selectedChannelId)}
+            className={DT.BTN_PRIMARY}
           >
             {importing && <Loader2Icon className="size-4 me-2 animate-spin" />}
             {t("Import", "استيراد")}
-          </Button>
+          </button>
         </div>
       </DialogContent>
     </Dialog>
@@ -215,10 +216,10 @@ export function BroadcastTemplatesTab({ onCreateClick, onEditTemplate }: Props) 
 
       <div className="flex items-center justify-end gap-2">
         {importButton}
-        <Button onClick={onCreateClick}>
+        <button onClick={onCreateClick} className={DT.BTN_PRIMARY}>
           <PlusIcon className="size-4 me-2" />
           {t("Add Broadcast Template", "إضافة قالب البث")}
-        </Button>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

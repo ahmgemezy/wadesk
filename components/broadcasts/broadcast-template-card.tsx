@@ -2,9 +2,8 @@
 
 import { useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
@@ -84,9 +83,8 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
         {/* Action buttons */}
         <div className="absolute top-2 end-2 flex gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
           {template.metaStatus === "pending" && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
+            <button
+              className={DT.BTN_ICON_SM}
               onClick={handleCheckStatus}
               disabled={syncing}
               title={t("Check approval status", "تحقق من حالة الموافقة")}
@@ -95,20 +93,19 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
                 ? <Loader2Icon className="size-3.5 animate-spin" />
                 : <RefreshCwIcon className="size-3.5" />
               }
-            </Button>
+            </button>
           )}
 
           {isLocked && (
             <Tooltip>
               <TooltipTrigger>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
+                <button
+                  className={DT.BTN_ICON_SM}
                   onClick={() => onEdit(template._id)}
                   disabled={isLocked}
                 >
                   <PencilIcon className="size-3.5" />
-                </Button>
+                </button>
               </TooltipTrigger>
               <TooltipContent>
                 {template.metaStatus === "pending"
@@ -118,24 +115,21 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
             </Tooltip>
           )}
           {!isLocked && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
+            <button
+              className={DT.BTN_ICON_SM}
               onClick={() => onEdit(template._id)}
               disabled={isLocked}
               title={t("Edit template", "تحرير القالب")}
             >
               <PencilIcon className="size-3.5" />
-            </Button>
+            </button>
           )}
 
           {isLocked && (
             <Tooltip>
               <TooltipTrigger>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                <button
+                  className={`${DT.BTN_ICON_SM} ${DT.TEXT_RED}`}
                   onClick={handleDelete}
                   disabled={isLocked || removing}
                 >
@@ -143,7 +137,7 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
                     ? <Loader2Icon className="size-3.5 animate-spin" />
                     : <Trash2Icon className="size-3.5" />
                   }
-                </Button>
+                </button>
               </TooltipTrigger>
               <TooltipContent>
                 {t("Cannot delete while pending or approved", "لا يمكن الحذف أثناء المراجعة أو الاعتماد")}
@@ -151,10 +145,8 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
             </Tooltip>
           )}
           {!isLocked && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            <button
+              className={`${DT.BTN_ICON_SM} ${DT.TEXT_RED}`}
               onClick={handleDelete}
               disabled={isLocked || removing}
             >
@@ -162,7 +154,7 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
                 ? <Loader2Icon className="size-3.5 animate-spin" />
                 : <Trash2Icon className="size-3.5" />
               }
-            </Button>
+            </button>
           )}
         </div>
 
@@ -171,12 +163,12 @@ export function BroadcastTemplateCard({ template, onEdit }: Props) {
             <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${status.className}`}>
               {t(status.label, status.labelAr)}
             </span>
-            <Badge variant="outline" className="text-[10px] uppercase">
+            <span className={`${DT.BADGE_NEUTRAL} text-[10px] uppercase`}>
               {template.language}
-            </Badge>
-            <Badge variant="secondary" className="text-[10px]">
+            </span>
+            <span className={`${DT.BADGE_BLUE} text-[10px]`}>
               {HEADER_ICONS[template.headerType]} {template.headerType}
-            </Badge>
+            </span>
           </div>
           <CardTitle className="text-base font-semibold leading-tight line-clamp-1">
             {template.title}

@@ -3,16 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2Icon, PlusIcon, Trash2Icon, SendIcon } from "lucide-react";
 import { WhatsAppTemplatePreview } from "@/components/broadcasts/whatsapp-template-preview";
@@ -291,33 +286,34 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
             {/* Basic Info */}
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label>{t("Display Title", "العنوان")}</Label>
-                <Input
+                <label className={DT.LBL}>{t("Display Title", "العنوان")}</label>
+                <input
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   placeholder={t("e.g. Product Showcase", "مثال: عرض المنتج")}
                   dir="auto"
                   disabled={isLocked}
+                  className={DT.INPUT}
                 />
               </div>
               <div className="space-y-1">
-                <Label>{t("Template Name (Meta slug)", "اسم القالب (Meta)")}</Label>
-                <Input
+                <label className={DT.LBL}>{t("Template Name (Meta slug)", "اسم القالب (Meta)")}</label>
+                <input
                   value={name}
                   onChange={(e) => setName(e.target.value.replace(/[^a-z0-9_]/g, ""))}
                   placeholder="product_showcase_ar"
                   dir="ltr"
                   disabled={isLocked}
-                  className="font-mono text-sm"
+                  className={`${DT.INPUT} font-mono text-sm`}
                 />
                 <p className="text-xs text-muted-foreground">
                   {t("Lowercase letters, numbers, underscores only", "أحرف صغيرة وأرقام وشرطة سفلية فقط")}
                 </p>
               </div>
               <div className="space-y-1">
-                <Label>{t("Channel", "القناة")}</Label>
+                <label className={DT.LBL}>{t("Channel", "القناة")}</label>
                 <select
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className={DT.SELECT}
                   value={channelId}
                   onChange={(e) => setChannelId(e.target.value as Id<"channels">)}
                   disabled={isLocked}
@@ -330,7 +326,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
               </div>
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
-                  <Label>{t("Language", "اللغة")}</Label>
+                  <label className={DT.LBL}>{t("Language", "اللغة")}</label>
                   <div className="flex gap-2">
                     {(["ar", "en"] as const).map((lang) => (
                       <button
@@ -350,7 +346,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                   </div>
                 </div>
                 <div className="flex-1 space-y-1">
-                  <Label>{t("Category", "الفئة")}</Label>
+                  <label className={DT.LBL}>{t("Category", "الفئة")}</label>
                   <div className="flex gap-2">
                     {(["MARKETING", "UTILITY"] as const).map((cat) => (
                       <button
@@ -374,7 +370,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
 
             {/* Header */}
             <div className="space-y-2">
-              <Label>{t("Header", "الترويسة")}</Label>
+              <label className={DT.LBL}>{t("Header", "الترويسة")}</label>
               <div className="flex flex-wrap gap-1.5">
                 {HEADER_OPTIONS.map((opt) => (
                   <button
@@ -393,22 +389,24 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                 ))}
               </div>
               {headerType === "TEXT" && (
-                <Input
+                <input
                   value={headerText}
-                  onChange={(e) => setHeaderText(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHeaderText(e.target.value)}
                   placeholder={t("Header text…", "نص الترويسة...")}
                   dir="auto"
                   disabled={isLocked}
+                  className={DT.INPUT}
                 />
               )}
               {["IMAGE", "VIDEO", "DOCUMENT"].includes(headerType) && (
                 <div className="space-y-1">
-                  <Input
+                  <input
                     value={headerMediaUrl}
-                    onChange={(e) => setHeaderMediaUrl(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHeaderMediaUrl(e.target.value)}
                     placeholder="https://cdn.example.com/image.jpg"
                     dir="ltr"
                     disabled={isLocked}
+                    className={DT.INPUT}
                   />
                   <p className="text-xs text-muted-foreground">
                     {t("Default media URL — agents can override when sending a broadcast", "رابط الوسائط الافتراضي — يمكن للوكلاء تغييره عند إرسال الحملة")}
@@ -420,7 +418,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
             {/* Body */}
             <div className="space-y-2">
               <div className="flex items-baseline justify-between">
-                <Label>{t("Body", "النص")}</Label>
+                <label className={DT.LBL}>{t("Body", "النص")}</label>
                 <span className="text-[11px] text-muted-foreground">
                   {t("Use {{variable}} to personalise", "استخدم {{متغير}} للتخصيص")}
                 </span>
@@ -488,12 +486,12 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                 </div>
               </div>
 
-              <Textarea
+              <textarea
                 ref={bodyRef}
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBody(e.target.value)}
                 placeholder={t("Hello {{name}}, your order {{order_id}} is ready!", "أهلاً {{name}}، طلبك {{order_id}} جاهز!")}
-                className="min-h-[120px] resize-none text-sm"
+                className={`${DT.TEXTAREA} min-h-[120px]`}
                 dir="auto"
                 disabled={isLocked}
               />
@@ -504,7 +502,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                     {t("In this message:", "في هذه الرسالة:")}
                   </span>
                   {detectedVars.map((v) => (
-                    <Badge key={v} variant="secondary" className="text-[11px] font-mono py-0">{`{{${v}}}`}</Badge>
+                    <span key={v} className={`${DT.BADGE_BLUE} text-[11px] font-mono py-0`}>{`{{${v}}}`}</span>
                   ))}
                 </div>
               )}
@@ -515,7 +513,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
               {!showFooter ? (
                 <button
                   type="button"
-                  className="text-xs text-primary hover:underline"
+                  className={`${DT.TEXT_BLUE_INTERACTIVE} text-xs hover:underline`}
                   onClick={() => setShowFooter(true)}
                   disabled={isLocked}
                 >
@@ -523,14 +521,15 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                 </button>
               ) : (
                 <div className="space-y-1">
-                  <Label>{t("Footer", "التذييل")}</Label>
-                  <Input
+                  <label className={DT.LBL}>{t("Footer", "التذييل")}</label>
+                  <input
                     value={footer}
-                    onChange={(e) => setFooter(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFooter(e.target.value)}
                     maxLength={60}
                     placeholder={t("e.g. Thank you for your business", "مثال: شكراً لتعاملك معنا")}
                     dir="auto"
                     disabled={isLocked}
+                    className={DT.INPUT}
                   />
                 </div>
               )}
@@ -540,7 +539,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
             <div className="space-y-2">
               {buttons.length > 0 && (
                 <div className="space-y-2">
-                  <Label>{t("Buttons", "الأزرار")}</Label>
+                  <label className={DT.LBL}>{t("Buttons", "الأزرار")}</label>
                   {buttons.map((btn, idx) => (
                     <div key={idx} className="border rounded-md p-3 space-y-2">
                       <div className="flex items-center gap-2">
@@ -554,10 +553,10 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                           <option value="PHONE_NUMBER">{t("Phone", "هاتف")}</option>
                           <option value="QUICK_REPLY">{t("Quick Reply", "رد سريع")}</option>
                         </select>
-                        <Input
-                          className="flex-1 h-7 text-xs"
+                        <input
+                          className={`${DT.INPUT_SM} flex-1 h-7 text-xs`}
                           value={btn.text}
-                          onChange={(e) => updateButton(idx, { text: e.target.value })}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateButton(idx, { text: e.target.value })}
                           placeholder={t("Button label", "نص الزر")}
                           dir="auto"
                           disabled={isLocked}
@@ -567,10 +566,10 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                         </button>
                       </div>
                       {btn.type !== "QUICK_REPLY" && (
-                        <Input
-                          className="text-xs"
+                        <input
+                          className={`${DT.INPUT_SM} text-xs`}
                           value={btn.value}
-                          onChange={(e) => updateButton(idx, { value: e.target.value })}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateButton(idx, { value: e.target.value })}
                           placeholder={btn.type === "URL" ? "https://shop.com/" : "+201234567890"}
                           dir="ltr"
                           disabled={isLocked}
@@ -578,15 +577,17 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
                       )}
                       {btn.type === "URL" && (
                         <div className="flex items-center gap-2">
-                          <Switch
+                          <input
                             id={`dynamic-${idx}`}
+                            type="checkbox"
                             checked={btn.isDynamic}
-                            onCheckedChange={(v) => updateButton(idx, { isDynamic: v })}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateButton(idx, { isDynamic: e.target.checked })}
                             disabled={isLocked}
+                            className={DT.CHECKBOX_ACCENT}
                           />
-                          <Label htmlFor={`dynamic-${idx}`} className="text-xs cursor-pointer">
+                          <label htmlFor={`dynamic-${idx}`} className={`${DT.BODY} text-xs cursor-pointer`}>
                             {t("Dynamic suffix {{1}}", "لاحقة متغيرة {{1}}")}
-                          </Label>
+                          </label>
                         </div>
                       )}
                     </div>
@@ -596,7 +597,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
               {!isLocked && buttons.length < 3 && (
                 <button
                   type="button"
-                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                  className={`${DT.TEXT_BLUE_INTERACTIVE} text-xs hover:underline flex items-center gap-1`}
                   onClick={addButton}
                 >
                   <PlusIcon className="size-3" />
@@ -620,28 +621,29 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
 
       {/* Action bar — pinned to bottom */}
       <div className="flex justify-between items-center px-6 py-4 border-t shrink-0">
-        <Button variant="outline" onClick={onClose}>
+        <button onClick={onClose} className={DT.BTN_OUTLINE}>
           {t("Cancel", "إلغاء")}
-        </Button>
+        </button>
         <div className="flex gap-2">
           {canSubmitToMeta && (
-            <Button
-              variant="outline"
+            <button
               onClick={handleSubmitToMeta}
               disabled={submitting || saving}
+              className={DT.BTN_OUTLINE}
             >
               {submitting && <Loader2Icon className="size-4 me-2 animate-spin" />}
               <SendIcon className="size-4 me-2" />
               {t("Submit to Meta", "إرسال لميتا")}
-            </Button>
+            </button>
           )}
-          <Button
+          <button
             onClick={handleSave}
             disabled={!canSave || saving || submitting}
+            className={DT.BTN_PRIMARY}
           >
             {saving && <Loader2Icon className="size-4 me-2 animate-spin" />}
             {t("Save as Draft", "حفظ كمسودة")}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
