@@ -221,6 +221,26 @@ export const DT = {
 
   // ── Form inputs ───────────────────────────────────────────────────────────
   CHECKBOX_ACCENT: "accent-[#0071E3] dark:accent-[#0A84FF]",
+
+  // ── Broadcasts & Templates ────────────────────────────────────────────────
+  BG_BLUE_BADGE: "bg-blue-50 dark:bg-blue-950/20",
+  TEXT_BLUE_DARK: "text-blue-700 dark:text-blue-300",
+  BORDER_BLUE_BADGE: "border-blue-200 dark:border-blue-800",
+
+  BG_AMBER_LIGHT: "bg-amber-50 dark:bg-amber-950/20",
+  TEXT_AMBER: "text-amber-700 dark:text-amber-300",
+  BORDER_AMBER: "border-amber-200 dark:border-amber-800",
+
+  BG_GREEN_LIGHT: "bg-green-100 dark:bg-green-950/20",
+  TEXT_GREEN: "text-green-700 dark:text-green-300",
+
+  BG_RED_LIGHT: "bg-red-100 dark:bg-red-950/20",
+  TEXT_RED_LIGHT: "text-red-700 dark:text-red-300",
+
+  BG_WHATSAPP_GREEN: "bg-[#075E54] dark:bg-[#05463F]",
+  TEXT_WHATSAPP_ACTION: "text-[#00A884] dark:text-[#31A24C]",
+  TEXT_MUTED_DARK: "text-[#8696a0] dark:text-[#a0a7b0]",
+  TEXT_BLUE_LIGHT: "text-[#53bdeb] dark:text-[#6bc5f0]",
 } as const;
 
 export type DTKey = keyof typeof DT;

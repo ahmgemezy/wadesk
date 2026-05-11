@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import { LibraryTemplateCard } from "@/components/templates/library-template-card";
 import { LibraryTemplatePreview } from "@/components/templates/library-template-preview";
 import { MetaSubmitForm } from "@/components/templates/meta-submit-form";
@@ -100,7 +100,7 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
   return (
     <div className="space-y-4">
       {isFree && (
-        <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+        <div className={`rounded-lg ${DT.BG_AMBER_LIGHT} border border-amber-200 dark:border-amber-900 px-4 py-3 text-sm ${DT.TEXT_AMBER}`}>
           {t(
             "Browse templates freely! Upgrade to Starter to save quick-reply templates or submit Meta templates for approval.",
             "تصفّح القوالب بحرية! ارتقِ إلى خطة ستارتر لحفظ قوالب الرد السريع أو إرسال قوالب ميتا للمراجعة.",
@@ -111,8 +111,9 @@ export function TemplateLibraryTab({ onUseQuickReply }: Props) {
       {/* Search */}
       <div className="relative">
         <SearchIcon className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
-        <Input
-          className="ps-9"
+        <input
+          type="text"
+          className={`${DT.INPUT} ps-9`}
           placeholder={t("Search templates…", "البحث في القوالب...")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}

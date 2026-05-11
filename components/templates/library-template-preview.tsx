@@ -8,8 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { ClipboardCopyIcon, LockIcon, SparklesIcon, CheckCircle2Icon, AlertTriangleIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { LibraryTemplate } from "@/lib/templateLibrary";
@@ -85,22 +84,22 @@ export function LibraryTemplatePreview({
 
           <div className="flex flex-wrap gap-1.5 pt-1">
             {isMeta ? (
-              <Badge variant="secondary" className="text-[10px] bg-orange-500/10 text-orange-600 dark:text-orange-400 border-0 rounded-full">
+              <span className="text-[10px] bg-orange-500/10 text-orange-600 dark:text-orange-400 border-0 rounded-full px-2.5 py-0.5 inline-flex items-center">
                 📢 Meta
-              </Badge>
+              </span>
             ) : (
-              <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary dark:text-primary border-0 rounded-full">
+              <span className="text-[10px] bg-primary/10 text-primary dark:text-primary border-0 rounded-full px-2.5 py-0.5 inline-flex items-center">
                 💬 {t("Quick-Reply", "رد سريع")}
-              </Badge>
+              </span>
             )}
             {catMeta && (
-              <Badge variant="outline" className="text-[10px] rounded-full">
+              <span className="text-[10px] rounded-full px-2.5 py-0.5 inline-flex items-center border border-border">
                 {catMeta.icon} {t(catMeta.en, catMeta.ar)}
-              </Badge>
+              </span>
             )}
-            <Badge variant="outline" className="text-[10px] uppercase rounded-full tracking-wider">
+            <span className="text-[10px] uppercase rounded-full tracking-wider px-2.5 py-0.5 inline-flex items-center border border-border">
               {template.language}
-            </Badge>
+            </span>
           </div>
         </DialogHeader>
 
@@ -125,8 +124,8 @@ export function LibraryTemplatePreview({
                   >
                     {highlightVars(template.body)}
                     <div className="flex items-center justify-end gap-1 mt-1.5">
-                      <span className="text-[10px] text-[#8696a0]/80">9:41 AM</span>
-                      <span className="text-[10px] text-[#53bdeb]">✓✓</span>
+                      <span className={`text-[10px] ${DT.TEXT_MUTED_DARK} opacity-80`}>9:41 AM</span>
+                      <span className={`text-[10px] ${DT.TEXT_BLUE_LIGHT}`}>✓✓</span>
                     </div>
                   </div>
                 </div>
@@ -141,13 +140,12 @@ export function LibraryTemplatePreview({
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {template.variables.map((v) => (
-                    <Badge
+                    <span
                       key={v}
-                      variant="outline"
-                      className="text-xs font-mono rounded-full bg-primary/5 text-primary dark:text-primary border-primary/20"
+                      className="text-xs font-mono rounded-full bg-primary/5 text-primary dark:text-primary border border-primary/20 px-2.5 py-0.5 inline-flex items-center"
                     >
                       {`{{${v}}}`}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -182,27 +180,25 @@ export function LibraryTemplatePreview({
         <div className="border-t px-6 py-4 shrink-0 space-y-3">
           <div className="flex gap-2 w-full">
             {isFree ? (
-              <Button className="flex-1" disabled variant="outline">
+              <button className={`${DT.BTN_OUTLINE} flex-1`} disabled>
                 <LockIcon className="size-4 me-2" />
                 {t("Upgrade to use", "ارتقِ للاستخدام")}
-              </Button>
+              </button>
             ) : (
-              <Button className="flex-1" onClick={handleUse}>
+              <button className={`${DT.BTN_PRIMARY} flex-1`} onClick={handleUse}>
                 {isMeta
                   ? t("Submit to Meta", "إرسال لميتا")
                   : t("Use This Template", "استخدم هذا القالب")}
-              </Button>
+              </button>
             )}
-            <Button
-              variant="outline"
-              size="icon"
-              className="shrink-0"
+            <button
+              className={DT.BTN_ICON_SM}
               onClick={handleCopy}
               aria-label={t("Copy body", "نسخ النص")}
               title={t("Copy body", "نسخ النص")}
             >
               <ClipboardCopyIcon className="size-4" />
-            </Button>
+            </button>
           </div>
 
           {isFree && (

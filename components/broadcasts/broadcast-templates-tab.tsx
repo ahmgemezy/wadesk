@@ -171,7 +171,7 @@ export function BroadcastTemplatesTab({ onCreateClick, onEditTemplate }: Props) 
       <div className="space-y-4">
         {importDialog}
         {showPlanBanner && plan && planInfo && (
-          <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+          <div className={`rounded-lg ${DT.BG_AMBER_LIGHT} border border-amber-200 dark:border-amber-900 px-4 py-3 text-sm ${DT.TEXT_AMBER}`}>
             {t(
               `You have ${templates.length}/${PLAN_LIMITS[plan]} broadcast templates. Upgrade to ${planInfo.nextPlan} for ${planInfo.templateCount}.`,
               `لديك ${templates.length}/${PLAN_LIMITS[plan]} قالب بث. ارقَ إلى ${planInfo.nextPlan} للحصول على ${planInfo.templateCount}.`,
@@ -206,7 +206,7 @@ export function BroadcastTemplatesTab({ onCreateClick, onEditTemplate }: Props) 
     <div className="space-y-4">
       {importDialog}
       {showPlanBanner && plan && planInfo && (
-        <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-sm text-amber-600 dark:text-amber-400">
+        <div className={`rounded-lg ${DT.BG_AMBER_LIGHT} border border-amber-200 dark:border-amber-900 px-4 py-3 text-sm ${DT.TEXT_AMBER}`}>
           {t(
             `You have ${templates.length}/${PLAN_LIMITS[plan]} broadcast templates. Upgrade to ${planInfo.nextPlan} for ${planInfo.templateCount}.`,
             `لديك ${templates.length}/${PLAN_LIMITS[plan]} قالب بث. ارقَ إلى ${planInfo.nextPlan} للحصول على ${planInfo.templateCount}.`,

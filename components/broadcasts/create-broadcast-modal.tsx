@@ -10,7 +10,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import {
   XIcon,
   SendIcon,
@@ -48,7 +48,7 @@ function renderPreviewBody(body: string): React.ReactNode {
   if (!body) return null;
   return body.split(/(\{\{[^}]+\}\})/g).map((part, i) =>
     /^\{\{[^}]+\}\}$/.test(part) ? (
-      <span key={i} className="text-[#2563EB] font-semibold">{part}</span>
+      <span key={i} className={`${DT.TEXT_BLUE} font-semibold`}>{part}</span>
     ) : (
       <span key={i}>{part}</span>
     )
@@ -83,13 +83,13 @@ function WaPhoneMockup({
 
       {/* ── Side buttons ─────────────────────────────────────────────────── */}
       {/* Action button (left, top) */}
-      <div className="absolute" style={{ left: "-5px", top: "96px",  width: "5px", height: "30px", background: "linear-gradient(to right,#5a5a5c,#3a3a3c)", borderRadius: "3px 0 0 3px" }} />
+      <div className="absolute" style={{ left: "-5px", top: "96px",  width: "5px", height: "30px", background: "linear-gradient(to right, rgb(90,90,92), rgb(58,58,60))", borderRadius: "3px 0 0 3px" }} />
       {/* Volume up */}
-      <div className="absolute" style={{ left: "-5px", top: "138px", width: "5px", height: "44px", background: "linear-gradient(to right,#5a5a5c,#3a3a3c)", borderRadius: "3px 0 0 3px" }} />
+      <div className="absolute" style={{ left: "-5px", top: "138px", width: "5px", height: "44px", background: "linear-gradient(to right, rgb(90,90,92), rgb(58,58,60))", borderRadius: "3px 0 0 3px" }} />
       {/* Volume down */}
-      <div className="absolute" style={{ left: "-5px", top: "190px", width: "5px", height: "44px", background: "linear-gradient(to right,#5a5a5c,#3a3a3c)", borderRadius: "3px 0 0 3px" }} />
+      <div className="absolute" style={{ left: "-5px", top: "190px", width: "5px", height: "44px", background: "linear-gradient(to right, rgb(90,90,92), rgb(58,58,60))", borderRadius: "3px 0 0 3px" }} />
       {/* Power / sleep-wake */}
-      <div className="absolute" style={{ right: "-5px", top: "158px", width: "5px", height: "72px", background: "linear-gradient(to left,#5a5a5c,#3a3a3c)", borderRadius: "0 3px 3px 0" }} />
+      <div className="absolute" style={{ right: "-5px", top: "158px", width: "5px", height: "72px", background: "linear-gradient(to left, rgb(90,90,92), rgb(58,58,60))", borderRadius: "0 3px 3px 0" }} />
 
       {/* ── Phone frame ──────────────────────────────────────────────────── */}
       <div style={{
@@ -113,9 +113,8 @@ function WaPhoneMockup({
         }}>
 
           {/* Status bar — Dynamic Island centered, time left, icons right */}
-          <div className="relative flex items-center shrink-0" style={{
+          <div className={`relative flex items-center shrink-0 ${DT.BG_WHATSAPP_GREEN}`} style={{
             height: "50px",
-            background: "#075E54",
             paddingLeft: "20px",
             paddingRight: "16px",
           }}>
@@ -161,8 +160,7 @@ function WaPhoneMockup({
           </div>
 
           {/* WhatsApp chat header */}
-          <div className="flex items-center gap-2 shrink-0" style={{
-            backgroundColor: "#075E54",
+          <div className={`flex items-center gap-2 shrink-0 ${DT.BG_WHATSAPP_GREEN}`} style={{
             paddingInline: "12px",
             paddingBottom: "10px",
           }}>
@@ -230,7 +228,7 @@ function WaPhoneMockup({
                   <span style={{ color: "#aaa", fontStyle: "italic" }}>Your message will appear here…</span>
                 )}
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "3px" }}>
-                  <span style={{ fontSize: "8px", color: "#8696a0" }}>{now} ✓✓</span>
+                  <span className={DT.TEXT_MUTED_DARK} style={{ fontSize: "8px" }}>{now} ✓✓</span>
                 </div>
               </div>
             </div>
@@ -465,9 +463,9 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                         : "Creating broadcast campaigns is optimized for desktop use. Please open WABDesk on your computer or laptop to compose and send broadcasts."}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                  <button onClick={() => onOpenChange(false)} className={DT.BTN_OUTLINE}>
                     {isAr ? "حسناً، فهمت" : "Got it"}
-                  </Button>
+                  </button>
                 </div>
               ) : done ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3">
@@ -742,20 +740,19 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
             {/* Footer */}
             {!done && !isMobile && (
               <div className="border-t px-6 py-4 flex items-center justify-between gap-3 shrink-0 bg-background">
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => handleSubmit("draft")}
                   disabled={!canSubmit}
-                  className="gap-1.5"
+                  className={`${DT.BTN_OUTLINE} gap-1.5`}
                 >
                   <SaveIcon className="size-4" />
                   {isAr ? "حفظ كمسودة" : "Save Draft"}
-                </Button>
+                </button>
 
-                <Button
+                <button
                   onClick={() => handleSubmit(isScheduled ? "schedule" : "send")}
                   disabled={!canSubmit}
-                  className="gap-1.5 px-6"
+                  className={`${DT.BTN_PRIMARY} gap-1.5 px-6`}
                 >
                   <SendIcon className="size-4" />
                   {submitting
@@ -763,7 +760,7 @@ export function CreateBroadcastModal({ open, onOpenChange, locale }: Props) {
                     : isScheduled
                       ? (isAr ? "جدولة الحملة" : "Schedule Broadcast")
                       : (isAr ? "إرسال الحملة" : "Send Broadcast")}
-                </Button>
+                </button>
               </div>
             )}
           </div>

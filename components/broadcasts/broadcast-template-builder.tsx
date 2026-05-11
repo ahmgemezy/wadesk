@@ -273,7 +273,7 @@ export function BroadcastTemplateBuilder({ templateId, onClose, onSave }: Props)
   return (
     <div className="flex flex-col h-full">
         {isLocked && (
-          <div className="mx-6 mt-4 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 px-3 py-2 text-sm text-amber-700 dark:text-amber-400 shrink-0">
+          <div className={`mx-6 mt-4 rounded-md ${DT.BG_AMBER_LIGHT} ${DT.BORDER_AMBER} px-3 py-2 text-sm ${DT.TEXT_AMBER} shrink-0`}>
             {template?.metaStatus === "pending"
               ? t("This template is pending Meta review and cannot be edited.", "هذا القالب قيد مراجعة ميتا ولا يمكن تعديله.")
               : t("Approved templates cannot be edited.", "لا يمكن تعديل القوالب المعتمدة.")}

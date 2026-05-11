@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { DT } from "@/lib/design-tokens";
 import type { LibraryTemplate } from "@/lib/templateLibrary";
 import { CATEGORY_LABELS, INDUSTRY_LABELS } from "@/lib/templateLibrary";
 import { useT } from "@/lib/i18n/context";
@@ -13,30 +13,30 @@ interface Props {
 function PurposeBadge({ template, t }: { template: LibraryTemplate; t: (en: string, ar: string) => string }) {
   if (template.type === "quick_reply") {
     return (
-      <Badge variant="secondary" className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 border-0">
+      <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 border-0 px-2.5 py-0.5 rounded-full inline-flex items-center">
         💬 {t("Quick-Reply", "رد سريع")}
-      </Badge>
+      </span>
     );
   }
   if (template.metaCategory === "MARKETING") {
     return (
-      <Badge variant="secondary" className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border-0">
+      <span className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border-0 px-2.5 py-0.5 rounded-full inline-flex items-center">
         🎯 {t("Marketing Broadcast", "حملة تسويقية")}
-      </Badge>
+      </span>
     );
   }
   if (template.metaCategory === "AUTHENTICATION") {
     return (
-      <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border-0">
+      <span className={`text-[10px] ${DT.BG_AMBER_LIGHT} ${DT.TEXT_AMBER} border-0 px-2.5 py-0.5 rounded-full inline-flex items-center`}>
         🔐 {t("Auth Broadcast", "حملة مصادقة")}
-      </Badge>
+      </span>
     );
   }
   // UTILITY (default for meta)
   return (
-    <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0">
+    <span className="text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border-0 px-2.5 py-0.5 rounded-full inline-flex items-center">
       🔧 {t("Utility Broadcast", "حملة خدمية")}
-    </Badge>
+    </span>
   );
 }
 
@@ -57,9 +57,9 @@ export function LibraryTemplateCard({ template, onClick }: Props) {
         <span className="text-sm font-semibold leading-tight line-clamp-1">
           {template.title}
         </span>
-        <Badge variant="outline" className="shrink-0 text-[10px] uppercase tracking-wider">
+        <span className="shrink-0 text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-border inline-flex items-center">
           {template.language === "ar" ? "AR" : "EN"}
-        </Badge>
+        </span>
       </div>
 
       <p
@@ -72,22 +72,22 @@ export function LibraryTemplateCard({ template, onClick }: Props) {
       <div className="flex flex-wrap gap-1.5 mt-auto pt-1 border-t border-border/50">
         <PurposeBadge template={template} t={t} />
         {catMeta && (
-          <Badge variant="outline" className="text-[10px]">
+          <span className="text-[10px] px-2.5 py-0.5 rounded-full border border-border inline-flex items-center">
             {catMeta.icon} {t(catMeta.en, catMeta.ar)}
-          </Badge>
+          </span>
         )}
         {displayIndustries.map((ind) => {
           const indMeta = INDUSTRY_LABELS[ind];
           return (
-            <Badge key={ind} variant="outline" className="text-[10px] text-muted-foreground">
+            <span key={ind} className="text-[10px] text-muted-foreground px-2.5 py-0.5 rounded-full border border-border inline-flex items-center">
               {indMeta.icon} {t(indMeta.en, indMeta.ar)}
-            </Badge>
+            </span>
           );
         })}
         {extraCount > 0 && (
-          <Badge variant="outline" className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground px-2.5 py-0.5 rounded-full border border-border inline-flex items-center">
             +{extraCount}
-          </Badge>
+          </span>
         )}
       </div>
     </button>

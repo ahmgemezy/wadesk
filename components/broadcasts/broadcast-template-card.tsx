@@ -28,9 +28,9 @@ type BroadcastTemplate = {
 
 const STATUS_CONFIG = {
   draft:    { label: "Draft",          labelAr: "مسودة",            className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
-  pending:  { label: "Pending Review", labelAr: "قيد المراجعة",     className: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300" },
-  approved: { label: "Approved",       labelAr: "معتمد",            className: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
-  rejected: { label: "Rejected",       labelAr: "مرفوض",            className: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300" },
+  pending:  { label: "Pending Review", labelAr: "قيد المراجعة",     className: `${DT.BG_AMBER_LIGHT} ${DT.TEXT_AMBER}` },
+  approved: { label: "Approved",       labelAr: "معتمد",            className: `${DT.BG_GREEN_LIGHT} ${DT.TEXT_GREEN}` },
+  rejected: { label: "Rejected",       labelAr: "مرفوض",            className: `${DT.BG_RED_LIGHT} ${DT.TEXT_RED_LIGHT}` },
   paused:   { label: "Paused",         labelAr: "موقوف",            className: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" },
 };
 

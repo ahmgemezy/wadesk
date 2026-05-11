@@ -30,29 +30,34 @@ const BORDER_COLOR: Record<string, string> = {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: { ar: string; en: string }; cls: string; dot?: string }
+  { label: { ar: string; en: string }; cls: string; dot?: string; progressColor?: string }
 > = {
   sending: {
     label: { ar: "جاري الإرسال", en: "Sending" },
-    cls: "bg-blue-50 text-blue-700 border border-blue-200",
+    cls: `${DT.BG_BLUE_LIGHT} ${DT.TEXT_BLUE_DARK} border border-blue-200`,
     dot: "bg-blue-500 animate-pulse",
+    progressColor: "bg-blue-500",
   },
   scheduled: {
     label: { ar: "مجدول", en: "Scheduled" },
-    cls: "bg-amber-50 text-amber-700 border border-amber-200",
+    cls: `${DT.BG_AMBER_LIGHT} ${DT.TEXT_AMBER} border border-amber-200`,
     dot: "bg-amber-500",
+    progressColor: "bg-amber-400",
   },
   sent: {
     label: { ar: "تم الإرسال", en: "Completed" },
-    cls: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    cls: `${DT.BG_GREEN_LIGHT} text-emerald-700 border border-emerald-200`,
+    progressColor: "bg-emerald-500",
   },
   failed: {
     label: { ar: "فشل جزئي", en: "Failed (Partial)" },
-    cls: "bg-rose-50 text-rose-700 border border-rose-200",
+    cls: `${DT.BG_RED_LIGHT} text-red-700 border border-red-200`,
+    progressColor: "bg-red-500",
   },
   draft: {
     label: { ar: "مسودة", en: "Draft" },
     cls: "bg-slate-50 text-slate-600 border border-slate-200",
+    progressColor: "bg-slate-400",
   },
 };
 
@@ -139,7 +144,7 @@ function ActiveCampaignCard({
         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-500 ${
-              broadcast.status === "sending" ? "bg-blue-500" : "bg-amber-400"
+              STATUS_CONFIG[broadcast.status]?.progressColor ?? "bg-slate-400"
             }`}
             style={{ width: `${progress}%` }}
           />

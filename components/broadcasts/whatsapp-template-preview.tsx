@@ -1,6 +1,7 @@
 "use client";
 
 import { PhoneIcon, ExternalLinkIcon, CornerDownLeftIcon } from "lucide-react";
+import { DT } from "@/lib/design-tokens";
 
 export type TemplateComponent = {
   type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
@@ -55,7 +56,7 @@ export function WhatsAppTemplatePreview({ name, components }: Props) {
         }}
       >
         {/* Dynamic Island area */}
-        <div className="bg-[#075E54] flex justify-center items-start pt-3 pb-0">
+        <div className={`${DT.BG_WHATSAPP_GREEN} flex justify-center items-start pt-3 pb-0`}>
           <div
             className="bg-black rounded-full"
             style={{ width: "126px", height: "36px" }}
@@ -63,7 +64,7 @@ export function WhatsAppTemplatePreview({ name, components }: Props) {
         </div>
 
         {/* WhatsApp header */}
-        <div className="bg-[#075E54] h-14 flex items-center px-4 gap-3">
+        <div className={`${DT.BG_WHATSAPP_GREEN} h-14 flex items-center px-4 gap-3`}>
           <div className="w-9 h-9 rounded-full bg-gray-400 shrink-0" />
           <div className="flex-1">
             <div className="text-white text-sm font-semibold">Business</div>
@@ -131,7 +132,7 @@ export function WhatsAppTemplatePreview({ name, components }: Props) {
                 {buttonsComp.buttons.map((btn, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-xl shadow-sm py-2.5 px-4 flex items-center justify-center gap-2 text-[#00A884] text-[13px] font-medium"
+                    className={`bg-white rounded-xl shadow-sm py-2.5 px-4 flex items-center justify-center gap-2 ${DT.TEXT_WHATSAPP_ACTION} text-[13px] font-medium`}
                   >
                     {btn.type === "URL" && <ExternalLinkIcon className="size-3.5" />}
                     {btn.type === "PHONE_NUMBER" && <PhoneIcon className="size-3.5" />}

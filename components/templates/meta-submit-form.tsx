@@ -10,9 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DT } from "@/lib/design-tokens";
 import { Loader2Icon } from "lucide-react";
 import { toast } from "sonner";
 import type { LibraryTemplate, MetaCategory } from "@/lib/templateLibrary";
@@ -107,18 +105,19 @@ export function MetaSubmitForm({ template, open, onClose }: Props) {
 
         <div className="space-y-4 pt-1">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">
+            <label className={DT.LBL}>
               {t("Template Name", "اسم القالب")}
               <span className="ms-1 text-xs text-muted-foreground font-normal">
                 {t("(lowercase + underscores only)", "(أحرف صغيرة ومسطّرات فقط)")}
               </span>
             </label>
-            <Input
+            <input
+              type="text"
               value={name}
               onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
               dir="ltr"
               placeholder="flash_sale_offer"
-              className={!nameIsValid && name.length > 0 ? "border-destructive" : ""}
+              className={`${DT.INPUT} ${!nameIsValid && name.length > 0 ? "border-destructive" : ""}`}
             />
             {!nameIsValid && name.length > 0 && (
               <p className="text-xs text-destructive">
@@ -128,11 +127,11 @@ export function MetaSubmitForm({ template, open, onClose }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">{t("Template Body", "نص القالب")}</label>
-            <Textarea
+            <label className={DT.LBL}>{t("Template Body", "نص القالب")}</label>
+            <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="min-h-28 resize-none"
+              className={`${DT.TEXTAREA} min-h-28 resize-none`}
               dir="auto"
             />
             <p className="text-xs text-muted-foreground">
@@ -196,16 +195,17 @@ export function MetaSubmitForm({ template, open, onClose }: Props) {
         </div>
 
         <div className="flex gap-2 justify-end pt-2 border-t mt-2">
-          <Button variant="outline" onClick={onClose} disabled={submitting}>
+          <button onClick={onClose} disabled={submitting} className={DT.BTN_OUTLINE}>
             {t("Cancel", "إلغاء")}
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={handleSubmit}
             disabled={submitting || !channelId || !nameIsValid || !body.trim()}
+            className={DT.BTN_PRIMARY}
           >
             {submitting && <Loader2Icon className="size-4 me-2 animate-spin" />}
             {t("Submit to Meta for Approval", "إرسال لميتا للمراجعة")}
-          </Button>
+          </button>
         </div>
       </DialogContent>
     </Dialog>
