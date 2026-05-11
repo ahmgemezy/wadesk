@@ -255,6 +255,7 @@ export default defineSchema({
     failureReason: v.optional(v.string()),
     status: v.union(
       v.literal("scheduled"),
+      v.literal("processing"),
       v.literal("sending"),
       v.literal("sent"),
       v.literal("delivered"),
@@ -262,6 +263,10 @@ export default defineSchema({
       v.literal("failed"),
     ),
     scheduledAt: v.optional(v.number()),
+    retryCount: v.optional(v.number()),
+    lastFailureAt: v.optional(v.number()),
+    lastErrorCode: v.optional(v.string()),
+    processingStartedAt: v.optional(v.number()),
     timestamp: v.number(),
     createdAt: v.number(),
     quotedMessageId: v.optional(v.id("messages")),
@@ -300,6 +305,7 @@ export default defineSchema({
     .index("by_conversation", ["conversationId", "createdAt"])
     .index("by_tenant", ["tenantId"])
     .index("by_meta_message_id", ["metaMessageId"])
+    .index("by_status_and_scheduledAt", ["status", "scheduledAt"])
     .searchIndex("search_content", {
       searchField: "content",
       filterFields: ["tenantId"],

@@ -100,29 +100,113 @@ export const listScheduled = query({
   },
 });
 
+// Tunables for the scheduled-message processor.
+// MAX_RETRY_ATTEMPTS — retry budget for messages that get stuck in "processing"
+//   (cron crashed mid-send, action timed out, etc.). Bumped on each bounce
+//   back from "processing" → "scheduled" by the reaper. Phase 1.5 will also
+//   bump this on transient Meta API failures from the send action itself.
+// PROCESSING_TIMEOUT_MS — a row may sit in "processing" for at most this long
+//   before the reaper considers it stuck. 10 min is generous vs. normal Meta
+//   latency (sub-second to a few seconds) and short enough to keep ghosts off
+//   the inbox UI.
+// BATCH_SIZE — max messages dispatched per cron tick. Cron runs every minute
+//   (convex/crons.ts), so steady-state throughput cap is BATCH_SIZE/min. Bump
+//   this constant if a backlog ever forms.
+const MAX_RETRY_ATTEMPTS = 5;
+const PROCESSING_TIMEOUT_MS = 10 * 60 * 1000;
+const BATCH_SIZE = 100;
+
+// Failure-code constants. Prefix convention:
+//   INTERNAL_* → WABDesk bugs / cron issues (this file).
+//   META_*     → Meta API errors (introduced in Phase 1.5, not yet present).
+//   No prefix  → preexisting strings (CONVERSATION_NOT_FOUND,
+//                CHANNEL_OR_CONTACT_NOT_FOUND) that are also used as
+//                client-facing ConvexError codes in convex/messages.ts;
+//                left unprefixed to avoid touching code outside Phase 1 scope.
+const FAILURE_INTERNAL_MAX_RETRIES = "INTERNAL_MAX_RETRIES_EXCEEDED";
+const FAILURE_INTERNAL_STUCK_PROCESSING = "INTERNAL_STUCK_PROCESSING_TIMEOUT";
+
 export const processScheduledMessages = internalMutation({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
 
-    const all = await ctx.db.query("messages").collect();
-    const scheduled = all.filter((m) => m.status === "scheduled" && m.scheduledAt && m.scheduledAt <= now);
+    // ─ Step 1: reap rows stuck in "processing" past the timeout.
+    // Indexed read on (status, scheduledAt) prefix; bounded by BATCH_SIZE.
+    // If a row is past PROCESSING_TIMEOUT_MS and has retry budget remaining,
+    // bounce it back to "scheduled" for re-dispatch on a later tick. Otherwise
+    // mark failed and stop retrying.
+    const stuck = await ctx.db
+      .query("messages")
+      .withIndex("by_status_and_scheduledAt", (q) => q.eq("status", "processing"))
+      .take(BATCH_SIZE);
 
-    for (const msg of scheduled.slice(0, 20)) {
+    for (const msg of stuck) {
+      const startedAt = msg.processingStartedAt ?? msg._creationTime;
+      if (now - startedAt < PROCESSING_TIMEOUT_MS) continue;
+
+      const retryCount = msg.retryCount ?? 0;
+      if (retryCount >= MAX_RETRY_ATTEMPTS) {
+        await ctx.db.patch(msg._id, {
+          status: "failed",
+          failureReason: FAILURE_INTERNAL_MAX_RETRIES,
+          lastFailureAt: now,
+        });
+        continue;
+      }
+
+      await ctx.db.patch(msg._id, {
+        status: "scheduled",
+        retryCount: retryCount + 1,
+        lastFailureAt: now,
+        lastErrorCode: FAILURE_INTERNAL_STUCK_PROCESSING,
+        processingStartedAt: undefined,
+      });
+    }
+
+    // ─ Step 2: dispatch due scheduled messages via the indexed query.
+    // The (status, scheduledAt) index lets storage filter by status AND
+    // range-scan by scheduledAt in a single read — replaces the prior full
+    // table scan of every message ever sent.
+    const due = await ctx.db
+      .query("messages")
+      .withIndex("by_status_and_scheduledAt", (q) =>
+        q.eq("status", "scheduled").lte("scheduledAt", now),
+      )
+      .take(BATCH_SIZE);
+
+    for (const msg of due) {
       const conversation = await ctx.db.get(msg.conversationId);
       if (!conversation) {
-        await ctx.db.patch(msg._id, { status: "failed", failureReason: "CONVERSATION_NOT_FOUND" });
+        await ctx.db.patch(msg._id, {
+          status: "failed",
+          failureReason: "CONVERSATION_NOT_FOUND",
+          lastFailureAt: now,
+        });
         continue;
       }
 
-      const channel = await ctx.db.get(conversation.channelId);
-      const contact = await ctx.db.get(conversation.contactId);
+      const [channel, contact] = await Promise.all([
+        ctx.db.get(conversation.channelId),
+        ctx.db.get(conversation.contactId),
+      ]);
       if (!channel || !contact) {
-        await ctx.db.patch(msg._id, { status: "failed", failureReason: "CHANNEL_OR_CONTACT_NOT_FOUND" });
+        await ctx.db.patch(msg._id, {
+          status: "failed",
+          failureReason: "CHANNEL_OR_CONTACT_NOT_FOUND",
+          lastFailureAt: now,
+        });
         continue;
       }
 
-      await ctx.db.patch(msg._id, { status: "sending" });
+      // Idempotency boundary: transition scheduled → processing BEFORE
+      // scheduling the send action. The next cron tick cannot observe this
+      // row as "scheduled" until either the send completes (→ "sent" /
+      // "failed") or the reaper bounces it back.
+      await ctx.db.patch(msg._id, {
+        status: "processing",
+        processingStartedAt: now,
+      });
 
       await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMessage, {
         messageId: msg._id,

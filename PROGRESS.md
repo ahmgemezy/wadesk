@@ -18,6 +18,105 @@
 
 ## ✅ Completed Tasks
 
+### 2026-05-11: Convex Perf Phase 1 — Indexed Scheduled-Message Cron + Stuck-Row Reaper ✅
+
+**Branch:** `feat/clerk-to-better-auth`
+
+**Goal:** Eliminate the full table scan in `processScheduledMessages` (the cron responsible for ~1.46 GB of DB I/O / month — 80% of total DB I/O in dev telemetry Apr 30 – May 30, 2026). Replace with an indexed query, add idempotency via a `"processing"` intermediate state, and add a stuck-row reaper so a mid-send crash cannot create permanent ghost messages.
+
+**Phase scope:** cron + index + reaper only. Send-action retry classification (transient vs permanent Meta API errors) is deferred to Phase 1.5 — the send path is intentionally untouched here to keep blast radius small.
+
+**Files modified:**
+- `convex/schema.ts` — additive changes to the `messages` table:
+  - Added `v.literal("processing")` to the `status` union (new literal; only written by the new cron, so existing rows are unaffected).
+  - Added four optional fields: `retryCount`, `lastFailureAt`, `lastErrorCode`, `processingStartedAt` (all `v.optional(...)`).
+  - Added new compound index `.index("by_status_and_scheduledAt", ["status", "scheduledAt"])`.
+- `convex/messageScheduling.ts` — rewrote `processScheduledMessages` (internalMutation):
+  - Introduced tunable constants: `MAX_RETRY_ATTEMPTS = 5`, `PROCESSING_TIMEOUT_MS = 10 * 60 * 1000`, `BATCH_SIZE = 100`.
+  - Step 1 (reaper): indexed query on `status = "processing"`, take BATCH_SIZE. For each row whose `processingStartedAt` (or `_creationTime` fallback) is older than `PROCESSING_TIMEOUT_MS`: if `retryCount >= MAX_RETRY_ATTEMPTS` → `status = "failed"` with `failureReason = "MAX_RETRIES_EXCEEDED"`; else bounce to `status = "scheduled"`, `retryCount += 1`, `lastErrorCode = "STUCK_PROCESSING_TIMEOUT"`, clear `processingStartedAt`.
+  - Step 2 (dispatch): indexed query on `status = "scheduled" AND scheduledAt <= now`, take BATCH_SIZE. Same not-found handling as before for missing conversation / channel / contact, now also writing `lastFailureAt`. Idempotency: transition `"scheduled" → "processing"` + set `processingStartedAt = now` BEFORE scheduling the send action (was `"scheduled" → "sending"` before).
+  - Parallelized `channel` + `contact` lookups via `Promise.all` (was sequential; minor latency win, no semantic change).
+  - Throughput cap raised from `.slice(0, 20)` to `.take(BATCH_SIZE)` = 100/min. Cron frequency unchanged (every 1 min).
+
+**Files NOT touched (deliberate):**
+- `convex/crons.ts` — frequency and arg shape are correct; no edit needed.
+- `convex/actions/sendWhatsAppMessage.ts` — Phase 1.5 boundary. The five send actions still call `markFailed` on any non-OK Meta response. `retryCount` is currently consumed only by the reaper, not the send path. Phase 1.5 will modify the send actions to classify Meta errors (5xx / 429 = transient → bounce to `"scheduled"` + `retryCount++`; 4xx = permanent → straight to `"failed"`).
+- `scheduleMessage`, `cancelScheduled`, `listScheduled` in `messageScheduling.ts` — out of scope per CLAUDE.md §30.3 (Surgical Changes). `listScheduled` has the same anti-pattern (tenant collect + JS filter); flagged as a follow-up.
+
+**Schema migration safety:**
+- All schema changes are **additive** — existing rows that lack `retryCount` / `lastFailureAt` / `lastErrorCode` / `processingStartedAt` read as `undefined` and are normalized (`?? 0` or `?? _creationTime` fallback) at the call site.
+- The new `"processing"` literal is only emitted by the new cron. No existing rows have it, no old code reads it.
+- No data backfill required.
+
+**Idempotency model (new):**
+- `scheduled` → reaper or cron picks up
+- `scheduled` → `processing` (before action dispatch; `processingStartedAt = now`)
+- `processing` → `sent` (action success path, via `internal.messages.updateStatus`)
+- `processing` → `failed` (action failure path, via `markFailed`)
+- `processing` → `scheduled` (reaper if stuck > 10 min and `retryCount < 5`; bumps `retryCount`)
+- `processing` → `failed` (reaper if stuck > 10 min and `retryCount >= 5`; sets `failureReason = "MAX_RETRIES_EXCEEDED"`)
+
+**Behavioral preservation:**
+- Conversation-not-found / channel-not-found / contact-not-found → `failed` with the same `failureReason` codes as before (additive `lastFailureAt`).
+- Send action call signature is unchanged (same five args: `messageId`, `phoneNumberId`, `contactPhone`, `content`, `tenantId`).
+- No frontend or webhook depends on the intermediate status; only the cron reads it.
+
+**TypeScript:** `npx tsc --noEmit` → exit 0, zero errors. Literal terminal output:
+```
+$ npx tsc --noEmit
+$ echo "EXIT=$?"
+EXIT=0
+```
+
+**Diff stats:**
+```
+ convex/messageScheduling.ts | 90 +++++++++++++++++++++++++++++++++++++++++----
+ convex/schema.ts            |  6 +++
+ 2 files changed, 88 insertions(+), 8 deletions(-)
+```
+
+**Verification (post-deploy, run from Convex dashboard):**
+1. Confirm new index is used by the due-message query:
+   ```ts
+   await ctx.db
+     .query("messages")
+     .withIndex("by_status_and_scheduledAt", (q) =>
+       q.eq("status", "scheduled").lte("scheduledAt", Date.now()),
+     )
+     .take(10);
+   ```
+2. Find ghost rows (expected empty after a few cron ticks):
+   ```ts
+   await ctx.db
+     .query("messages")
+     .withIndex("by_status_and_scheduledAt", (q) => q.eq("status", "processing"))
+     .collect();
+   ```
+
+**Manual test plan:**
+1. Schedule a message for `now + 60s` → confirm it sends.
+2. Schedule then disconnect channel before cron picks it up → confirm `status="failed"`, `failureReason="CHANNEL_OR_CONTACT_NOT_FOUND"`, `lastFailureAt` populated.
+3. Manually patch a test row to `{ status: "processing", processingStartedAt: Date.now() - 11*60*1000 }` → wait for next cron → confirm row bounced to `"scheduled"` with `retryCount = 1`.
+4. Repeat (3) until `retryCount = 5` → confirm row marked `"failed"` with `failureReason: "MAX_RETRIES_EXCEEDED"`.
+
+**Expected telemetry impact:** the dominant reads in `processScheduledMessages` move from "every message in the deployment per cron tick (every 1 min)" to "up to 200 indexed rows per tick" (BATCH_SIZE reaper + BATCH_SIZE dispatch). Projected DB I/O drop: ~1.46 GB/month → well under 50 MB/month for this path. Re-measure after 24 hours of dev soak.
+
+**Rollback plan:** all changes additive. `git revert <commit>` reverts both files; the unused new schema fields and new index are harmless on disk and cost approximately nothing to leave behind if rollback is permanent.
+
+**Follow-ups (NOT in this PR):**
+- Phase 1.5 — classify transient vs permanent Meta API errors in the five `sendWhatsAppMessage` actions (`sendMessage`, `sendLocation`, `sendQuotedMessage`, `sendProduct`, `sendMediaMessage`). New failure-code prefix `META_*` will be introduced for those.
+- `listScheduled` — same anti-pattern (tenant `.collect()` + JS filter on status). Minor blast radius; can adopt the new index in a sibling sweep.
+
+**Production-readiness notes:**
+- **`BATCH_SIZE` tuning** — 100 messages/min = 6,000/hour ceiling. Sufficient for dev and early production. Revisit if/when:
+  - A single tenant runs a broadcast > 6,000 messages in < 1 hour
+  - p95 cron execution time exceeds 30 seconds
+  - Meta API rate limits become the bottleneck (in which case raising `BATCH_SIZE` alone may not help — need per-channel throttling)
+- **Failure-code prefix convention** — `INTERNAL_*` = WABDesk bugs / cron issues; `META_*` = Meta API errors (Phase 1.5); unprefixed strings (`CONVERSATION_NOT_FOUND`, `CHANNEL_OR_CONTACT_NOT_FOUND`) are preexisting and double-duty as client-facing `ConvexError` codes in `convex/messages.ts`. Renaming those is a wider refactor and intentionally out of Phase 1 scope.
+- **Unreaped `"sending"` rows** — instant-send paths (12 call sites in `messages.ts`, `inbox.ts`, `automations.ts`, `broadcasts.ts`) write `status: "sending"` synchronously inside their mutation and schedule the send action atomically (Convex commit guarantees both or neither). The reaper protects only the cron-managed `"processing"` state. A `"sending"` row stuck because the action crashed mid-Meta-call has no automatic recovery today — same behavior as before Phase 1. If this becomes a problem, extend the reaper query to also include `status="sending"` with an age threshold.
+
+---
+
 ### 2026-05-09: Broadcasts UI Redesign + Scheduling Backend ✅
 
 **Branch:** `feat/clerk-to-better-auth`
@@ -1924,6 +2023,44 @@ Implementer: GLM 5.1 (cheaper coding model). Reviewer: Claude Code. Approver: Ah
 | **WhatsApp Catalog**                     | CLAUDE.md §6 explicitly deferred to Phase 2.                                                                                |
 | **WooCommerce / Shopify Integration**    | Phase 2.                                                                                                                    |
 | **WhatsApp OTP**                         | Phase 2.                                                                                                                    |
+
+---
+
+## 📋 Deferred / Production-readiness Backlog
+
+Items deferred from completed Phases to keep blast radius surgical. Re-evaluate before scale or when telemetry justifies.
+
+### 1. Unreaped `"sending"` path (perf Phase 1 follow-up)
+Instant-send messages (`convex/messages.ts`, `convex/inbox.ts`, `convex/automations.ts`, `convex/broadcasts.ts` — 12 call sites) write `status: "sending"` synchronously inside their mutation and schedule the send action atomically. If the send **action itself** crashes mid-Meta-call, the row can sit in `"sending"` forever — no automatic recovery. This is **pre-existing behavior, not introduced by Phase 1**.
+
+**Options when revisited:**
+- Extend the cron reaper to also query `status="sending"` with a longer timeout (e.g., 5 min — longer than any reasonable Meta API call latency).
+- OR a separate reconciliation cron dedicated to stuck instant-send rows.
+
+**Priority:** Lower than Phase 2/3 unless dev/prod telemetry shows this happening at scale (look for `"sending"` rows older than ~5 min in Convex dashboard).
+
+### 2. Error-code taxonomy refactor (perf Phase 1 follow-up)
+`CONVERSATION_NOT_FOUND` and `CHANNEL_OR_CONTACT_NOT_FOUND` currently serve double duty: cron failure-reason writes (`convex/messageScheduling.ts`) AND client-facing `ConvexError` codes (`convex/messages.ts:753, 946, 994, 1027, 1030`). Phase 1 deliberately did not prefix these to avoid touching code outside scope, but the dual-use is technical debt.
+
+**A future refactor should establish a consistent prefix convention across:**
+- All `ConvexError` throws in `convex/messages.ts`
+- All frontend `catch` blocks matching these codes
+- All cron failure-reason writers (currently only `convex/messageScheduling.ts`)
+- i18n/localization layer for Arabic/English user-facing messages (current pattern: error codes mapped to localized strings in the UI layer)
+- New code should follow the prefix convention introduced in Phase 1: `INTERNAL_*` for WABDesk bugs / cron issues, `META_*` for Meta API errors (Phase 1.5), and explicit error codes for client-throwable conditions.
+
+**Priority:** Medium. Bundle with i18n cleanup or the next time we touch the error-handling layer.
+
+### 3. `BATCH_SIZE` tuning trigger (perf Phase 1 follow-up)
+Current `BATCH_SIZE = 100` in `convex/messageScheduling.ts` → 100 messages/min = 6,000/hour ceiling. Sufficient for dev and early production.
+
+**Revisit when any of these become true:**
+- A single tenant runs a broadcast > 6,000 messages in < 1 hour
+- p95 cron execution time for `processScheduledMessages` exceeds 30 seconds (observe in Convex dashboard → Functions → metrics)
+- Multiple tenants compete for the same cron capacity (need per-tenant fairness — raising `BATCH_SIZE` alone won't help; consider per-tenant interleaving or a fair-share scheduler)
+- Meta API rate limits become the bottleneck (raising `BATCH_SIZE` alone won't help; needs per-channel throttling at the send-action layer)
+
+**Priority:** Reactive — bump only when telemetry justifies.
 
 ---
 

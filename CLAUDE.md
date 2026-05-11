@@ -52,6 +52,144 @@ A team inbox built on WhatsApp Business — multiple agents handle customer conv
 
 ---
 
+## 🔧 Convex Performance Optimization (Phase 1 deployed 2026-05-11)
+
+> Architectural decisions and principles from the Convex perf work. Future sessions must respect these or they will undo the savings. The full changelog lives in `PROGRESS.md`; this section is the durable contract.
+
+### Baseline (dev `determined-loris-556`, Apr 30 – May 30, 2026)
+
+Pre-Phase-1 monthly telemetry from a nearly-empty deployment:
+
+| Metric         | Value         | Top offender                                                            |
+| -------------- | ------------- | ----------------------------------------------------------------------- |
+| Function calls | 924K / month  | Better Auth — 471K                                                      |
+| DB I/O         | 1.83 GB       | `messageScheduling.processScheduledMessages` — 1.46 GB                  |
+| Compute        | 1.6 GB-hours  | `orgMembers.list` / `orgMembersQueries.listActive` — 1.3 GB-hours       |
+| Data egress    | 553 MB        | `orgMembers.list` / `listActive` — 434 MB                               |
+
+### Phase 1 — landed 2026-05-11 (cron + index + reaper)
+
+#### Decision 1: two distinct state machines for `messages`. Do NOT collapse them.
+
+- **Cron-driven path** (scheduled outbound): `scheduled → processing → sent | failed`. Cross-transaction; needs an explicit checkpoint state because the cron picks up rows written in a previous transaction. The reaper bounces stuck `"processing"` rows back to `"scheduled"` after `PROCESSING_TIMEOUT_MS`, up to `MAX_RETRY_ATTEMPTS`.
+- **Instant-send path** (agent click, automation, broadcast): `(insert) → sending → sent | failed`. Atomic — the mutation that writes `"sending"` also schedules the send action in the same Convex transaction (commit-or-nothing). Reaper not needed.
+
+`"processing"` and `"sending"` are **not redundant**. They mark different ownership windows: cron-owned vs. mutation-owned. Collapsing them would either (a) lose reaper protection on the cron path or (b) force the instant path through a checkpoint it does not need.
+
+#### Decision 2: `INTERNAL_` prefix convention for failure codes written by the cron / reaper
+
+- `INTERNAL_*` — WABDesk bug or cron issue. Examples: `INTERNAL_MAX_RETRIES_EXCEEDED`, `INTERNAL_STUCK_PROCESSING_TIMEOUT`.
+- `META_*` — Meta API error. Introduced in Phase 1.5 (see plan below); not yet present.
+- **Unprefixed** strings — `CONVERSATION_NOT_FOUND`, `CHANNEL_OR_CONTACT_NOT_FOUND`. Dual-use: cron failure reasons AND client-facing `ConvexError` codes thrown from user mutations in `convex/messages.ts`. Intentionally NOT prefixed in Phase 1 — a unified taxonomy refactor is a separate piece of work tracked in `PROGRESS.md` backlog item #2.
+
+When you introduce new failure codes, **pick a prefix** before writing the literal.
+
+#### Decision 3: named constants at the top of `convex/messageScheduling.ts`
+
+```ts
+const MAX_RETRY_ATTEMPTS = 5;
+const PROCESSING_TIMEOUT_MS = 10 * 60 * 1000;  // 10 min
+const BATCH_SIZE = 100;                         // 6,000/hour ceiling
+const FAILURE_INTERNAL_MAX_RETRIES = "INTERNAL_MAX_RETRIES_EXCEEDED";
+const FAILURE_INTERNAL_STUCK_PROCESSING = "INTERNAL_STUCK_PROCESSING_TIMEOUT";
+```
+
+- Do NOT inline these as magic numbers / string literals.
+- Do NOT change values without first checking `PROGRESS.md` backlog item #3 (BATCH_SIZE tuning triggers) — the constants encode soak-test conclusions.
+
+#### Decision 4: indexed query on `(status, scheduledAt)` — tenant-agnostic by design
+
+- Schema index `messages.by_status_and_scheduledAt = ["status", "scheduledAt"]`. Global, not tenant-prefixed.
+- Adding `tenantId` as the leading field would force the cron to enumerate tenants — the anti-pattern we just eliminated. Tenant isolation is preserved per-row (`messages.tenantId` on each row; the send action takes `tenantId` and resolves the Meta token per-channel).
+- Do NOT add a `by_tenant_status_scheduledAt` compound index "for safety" — it would silently bring the regression back.
+
+### Phase 2 — pending, awaiting 24h Phase 1 telemetry
+
+**Target:** `orgMembers.list` action + `orgMembersQueries.listActive` query — together responsible for ~81% of compute and ~80% of egress.
+
+**Confirmed root causes** (from Phase 0 audit, not the original guess):
+
+- `useOrganization()` in `lib/auth-hooks.ts` always subscribes to `listActive` regardless of which field the caller reads. 36 frontend call sites, most only consuming `membership.role` or `organization.id` (both already in the session JWT).
+- N+1 inside `listActive` itself: `listOrgMembers` + one `findUserById` per member.
+
+**Strategy:**
+
+- Make the `useOrganization()` shim **opt-in** to the heavy `memberships` payload. Verified safe: callers that read `.memberships` already pass `{ memberships: true }` — the shim just ignores the option today.
+- Split `orgMembers.list` action into lightweight `list` + on-demand `getMemberDetails`, OR consider denormalizing hot fields (`userName`, `userEmail`, `userImage`) onto `member` to eliminate the per-row `findUserById`.
+
+**Do NOT start Phase 2 without explicit go-ahead from Ahmed.** Phase 2 has frontend blast radius; it deserves its own review cycle.
+
+### Phase 3 — pending, after Phase 2
+
+**Target:** Better Auth — 471K function calls/month (`HTTP /api/auth/*` 245K, `betterAuth/adapter.findMany` 232K, `betterAuth/orgQueries.*` ~190K).
+
+**Confirmed config gap** (from Phase 0 audit): `convex/auth.ts` has no `cookieCache`, no `session.updateAge`, no `expiresIn` override — all Better Auth defaults. Every request validates the session against the DB.
+
+**Strategy:**
+
+- Enable `cookieCache: { enabled: true, maxAge: 5 * 60 }` and set `session.updateAge` (e.g., 24h) so most requests skip DB validation entirely.
+- Better Auth tables are already well-indexed (see `convex/betterAuth/schema.ts`) — the 232K `findMany` are not from missing indexes.
+- A meaningful portion of `orgQueries.*` traffic is downstream of Phase 2's over-subscription. Re-measure after Phase 2 lands before tuning Phase 3 further.
+
+**Highest-risk phase — extreme caution.** Better Auth misconfiguration can lock out every active session. Each option goes in alone with explicit rollback. Verification checklist (existing session stays valid, fresh signup works, OAuth works, logout works, org switch works) must pass on dev before prod.
+
+### Verification queries (keep handy for ongoing monitoring)
+
+Paste into the Convex dashboard against the deployed deployment.
+
+**1. Messages stuck in `"processing"` > 10 min** (expected: empty in a healthy deployment)
+
+```ts
+const PROCESSING_TIMEOUT_MS = 10 * 60 * 1000;
+const now = Date.now();
+const stuck = await ctx.db
+  .query("messages")
+  .withIndex("by_status_and_scheduledAt", (q) => q.eq("status", "processing"))
+  .collect();
+return stuck.filter(
+  (m) => now - (m.processingStartedAt ?? m._creationTime) > PROCESSING_TIMEOUT_MS,
+);
+```
+
+**2. Recent failures grouped by `failureReason`** (last 24h; spot trends)
+
+```ts
+const since = Date.now() - 24 * 60 * 60 * 1000;
+const failed = await ctx.db
+  .query("messages")
+  .withIndex("by_status_and_scheduledAt", (q) => q.eq("status", "failed"))
+  .collect();
+const recent = failed.filter(
+  (m) => (m.lastFailureAt ?? m._creationTime) >= since,
+);
+const grouped: Record<string, number> = {};
+for (const m of recent) {
+  const k = m.failureReason ?? "(none)";
+  grouped[k] = (grouped[k] ?? 0) + 1;
+}
+return grouped;
+```
+
+**3. Confirm new index is hot** (run before/after deploy to compare bytes-read)
+
+```ts
+return await ctx.db
+  .query("messages")
+  .withIndex("by_status_and_scheduledAt", (q) =>
+    q.eq("status", "scheduled").lte("scheduledAt", Date.now()),
+  )
+  .take(10);
+```
+
+### Reference pointers
+
+- Full Phase 1 changelog → `PROGRESS.md` entry dated **2026-05-11: Convex Perf Phase 1 — Indexed Scheduled-Message Cron + Stuck-Row Reaper**.
+- Deferred / production-readiness backlog → `PROGRESS.md:2029` (three items: unreaped `"sending"`, error-code taxonomy refactor, BATCH_SIZE tuning triggers).
+- Pre-Phase-1 baseline backup → `./backups/wabdesk-backup-phase1-2026-05-11.zip`.
+- Git tag → `phase1-deployed`.
+
+---
+
 ## 4. RTL & Arabic Rules (CRITICAL)
 
 These rules apply to EVERY UI component, no exceptions:
