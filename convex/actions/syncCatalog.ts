@@ -18,6 +18,20 @@ interface MetaProduct {
   currency?: string;
   image_url?: string;
   availability?: string;
+  sale_price?: string;
+  sale_price_effective_date?: string;
+  additional_image_link?: string[];
+  "video[0].url"?: string;
+  custom_label_0?: string;
+  custom_label_1?: string;
+  custom_label_2?: string;
+  custom_label_3?: string;
+  custom_label_4?: string;
+  custom_number_0?: string;
+  custom_number_1?: string;
+  custom_number_2?: string;
+  custom_number_3?: string;
+  custom_number_4?: string;
 }
 
 interface MetaProductsPage {
@@ -28,9 +42,24 @@ interface MetaProductsPage {
   };
 }
 
+// Meta returns price as "10.00 USD" (combined) or as a plain number with a separate currency field.
+// This normalises both into { price: "10.00", currency: "USD" }.
+function parseMetaPrice(raw?: string, rawCurrency?: string): { price?: string; currency?: string } {
+  if (!raw) return {};
+  const match = raw.match(/^(\d[\d.]*)\s+([A-Z]{3})$/);
+  if (match) return { price: match[1], currency: match[2] };
+  return { price: raw || undefined, currency: rawCurrency || undefined };
+}
+
 async function fetchAllProducts(catalogId: string, token: string): Promise<MetaProduct[]> {
   const products: MetaProduct[] = [];
-  const fields = "retailer_id,name,description,price,currency,image_url,availability";
+  const fields = [
+    "retailer_id", "name", "description", "price", "currency",
+    "image_url", "availability",
+    "sale_price", "sale_price_effective_date", "additional_image_link",
+    "custom_label_0", "custom_label_1", "custom_label_2", "custom_label_3", "custom_label_4",
+    "custom_number_0", "custom_number_1", "custom_number_2", "custom_number_3", "custom_number_4",
+  ].join(",");
   let url: string | null = `${BASE}/${catalogId}/products?fields=${fields}&limit=100`;
 
   while (url) {
@@ -94,15 +123,33 @@ export const syncOneCatalog = internalAction({
 
     const syncedAt = Date.now();
     for (let i = 0; i < products.length; i += BATCH_SIZE) {
-      const batch = products.slice(i, i + BATCH_SIZE).map(p => ({
-        retailerId: p.retailer_id ?? p.id,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        currency: p.currency,
-        imageUrl: p.image_url,
-        availability: p.availability,
-      }));
+      const batch = products.slice(i, i + BATCH_SIZE).map(p => {
+        const { price, currency } = parseMetaPrice(p.price, p.currency);
+        const { price: salePrice } = parseMetaPrice(p.sale_price);
+        const customLabels = [
+          p.custom_label_0, p.custom_label_1, p.custom_label_2,
+          p.custom_label_3, p.custom_label_4,
+        ].filter((v): v is string => !!v);
+        const customNumbers = [
+          p.custom_number_0, p.custom_number_1, p.custom_number_2,
+          p.custom_number_3, p.custom_number_4,
+        ].filter((v): v is string => !!v);
+        return {
+          retailerId: p.retailer_id ?? p.id,
+          name: p.name,
+          description: p.description,
+          price,
+          currency,
+          imageUrl: p.image_url,
+          availability: p.availability,
+          salePrice,
+          salePriceEffectiveDate: p.sale_price_effective_date,
+          additionalImages: p.additional_image_link?.length ? p.additional_image_link : undefined,
+          videoUrl: p["video[0].url"],
+          customLabels: customLabels.length ? customLabels : undefined,
+          customNumbers: customNumbers.length ? customNumbers : undefined,
+        };
+      });
       await ctx.runMutation(internal.catalog.insertProductBatch, {
         tenantId: catalog.tenantId,
         channelId: catalog.channelId as Id<"channels">,
@@ -154,15 +201,33 @@ export const syncChannelCatalog = internalAction({
 
     const syncedAt = Date.now();
     for (let i = 0; i < products.length; i += BATCH_SIZE) {
-      const batch = products.slice(i, i + BATCH_SIZE).map(p => ({
-        retailerId: p.retailer_id ?? p.id,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        currency: p.currency,
-        imageUrl: p.image_url,
-        availability: p.availability,
-      }));
+      const batch = products.slice(i, i + BATCH_SIZE).map(p => {
+        const { price, currency } = parseMetaPrice(p.price, p.currency);
+        const { price: salePrice } = parseMetaPrice(p.sale_price);
+        const customLabels = [
+          p.custom_label_0, p.custom_label_1, p.custom_label_2,
+          p.custom_label_3, p.custom_label_4,
+        ].filter((v): v is string => !!v);
+        const customNumbers = [
+          p.custom_number_0, p.custom_number_1, p.custom_number_2,
+          p.custom_number_3, p.custom_number_4,
+        ].filter((v): v is string => !!v);
+        return {
+          retailerId: p.retailer_id ?? p.id,
+          name: p.name,
+          description: p.description,
+          price,
+          currency,
+          imageUrl: p.image_url,
+          availability: p.availability,
+          salePrice,
+          salePriceEffectiveDate: p.sale_price_effective_date,
+          additionalImages: p.additional_image_link?.length ? p.additional_image_link : undefined,
+          videoUrl: p["video[0].url"],
+          customLabels: customLabels.length ? customLabels : undefined,
+          customNumbers: customNumbers.length ? customNumbers : undefined,
+        };
+      });
       await ctx.runMutation(internal.catalog.insertProductBatch, {
         tenantId: channel.tenantId,
         channelId: args.channelId as Id<"channels">,

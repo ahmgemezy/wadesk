@@ -141,11 +141,33 @@ export const pushProductToMeta = action({
       availability: product.availability ?? "in stock",
     };
     if (product.description) body.description = product.description;
-    if (product.imageUrl) body.image_url = product.imageUrl;
+    if (product.productUrl) body.link = product.productUrl;
+    if (product.imageUrl) body.image_link = product.imageUrl;
     if (product.price && product.currency) {
-      // Meta expects price as integer in the lowest currency unit (e.g. cents)
-      body.price = Math.round(parseFloat(product.price) * 100);
-      body.currency = product.currency;
+      // Meta Catalog Products API: price as "<AMOUNT> <CURRENCY>" string (e.g. "10.00 USD")
+      body.price = `${product.price} ${product.currency}`;
+    }
+    if (product.salePrice && product.currency) {
+      body.sale_price = `${product.salePrice} ${product.currency}`;
+    }
+    if (product.salePriceEffectiveDate) {
+      body.sale_price_effective_date = product.salePriceEffectiveDate;
+    }
+    if (product.additionalImages?.length) {
+      product.additionalImages.forEach((url, i) => {
+        body[`additional_image_link[${i}]`] = url;
+      });
+    }
+    if (product.videoUrl) body["video[0].url"] = product.videoUrl;
+    if (product.customLabels?.length) {
+      product.customLabels.forEach((label, i) => {
+        body[`custom_label_${i}`] = label;
+      });
+    }
+    if (product.customNumbers?.length) {
+      product.customNumbers.forEach((num, i) => {
+        body[`custom_number_${i}`] = num;
+      });
     }
 
     const res = await fetch(`${BASE}/${product.catalogId}/products`, {

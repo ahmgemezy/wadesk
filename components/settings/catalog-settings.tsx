@@ -110,6 +110,18 @@ interface ProductDraft {
   pattern: string;
   gender: string;
   ageGroup: string;
+  salePriceEffectiveDate: string;
+  videoUrl: string;
+  customLabel0: string;
+  customLabel1: string;
+  customLabel2: string;
+  customLabel3: string;
+  customLabel4: string;
+  customNumber0: string;
+  customNumber1: string;
+  customNumber2: string;
+  customNumber3: string;
+  customNumber4: string;
 }
 
 const EMPTY_DRAFT: ProductDraft = {
@@ -132,6 +144,18 @@ const EMPTY_DRAFT: ProductDraft = {
   pattern: "",
   gender: "",
   ageGroup: "",
+  salePriceEffectiveDate: "",
+  videoUrl: "",
+  customLabel0: "",
+  customLabel1: "",
+  customLabel2: "",
+  customLabel3: "",
+  customLabel4: "",
+  customNumber0: "",
+  customNumber1: "",
+  customNumber2: "",
+  customNumber3: "",
+  customNumber4: "",
 };
 
 function ProductFormDialog({
@@ -162,6 +186,10 @@ function ProductFormDialog({
     pattern?: string;
     gender?: string;
     ageGroup?: string;
+    salePriceEffectiveDate?: string;
+    videoUrl?: string;
+    customLabels?: string[];
+    customNumbers?: string[];
   } | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -192,6 +220,18 @@ function ProductFormDialog({
           pattern: editingProduct.pattern ?? "",
           gender: editingProduct.gender ?? "",
           ageGroup: editingProduct.ageGroup ?? "",
+          salePriceEffectiveDate: editingProduct.salePriceEffectiveDate ?? "",
+          videoUrl: editingProduct.videoUrl ?? "",
+          customLabel0: editingProduct.customLabels?.[0] ?? "",
+          customLabel1: editingProduct.customLabels?.[1] ?? "",
+          customLabel2: editingProduct.customLabels?.[2] ?? "",
+          customLabel3: editingProduct.customLabels?.[3] ?? "",
+          customLabel4: editingProduct.customLabels?.[4] ?? "",
+          customNumber0: editingProduct.customNumbers?.[0] ?? "",
+          customNumber1: editingProduct.customNumbers?.[1] ?? "",
+          customNumber2: editingProduct.customNumbers?.[2] ?? "",
+          customNumber3: editingProduct.customNumbers?.[3] ?? "",
+          customNumber4: editingProduct.customNumbers?.[4] ?? "",
         }
       : EMPTY_DRAFT,
   );
@@ -327,6 +367,16 @@ function ProductFormDialog({
         pattern: draft.pattern.trim() || undefined,
         gender: draft.gender || undefined,
         ageGroup: draft.ageGroup || undefined,
+        salePriceEffectiveDate: draft.salePriceEffectiveDate.trim() || undefined,
+        videoUrl: draft.videoUrl.trim() || undefined,
+        customLabels: (() => {
+          const arr = [draft.customLabel0, draft.customLabel1, draft.customLabel2, draft.customLabel3, draft.customLabel4].map(s => s.trim());
+          return arr.some(Boolean) ? arr : undefined;
+        })(),
+        customNumbers: (() => {
+          const arr = [draft.customNumber0, draft.customNumber1, draft.customNumber2, draft.customNumber3, draft.customNumber4].map(s => s.trim());
+          return arr.some(Boolean) ? arr : undefined;
+        })(),
       };
       if (isEdit) {
         await updateProduct({ productId: editingProduct!._id, ...shared });
@@ -549,8 +599,8 @@ function ProductFormDialog({
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="pf-name">{t("Product Name", "اسم المنتج")} *</Label>
-                  <span className={`text-xs ${nameLen > 130 ? "text-amber-500" : "text-muted-foreground"}`}>
-                    {nameLen}/150
+                  <span className={`text-xs ${nameLen > 170 ? "text-amber-500" : "text-muted-foreground"}`}>
+                    {nameLen}/200
                   </span>
                 </div>
                 <Input
@@ -559,7 +609,7 @@ function ProductFormDialog({
                   onChange={field("name")}
                   placeholder={t("e.g. Nike Air Max 270", "مثال: نايكي اير ماكس 270")}
                   required
-                  maxLength={150}
+                  maxLength={200}
                 />
               </div>
 
@@ -843,6 +893,93 @@ function ProductFormDialog({
               </div>
             </div>
 
+            <Separator />
+
+            {/* ── Advanced / Meta optional fields ───────────────────── */}
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {t("Advanced Fields", "الحقول المتقدمة")}
+              </p>
+
+              {/* Sale price effective date */}
+              <div className="space-y-1">
+                <Label htmlFor="pf-saleDate">{t("Sale Price Effective Date", "فترة سريان سعر التخفيض")}</Label>
+                <Input
+                  id="pf-saleDate"
+                  value={draft.salePriceEffectiveDate}
+                  onChange={field("salePriceEffectiveDate")}
+                  placeholder="2024-01-01T00:00+00:00/2024-01-31T23:59+00:00"
+                  dir="ltr"
+                  className="font-mono text-xs"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("Format: start/end in ISO 8601. Leave empty for indefinite sale.", "تنسيق: بداية/نهاية بصيغة ISO 8601. اتركه فارغاً للبيع المفتوح.")}
+                </p>
+              </div>
+
+              {/* Video URL */}
+              <div className="space-y-1">
+                <Label htmlFor="pf-video">{t("Product Video URL", "رابط فيديو المنتج")}</Label>
+                <Input
+                  id="pf-video"
+                  value={draft.videoUrl}
+                  onChange={field("videoUrl")}
+                  placeholder="https://example.com/product.mp4"
+                  dir="ltr"
+                  type="url"
+                />
+              </div>
+
+              {/* Custom Labels */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">
+                  {t("Custom Labels (custom_label_0 … 4)", "تسميات مخصصة (custom_label_0 … 4)")}
+                </p>
+                <div className="grid grid-cols-5 gap-2">
+                  {([0, 1, 2, 3, 4] as const).map((i) => {
+                    const key = `customLabel${i}` as keyof ProductDraft;
+                    return (
+                      <div key={i} className="space-y-0.5">
+                        <Label className="text-[10px] text-muted-foreground">{i}</Label>
+                        <Input
+                          value={draft[key] as string}
+                          onChange={field(key)}
+                          placeholder="—"
+                          className="h-7 text-xs"
+                          maxLength={100}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Numbers */}
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">
+                  {t("Custom Numbers (custom_number_0 … 4)", "أرقام مخصصة (custom_number_0 … 4)")}
+                </p>
+                <div className="grid grid-cols-5 gap-2">
+                  {([0, 1, 2, 3, 4] as const).map((i) => {
+                    const key = `customNumber${i}` as keyof ProductDraft;
+                    return (
+                      <div key={i} className="space-y-0.5">
+                        <Label className="text-[10px] text-muted-foreground">{i}</Label>
+                        <Input
+                          value={draft[key] as string}
+                          onChange={field(key)}
+                          placeholder="—"
+                          dir="ltr"
+                          inputMode="numeric"
+                          className="h-7 text-xs font-mono"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
             {/* bottom breathing room */}
             <div className="h-2" />
           </div>
@@ -888,6 +1025,10 @@ type CatalogProduct = {
   pattern?: string;
   gender?: string;
   ageGroup?: string;
+  salePriceEffectiveDate?: string;
+  videoUrl?: string;
+  customLabels?: string[];
+  customNumbers?: string[];
   source?: "sync" | "manual";
 };
 

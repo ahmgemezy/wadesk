@@ -795,7 +795,9 @@ export default defineSchema({
     brand: v.optional(v.string()),
     productUrl: v.optional(v.string()),
     salePrice: v.optional(v.string()),
+    salePriceEffectiveDate: v.optional(v.string()),  // YYYY-MM-DDT..../YYYY-MM-DDT....
     additionalImages: v.optional(v.array(v.string())),
+    videoUrl: v.optional(v.string()),
     itemGroupId: v.optional(v.string()),
     color: v.optional(v.string()),
     size: v.optional(v.string()),
@@ -803,6 +805,8 @@ export default defineSchema({
     pattern: v.optional(v.string()),
     gender: v.optional(v.string()),
     ageGroup: v.optional(v.string()),
+    customLabels: v.optional(v.array(v.string())),   // custom_label_0 … custom_label_4
+    customNumbers: v.optional(v.array(v.string())),  // custom_number_0 … custom_number_4
     syncedAt: v.number(),
     source: v.optional(v.union(v.literal("sync"), v.literal("manual"))),
   })
