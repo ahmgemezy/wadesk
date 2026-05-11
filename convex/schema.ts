@@ -791,6 +791,9 @@ export default defineSchema({
     currency: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     availability: v.optional(v.string()),
+    condition: v.optional(v.string()),
+    brand: v.optional(v.string()),
+    productUrl: v.optional(v.string()),
     syncedAt: v.number(),
     source: v.optional(v.union(v.literal("sync"), v.literal("manual"))),
   })

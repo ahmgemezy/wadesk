@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -37,7 +37,20 @@ import {
   UploadCloudIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  ImageIcon,
+  LinkIcon,
+  TagIcon,
+  XIcon,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function extractConvexMsg(err: unknown): string {
   if (!(err instanceof Error)) return "";
@@ -47,6 +60,20 @@ function extractConvexMsg(err: unknown): string {
 
 // ─── Product form ─────────────────────────────────────────────────────────────
 
+const AVAILABILITY_OPTIONS = [
+  { value: "in stock", labelEn: "In Stock", labelAr: "متوفر" },
+  { value: "out of stock", labelEn: "Out of Stock", labelAr: "غير متوفر" },
+  { value: "preorder", labelEn: "Pre-order", labelAr: "طلب مسبق" },
+  { value: "available for order", labelEn: "Available for Order", labelAr: "متاح للطلب" },
+  { value: "discontinued", labelEn: "Discontinued", labelAr: "متوقف" },
+];
+
+const CONDITION_OPTIONS = [
+  { value: "new", labelEn: "New", labelAr: "جديد" },
+  { value: "refurbished", labelEn: "Refurbished", labelAr: "مجدد" },
+  { value: "used", labelEn: "Used", labelAr: "مستعمل" },
+];
+
 interface ProductDraft {
   retailerId: string;
   name: string;
@@ -55,6 +82,9 @@ interface ProductDraft {
   currency: string;
   imageUrl: string;
   availability: string;
+  condition: string;
+  brand: string;
+  productUrl: string;
 }
 
 const EMPTY_DRAFT: ProductDraft = {
@@ -64,7 +94,10 @@ const EMPTY_DRAFT: ProductDraft = {
   price: "",
   currency: "",
   imageUrl: "",
-  availability: "",
+  availability: "in stock",
+  condition: "new",
+  brand: "",
+  productUrl: "",
 };
 
 function ProductFormDialog({
@@ -83,12 +116,16 @@ function ProductFormDialog({
     currency?: string;
     imageUrl?: string;
     availability?: string;
+    condition?: string;
+    brand?: string;
+    productUrl?: string;
   } | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
   const t = useT();
   const isEdit = !!editingProduct;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [draft, setDraft] = useState<ProductDraft>(() =>
     editingProduct
@@ -99,18 +136,77 @@ function ProductFormDialog({
           price: editingProduct.price ?? "",
           currency: editingProduct.currency ?? "",
           imageUrl: editingProduct.imageUrl ?? "",
-          availability: editingProduct.availability ?? "",
+          availability: editingProduct.availability ?? "in stock",
+          condition: editingProduct.condition ?? "new",
+          brand: editingProduct.brand ?? "",
+          productUrl: editingProduct.productUrl ?? "",
         }
       : EMPTY_DRAFT,
   );
   const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    editingProduct?.imageUrl ?? null,
+  );
+  const [imageError, setImageError] = useState(false);
 
   const createProduct = useMutation(api.catalog.createProduct);
   const updateProduct = useMutation(api.catalog.updateProduct);
+  const generateUploadUrl = useMutation(api.catalog.generateProductImageUploadUrl);
+  const resolveUrl = useMutation(api.catalog.resolveProductImageUrl);
+
+  function setField<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
+    setDraft((d) => ({ ...d, [key]: value }));
+  }
 
   function field(key: keyof ProductDraft) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setDraft((d) => ({ ...d, [key]: e.target.value }));
+    return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setField(key, e.target.value);
+  }
+
+  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("Only image files are allowed", "يُسمح بالصور فقط"));
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error(t("Image must be under 8 MB", "يجب أن تكون الصورة أقل من 8 ميجابايت"));
+      return;
+    }
+    // Show local preview immediately
+    const localUrl = URL.createObjectURL(file);
+    setImagePreview(localUrl);
+    setImageError(false);
+    setImageUploading(true);
+    try {
+      const uploadUrl = await generateUploadUrl();
+      const res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error("upload_failed");
+      const { storageId } = await res.json() as { storageId: Id<"_storage"> };
+      const url = await resolveUrl({ storageId });
+      setField("imageUrl", url);
+      setImagePreview(url);
+      toast.success(t("Image uploaded", "تم رفع الصورة"));
+    } catch {
+      toast.error(t("Failed to upload image", "فشل رفع الصورة"));
+      setImagePreview(draft.imageUrl || null);
+    } finally {
+      setImageUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function handleUrlChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setField("imageUrl", val);
+    setImagePreview(val || null);
+    setImageError(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -119,30 +215,25 @@ function ProductFormDialog({
     if (!isEdit && !draft.retailerId.trim()) return;
     setSaving(true);
     try {
+      const shared = {
+        name: draft.name.trim(),
+        description: draft.description.trim() || undefined,
+        price: draft.price.trim() || undefined,
+        currency: draft.currency.trim() || undefined,
+        imageUrl: draft.imageUrl.trim() || undefined,
+        availability: draft.availability || undefined,
+        condition: draft.condition || undefined,
+        brand: draft.brand.trim() || undefined,
+        productUrl: draft.productUrl.trim() || undefined,
+      };
       if (isEdit) {
-        await updateProduct({
-          productId: editingProduct!._id,
-          name: draft.name.trim(),
-          description: draft.description.trim() || undefined,
-          price: draft.price.trim() || undefined,
-          currency: draft.currency.trim() || undefined,
-          imageUrl: draft.imageUrl.trim() || undefined,
-          availability: draft.availability.trim() || undefined,
-        });
+        await updateProduct({ productId: editingProduct!._id, ...shared });
         toast.success(t("Product updated", "تم تحديث المنتج"));
       } else {
-        await createProduct({
-          catalogDocId,
-          retailerId: draft.retailerId.trim(),
-          name: draft.name.trim(),
-          description: draft.description.trim() || undefined,
-          price: draft.price.trim() || undefined,
-          currency: draft.currency.trim() || undefined,
-          imageUrl: draft.imageUrl.trim() || undefined,
-          availability: draft.availability.trim() || undefined,
-        });
+        await createProduct({ catalogDocId, retailerId: draft.retailerId.trim(), ...shared });
         toast.success(t("Product added", "تم إضافة المنتج"));
         setDraft(EMPTY_DRAFT);
+        setImagePreview(null);
       }
       onOpenChange(false);
     } catch (err) {
@@ -157,107 +248,331 @@ function ProductFormDialog({
     }
   }
 
+  const nameLen = draft.name.length;
+  const descLen = draft.description.length;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
+          <DialogTitle className="text-base">
             {isEdit ? t("Edit Product", "تعديل المنتج") : t("Add Product", "إضافة منتج")}
           </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {t(
+              "Fields marked * are required by Meta's catalog schema.",
+              "الحقول المحددة بـ * مطلوبة في مخطط كتالوج Meta.",
+            )}
+          </p>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {!isEdit && (
-            <div className="space-y-1">
-              <Label htmlFor="pf-retailerId">
-                {t("Retailer ID", "معرّف البائع")} *
-              </Label>
-              <Input
-                id="pf-retailerId"
-                value={draft.retailerId}
-                onChange={field("retailerId")}
-                placeholder="SKU-001"
-                dir="ltr"
-                className="font-mono text-sm"
-                required
-              />
+
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+          <div className="overflow-y-auto flex-1 px-6 space-y-5 pb-2">
+
+            {/* ── Image section ──────────────────────────────────────── */}
+            <div className="flex gap-4">
+              {/* Preview box */}
+              <div className="shrink-0">
+                <div
+                  className="size-36 rounded-lg border-2 border-dashed bg-muted/40 flex items-center justify-center overflow-hidden relative cursor-pointer group"
+                  onClick={() => !imageUploading && fileInputRef.current?.click()}
+                >
+                  {imageUploading && (
+                    <div className="absolute inset-0 bg-background/70 flex items-center justify-center z-10">
+                      <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {imagePreview && !imageError ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imagePreview}
+                        alt="preview"
+                        className="size-full object-cover"
+                        onError={() => setImageError(true)}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <ImageIcon className="size-5 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5 text-muted-foreground group-hover:text-foreground transition-colors">
+                      <ImageIcon className="size-7" />
+                      <span className="text-[10px] font-medium">
+                        {t("Click to upload", "انقر للرفع")}
+                      </span>
+                    </div>
+                  )}
+                  {imagePreview && !imageError && !imageUploading && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setField("imageUrl", "");
+                        setImagePreview(null);
+                        setImageError(false);
+                      }}
+                      className="absolute top-1 end-1 size-5 rounded-full bg-background/80 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors z-10"
+                    >
+                      <XIcon className="size-3" />
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  className="hidden"
+                  onChange={handleImageFile}
+                />
+              </div>
+
+              {/* Image URL input + requirements */}
+              <div className="flex-1 space-y-2 min-w-0">
+                <div className="space-y-1">
+                  <Label htmlFor="pf-img">{t("Image URL", "رابط الصورة")}</Label>
+                  <Input
+                    id="pf-img"
+                    value={draft.imageUrl}
+                    onChange={handleUrlChange}
+                    placeholder="https://example.com/product.jpg"
+                    dir="ltr"
+                    className={imageError ? "border-destructive" : ""}
+                  />
+                  {imageError && (
+                    <p className="text-xs text-destructive">
+                      {t("Could not load image from this URL", "تعذّر تحميل الصورة من هذا الرابط")}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageUploading}
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+                >
+                  <UploadCloudIcon className="size-3.5" />
+                  {imageUploading
+                    ? t("Uploading…", "جارٍ الرفع…")
+                    : t("Or upload from your device", "أو ارفع من جهازك")}
+                </button>
+                <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
+                  <p className="font-medium text-foreground/70">{t("Meta image requirements", "متطلبات صورة Meta")}</p>
+                  <p>· {t("Min 500 × 500 px (1024 × 1024 recommended)", "الحد الأدنى 500 × 500 بكسل (يوصى بـ 1024 × 1024)")}</p>
+                  <p>· {t("JPG, PNG or GIF — max 8 MB", "JPG أو PNG أو GIF — الحد الأقصى 8 ميجابايت")}</p>
+                  <p>· {t("Clear product shot, no promotional text", "صورة واضحة للمنتج، بدون نص إعلاني")}</p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* ── Identity ──────────────────────────────────────────── */}
+            <div className="space-y-3">
+              {!isEdit && (
+                <div className="space-y-1">
+                  <Label htmlFor="pf-retailerId">
+                    {t("Retailer ID", "معرّف البائع")} *
+                  </Label>
+                  <Input
+                    id="pf-retailerId"
+                    value={draft.retailerId}
+                    onChange={field("retailerId")}
+                    placeholder="SKU-001"
+                    dir="ltr"
+                    className="font-mono"
+                    required
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t(
+                      "Must match product_retailer_id in your Meta catalog. Max 100 chars.",
+                      "يجب أن يطابق product_retailer_id في كتالوج Meta الخاص بك. الحد الأقصى 100 حرف.",
+                    )}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="pf-name">{t("Product Name", "اسم المنتج")} *</Label>
+                  <span className={`text-xs ${nameLen > 130 ? "text-amber-500" : "text-muted-foreground"}`}>
+                    {nameLen}/150
+                  </span>
+                </div>
+                <Input
+                  id="pf-name"
+                  value={draft.name}
+                  onChange={field("name")}
+                  placeholder={t("e.g. Nike Air Max 270", "مثال: نايكي اير ماكس 270")}
+                  required
+                  maxLength={150}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="pf-desc">{t("Description", "الوصف")} *</Label>
+                  <span className={`text-xs ${descLen > 9000 ? "text-amber-500" : "text-muted-foreground"}`}>
+                    {descLen}/9,999
+                  </span>
+                </div>
+                <Textarea
+                  id="pf-desc"
+                  value={draft.description}
+                  onChange={field("description")}
+                  placeholder={t("Describe the product — material, size, features…", "صف المنتج — الخامة، الحجم، المميزات…")}
+                  className="min-h-20 resize-none"
+                  maxLength={9999}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* ── Pricing ───────────────────────────────────────────── */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {t("Pricing", "التسعير")}
+              </p>
+              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+                <div className="space-y-1">
+                  <Label htmlFor="pf-price">{t("Price", "السعر")} *</Label>
+                  <Input
+                    id="pf-price"
+                    value={draft.price}
+                    onChange={field("price")}
+                    placeholder="99.99"
+                    dir="ltr"
+                    inputMode="decimal"
+                  />
+                </div>
+                <div className="w-28 space-y-1">
+                  <Label htmlFor="pf-currency">{t("Currency", "العملة")} *</Label>
+                  <Input
+                    id="pf-currency"
+                    value={draft.currency}
+                    onChange={field("currency")}
+                    placeholder="EGP"
+                    dir="ltr"
+                    maxLength={3}
+                    className="uppercase"
+                  />
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground">
                 {t(
-                  "Must match the product_retailer_id in your Meta catalog",
-                  "يجب أن يطابق product_retailer_id في كتالوج Meta الخاص بك",
+                  "Meta format: amount and ISO-4217 currency code (e.g. 99.99 EGP)",
+                  "تنسيق Meta: المبلغ ورمز العملة ISO-4217 (مثال: 99.99 EGP)",
                 )}
               </p>
             </div>
-          )}
 
-          <div className="space-y-1">
-            <Label htmlFor="pf-name">{t("Name", "الاسم")} *</Label>
-            <Input
-              id="pf-name"
-              value={draft.name}
-              onChange={field("name")}
-              placeholder={t("Product name", "اسم المنتج")}
-              required
-            />
-          </div>
+            <Separator />
 
-          <div className="space-y-1">
-            <Label htmlFor="pf-desc">{t("Description", "الوصف")}</Label>
-            <Input
-              id="pf-desc"
-              value={draft.description}
-              onChange={field("description")}
-              placeholder={t("Optional description", "وصف اختياري")}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="pf-price">{t("Price", "السعر")}</Label>
-              <Input
-                id="pf-price"
-                value={draft.price}
-                onChange={field("price")}
-                placeholder="99.99"
-                dir="ltr"
-              />
+            {/* ── Classification ────────────────────────────────────── */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {t("Classification", "التصنيف")}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label>{t("Availability", "التوفر")} *</Label>
+                  <Select
+                    value={draft.availability}
+                    onValueChange={(v) => setField("availability", v ?? "in stock")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <span>
+                        {AVAILABILITY_OPTIONS.find(o => o.value === draft.availability)?.labelEn ?? draft.availability}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AVAILABILITY_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.labelEn}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>{t("Condition", "الحالة")} *</Label>
+                  <Select
+                    value={draft.condition}
+                    onValueChange={(v) => setField("condition", v ?? "new")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <span>
+                        {CONDITION_OPTIONS.find(o => o.value === draft.condition)?.labelEn ?? draft.condition}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONDITION_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.labelEn}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div className="w-24 space-y-1">
-              <Label htmlFor="pf-currency">{t("Currency", "العملة")}</Label>
-              <Input
-                id="pf-currency"
-                value={draft.currency}
-                onChange={field("currency")}
-                placeholder="EGP"
-                dir="ltr"
-                maxLength={3}
-              />
+
+            <Separator />
+
+            {/* ── Optional extras ───────────────────────────────────── */}
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {t("Additional Info", "معلومات إضافية")}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="pf-brand">
+                    <TagIcon className="size-3 inline me-1" />
+                    {t("Brand", "الماركة")}
+                  </Label>
+                  <Input
+                    id="pf-brand"
+                    value={draft.brand}
+                    onChange={field("brand")}
+                    placeholder={t("e.g. Nike", "مثال: نايكي")}
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="pf-url">
+                    <LinkIcon className="size-3 inline me-1" />
+                    {t("Product URL", "رابط المنتج")}
+                  </Label>
+                  <Input
+                    id="pf-url"
+                    value={draft.productUrl}
+                    onChange={field("productUrl")}
+                    placeholder="https://your-store.com/product"
+                    dir="ltr"
+                    type="url"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* bottom breathing room */}
+            <div className="h-2" />
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="pf-img">{t("Image URL", "رابط الصورة")}</Label>
-            <Input
-              id="pf-img"
-              value={draft.imageUrl}
-              onChange={field("imageUrl")}
-              placeholder="https://…"
-              dir="ltr"
-              type="url"
-            />
-          </div>
-
-          <DialogFooter>
+          <div className="shrink-0 border-t px-6 py-4 flex items-center justify-end gap-2 bg-background">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t("Cancel", "إلغاء")}
             </Button>
             <Button
               type="submit"
-              disabled={saving || !draft.name.trim() || (!isEdit && !draft.retailerId.trim())}
+              disabled={saving || imageUploading || !draft.name.trim() || (!isEdit && !draft.retailerId.trim())}
             >
               {saving && <Loader2Icon className="size-3.5 animate-spin me-1.5" />}
-              {t("Save", "حفظ")}
+              {isEdit ? t("Save Changes", "حفظ التغييرات") : t("Add Product", "إضافة منتج")}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

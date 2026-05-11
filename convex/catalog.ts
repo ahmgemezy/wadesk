@@ -359,6 +359,25 @@ export const getProductInternal = internalQuery({
   handler: async (ctx, args) => ctx.db.get(args.productId),
 });
 
+// Image upload helpers — stores image in Convex file storage and returns the served URL
+export const generateProductImageUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await getCallerIdentity(ctx);
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const resolveProductImageUrl = mutation({
+  args: { storageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    await getCallerIdentity(ctx);
+    const url = await ctx.storage.getUrl(args.storageId);
+    if (!url) throw new ConvexError({ message: "STORAGE_URL_NOT_FOUND" });
+    return url;
+  },
+});
+
 export const getCatalogInternal = internalQuery({
   args: { catalogDocId: v.id("catalogs") },
   handler: async (ctx, args) => ctx.db.get(args.catalogDocId),
@@ -390,6 +409,9 @@ export const createProduct = mutation({
     currency: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     availability: v.optional(v.string()),
+    condition: v.optional(v.string()),
+    brand: v.optional(v.string()),
+    productUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
@@ -421,6 +443,9 @@ export const createProduct = mutation({
       currency: args.currency,
       imageUrl: args.imageUrl,
       availability: args.availability,
+      condition: args.condition,
+      brand: args.brand,
+      productUrl: args.productUrl,
       syncedAt: Date.now(),
       source: "manual",
     });
@@ -436,6 +461,9 @@ export const updateProduct = mutation({
     currency: v.optional(v.string()),
     imageUrl: v.optional(v.string()),
     availability: v.optional(v.string()),
+    condition: v.optional(v.string()),
+    brand: v.optional(v.string()),
+    productUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { tenantId, orgRole } = await getCallerIdentity(ctx);
@@ -451,6 +479,9 @@ export const updateProduct = mutation({
       currency: fields.currency,
       imageUrl: fields.imageUrl,
       availability: fields.availability,
+      condition: fields.condition,
+      brand: fields.brand,
+      productUrl: fields.productUrl,
     });
   },
 });
