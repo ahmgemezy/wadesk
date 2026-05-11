@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import type { OrgRole } from "./team-member-list";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 interface RoleSelectProps {
   value: OrgRole;
@@ -27,7 +28,7 @@ export function RoleSelect({ value, onChange, disabled }: RoleSelectProps) {
 
   return (
     <Select value={value} onValueChange={(v) => onChange(v as OrgRole)} disabled={disabled}>
-      <SelectTrigger className="w-full">
+      <SelectTrigger className={DT.SELECT}>
         <span>{ROLES.find((r) => r.value === value)?.label ?? value}</span>
       </SelectTrigger>
       <SelectContent>

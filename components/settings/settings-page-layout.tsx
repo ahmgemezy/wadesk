@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DT } from "@/lib/design-tokens";
 
 interface SettingsPageLayoutProps {
   title: string;
@@ -16,10 +17,8 @@ export function SettingsPageLayout({
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
+        <h1 className={DT.H1}>{title}</h1>
+        {description && <p className={DT.MUTED}>{description}</p>}
       </div>
       <div className="flex flex-col gap-6">{children}</div>
     </div>

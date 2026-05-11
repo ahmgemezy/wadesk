@@ -1,11 +1,11 @@
 "use client";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { NotificationsSettings } from "@/components/settings/notifications-settings";
 import { NotificationsPreferences } from "@/components/settings/notifications-preferences";
 import { NotificationsErrorBoundary } from "@/components/settings/notifications-error-boundary";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 
 const VALID_TABS = ["log", "preferences"] as const;
 type TabValue = (typeof VALID_TABS)[number];
@@ -34,24 +34,49 @@ export function NotificationsTabShell() {
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   }
 
+  const logPanelId = "notifications-tabpanel-log";
+  const preferencesPanelId = "notifications-tabpanel-preferences";
+
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange}>
-      <TabsList>
-        <TabsTrigger value="log">
+    <div>
+      <div
+        role="tablist"
+        className="inline-flex bg-black/[0.03] dark:bg-white/[0.03] rounded-2xl p-1"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "log"}
+          aria-controls={logPanelId}
+          onClick={() => handleTabChange("log")}
+          className={`shrink-0 ${activeTab === "log" ? DT.SIDEBAR_ITEM_ACTIVE : DT.SIDEBAR_ITEM}`}
+        >
           {t("Notification Log", "سجل الإشعارات")}
-        </TabsTrigger>
-        <TabsTrigger value="preferences">
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "preferences"}
+          aria-controls={preferencesPanelId}
+          onClick={() => handleTabChange("preferences")}
+          className={`shrink-0 ${activeTab === "preferences" ? DT.SIDEBAR_ITEM_ACTIVE : DT.SIDEBAR_ITEM}`}
+        >
           {t("Preferences", "التفضيلات")}
-        </TabsTrigger>
-      </TabsList>
-      <TabsContent value="log" className="mt-4">
-        <NotificationsSettings />
-      </TabsContent>
-      <TabsContent value="preferences" className="mt-4">
-        <NotificationsErrorBoundary>
-          <NotificationsPreferences />
-        </NotificationsErrorBoundary>
-      </TabsContent>
-    </Tabs>
+        </button>
+      </div>
+      <div
+        role="tabpanel"
+        id={activeTab === "log" ? logPanelId : preferencesPanelId}
+        className="mt-4"
+      >
+        {activeTab === "log" ? (
+          <NotificationsSettings />
+        ) : (
+          <NotificationsErrorBoundary>
+            <NotificationsPreferences />
+          </NotificationsErrorBoundary>
+        )}
+      </div>
+    </div>
   );
 }

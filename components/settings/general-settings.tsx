@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
 import { useAuth } from "@/lib/auth-hooks";
 import { Mail, ImageIcon, Loader2Icon } from "lucide-react";
+import { DT } from "@/lib/design-tokens";
 import { ForwardTemplateCard } from "./forward-template-card";
 
 function getInitials(name: string | null): string {
@@ -67,7 +68,7 @@ function BrandLogoCard() {
   const initials = getInitials(orgName);
 
   return (
-    <div className="border rounded-lg p-5 space-y-4">
+    <div className={`${DT.CARD} p-5 space-y-4`}>
       <div className="flex items-center gap-3">
         <div className="size-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
           <ImageIcon className="size-4 text-primary" />
@@ -161,15 +162,15 @@ export function GeneralSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">{t("General Settings", "الإعدادات العامة")}</h2>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h2 className={DT.H3}>{t("General Settings", "الإعدادات العامة")}</h2>
+        <p className={`${DT.MUTED} mt-1`}>
           {t("Workspace-level preferences", "تفضيلات مساحة العمل")}
         </p>
       </div>
 
       <BrandLogoCard />
 
-      <div className="border rounded-lg p-5 space-y-4">
+      <div className={`${DT.CARD} p-5 space-y-4`}>
         <div className="flex items-center gap-3">
           <div className="size-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
             <Mail className="size-4 text-primary" />

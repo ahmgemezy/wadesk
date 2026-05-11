@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSidebar } from "@/components/ui/sidebar";
 import { resolveIcon } from "@/components/shell/resolve-icon";
 import { cn } from "@/lib/utils";
+import { DT } from "@/lib/design-tokens";
 import type { NavItem } from "@/lib/shell/types";
 
 const ADMIN_PREFIXES = ["/settings/team", "/settings/channels", "/settings/billing"];
@@ -31,7 +32,7 @@ export function SettingsSubNav({ items, adminItems = [], locale }: SettingsSubNa
   return (
     <nav
       dir={locale === "ar" ? "rtl" : "ltr"}
-      className="flex items-center gap-1 overflow-x-auto border-b bg-background px-4 py-2 scrollbar-none"
+      className="mx-4 my-2 flex items-center gap-1 overflow-x-auto rounded-2xl bg-black/[0.03] p-1 scrollbar-none dark:bg-white/[0.03]"
     >
       {activeItems.map((item) => {
         const Icon = resolveIcon(item.icon);
@@ -42,12 +43,7 @@ export function SettingsSubNav({ items, adminItems = [], locale }: SettingsSubNa
           <Link
             key={item.href}
             href={item.href}
-            className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
-            )}
+            className={cn("shrink-0", isActive ? DT.SIDEBAR_ITEM_ACTIVE : DT.SIDEBAR_ITEM)}
           >
             <Icon className="size-4 shrink-0" />
             <span>{label}</span>

@@ -1,24 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NotificationsPreferencesRow } from "@/components/settings/notifications-preferences-row";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { TOGGLEABLE_EVENT_TYPES } from "@/convex/lib/notificationEvents";
 import { useT } from "@/lib/i18n/context";
 import { useSelectedChannel } from "@/lib/hooks/channel-context";
+import { DT } from "@/lib/design-tokens";
 
 function PreferenceRowSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-lg border p-4">
+    <div className={`${DT.CARD_FLAT} flex items-center justify-between p-4`}>
       <div className="space-y-1.5">
         <Skeleton className="h-4 w-36" />
         <Skeleton className="h-3 w-56" />
@@ -54,25 +47,25 @@ export function NotificationsPreferences() {
     useNotificationPreferences(selectedChannelId);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
+    <section className={DT.CARD}>
+      <header className="px-6 pt-6 pb-4 space-y-1.5">
+        <h2 className={DT.H2}>
           {t("Notification Preferences", "تفضيلات الإشعارات")}
-        </CardTitle>
-        <CardDescription>
+        </h2>
+        <p className={DT.MUTED}>
           {t(
             "Manage how you receive notifications across channels.",
             "إدارة كيفية تلقي الإشعارات عبر القنوات.",
           )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+        </p>
+      </header>
+      <div className="px-6 pb-6">
         {isLoading ? (
           <PreferencesLoadingSkeleton />
         ) : preferences === undefined ? null : (
           <>
             {plan === "free" && (
-              <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
+              <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-400">
                 {t(
                   "Email notifications are available on Starter plans and above. ",
                   "إشعارات البريد الإلكتروني متاحة في باقة Starter وأعلى. ",
@@ -103,14 +96,14 @@ export function NotificationsPreferences() {
                     }
                   />
                   {index < TOGGLEABLE_EVENT_TYPES.length - 1 && (
-                    <Separator />
+                    <div className={DT.DIVIDER} />
                   )}
                 </div>
               );
             })}
           </>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
