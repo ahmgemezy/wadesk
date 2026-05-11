@@ -95,16 +95,15 @@ export function TemplatePicker({ onSelect }: { onSelect: (text: string) => void 
               </div>
             ))}
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleApply} className="flex-1">
+              <button onClick={handleApply} className={`${DT.BTN_SM_PRIMARY} flex-1`}>
                 {t("Apply", "تطبيق")}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
+              </button>
+              <button
                 onClick={() => { setSelected(null); setApplyErrors([]); }}
+                className={DT.BTN_SM}
               >
                 {t("Cancel", "إلغاء")}
-              </Button>
+              </button>
             </div>
           </div>
         ) : (

@@ -191,10 +191,10 @@ export function BroadcastTemplatesTab({ onCreateClick, onEditTemplate }: Props) 
           </p>
           <div className="flex gap-2">
             {importButton}
-            <Button onClick={onCreateClick}>
+            <button onClick={onCreateClick} className={DT.BTN_PRIMARY}>
               <PlusIcon className="size-4 me-2" />
               {t("Create template", "إنشاء قالب")}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
