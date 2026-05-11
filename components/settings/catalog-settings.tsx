@@ -574,7 +574,7 @@ function ProductFormDialog({
                     onChange={handleUrlChange}
                     placeholder="https://example.com/product.jpg"
                     dir="ltr"
-                    className={`${DT.INPUT}${imageError ? " !border-[#FF3B30] dark:!border-[#FF453A]" : ""}`}
+                    className={`${DT.INPUT}${imageError ? ` ${DT.BORDER_ERROR}` : ""}`}
                   />
                   {imageError && (
                     <p className="text-[12px] ${DT.TEXT_RED}">
@@ -627,7 +627,7 @@ function ProductFormDialog({
                     type="button"
                     onClick={() => additionalFileInputRef.current?.click()}
                     disabled={additionalImageUploading}
-                    className={`size-16 rounded-xl border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] flex flex-col items-center justify-center gap-0.5 ${DT.TEXT_GRAY} hover:text-[#0071E3] dark:hover:text-[#0A84FF] hover:border-[#0071E3]/40 dark:hover:border-[#0A84FF]/40 transition-colors disabled:opacity-50`}
+                    className={`size-16 rounded-xl border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] flex flex-col items-center justify-center gap-0.5 ${DT.TEXT_GRAY} ${DT.HOVER_TEXT_BLUE} ${DT.HOVER_BORDER_BLUE_LT} transition-colors disabled:opacity-50`}
                   >
                     {additionalImageUploading ? (
                       <Loader2Icon className="size-4 animate-spin" />
@@ -707,7 +707,7 @@ function ProductFormDialog({
                   value={draft.description}
                   onChange={field("description")}
                   placeholder={t("Describe the product — material, size, features…", "صف المنتج — الخامة، الحجم، المميزات…")}
-                  className={`min-h-20 resize-none rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40`}
+                  className={`min-h-20 resize-none rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 text-[14px] text-[#1D1D1F] outline-none ${DT.FOCUS_BORDER_BLUE} ${DT.FOCUS_RING_BLUE} transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40`}
                   maxLength={9999}
                 />
               </div>
@@ -1296,7 +1296,7 @@ function ProductRow({
           <PencilIcon className="size-3.5" />
         </button>
         <AlertDialog>
-          <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 dark:hover:!bg-[#FF453A]/10 hover:!text-[#FF3B30] dark:hover:!text-[#FF453A]`}>
+          <AlertDialogTrigger className={`${DT.BTN_ICON} ${DT.HOVER_RED_DESTRUCTIVE}`}>
             <Trash2Icon className="size-3.5" />
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -1492,7 +1492,7 @@ function CatalogCard({
                   if (e.key === "Enter") handleRename();
                   if (e.key === "Escape") setRenaming(false);
                 }}
-                className={`h-7 flex-1 rounded-lg border border-black/[0.12] bg-black/[0.04] px-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] dark:focus:border-[#0A84FF] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white`}
+                className={`h-7 flex-1 rounded-lg border border-black/[0.12] bg-black/[0.04] px-2.5 text-[14px] text-[#1D1D1F] outline-none ${DT.FOCUS_BORDER_BLUE} dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white`}
                 autoFocus
                 onClick={(e) => e.stopPropagation()}
               />
@@ -1554,7 +1554,7 @@ function CatalogCard({
             </button>
 
             <AlertDialog>
-              <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 dark:hover:!bg-[#FF453A]/10 hover:!text-[#FF3B30] dark:hover:!text-[#FF453A]`}>
+              <AlertDialogTrigger className={`${DT.BTN_ICON} ${DT.HOVER_RED_DESTRUCTIVE}`}>
                 <Trash2Icon className="size-3.5" />
               </AlertDialogTrigger>
               <AlertDialogContent>

@@ -212,6 +212,12 @@ export const DT = {
   CATALOG_BORDER_UPLOAD: "hover:border-[#0071E3]/50 dark:hover:border-[#0A84FF]/50 transition-colors",
   CATALOG_TEXT_HOVER: "group-hover:text-[#0071E3] dark:group-hover:text-[#0A84FF] transition-colors",
   CATALOG_LOADING: "text-[#0071E3] dark:text-[#0A84FF]",
+  FOCUS_BORDER_BLUE: "focus:border-[#0071E3] dark:focus:border-[#0A84FF]",
+  FOCUS_RING_BLUE: "focus:ring-2 focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20",
+  HOVER_TEXT_BLUE: "hover:text-[#0071E3] dark:hover:text-[#0A84FF]",
+  HOVER_BORDER_BLUE_LT: "hover:border-[#0071E3]/40 dark:hover:border-[#0A84FF]/40",
+  HOVER_RED_DESTRUCTIVE: "hover:!bg-[#FF3B30]/10 dark:hover:!bg-[#FF453A]/10 hover:!text-[#FF3B30] dark:hover:!text-[#FF453A]",
+  BORDER_ERROR: "!border-[#FF3B30] dark:!border-[#FF453A]",
 
   // ── Form inputs ───────────────────────────────────────────────────────────
   CHECKBOX_ACCENT: "accent-[#0071E3] dark:accent-[#0A84FF]",
