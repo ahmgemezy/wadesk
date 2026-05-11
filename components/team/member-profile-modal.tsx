@@ -8,9 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { DT } from "@/lib/design-tokens";
 import { useT } from "@/lib/i18n/context";
-import { useMemberProfile, useMemberProfileMutations } from "@/hooks/use-member-profile";
+import { useMemberProfile } from "@/hooks/use-member-profile";
 import type { OrgRole } from "@/components/settings/team-member-list";
 import { Crown, Shield, HeadphonesIcon, CalendarDays } from "lucide-react";
 import { OverviewTab } from "./member-profile/overview-tab";
@@ -38,14 +38,14 @@ function roleLabel(role: OrgRole, t: (en: string, ar: string) => string): string
   }
 }
 
-function roleBadgeVariant(role: OrgRole): "default" | "secondary" | "outline" {
+function roleBadgeClass(role: OrgRole): string {
   switch (role) {
     case "org:admin":
-      return "default";
+      return DT.BADGE_BLUE;
     case "org:supervisor":
-      return "secondary";
+      return DT.BADGE_AMBER;
     case "org:agent":
-      return "outline";
+      return DT.BADGE_NEUTRAL;
   }
 }
 
@@ -78,28 +78,28 @@ export function MemberProfileModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-136 max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className={`${DT.DIALOG} sm:max-w-136 max-h-[85vh] overflow-hidden flex flex-col`}>
         <DialogHeader className="pe-8">
-          <DialogTitle>{t("Member Profile", "ملف العضو")}</DialogTitle>
+          <DialogTitle className={DT.H3}>{t("Member Profile", "ملف العضو")}</DialogTitle>
         </DialogHeader>
 
         {profileLoading ? (
           <div className="flex-1 space-y-4 p-4">
             <div className="flex items-center gap-4">
-              <div className="size-14 rounded-full bg-muted animate-pulse" />
+              <div className="size-14 rounded-full bg-black/[0.06] dark:bg-white/[0.08] animate-pulse" />
               <div className="space-y-2 flex-1">
-                <div className="h-5 w-40 bg-muted rounded animate-pulse" />
-                <div className="h-4 w-56 bg-muted rounded animate-pulse" />
+                <div className="h-5 w-40 bg-black/[0.06] dark:bg-white/[0.08] rounded animate-pulse" />
+                <div className="h-4 w-56 bg-black/[0.06] dark:bg-white/[0.08] rounded animate-pulse" />
               </div>
             </div>
             <div className="space-y-3 pt-2">
-              <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-              <div className="h-32 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-24 bg-black/[0.06] dark:bg-white/[0.08] rounded animate-pulse" />
+              <div className="h-32 bg-black/[0.06] dark:bg-white/[0.08] rounded animate-pulse" />
             </div>
           </div>
         ) : profile ? (
           <>
-            <div className="flex items-start gap-4 px-4 pb-4 border-b">
+            <div className={`flex items-start gap-4 px-4 pb-4 ${DT.DIVIDER}`}>
               <Avatar className="size-14">
                 {profile.imageUrl && (
                   <AvatarImage src={profile.imageUrl} />
@@ -110,24 +110,24 @@ export function MemberProfileModal({
               </Avatar>
 
               <div className="flex-1 min-w-0 space-y-1">
-                <h3 className="text-lg font-semibold truncate">
+                <h3 className={`${DT.H3} truncate`}>
                   {profile.name ?? profile.email ?? t("Unknown", "غير معروف")}
                 </h3>
 
                 {profile.email && (
-                  <p className="text-sm text-muted-foreground truncate" dir="ltr">
+                  <p className={`${DT.MUTED} truncate`} dir="ltr">
                     {profile.email}
                   </p>
                 )}
 
                 <div className="flex items-center gap-2 flex-wrap pt-1">
-                  <Badge variant={roleBadgeVariant(profile.role as OrgRole)} className="gap-1">
+                  <span className={`${roleBadgeClass(profile.role as OrgRole)} gap-1`}>
                     {roleIcon(profile.role as OrgRole)}
                     {roleLabel(profile.role as OrgRole, t)}
-                  </Badge>
+                  </span>
 
                   {profile.joinedAt && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className={`inline-flex items-center gap-1 ${DT.MICRO}`}>
                       <CalendarDays className="size-3" />
                       {t("Joined", "انضم في")}{" "}
                       {new Date(profile.joinedAt).toLocaleDateString()}
@@ -137,7 +137,7 @@ export function MemberProfileModal({
               </div>
             </div>
 
-            <div className="flex gap-1 border-b pb-0">
+            <div className={`flex gap-1 ${DT.DIVIDER} pb-0 px-1`}>
               {([
                 { id: "overview" as const, label: t("Overview", "نظرة عامة") },
                 { id: "analytics" as const, label: t("Analytics", "تحليلات") },
@@ -147,10 +147,10 @@ export function MemberProfileModal({
                 <button
                   key={item.id}
                   onClick={() => setTab(item.id)}
-                  className={`px-3 py-1.5 text-sm rounded-t-md transition-colors ${
+                  className={`${DT.BTN_SM} ${
                     tab === item.id
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-white shadow-sm dark:bg-white/[0.10]"
+                      : "!border-transparent text-[#6E6E73] dark:text-white/50"
                   }`}
                 >
                   {item.label}
@@ -190,7 +190,7 @@ export function MemberProfileModal({
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center py-12 text-muted-foreground">
+          <div className={`flex-1 flex items-center justify-center py-12 ${DT.MUTED}`}>
             {t("Member not found", "العضو غير موجود")}
           </div>
         )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useT } from "@/lib/i18n/context";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { Clock, Star, MessageSquare, CheckCircle2 } from "lucide-react";
 
 type TimeRange = "week" | "month" | "90days" | "alltime";
@@ -53,14 +53,14 @@ export function AnalyticsTab({ analytics, timeRange, setTimeRange }: AnalyticsTa
     <div className="space-y-6">
       <div className="flex gap-1.5">
         {TIME_RANGES.map((tr) => (
-          <Button
+          <button
             key={tr.value}
-            variant={timeRange === tr.value ? "default" : "outline"}
-            size="xs"
+            type="button"
+            className={timeRange === tr.value ? DT.BTN_SM_PRIMARY : DT.BTN_SM}
             onClick={() => setTimeRange(tr.value)}
           >
             {t(tr.labelEn, tr.labelAr)}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -68,35 +68,35 @@ export function AnalyticsTab({ analytics, timeRange, setTimeRange }: AnalyticsTa
         <MetricCard
           label={t("Avg Response Time", "متوسط وقت الاستجابة")}
           value={`${responseTime} ${t("min", "د")}`}
-          icon={<Clock className="size-5 text-muted-foreground" />}
+          icon={<Clock className="size-5 text-[#6E6E73] dark:text-white/50" />}
         />
         <MetricCard
           label={t("CSAT Score", "درجة رضا العملاء")}
           value={`${csat} / 5`}
-          icon={<Star className="size-5 text-muted-foreground" />}
+          icon={<Star className="size-5 text-[#6E6E73] dark:text-white/50" />}
         />
         <MetricCard
           label={t("Total Conversations", "إجمالي المحادثات")}
           value={String(s.totalConversations)}
-          icon={<MessageSquare className="size-5 text-muted-foreground" />}
+          icon={<MessageSquare className="size-5 text-[#6E6E73] dark:text-white/50" />}
         />
         <MetricCard
           label={t("Resolution Rate", "نسبة الحل")}
           value={`${resolutionRate}%`}
           sub={`${s.resolvedCount} / ${s.totalConversations}`}
-          icon={<CheckCircle2 className="size-5 text-muted-foreground" />}
+          icon={<CheckCircle2 className="size-5 text-[#6E6E73] dark:text-white/50" />}
         />
       </div>
 
-      <section>
-        <h3 className="mb-3 text-sm font-medium">
+      <section className={`${DT.CARD} overflow-hidden`}>
+        <h3 className={`px-4 pt-4 pb-3 ${DT.H3}`}>
           {t("Channel Breakdown", "تفصيل القنوات")}
         </h3>
-        <div className="overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
+        <div className="overflow-hidden">
+          <table className={`w-full ${DT.BODY}`}>
             <thead>
-              <tr className="bg-muted text-start text-xs font-medium text-muted-foreground">
-                <th className="px-3 py-2">{t("Channel", "القناة")}</th>
+              <tr className={`bg-black/[0.03] dark:bg-white/[0.04] text-start ${DT.SEC}`}>
+                <th className="px-3 py-2 text-start">{t("Channel", "القناة")}</th>
                 <th className="px-3 py-2 text-end">{t("Volume", "الحجم")}</th>
                 <th className="px-3 py-2 text-end">{t("Resolved", "تم الحل")}</th>
                 <th className="px-3 py-2 text-end">{t("CSAT", "الرضا")}</th>
@@ -107,7 +107,7 @@ export function AnalyticsTab({ analytics, timeRange, setTimeRange }: AnalyticsTa
                 const resolvedPct =
                   ch.count > 0 ? ((ch.resolved / ch.count) * 100).toFixed(0) : "0";
                 return (
-                  <tr key={ch.channelId} className="border-b last:border-b-0 hover:bg-muted/50">
+                  <tr key={ch.channelId} className="border-b border-black/[0.06] dark:border-white/[0.06] last:border-b-0 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
                     <td className="px-3 py-2 font-medium">{ch.channelName}</td>
                     <td className="px-3 py-2 text-end tabular-nums">{ch.count}</td>
                     <td className="px-3 py-2 text-end tabular-nums">
@@ -121,7 +121,7 @@ export function AnalyticsTab({ analytics, timeRange, setTimeRange }: AnalyticsTa
               })}
               {analytics.channelBreakdown.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-3 py-4 text-center text-muted-foreground">
+                  <td colSpan={4} className={`px-3 py-4 text-center ${DT.MUTED}`}>
                     {t("No data", "لا توجد بيانات")}
                   </td>
                 </tr>
@@ -146,13 +146,13 @@ function MetricCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border p-4">
-      <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+    <div className={`${DT.CARD_SM} p-4`}>
+      <div className={`mb-1.5 flex items-center gap-2 ${DT.MICRO}`}>
         {icon}
         {label}
       </div>
-      <p className="text-xl font-bold">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+      <p className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white">{value}</p>
+      {sub && <p className={`mt-0.5 ${DT.MICRO}`}>{sub}</p>}
     </div>
   );
 }
@@ -162,17 +162,17 @@ function AnalyticsSkeleton() {
     <div className="space-y-6 animate-pulse">
       <div className="flex gap-1.5">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-6 w-16 rounded-lg bg-muted" />
+          <div key={i} className="h-6 w-16 rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
         ))}
       </div>
       <div className="grid grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-lg bg-muted" />
+          <div key={i} className="h-24 rounded-2xl bg-black/[0.06] dark:bg-white/[0.08]" />
         ))}
       </div>
       <div className="space-y-2">
-        <div className="h-4 w-32 rounded bg-muted" />
-        <div className="h-40 rounded-lg bg-muted" />
+        <div className="h-4 w-32 rounded bg-black/[0.06] dark:bg-white/[0.08]" />
+        <div className="h-40 rounded-2xl bg-black/[0.06] dark:bg-white/[0.08]" />
       </div>
     </div>
   );

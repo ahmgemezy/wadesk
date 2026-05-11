@@ -3,7 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { ListCard } from "./list-card";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { PlusIcon, ListIcon } from "lucide-react";
 import { useState } from "react";
 import { CreateListDialog } from "./create-list-dialog";
@@ -59,27 +59,27 @@ export function ListsPage({ locale }: { locale: "ar" | "en" }) {
         {/* Header */}
         <div className="flex items-start justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{tx.title}</h1>
-            <p className="text-sm text-muted-foreground mt-1">{tx.subtitle}</p>
+            <h1 className={DT.H1}>{tx.title}</h1>
+            <p className={`${DT.MUTED} mt-1`}>{tx.subtitle}</p>
           </div>
-          <Button onClick={() => setCreateOpen(true)}>
+          <button type="button" className={DT.BTN_PRIMARY} onClick={() => setCreateOpen(true)}>
             <PlusIcon className="size-4 me-2" />
             {tx.newList}
-          </Button>
+          </button>
         </div>
 
         {/* Empty state */}
         {lists.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="size-14 rounded-2xl bg-primary/8 flex items-center justify-center mb-4">
-              <ListIcon className="size-6 text-primary" />
+            <div className={`size-14 rounded-2xl ${DT.BG_BLUE_LIGHT} flex items-center justify-center mb-4`}>
+              <ListIcon className={`size-6 ${DT.TEXT_BLUE}`} />
             </div>
-            <p className="font-medium text-foreground">{tx.empty}</p>
-            <p className="text-sm text-muted-foreground mt-1.5 max-w-xs">{tx.emptyHint}</p>
-            <Button className="mt-6" onClick={() => setCreateOpen(true)}>
+            <p className={DT.H3}>{tx.empty}</p>
+            <p className={`${DT.MUTED} mt-1.5 max-w-xs`}>{tx.emptyHint}</p>
+            <button type="button" className={`${DT.BTN_SM_PRIMARY} mt-6`} onClick={() => setCreateOpen(true)}>
               <PlusIcon className="size-4 me-2" />
               {tx.emptyAction}
-            </Button>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -90,12 +90,12 @@ export function ListsPage({ locale }: { locale: "ar" | "en" }) {
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="group border-2 border-dashed border-border rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary/40 hover:text-primary transition-all duration-200 min-h-40"
+              className="group border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] rounded-2xl p-6 flex flex-col items-center justify-center gap-2 text-[#6E6E73] dark:text-white/50 hover:border-[#0071E3]/40 dark:hover:border-[#0A84FF]/40 hover:text-[#0071E3] dark:hover:text-[#0A84FF] transition-all duration-200 min-h-40"
             >
               <div className="size-9 rounded-xl border-2 border-current flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                 <PlusIcon className="size-4" />
               </div>
-              <span className="text-sm font-medium">{tx.newList}</span>
+              <span className="text-[14px] font-medium">{tx.newList}</span>
             </button>
           </div>
         )}

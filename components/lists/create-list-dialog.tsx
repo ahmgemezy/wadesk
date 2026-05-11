@@ -12,8 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import { XIcon, UsersIcon, CheckIcon, GlobeIcon, MapPinIcon } from "lucide-react";
 import { useEffect } from "react";
 
@@ -347,63 +346,63 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
       }}
     >
       <DialogContent
-        className="flex flex-col gap-0 p-0 overflow-hidden w-[90vw] max-w-4xl sm:max-w-4xl h-[min(90vh,700px)]"
+        className={`${DT.DIALOG} flex flex-col gap-0 p-0 overflow-hidden w-[90vw] max-w-4xl sm:max-w-4xl h-[min(90vh,700px)]`}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b shrink-0">
-          <DialogTitle className="text-base font-semibold">{isEditMode ? tx.editTitle : tx.title}</DialogTitle>
+        <DialogHeader className={`px-6 py-4 ${DT.DIVIDER} shrink-0`}>
+          <DialogTitle className={DT.H3}>{isEditMode ? tx.editTitle : tx.title}</DialogTitle>
         </DialogHeader>
 
         {/* Two-column body: filters | preview */}
         {isMobile && (
           <div className="flex flex-col items-center justify-center flex-1 gap-5 text-center px-6 py-10">
-            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="size-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="w-16 h-16 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="size-8 text-[#6E6E73] dark:text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3" />
               </svg>
             </div>
             <div className="space-y-2 max-w-xs">
-              <h3 className="text-base font-semibold text-foreground">
+              <h3 className={DT.H3}>
                 {isRTL ? "يتطلب شاشة أكبر" : "Desktop Required"}
               </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className={`${DT.MUTED} leading-relaxed`}>
                 {isRTL
                   ? "إنشاء القوائم متاح على الحاسوب فقط. يرجى فتح التطبيق على جهاز الكمبيوتر أو اللابتوب للمتابعة."
                   : "Creating contact lists is optimized for desktop use. Please open WABDesk on your computer or laptop to build and save lists."}
               </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            <button type="button" className={DT.BTN_SM} onClick={() => onOpenChange(false)}>
               {isRTL ? "حسناً، فهمت" : "Got it"}
-            </Button>
+            </button>
           </div>
         )}
         <div className={`flex-1 overflow-hidden flex${isMobile ? " hidden" : ""}`}>
           {/* ── Left: scrollable filters ── */}
-          <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5 border-e">
+          <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5 border-e border-black/[0.06] dark:border-white/[0.06]">
             {/* Identity */}
             <div className="flex flex-col gap-3">
               <div>
-                <Input
+                <input
                   placeholder={tx.namePlaceholder}
                   value={name}
                   onChange={(e) => { setName(e.target.value); setNameError(false); }}
-                  className={`h-10 font-medium ${nameError ? "border-destructive" : ""}`}
+                  className={`${DT.INPUT} font-medium ${nameError ? DT.BORDER_ERROR : ""}`}
                   autoFocus
                 />
                 {nameError && (
-                  <p className="text-xs text-destructive mt-1.5">{tx.nameRequired}</p>
+                  <p className={`text-[12px] ${DT.TEXT_RED} mt-1.5`}>{tx.nameRequired}</p>
                 )}
               </div>
-              <Input
+              <input
                 placeholder={tx.descriptionPlaceholder}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="h-9 text-sm"
+                className={DT.INPUT_SM}
               />
             </div>
 
-            <div className="border-t" />
+            <div className={DT.DIVIDER} />
 
             {/* Country */}
             <FilterSection label={tx.country}>
@@ -438,7 +437,7 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
               {availableCities === undefined ? (
                 <div className="flex flex-wrap gap-2">
                   {[55, 70, 60, 80].map((w, i) => (
-                    <div key={i} className="h-8 rounded-full bg-muted animate-pulse" style={{ width: w }} />
+                    <div key={i} className="h-8 rounded-full bg-black/[0.04] dark:bg-white/[0.06] animate-pulse" style={{ width: w }} />
                   ))}
                 </div>
               ) : availableCities.length > 0 ? (
@@ -468,15 +467,15 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
                       ))}
                     </div>
                   )}
-                  <Input
+                  <input
                     placeholder={tx.cityPlaceholder}
                     value={cityInput}
                     onChange={(e) => setCityInput(e.target.value)}
                     onKeyDown={handleCityKey}
-                    className="h-9 text-sm"
+                    className={DT.INPUT_SM}
                   />
                   {selectedCountries.length > 0 && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <p className={`${DT.MICRO} flex items-center gap-1 mt-0.5`}>
                       <MapPinIcon className="size-3" />
                       {locale === "ar" ? "لا توجد مدن مسجلة للدول المحددة" : "No cities recorded for the selected countries"}
                     </p>
@@ -520,12 +519,12 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
                   ))}
                 </div>
               )}
-              <Input
+              <input
                 placeholder={tx.tagPlaceholder}
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKey}
-                className="h-9 text-sm"
+                className={DT.INPUT_SM}
               />
             </FilterSection>
 
@@ -564,15 +563,15 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
           </div>
 
           {/* ── Right: live preview (fixed, not scrolling) ── */}
-          <div className="w-64 shrink-0 flex flex-col bg-muted/30 p-5 gap-5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="w-64 shrink-0 flex flex-col bg-black/[0.03] dark:bg-white/[0.04] p-5 gap-5">
+            <p className={DT.SEC}>
               {tx.previewLabel}
             </p>
 
             {!hasFilters ? (
               <div className="flex flex-col items-center justify-center flex-1 text-center gap-2 pb-8">
-                <UsersIcon className="size-8 text-muted-foreground/40" />
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <UsersIcon className="size-8 text-[#6E6E73]/40 dark:text-white/30" />
+                <p className={`${DT.MICRO} leading-relaxed`}>
                   {locale === "ar"
                     ? "اختر فلتراً واحداً على الأقل لمعاينة النتائج"
                     : "Select at least one filter to preview results"}
@@ -583,12 +582,12 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
                 {/* Big number */}
                 <div className="flex flex-col gap-1">
                   <div className="flex items-baseline gap-1.5">
-                    <UsersIcon className="size-4 text-primary mb-0.5 shrink-0" />
-                    <span className="text-3xl font-bold text-foreground tabular-nums leading-none">
+                    <UsersIcon className={`size-4 ${DT.TEXT_BLUE} mb-0.5 shrink-0`} />
+                    <span className="text-[30px] font-semibold text-[#1D1D1F] dark:text-white tabular-nums leading-none">
                       {preview === undefined ? "—" : preview.count.toLocaleString()}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{tx.contacts}</span>
+                  <span className={DT.MICRO}>{tx.contacts}</span>
                 </div>
 
                 {/* Stage breakdown */}
@@ -596,10 +595,10 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
                   <div className="flex flex-col gap-2.5">
                     {topStages.map(([stage, count]) => (
                       <div key={stage} className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-muted-foreground truncate">
+                        <span className={`${DT.MICRO} truncate`}>
                           {(STAGE_LABELS as Record<string, { ar: string; en: string }>)[stage]?.[locale] ?? stage}
                         </span>
-                        <span className="text-xs font-semibold tabular-nums shrink-0">{count}</span>
+                        <span className="text-[12px] font-semibold tabular-nums shrink-0 text-[#1D1D1F] dark:text-white">{count}</span>
                       </div>
                     ))}
                   </div>
@@ -610,13 +609,13 @@ export function CreateListDialog({ open, onOpenChange, locale, initialData }: Pr
         </div>
 
         {/* Footer */}
-        {!isMobile && <div className="px-6 py-4 border-t shrink-0 flex justify-end gap-2 bg-background">
-          <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
+        {!isMobile && <div className={DT.DIALOG_FOOTER}>
+          <button type="button" className={DT.BTN_OUTLINE} onClick={() => { reset(); onOpenChange(false); }}>
             {tx.cancel}
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          </button>
+          <button type="button" className={DT.BTN_PRIMARY} onClick={handleSave} disabled={saving}>
             {saving ? tx.saving : isEditMode ? tx.update : tx.save}
-          </Button>
+          </button>
         </div>}
       </DialogContent>
     </Dialog>

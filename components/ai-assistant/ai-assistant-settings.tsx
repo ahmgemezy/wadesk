@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useLocale } from "@/lib/i18n/context";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   BotIcon,
@@ -119,25 +118,25 @@ export function AiAssistantSettings() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-bold tracking-tight">{t.title}</h1>
-            <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+            <h1 className={DT.H1}>{t.title}</h1>
+            <span className={`${DT.BADGE_AMBER} gap-1`}>
               <SparklesIcon className="size-3" />
               {t.comingSoon}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
+          <p className={DT.MUTED}>{t.subtitle}</p>
         </div>
-        <div className="shrink-0 w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-          <BotIcon className="size-6 text-primary" />
+        <div className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center ${DT.BG_BLUE_LIGHT}`}>
+          <BotIcon className={`size-6 ${DT.TEXT_BLUE}`} />
         </div>
       </div>
 
       {/* Active Status */}
-      <section className="rounded-xl border bg-card p-5 space-y-1">
+      <section className={`${DT.CARD} p-5 space-y-1`}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="font-semibold text-sm">{t.activeStatus}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{t.activeDesc}</p>
+            <p className={DT.H3}>{t.activeStatus}</p>
+            <p className={`${DT.MUTED} mt-0.5`}>{t.activeDesc}</p>
           </div>
           <Switch
             checked={active}
@@ -148,12 +147,12 @@ export function AiAssistantSettings() {
       </section>
 
       {/* Tone of Voice */}
-      <section className="rounded-xl border bg-card p-5 space-y-4">
+      <section className={`${DT.CARD} p-5 space-y-4`}>
         <div className="flex items-center gap-2 mb-1">
-          <MessageCircleIcon className="size-4 text-muted-foreground" />
+          <MessageCircleIcon className="size-4 text-[#6E6E73] dark:text-white/50" />
           <div>
-            <p className="font-semibold text-sm">{t.tone}</p>
-            <p className="text-xs text-muted-foreground">{t.toneDesc}</p>
+            <p className={DT.H3}>{t.tone}</p>
+            <p className={DT.MUTED}>{t.toneDesc}</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -162,16 +161,16 @@ export function AiAssistantSettings() {
               key={opt.value}
               type="button"
               onClick={() => setTone(opt.value)}
-              className={`rounded-lg border p-3 text-start transition-colors ${
+              className={`${DT.CARD_SM} p-3 text-start transition-colors ${
                 tone === opt.value
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "hover:bg-muted/50"
+                  ? `${DT.BORDER_BLUE} ${DT.BG_BLUE_LIGHT} ring-1 ring-[#0071E3] dark:ring-[#0A84FF]`
+                  : "hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
               }`}
             >
-              <p className="text-sm font-medium">
+              <p className={`${DT.BODY} font-medium`}>
                 {locale === "ar" ? opt.labelAr : opt.labelEn}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className={`${DT.MUTED} mt-0.5`}>
                 {locale === "ar" ? opt.descAr : opt.descEn}
               </p>
             </button>
@@ -180,12 +179,12 @@ export function AiAssistantSettings() {
       </section>
 
       {/* Response Length */}
-      <section className="rounded-xl border bg-card p-5 space-y-4">
+      <section className={`${DT.CARD} p-5 space-y-4`}>
         <div className="flex items-center gap-2 mb-1">
-          <BookOpenIcon className="size-4 text-muted-foreground" />
+          <BookOpenIcon className="size-4 text-[#6E6E73] dark:text-white/50" />
           <div>
-            <p className="font-semibold text-sm">{t.responseLength}</p>
-            <p className="text-xs text-muted-foreground">{t.responseLengthDesc}</p>
+            <p className={DT.H3}>{t.responseLength}</p>
+            <p className={DT.MUTED}>{t.responseLengthDesc}</p>
           </div>
         </div>
         <div className="space-y-2">
@@ -196,15 +195,15 @@ export function AiAssistantSettings() {
             step={1}
             value={responseLength}
             onChange={(e) => setResponseLength(Number(e.target.value) as ResponseLength)}
-            className="w-full accent-primary"
+            className={`w-full ${DT.CHECKBOX_ACCENT}`}
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className={`flex justify-between ${DT.MICRO}`}>
             {LENGTH_LABELS.map((l) => (
               <span key={l.en}>{locale === "ar" ? l.ar : l.en}</span>
             ))}
           </div>
         </div>
-        <p className="text-xs text-primary font-medium">
+        <p className={`text-[12px] font-medium ${DT.TEXT_BLUE}`}>
           {locale === "ar"
             ? LENGTH_LABELS[responseLength].ar
             : LENGTH_LABELS[responseLength].en}
@@ -212,27 +211,27 @@ export function AiAssistantSettings() {
       </section>
 
       {/* Response Rules & Knowledge */}
-      <section className="rounded-xl border bg-card p-5 space-y-5">
+      <section className={`${DT.CARD} p-5 space-y-5`}>
         <div className="flex items-center gap-2">
-          <ShieldCheckIcon className="size-4 text-muted-foreground" />
+          <ShieldCheckIcon className="size-4 text-[#6E6E73] dark:text-white/50" />
           <div>
-            <p className="font-semibold text-sm">{t.rules}</p>
-            <p className="text-xs text-muted-foreground">{t.rulesDesc}</p>
+            <p className={DT.H3}>{t.rules}</p>
+            <p className={DT.MUTED}>{t.rulesDesc}</p>
           </div>
         </div>
 
         {/* Automated Actions */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-2">
-            <ZapIcon className="size-3.5 text-muted-foreground" />
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <ZapIcon className="size-3.5 text-[#6E6E73] dark:text-white/50" />
+            <p className={DT.SEC}>
               {t.autoActions}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+          <div className={`${DT.CARD_SM} flex items-center justify-between gap-4 p-3`}>
             <div>
-              <p className="text-sm font-medium">{t.autoHandoff}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t.autoHandoffDesc}</p>
+              <p className={`${DT.BODY} font-medium`}>{t.autoHandoff}</p>
+              <p className={`${DT.MUTED} mt-0.5`}>{t.autoHandoffDesc}</p>
             </div>
             <Switch
               checked={autoHandoff}
@@ -240,10 +239,10 @@ export function AiAssistantSettings() {
               aria-label={t.autoHandoff}
             />
           </div>
-          <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+          <div className={`${DT.CARD_SM} flex items-center justify-between gap-4 p-3`}>
             <div>
-              <p className="text-sm font-medium">{t.autoClose}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t.autoCloseDesc}</p>
+              <p className={`${DT.BODY} font-medium`}>{t.autoClose}</p>
+              <p className={`${DT.MUTED} mt-0.5`}>{t.autoCloseDesc}</p>
             </div>
             <Switch
               checked={autoClose}
@@ -255,23 +254,23 @@ export function AiAssistantSettings() {
 
         {/* Custom Instructions */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">{t.customInstructions}</label>
-          <Textarea
+          <label className={DT.LBL}>{t.customInstructions}</label>
+          <textarea
             value={customInstructions}
             onChange={(e) => setCustomInstructions(e.target.value)}
             placeholder={t.customInstructionsPlaceholder}
             rows={4}
-            className="resize-none text-sm"
+            className={DT.TEXTAREA}
           />
         </div>
       </section>
 
       {/* Save */}
       <div className="flex justify-end">
-        <Button onClick={handleSave} className="gap-1.5">
+        <button type="button" onClick={handleSave} className={DT.BTN_PRIMARY}>
           <SparklesIcon className="size-4" />
           {t.save}
-        </Button>
+        </button>
       </div>
     </div>
   );

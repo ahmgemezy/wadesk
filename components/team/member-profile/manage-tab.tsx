@@ -7,9 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { useMemberProfileMutations } from "@/hooks/use-member-profile";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -361,7 +359,7 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
 
   if (isSelf) {
     return (
-      <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+      <div className={`rounded-2xl border border-dashed border-black/[0.10] dark:border-white/[0.10] py-12 text-center ${DT.MUTED}`}>
         {t("You cannot manage your own account.", "لا يمكنك إدارة حسابك الخاص.")}
       </div>
     );
@@ -372,94 +370,96 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
       {/* Contact Information */}
       <section>
         <div className="mb-3 flex items-center gap-2">
-          <Mail className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">
+          <Mail className="size-4 text-[#6E6E73] dark:text-white/50" />
+          <h3 className={DT.H3}>
             {t("Contact Information", "معلومات التواصل")}
           </h3>
         </div>
 
         {/* Display Name (synced to Clerk) */}
-        <div className="rounded-lg border p-4 mb-3">
+        <div className={`${DT.LIST_ITEM} mb-3 cursor-default`}>
           {!editingDisplayName ? (
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <span className="text-muted-foreground">{t("Name", "الاسم")}: </span>
+            <div className="flex items-center justify-between w-full">
+              <div className={DT.BODY}>
+                <span className={DT.MUTED}>{t("Name", "الاسم")}: </span>
                 <span>{profile.name || "—"}</span>
               </div>
-              <Button variant="outline" size="sm" onClick={() => {
+              <button type="button" className={DT.BTN_SM} onClick={() => {
                 setFirstNameInput(profile.firstName || "");
                 setLastNameInput(profile.lastName || "");
                 setEditingDisplayName(true);
               }}>
                 {t("Edit", "تعديل")}
-              </Button>
+              </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 w-full">
               <div>
-                <label className="mb-1.5 block text-xs text-muted-foreground">
+                <label className={DT.LBL}>
                   {t("First Name", "الاسم الأول")}
                 </label>
-                <Input
+                <input
                   value={firstNameInput}
                   onChange={(e) => setFirstNameInput(e.target.value)}
                   placeholder={t("First name", "الاسم الأول")}
+                  className={DT.INPUT}
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs text-muted-foreground">
+                <label className={DT.LBL}>
                   {t("Last Name", "اسم العائلة")}
                 </label>
-                <Input
+                <input
                   value={lastNameInput}
                   onChange={(e) => setLastNameInput(e.target.value)}
                   placeholder={t("Last name", "اسم العائلة")}
+                  className={DT.INPUT}
                 />
               </div>
               <div className="flex gap-2">
-                <Button size="sm" disabled={savingDisplayName || !firstNameInput.trim()} onClick={handleUpdateDisplayName}>
+                <button type="button" className={DT.BTN_PRIMARY} disabled={savingDisplayName || !firstNameInput.trim()} onClick={handleUpdateDisplayName}>
                   {savingDisplayName && <Loader2 className="size-3.5 animate-spin" />}
                   {t("Save", "حفظ")}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setEditingDisplayName(false)}>
+                </button>
+                <button type="button" className={DT.BTN_OUTLINE} onClick={() => setEditingDisplayName(false)}>
                   {t("Cancel", "إلغاء")}
-                </Button>
+                </button>
               </div>
             </div>
           )}
         </div>
 
         {/* Other contact fields */}
-        <div className="rounded-lg border p-4">
+        <div className={`${DT.CARD_SM} p-4`}>
           {!editingContact ? (
             <div className="space-y-3">
-              <div className="text-sm">
-                <span className="text-muted-foreground">{t("Email", "البريد الإلكتروني")}: </span>
+              <div className={DT.BODY}>
+                <span className={DT.MUTED}>{t("Email", "البريد الإلكتروني")}: </span>
                 <span dir="ltr">{profile.email || "—"}</span>
               </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">{t("Phone", "الهاتف")}: </span>
+              <div className={DT.BODY}>
+                <span className={DT.MUTED}>{t("Phone", "الهاتف")}: </span>
                 <span dir="ltr">{profile.phone || "—"}</span>
               </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">{t("Job Title", "المسمى الوظيفي")}: </span>
+              <div className={DT.BODY}>
+                <span className={DT.MUTED}>{t("Job Title", "المسمى الوظيفي")}: </span>
                 <span>{profile.jobTitle || "—"}</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
+                className={DT.BTN_SM}
                 onClick={() => setEditingContact(true)}
               >
                 {t("Edit", "تعديل")}
-              </Button>
+              </button>
             </div>
           ) : (
             <div className="space-y-3">
               <div>
-                <label className="mb-1.5 block text-xs text-muted-foreground">
+                <label className={DT.LBL}>
                   {t("Phone", "الهاتف")}
                 </label>
-                <Input
+                <input
                   value={contactForm.phone}
                   onChange={(e) =>
                     setContactForm({ ...contactForm, phone: e.target.value })
@@ -467,36 +467,39 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                   type="tel"
                   dir="ltr"
                   placeholder="+20 100 000 0000"
+                  className={DT.INPUT}
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs text-muted-foreground">
+                <label className={DT.LBL}>
                   {t("Job Title", "المسمى الوظيفي")}
                 </label>
-                <Input
+                <input
                   value={contactForm.jobTitle}
                   onChange={(e) =>
                     setContactForm({ ...contactForm, jobTitle: e.target.value })
                   }
                   placeholder={t("Job Title", "المسمى الوظيفي")}
+                  className={DT.INPUT}
                 />
               </div>
               <div className="flex gap-2">
-                <Button
-                  size="sm"
+                <button
+                  type="button"
+                  className={DT.BTN_PRIMARY}
                   disabled={savingContact}
                   onClick={handleUpdateContact}
                 >
                   {savingContact && <Loader2 className="size-3.5 animate-spin" />}
                   {t("Save", "حفظ")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
+                </button>
+                <button
+                  type="button"
+                  className={DT.BTN_OUTLINE}
                   onClick={() => setEditingContact(false)}
                 >
                   {t("Cancel", "إلغاء")}
-                </Button>
+                </button>
               </div>
             </div>
           )}
@@ -504,12 +507,12 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
 
         {/* Avatar */}
         <div className="mb-3 mt-4 flex items-center gap-2">
-          <Upload className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">
+          <Upload className="size-4 text-[#6E6E73] dark:text-white/50" />
+          <h3 className={DT.H3}>
             {t("Profile Photo", "الصورة الشخصية")}
           </h3>
         </div>
-        <div className="rounded-lg border p-4">
+        <div className={`${DT.CARD_SM} p-4`}>
           <Tabs value={avatarTab} onValueChange={(v) => setAvatarTab(v as "upload" | "url")}>
             <TabsList className="w-full mb-3">
               <TabsTrigger value="upload" className="flex-1 gap-1.5">
@@ -529,26 +532,26 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                     <img
                       src={pendingPreviewUrl}
                       alt="preview"
-                      className="size-20 rounded-full object-cover border-2 border-primary"
+                      className={`size-20 rounded-full object-cover border-2 ${DT.BORDER_BLUE}`}
                     />
                   </div>
-                  <p className="text-center text-xs text-muted-foreground truncate">
+                  <p className={`text-center ${DT.MICRO} truncate`}>
                     {pendingFile?.name}
                   </p>
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1" onClick={confirmUpload} disabled={uploadingAvatar}>
+                    <button type="button" className={`${DT.BTN_PRIMARY} flex-1`} onClick={confirmUpload} disabled={uploadingAvatar}>
                       {uploadingAvatar && <Loader2 className="size-3.5 animate-spin" />}
                       {t("Save Photo", "حفظ الصورة")}
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1" onClick={cancelUpload} disabled={uploadingAvatar}>
+                    </button>
+                    <button type="button" className={`${DT.BTN_OUTLINE} flex-1`} onClick={cancelUpload} disabled={uploadingAvatar}>
                       {t("Cancel", "إلغاء")}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               ) : (
                 <div
-                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                    dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors ${
+                    dragOver ? `${DT.BORDER_BLUE} ${DT.BG_BLUE_LIGHT}` : `border-black/[0.12] dark:border-white/[0.10] ${DT.BORDER_BLUE_HOVER}`
                   }`}
                   onClick={() => fileInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -560,11 +563,11 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                     if (file) stageFile(file);
                   }}
                 >
-                  <Upload className="size-5 mx-auto mb-1.5 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
+                  <Upload className="size-5 mx-auto mb-1.5 text-[#6E6E73] dark:text-white/50" />
+                  <p className={DT.MUTED}>
                     {t("Click or drag an image here", "انقر أو اسحب صورة هنا")}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">PNG، JPG، WEBP</p>
+                  <p className={`${DT.MICRO} mt-0.5`}>PNG، JPG، WEBP</p>
                 </div>
               )}
               <input
@@ -581,57 +584,57 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
             </TabsContent>
 
             <TabsContent value="url" className="space-y-3">
-              <Input
+              <input
                 dir="ltr"
                 value={avatarUrlInput}
                 onChange={(e) => setAvatarUrlInput(e.target.value)}
                 placeholder="https://example.com/photo.jpg"
+                className={DT.INPUT}
               />
               {avatarUrlInput && (
                 <div className="flex justify-center">
                   <img
                     src={avatarUrlInput}
                     alt="preview"
-                    className="size-16 rounded-full object-cover border"
+                    className="size-16 rounded-full object-cover border border-black/[0.08] dark:border-white/[0.08]"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                   />
                 </div>
               )}
-              <Button
-                size="sm"
-                className="w-full"
+              <button
+                type="button"
+                className={`${DT.BTN_PRIMARY} w-full`}
                 onClick={handleSaveAvatarUrl}
                 disabled={savingAvatarUrl || !avatarUrlInput.trim()}
               >
                 {savingAvatarUrl && <Loader2 className="size-3.5 animate-spin" />}
                 {t("Save Photo", "حفظ الصورة")}
-              </Button>
+              </button>
             </TabsContent>
           </Tabs>
 
           {profile.imageUrl && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 w-full text-destructive hover:text-destructive"
+            <button
+              type="button"
+              className={`${DT.BTN_SM} mt-2 w-full !text-[#FF3B30] dark:!text-[#FF453A] !border-transparent`}
               onClick={handleRemoveAvatar}
               disabled={savingAvatarUrl}
             >
               {t("Remove current photo", "إزالة الصورة الحالية")}
-            </Button>
+            </button>
           )}
         </div>
       </section>
 
       {/* Channel Assignments */}
       <section>
-        <h3 className="mb-3 text-sm font-semibold">
+        <h3 className={`mb-3 ${DT.H3}`}>
           {t("Channel Assignments", "تعيينات القنوات")}
         </h3>
-        <div className="rounded-lg border p-4 space-y-3 max-h-40 overflow-y-auto">
+        <div className={`${DT.CARD_SM} p-4 space-y-1 max-h-40 overflow-y-auto`}>
           {availableChannels && availableChannels.length > 0 ? (
             availableChannels.map((channel) => (
-              <div key={channel.id} className="flex items-center gap-2">
+              <div key={channel.id} className={`${DT.LIST_ITEM} cursor-default`}>
                 <Checkbox
                   checked={selectedChannels.has(channel.id)}
                   onCheckedChange={(checked) => {
@@ -644,40 +647,39 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                     setSelectedChannels(newSet);
                   }}
                 />
-                <label className="text-sm cursor-pointer flex-1">{channel.name}</label>
+                <label className={`${DT.BODY} cursor-pointer flex-1`}>{channel.name}</label>
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">{t("No channels available", "لا توجد قنوات متاحة")}</p>
+            <p className={DT.MUTED}>{t("No channels available", "لا توجد قنوات متاحة")}</p>
           )}
         </div>
         {availableChannels && availableChannels.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3"
+          <button
+            type="button"
+            className={`${DT.BTN_SM} mt-3`}
             disabled={updatingChannels}
             onClick={handleUpdateChannels}
           >
             {updatingChannels && <Loader2 className="size-3.5 animate-spin" />}
             {t("Update Channels", "تحديث القنوات")}
-          </Button>
+          </button>
         )}
       </section>
 
       {/* Department Assignments */}
       <section>
-        <h3 className="mb-3 text-sm font-semibold">
+        <h3 className={`mb-3 ${DT.H3}`}>
           {t("Department Assignments", "تعيينات الأقسام")}
         </h3>
-        <div className="rounded-lg border p-4 space-y-3 max-h-40 overflow-y-auto">
+        <div className={`${DT.CARD_SM} p-4 space-y-1 max-h-40 overflow-y-auto`}>
           {selectedChannels.size === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className={DT.MUTED}>
               {t("Select a channel above to see its departments.", "اختر قناة أعلاه لعرض أقسامها.")}
             </p>
           ) : filteredDepartments.length > 0 ? (
             filteredDepartments.map((dept) => (
-              <div key={dept.id} className="flex items-center gap-2">
+              <div key={dept.id} className={`${DT.LIST_ITEM} cursor-default`}>
                 <Checkbox
                   checked={selectedDepartments.has(dept.id)}
                   onCheckedChange={(checked) => {
@@ -690,49 +692,48 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                     setSelectedDepartments(newSet);
                   }}
                 />
-                <label className="text-sm cursor-pointer flex-1">{dept.name}</label>
+                <label className={`${DT.BODY} cursor-pointer flex-1`}>{dept.name}</label>
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className={DT.MUTED}>
               {t("No departments in the selected channels.", "لا توجد أقسام في القنوات المختارة.")}
             </p>
           )}
         </div>
         {filteredDepartments.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3"
+          <button
+            type="button"
+            className={`${DT.BTN_SM} mt-3`}
             disabled={updatingDepartments}
             onClick={handleUpdateDepartments}
           >
             {updatingDepartments && <Loader2 className="size-3.5 animate-spin" />}
             {t("Update Departments", "تحديث الأقسام")}
-          </Button>
+          </button>
         )}
       </section>
 
       {/* Role Management */}
       <section>
         <div className="mb-3 flex items-center gap-2">
-          <Shield className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">
+          <Shield className="size-4 text-[#6E6E73] dark:text-white/50" />
+          <h3 className={DT.H3}>
             {t("Role Management", "إدارة الأدوار")}
           </h3>
         </div>
 
-        <div className="space-y-3 rounded-lg border p-4">
+        <div className={`space-y-3 ${DT.CARD_SM} p-4`}>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
+            <span className={DT.MUTED}>
               {t("Current Role", "الدور الحالي")}
             </span>
-            <Badge variant="secondary">{roleLabel(profile.role, t)}</Badge>
+            <span className={DT.BADGE_NEUTRAL}>{roleLabel(profile.role, t)}</span>
           </div>
 
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <label className="mb-1.5 block text-xs text-muted-foreground">
+              <label className={DT.LBL}>
                 {t("New Role", "الدور الجديد")}
               </label>
               <Select value={selectedRole} onValueChange={(val) => setSelectedRole(val ?? "")}>
@@ -750,29 +751,29 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
                 </SelectContent>
               </Select>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
+              className={DT.BTN_SM}
               disabled={!selectedRole || selectedRole === profile.role || changingRole}
               onClick={handleChangeRole}
             >
               {changingRole && <Loader2 className="size-3.5 animate-spin" />}
               {t("Change Role", "تغيير الدور")}
-            </Button>
+            </button>
           </div>
         </div>
       </section>
 
       {/* Danger Zone */}
-      <section className="rounded-lg border border-destructive/30 p-4">
+      <section className={`rounded-2xl border border-[#FF3B30]/30 dark:border-[#FF453A]/30 p-4`}>
         <div className="mb-3 flex items-center gap-2">
-          <TriangleAlert className="size-4 text-destructive" />
-          <h3 className="text-sm font-semibold text-destructive">
+          <TriangleAlert className={`size-4 ${DT.TEXT_RED}`} />
+          <h3 className={`${DT.H3} ${DT.TEXT_RED}`}>
             {t("Danger Zone", "منطقة الخطر")}
           </h3>
         </div>
 
-        <p className="mb-4 text-xs text-muted-foreground">
+        <p className={`mb-4 ${DT.MICRO}`}>
           {t(
             "Removing a member will revoke their access to the organization.",
             "إزالة عضو ستؤدي إلى سحب صلاحيته من المنظمة."
@@ -780,29 +781,29 @@ export function ManageTab({ memberId, profile, onClose, onUpdated }: ManageTabPr
         </p>
 
         <div className="flex flex-col gap-2">
-          <Button
-            variant="destructive"
-            size="sm"
+          <button
+            type="button"
+            className={DT.BTN_DESTRUCTIVE}
             disabled={removing}
             onClick={handleRemoveMember}
           >
             {removing && <Loader2 className="size-3.5 animate-spin" />}
             {t("Remove Member", "إزالة العضو")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
+            type="button"
+            className={DT.BTN_OUTLINE}
             onClick={handleDisableAccount}
           >
             {t("Disable Account", "تعطيل الحساب")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
+            type="button"
+            className={DT.BTN_OUTLINE}
             onClick={handleEnableAccount}
           >
             {t("Enable Account", "تفعيل الحساب")}
-          </Button>
+          </button>
         </div>
       </section>
     </div>

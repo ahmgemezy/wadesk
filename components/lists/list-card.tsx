@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
+import { DT } from "@/lib/design-tokens";
 import { UsersIcon, ChevronLeftIcon, ChevronRightIcon, Trash2Icon, XIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -80,14 +81,14 @@ export function ListCard({ list, stats, locale }: Props) {
       tabIndex={0}
       onClick={() => router.push(`/lists/${list._id}`)}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") router.push(`/lists/${list._id}`); }}
-      className="group w-full text-start bg-card border border-border rounded-2xl p-5 hover:border-primary/40 hover:shadow-[0_2px_12px_0_oklch(0.52_0.16_155/0.08)] transition-all duration-200 flex flex-col gap-4 cursor-pointer"
+      className={`group w-full text-start ${DT.CARD_SM} p-5 ${DT.BORDER_BLUE_HOVER} transition-all duration-200 flex flex-col gap-4 cursor-pointer`}
     >
       {/* Top row: name + actions */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-sm text-foreground truncate">{list.name}</div>
+          <div className={`${DT.H3} truncate`}>{list.name}</div>
           {list.description && (
-            <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{list.description}</div>
+            <div className={`${DT.MUTED} mt-0.5 line-clamp-1`}>{list.description}</div>
           )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -97,14 +98,14 @@ export function ListCard({ list, stats, locale }: Props) {
                 type="button"
                 disabled={deleting}
                 onClick={handleDelete}
-                className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-md disabled:opacity-50"
+                className={`${DT.BTN_SM} ${DT.BG_RED} hover:!bg-[#FF453A] !text-white !border-transparent`}
               >
                 {deleting ? "…" : (locale === "ar" ? "تأكيد" : "Delete")}
               </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-                className="text-muted-foreground hover:text-foreground"
+                className={DT.BTN_ICON}
               >
                 <XIcon className="size-4" />
               </button>
@@ -114,11 +115,11 @@ export function ListCard({ list, stats, locale }: Props) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all"
+                className={`${DT.BTN_ICON} opacity-0 group-hover:opacity-100 hover:!text-[#FF3B30] dark:hover:!text-[#FF453A] transition-all`}
               >
                 <Trash2Icon className="size-4" />
               </button>
-              <div className="text-muted-foreground group-hover:text-primary transition-colors mt-0.5">
+              <div className={`${DT.TEXT_GRAY} group-hover:${DT.TEXT_BLUE} transition-colors mt-0.5`}>
                 {isRTL ? <ChevronLeftIcon className="size-4" /> : <ChevronRightIcon className="size-4" />}
               </div>
             </>
@@ -128,11 +129,11 @@ export function ListCard({ list, stats, locale }: Props) {
 
       {/* Contact count */}
       <div className="flex items-end gap-1.5">
-        <UsersIcon className="size-4 text-muted-foreground mb-0.5" />
-        <span className="text-2xl font-bold text-foreground leading-none tabular-nums">
+        <UsersIcon className="size-4 text-[#6E6E73] dark:text-white/50 mb-0.5" />
+        <span className="text-[24px] font-semibold text-[#1D1D1F] dark:text-white leading-none tabular-nums">
           {stats === null ? "—" : stats.total.toLocaleString()}
         </span>
-        <span className="text-xs text-muted-foreground mb-0.5">
+        <span className={`${DT.MICRO} mb-0.5`}>
           {locale === "ar" ? "جهة اتصال" : "contacts"}
         </span>
       </div>
@@ -145,7 +146,7 @@ export function ListCard({ list, stats, locale }: Props) {
             return (
               <span
                 key={stage}
-                className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${c.bg} ${c.text}`}
+                className={`${DT.BADGE_NEUTRAL} gap-1.5 ${c.bg} ${c.text}`}
               >
                 <span className={`size-1.5 rounded-full ${c.dot}`} />
                 {STAGE_LABELS[stage]?.[locale] ?? stage}
@@ -155,7 +156,7 @@ export function ListCard({ list, stats, locale }: Props) {
           })}
         </div>
       ) : (
-        <div className="text-xs text-muted-foreground">{filterLabel}</div>
+        <div className={DT.MICRO}>{filterLabel}</div>
       )}
     </div>
   );

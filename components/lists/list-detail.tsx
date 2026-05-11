@@ -5,7 +5,7 @@ import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
+import { DT } from "@/lib/design-tokens";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRightIcon, MegaphoneIcon, PencilIcon, UserIcon } from "lucide-react";
 import { CreateListDialog } from "@/components/lists/create-list-dialog";
@@ -141,46 +141,47 @@ export function ListDetail({ listId, locale }: Props) {
         <button
           type="button"
           onClick={() => router.push("/lists")}
-          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-3"
+          className={`${DT.MUTED} ${DT.MUTED_HOVER} flex items-center gap-1 mb-3`}
         >
           <ArrowRightIcon className="size-3 rotate-180" />
           {tx.back}
         </button>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold">{list.name}</h1>
+            <h1 className={DT.H2}>{list.name}</h1>
             {filterSummary && (
-              <p className="text-sm text-muted-foreground mt-1">{filterSummary}</p>
+              <p className={`${DT.MUTED} mt-1`}>{filterSummary}</p>
             )}
           </div>
           <div className="flex gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <button type="button" className={DT.BTN_SM} onClick={() => setEditOpen(true)}>
               <PencilIcon className="size-4 me-1" />
               {tx.edit}
-            </Button>
-            <Button
-              size="sm"
+            </button>
+            <button
+              type="button"
+              className={DT.BTN_SM_PRIMARY}
               onClick={() => router.push(`/broadcasts/new?listId=${listId}`)}
             >
               <MegaphoneIcon className="size-4 me-1" />
               {tx.send}
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-card border rounded-xl p-4 text-center">
-          <div className="text-2xl font-bold text-primary">{stats?.total ?? "—"}</div>
-          <div className="text-xs text-muted-foreground mt-1">{tx.total}</div>
+        <div className={`${DT.CARD_SM} p-4 text-center`}>
+          <div className={`text-[24px] font-semibold ${DT.TEXT_BLUE}`}>{stats?.total ?? "—"}</div>
+          <div className={`${DT.MICRO} mt-1`}>{tx.total}</div>
         </div>
         {stageEntries.slice(0, 3).map(([stage, count]) => (
           <div
             key={stage}
-            className={`rounded-xl p-4 text-center ${STAGE_COLORS[stage] ?? STAGE_COLORS.unknown}`}
+            className={`rounded-2xl p-4 text-center ${STAGE_COLORS[stage] ?? STAGE_COLORS.unknown}`}
           >
-            <div className="text-2xl font-bold">{count}</div>
-            <div className="text-xs mt-1">{STAGE_LABELS[stage]?.[locale] ?? stage}</div>
+            <div className="text-[24px] font-semibold">{count}</div>
+            <div className="text-[11px] mt-1">{STAGE_LABELS[stage]?.[locale] ?? stage}</div>
           </div>
         ))}
       </div>
@@ -188,19 +189,19 @@ export function ListDetail({ listId, locale }: Props) {
       {(topCountries.length > 0 || topTags.length > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {topCountries.length > 0 && (
-            <div className="bg-card border rounded-xl p-5">
-              <h2 className="text-sm font-semibold mb-4">{tx.countryBreakdown}</h2>
+            <div className={`${DT.CARD} p-5`}>
+              <h2 className={`${DT.H3} mb-4`}>{tx.countryBreakdown}</h2>
               <div className="flex flex-col gap-3">
                 {topCountries.map(([country, count]) => (
                   <div key={country} className="flex items-center justify-between gap-3">
-                    <span className="text-sm min-w-12">{country}</span>
-                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                    <span className={`${DT.BODY} min-w-12`}>{country}</span>
+                    <div className="flex-1 h-2 bg-black/[0.06] dark:bg-white/[0.08] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-primary rounded-full"
+                        className={`h-full ${DT.BG_BLUE} rounded-full`}
                         style={{ width: `${(count / countryMax) * 100}%` }}
                       />
                     </div>
-                    <span className="text-sm font-semibold w-6 text-end">{count}</span>
+                    <span className={`${DT.BODY} font-semibold w-6 text-end`}>{count}</span>
                   </div>
                 ))}
               </div>
@@ -208,15 +209,15 @@ export function ListDetail({ listId, locale }: Props) {
           )}
 
           {topTags.length > 0 && (
-            <div className="bg-card border rounded-xl p-5">
-              <h2 className="text-sm font-semibold mb-4">{tx.tagDistribution}</h2>
+            <div className={`${DT.CARD} p-5`}>
+              <h2 className={`${DT.H3} mb-4`}>{tx.tagDistribution}</h2>
               <div className="flex flex-wrap gap-2">
                 {topTags.map(([tag, count]) => (
                   <span
                     key={tag}
-                    className="bg-muted text-muted-foreground text-xs px-3 py-1.5 rounded-full"
+                    className={DT.BADGE_NEUTRAL}
                   >
-                    {tag} <strong className="text-foreground">{count}</strong>
+                    {tag} <strong className="ms-1">{count}</strong>
                   </span>
                 ))}
               </div>
@@ -226,12 +227,12 @@ export function ListDetail({ listId, locale }: Props) {
       )}
 
       {/* Contacts list */}
-      <div className="bg-card border rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b flex items-center gap-2">
-          <UserIcon className="size-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold">{tx.contactsSection}</h2>
+      <div className={`${DT.CARD} overflow-hidden`}>
+        <div className={`px-5 py-4 ${DT.DIVIDER} flex items-center gap-2`}>
+          <UserIcon className="size-4 text-[#6E6E73] dark:text-white/50" />
+          <h2 className={DT.H3}>{tx.contactsSection}</h2>
           {contactsResult && (
-            <span className="ms-auto text-xs text-muted-foreground">
+            <span className={`ms-auto ${DT.MICRO}`}>
               {contactsResult.page.length}{" "}
               {locale === "ar" ? "جهة اتصال" : "contacts"}
             </span>
@@ -239,7 +240,7 @@ export function ListDetail({ listId, locale }: Props) {
         </div>
 
         {contactsResult === undefined ? (
-          <div className="flex flex-col divide-y">
+          <div className="flex flex-col divide-y divide-black/[0.06] dark:divide-white/[0.06]">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 px-5 py-3">
                 <Skeleton className="size-8 rounded-full shrink-0" />
@@ -249,27 +250,27 @@ export function ListDetail({ listId, locale }: Props) {
             ))}
           </div>
         ) : contactsResult.page.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+          <div className={`px-5 py-10 text-center ${DT.MUTED}`}>
             {tx.noContacts}
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="p-2 flex flex-col gap-0.5">
             {contactsResult.page.map((contact) => (
               <div
                 key={contact._id}
-                className="flex items-center gap-3 px-5 py-3 hover:bg-muted/40 cursor-pointer transition-colors"
+                className={DT.LIST_ITEM}
                 onClick={() => setSelectedContactId(contact._id)}
               >
-                <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 text-sm font-semibold">
+                <div className={`size-8 rounded-full ${DT.BG_BLUE_LIGHT} ${DT.TEXT_BLUE} flex items-center justify-center shrink-0 text-[14px] font-semibold`}>
                   {(contact.displayName ?? contact.phone)[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{contact.displayName ?? contact.phone}</p>
-                  <p className="text-xs text-muted-foreground" dir="ltr">{contact.phone}</p>
+                  <p className={`${DT.BODY} font-medium truncate`}>{contact.displayName ?? contact.phone}</p>
+                  <p className={DT.MICRO} dir="ltr">{contact.phone}</p>
                 </div>
                 {contact.stage && (
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${STAGE_COLORS[contact.stage] ?? STAGE_COLORS.unknown}`}
+                    className={`text-[11px] px-2 py-0.5 rounded-full shrink-0 ${STAGE_COLORS[contact.stage] ?? STAGE_COLORS.unknown}`}
                   >
                     {STAGE_LABELS[contact.stage]?.[locale] ?? contact.stage}
                   </span>

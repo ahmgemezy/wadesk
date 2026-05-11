@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import { MessageSquare, ScrollText, Search, Phone } from "lucide-react";
 
 type Conversation = {
@@ -57,21 +56,21 @@ function formatDate(ts: number, t: (en: string, ar: string) => string) {
 
 function ConversationSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-lg border p-3">
+    <div className={`${DT.CARD_SM} flex items-center justify-between p-3`}>
       <div className="flex flex-col gap-2">
-        <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-32 animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]" />
+        <div className="h-3 w-24 animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]" />
       </div>
-      <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+      <div className="h-5 w-16 animate-pulse rounded-full bg-black/[0.06] dark:bg-white/[0.08]" />
     </div>
   );
 }
 
 function AuditLogSkeleton() {
   return (
-    <div className="flex items-center justify-between rounded-lg border p-3">
-      <div className="h-4 w-36 animate-pulse rounded bg-muted" />
-      <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+    <div className={`${DT.CARD_SM} flex items-center justify-between p-3`}>
+      <div className="h-4 w-36 animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]" />
+      <div className="h-3 w-24 animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]" />
     </div>
   );
 }
@@ -89,8 +88,8 @@ export function HistoryTab({ recentConversations, auditLog }: HistoryTabProps) {
     <div className="space-y-6">
       <section>
         <div className="mb-3 flex items-center gap-2">
-          <MessageSquare className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">
+          <MessageSquare className="size-4 text-[#6E6E73] dark:text-white/50" />
+          <h3 className={DT.H3}>
             {t("Recent Conversations", "المحادثات الأخيرة")}
           </h3>
         </div>
@@ -102,38 +101,31 @@ export function HistoryTab({ recentConversations, auditLog }: HistoryTabProps) {
             <ConversationSkeleton />
           </div>
         ) : recentConversations.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+          <p className={`rounded-2xl border border-dashed border-black/[0.10] dark:border-white/[0.10] py-8 text-center ${DT.MUTED}`}>
             {t("No recent conversations", "لا توجد محادثات حديثة")}
           </p>
         ) : (
-          <div className="max-h-64 space-y-2 overflow-y-auto">
+          <div className="max-h-64 space-y-1 overflow-y-auto">
             {recentConversations.map((conv) => (
               <div
                 key={conv.id}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className={DT.LIST_ITEM}
               >
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-medium">{conv.customerName ?? conv.customerPhone ?? t("Unknown", "غير معروف")}</span>
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground" dir="ltr">
+                <div className="flex flex-col gap-1 flex-1 min-w-0">
+                  <span className={`${DT.BODY} font-medium truncate`}>{conv.customerName ?? conv.customerPhone ?? t("Unknown", "غير معروف")}</span>
+                  <span className={`flex items-center gap-1 ${DT.MICRO}`} dir="ltr">
                     <Phone className="size-3" />
                     {conv.customerPhone}
                   </span>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <Badge
-                    variant={
-                      conv.status === "open"
-                        ? "default"
-                        : conv.status === "pending"
-                          ? "secondary"
-                          : "outline"
-                    }
+                  <span
                     className={
                       conv.status === "pending"
-                        ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400"
+                        ? DT.BADGE_AMBER
                         : conv.status === "resolved"
-                          ? "border-green-500/30 text-green-600 dark:text-green-400"
-                          : ""
+                          ? DT.BADGE_GREEN
+                          : DT.BADGE_BLUE
                     }
                   >
                     {conv.status === "open"
@@ -141,8 +133,8 @@ export function HistoryTab({ recentConversations, auditLog }: HistoryTabProps) {
                       : conv.status === "pending"
                         ? t("Pending", "قيد الانتظار")
                         : t("Resolved", "تم الحل")}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
+                  </span>
+                  <span className={DT.MICRO}>
                     {formatDate(conv.lastMessageAt, t)}
                   </span>
                 </div>
@@ -154,19 +146,19 @@ export function HistoryTab({ recentConversations, auditLog }: HistoryTabProps) {
 
       <section>
         <div className="mb-3 flex items-center gap-2">
-          <ScrollText className="size-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">
+          <ScrollText className="size-4 text-[#6E6E73] dark:text-white/50" />
+          <h3 className={DT.H3}>
             {t("Activity Log", "سجل النشاط")}
           </h3>
         </div>
 
         <div className="mb-3 relative">
-          <Search className="absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <Search className="absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#6E6E73] dark:text-white/50" />
+          <input
             placeholder={t("Filter by action...", "تصفية حسب الإجراء...")}
             value={auditFilter}
             onChange={(e) => setAuditFilter(e.target.value)}
-            className="ps-8"
+            className={`${DT.INPUT} ps-8`}
           />
         </div>
 
@@ -177,20 +169,20 @@ export function HistoryTab({ recentConversations, auditLog }: HistoryTabProps) {
             <AuditLogSkeleton />
           </div>
         ) : !filteredAuditLog || filteredAuditLog.length === 0 ? (
-          <p className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+          <p className={`rounded-2xl border border-dashed border-black/[0.10] dark:border-white/[0.10] py-8 text-center ${DT.MUTED}`}>
             {t("No activity recorded", "لا يوجد نشاط مسجل")}
           </p>
         ) : (
-          <div className="max-h-96 space-y-2 overflow-y-auto">
+          <div className="max-h-96 space-y-1 overflow-y-auto">
             {filteredAuditLog.map((entry) => (
               <div
                 key={entry._id}
-                className="flex items-center justify-between rounded-lg border p-3"
+                className={DT.LIST_ITEM}
               >
-                <span className="text-sm font-medium">
+                <span className={`${DT.BODY} font-medium flex-1`}>
                   {formatAction(entry.action, t)}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className={DT.MICRO}>
                   {formatDate(entry.timestamp, t)}
                 </span>
               </div>

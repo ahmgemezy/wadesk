@@ -5,8 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import {
   Popover,
   PopoverContent,
@@ -81,9 +80,9 @@ export function CatalogBrowser({ conversationId }: { conversationId: string }) {
       <PopoverContent side="top" align="start" className="w-80 p-0">
         {!hasCatalog ? (
           <div className="flex flex-col items-center gap-2 p-6 text-center">
-            <ShoppingBagIcon className="size-8 text-muted-foreground/40" />
-            <p className="text-sm font-medium">{t("No catalog connected", "لا يوجد كتالوج")}</p>
-            <p className="text-xs text-muted-foreground">
+            <ShoppingBagIcon className="size-8 text-[#6E6E73]/40 dark:text-white/30" />
+            <p className={`${DT.H3}`}>{t("No catalog connected", "لا يوجد كتالوج")}</p>
+            <p className={DT.MUTED}>
               {t(
                 "Set up a product catalog in Settings → Product Catalog",
                 "أضف كتالوج منتجات من الإعدادات ← كتالوج المنتجات",
@@ -92,78 +91,79 @@ export function CatalogBrowser({ conversationId }: { conversationId: string }) {
           </div>
         ) : (
           <>
-            <div className="p-2 border-b">
+            <div className={`p-2 ${DT.DIVIDER}`}>
               <div className="relative">
-                <SearchIcon className="absolute start-2 top-2.5 size-3.5 text-muted-foreground pointer-events-none" />
-                <Input
+                <SearchIcon className="absolute start-2 top-1/2 -translate-y-1/2 size-3.5 text-[#6E6E73] dark:text-white/50 pointer-events-none" />
+                <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder={t("Search products…", "ابحث عن منتج…")}
-                  className="ps-7 h-8 text-sm"
+                  className={`${DT.INPUT_SM} ps-7`}
                   autoFocus
                 />
               </div>
             </div>
 
-            <div className="max-h-72 overflow-y-auto divide-y">
+            <div className={`max-h-72 overflow-y-auto`}>
               {products === undefined ? (
                 <div className="flex items-center justify-center p-6">
-                  <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                  <Loader2Icon className="size-4 animate-spin text-[#6E6E73] dark:text-white/50" />
                 </div>
               ) : products.length === 0 ? (
-                <p className="p-4 text-center text-sm text-muted-foreground">
+                <p className={`p-4 text-center ${DT.MUTED}`}>
                   {q
                     ? t("No products found", "لا توجد منتجات")
                     : t("No products yet", "لا توجد منتجات بعد")}
                 </p>
               ) : (
-                products.map((p) => (
-                  <div
-                    key={p._id}
-                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/40 group"
-                  >
-                    {p.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.imageUrl}
-                        alt={p.name}
-                        className="size-10 rounded object-cover shrink-0"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="size-10 rounded bg-muted flex items-center justify-center shrink-0">
-                        <ShoppingBagIcon className="size-4 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      {p.price && (
-                        <p className="text-xs text-muted-foreground">
-                          {p.price}
-                          {p.currency ? ` ${p.currency}` : ""}
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      disabled={sending !== null}
-                      onClick={() => handleSend(p)}
+                <div className="p-2 flex flex-col gap-1.5">
+                  {products.map((p) => (
+                    <div
+                      key={p._id}
+                      className={`${DT.CARD_SM} p-2 flex items-center gap-2 group`}
                     >
-                      {sending === p.retailerId ? (
-                        <Loader2Icon className="size-3 animate-spin" />
+                      {p.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
+                          className="size-10 rounded-xl object-cover shrink-0"
+                          loading="lazy"
+                        />
                       ) : (
-                        t("Send", "إرسال")
+                        <div className="size-10 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] flex items-center justify-center shrink-0">
+                          <ShoppingBagIcon className="size-4 text-[#6E6E73] dark:text-white/50" />
+                        </div>
                       )}
-                    </Button>
-                  </div>
-                ))
+                      <div className="flex-1 min-w-0">
+                        <p className={`${DT.H3} truncate`}>{p.name}</p>
+                        {p.price && (
+                          <p className={`${DT.BODY} font-medium`}>
+                            {p.price}
+                            {p.currency ? ` ${p.currency}` : ""}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        className={`${DT.BTN_SM_PRIMARY} opacity-0 group-hover:opacity-100 transition-opacity`}
+                        disabled={sending !== null}
+                        onClick={() => handleSend(p)}
+                      >
+                        {sending === p.retailerId ? (
+                          <Loader2Icon className="size-3 animate-spin" />
+                        ) : (
+                          t("Send", "إرسال")
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
             {syncStatus.productCount > 0 && (
-              <div className="border-t px-3 py-1.5 text-xs text-muted-foreground">
+              <div className={`${DT.DIVIDER} px-3 py-1.5 ${DT.MICRO}`}>
                 {syncStatus.productCount} {t("products", "منتج")}
               </div>
             )}
