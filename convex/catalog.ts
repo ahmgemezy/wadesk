@@ -390,6 +390,23 @@ export const resolveProductImageUrl = mutation({
   },
 });
 
+// Caches the result of a setCommerceSettings Meta API call on the channel doc
+export const updateChannelCommerceSettings = internalMutation({
+  args: {
+    channelId: v.id("channels"),
+    catalogId: v.optional(v.string()),
+    isCatalogVisible: v.optional(v.boolean()),
+    isCartEnabled: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const patch: Record<string, unknown> = {};
+    if (args.catalogId !== undefined) patch.catalogId = args.catalogId;
+    if (args.isCatalogVisible !== undefined) patch.isCatalogVisible = args.isCatalogVisible;
+    if (args.isCartEnabled !== undefined) patch.isCartEnabled = args.isCartEnabled;
+    if (Object.keys(patch).length > 0) await ctx.db.patch(args.channelId, patch);
+  },
+});
+
 export const getCatalogInternal = internalQuery({
   args: { catalogDocId: v.id("catalogs") },
   handler: async (ctx, args) => ctx.db.get(args.catalogDocId),

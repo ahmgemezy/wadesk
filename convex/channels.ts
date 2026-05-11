@@ -354,6 +354,32 @@ export const updateReopenWindow = mutation({
   },
 });
 
+export const updateMissedCallAutoReply = mutation({
+  args: {
+    channelId: v.id("channels"),
+    message: v.optional(v.string()),  // undefined → revert to system default
+  },
+  handler: async (ctx, args) => {
+    const role = await getCallerRole(ctx);
+    assertAdmin(role);
+
+    const { tenantId } = await getCallerIdentity(ctx);
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel || channel.tenantId !== tenantId) {
+      throw new ConvexError("NOT_FOUND");
+    }
+
+    if (args.message !== undefined && args.message.length > 1000) {
+      throw new ConvexError("MESSAGE_TOO_LONG");
+    }
+
+    await ctx.db.patch(args.channelId, {
+      missedCallAutoReply: args.message,
+    });
+  },
+});
+
 export const remove = mutation({
   args: {
     channelId: v.id("channels"),

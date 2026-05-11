@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { resolveIcon } from "./resolve-icon";
+import { DT } from "@/lib/design-tokens";
 import type { NavItem } from "@/lib/shell/types";
 
 interface BottomNavProps {
@@ -16,7 +17,7 @@ export function BottomNav({ items, locale }: BottomNavProps) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 flex md:hidden border-t bg-background pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-50 flex md:hidden bg-white/90 backdrop-blur-xl border-t border-black/[0.06] dark:bg-[#111111]/90 dark:border-white/[0.05] pb-[env(safe-area-inset-bottom)]"
       dir={locale === "ar" ? "rtl" : "ltr"}
     >
       {visibleItems.map((item) => {
@@ -30,8 +31,8 @@ export function BottomNav({ items, locale }: BottomNavProps) {
             href={item.href}
             className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-xs transition-colors ${
               isActive
-                ? "text-primary border-t-2 border-t-primary"
-                : "text-muted-foreground"
+                ? `${DT.TEXT_BLUE} border-t-2 ${DT.BORDER_BLUE}`
+                : DT.TEXT_GRAY
             }`}
             aria-current={isActive ? "page" : undefined}
           >

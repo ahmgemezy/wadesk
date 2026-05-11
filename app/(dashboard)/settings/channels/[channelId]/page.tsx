@@ -7,6 +7,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { DepartmentList } from "@/components/settings/department-list";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Check, X, Trash2, UserCircle, AlertTriangle, Clock, CheckCircle2, Zap, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -41,6 +42,10 @@ export default function ChannelSettingsPage({
   const [reopenHours, setReopenHours] = useState<string>("");
   const [savingReopen, setSavingReopen] = useState(false);
 
+  const updateMissedCallAutoReply = useMutation(api.channels.updateMissedCallAutoReply);
+  const [callReply, setCallReply] = useState<string>("");
+  const [savingCallReply, setSavingCallReply] = useState(false);
+
   const rules = useQuery(api.automations.listRules, {}) as { _id: string }[] | undefined;
   const templates = useQuery(api.messageTemplates.list, {}) as { _id: string }[] | undefined;
   const automationCount = rules?.length ?? 0;
@@ -50,8 +55,9 @@ export default function ChannelSettingsPage({
     if (channel) {
       setSlaMinutes(channel.slaThresholdMinutes ? String(channel.slaThresholdMinutes) : "");
       setReopenHours(channel.reopenWindowHours ? String(channel.reopenWindowHours) : "");
+      setCallReply(channel.missedCallAutoReply ?? "");
     }
-  }, [channel?.slaThresholdMinutes, channel?.reopenWindowHours]);
+  }, [channel?.slaThresholdMinutes, channel?.reopenWindowHours, channel?.missedCallAutoReply]);
   const router = useRouter();
 
   const isInGracePeriod =
@@ -354,6 +360,70 @@ export default function ChannelSettingsPage({
                   toast.error(t("Failed to reset", "فشل إعادة الضبط"));
                 } finally {
                   setSavingReopen(false);
+                }
+              }}
+            >
+              {t("Reset", "إعادة")}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2 border-t pt-6">
+        <h3 className="text-sm font-medium">{t("Missed Call Auto-Reply", "رد تلقائي على المكالمات الفائتة")}</h3>
+        <p className="text-xs text-muted-foreground font-cairo">
+          {t(
+            "Sent automatically when a customer calls your WhatsApp number and no one answers. Leave empty to use the default message.",
+            "يُرسَل تلقائياً عندما يتصل العميل على رقم واتساب ولا يرد أحد. اتركه فارغاً لاستخدام الرسالة الافتراضية.",
+          )}
+        </p>
+        <Textarea
+          dir="rtl"
+          rows={3}
+          maxLength={1000}
+          placeholder={t(
+            "Default: مرحباً! رأينا مكالمتك 😊 كيف نقدر نساعدك؟",
+            "الافتراضي: مرحباً! رأينا مكالمتك 😊 كيف نقدر نساعدك؟",
+          )}
+          value={callReply}
+          onChange={(e) => setCallReply(e.target.value)}
+          className="max-w-sm font-cairo"
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            disabled={savingCallReply}
+            onClick={async () => {
+              setSavingCallReply(true);
+              try {
+                await updateMissedCallAutoReply({
+                  channelId,
+                  message: callReply.trim() || undefined,
+                });
+                toast.success(t("Auto-reply saved", "تم حفظ الرد التلقائي"));
+              } catch {
+                toast.error(t("Failed to save", "فشل الحفظ"));
+              } finally {
+                setSavingCallReply(false);
+              }
+            }}
+          >
+            {savingCallReply ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
+          </Button>
+          {callReply && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                setSavingCallReply(true);
+                try {
+                  await updateMissedCallAutoReply({ channelId, message: undefined });
+                  setCallReply("");
+                  toast.success(t("Reset to default", "تمت إعادة الضبط للافتراضي"));
+                } catch {
+                  toast.error(t("Failed to reset", "فشل إعادة الضبط"));
+                } finally {
+                  setSavingCallReply(false);
                 }
               }}
             >

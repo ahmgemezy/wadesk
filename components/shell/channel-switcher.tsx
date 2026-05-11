@@ -2,6 +2,7 @@
 
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useSelectedChannel } from "@/lib/hooks/channel-context";
 import {
@@ -35,7 +36,7 @@ export function ChannelSwitcher({ locale }: ChannelSwitcherProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors data-[state=open]:bg-accent data-[state=open]:text-foreground outline-none">
+      <DropdownMenuTrigger className={`flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-xs outline-none ${DT.MUTED} hover:${DT.BODY} transition-colors data-[state=open]:${DT.BODY}`}>
         {activeChannel ? (
           <Hash className="size-3 shrink-0" />
         ) : (
@@ -45,33 +46,33 @@ export function ChannelSwitcher({ locale }: ChannelSwitcherProps) {
         <ChevronsUpDown className="size-3 shrink-0 ms-auto" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="min-w-48"
+        className={`min-w-48 ${DT.CARD}`}
         align={locale === "ar" ? "end" : "start"}
         side="bottom"
       >
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-xs text-muted-foreground">
+          <DropdownMenuLabel className={DT.MUTED}>
             {locale === "ar" ? "القنوات" : "Channels"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => setChannelId(null)}
-            className="gap-2"
+            className={`gap-2 ${DT.LIST_ITEM}`}
             data-active={channelId === null}
           >
-            <Layers className="size-3.5 text-muted-foreground" />
+            <Layers className={`size-3.5 ${DT.MUTED}`} />
             <span>{locale === "ar" ? "كل القنوات" : "All Channels"}</span>
-            {channelId === null && <span className="ms-auto text-xs text-muted-foreground">✓</span>}
+            {channelId === null && <span className={`ms-auto text-xs ${DT.MUTED}`}>✓</span>}
           </DropdownMenuItem>
           {channels.map((ch) => (
             <DropdownMenuItem
               key={ch._id}
               onClick={() => setChannelId(ch._id as Id<"channels">)}
-              className="gap-2"
+              className={`gap-2 ${DT.LIST_ITEM}`}
             >
-              <Hash className="size-3.5 text-muted-foreground" />
+              <Hash className={`size-3.5 ${DT.MUTED}`} />
               <span className="truncate">{ch.displayName}</span>
-              {channelId === ch._id && <span className="ms-auto text-xs text-muted-foreground">✓</span>}
+              {channelId === ch._id && <span className={`ms-auto text-xs ${DT.MUTED}`}>✓</span>}
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>

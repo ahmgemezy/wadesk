@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import { useAuth } from "@/lib/auth-hooks";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import {
   Sidebar,
   SidebarContent,

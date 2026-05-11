@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useQuery, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { DT } from "@/lib/design-tokens";
 import type { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
 
@@ -30,7 +31,7 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
 
   return (
     <nav
-      className="flex items-center gap-1.5 text-sm text-muted-foreground px-4 pt-3"
+      className={`flex items-center gap-1.5 px-4 pt-3 ${DT.MUTED}`}
       aria-label="Breadcrumb"
     >
       {segments.map((segment, index) => {
@@ -44,20 +45,20 @@ export function Breadcrumb({ locale }: BreadcrumbProps) {
         }
 
         return (
-          <span key={`${segment}-${index}`} className="flex items-center gap-1.5">
+          <span key={`${segment}-${index}`} className={`flex items-center gap-1.5 ${DT.MICRO}`}>
             {index > 0 && (
-              <span className="text-muted-foreground/50" aria-hidden="true">
+              <span className="text-white/40 dark:text-white/40" aria-hidden="true">
                 {locale === "ar" ? "‹" : "›"}
               </span>
             )}
             {isLast ? (
-              <span className="text-foreground font-medium" aria-current="page">
+              <span className={DT.BODY} aria-current="page">
                 <DynamicSegment segment={segment} prevSegment={prevSegment} locale={locale} />
               </span>
             ) : (
               <Link
                 href={href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className={`${DT.MUTED} hover:${DT.BODY} transition-colors`}
               >
                 <DynamicSegment segment={segment} prevSegment={prevSegment} locale={locale} />
               </Link>

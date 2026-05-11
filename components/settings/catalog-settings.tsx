@@ -5,15 +5,11 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useT } from "@/lib/i18n/context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -41,21 +37,73 @@ import {
   LinkIcon,
   TagIcon,
   XIcon,
+  EyeIcon,
+  ShoppingCartIcon,
+  WifiIcon,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 
 function extractConvexMsg(err: unknown): string {
   if (!(err instanceof Error)) return "";
   const m = err.message.match(/Uncaught ConvexError: ([\s\S]+?)(?:\s+at handler|\s*$)/);
   return m?.[1]?.trim() ?? err.message;
+}
+
+// ─── Apple design tokens ───────────────────────────────────────────────────────
+const INPUT = "w-full rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40";
+const INPUT_SM = "w-full rounded-lg border border-black/[0.12] bg-black/[0.04] px-2.5 py-1.5 text-[13px] text-[#1D1D1F] outline-none focus:border-[#0071E3] transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40";
+const INPUT_XS = "w-full rounded-md border border-black/[0.12] bg-black/[0.04] px-2 py-1 text-[12px] text-[#1D1D1F] outline-none focus:border-[#0071E3] transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40";
+const BTN_PRIMARY = "inline-flex items-center justify-center rounded-full bg-[#0071E3] hover:bg-[#0077ED] active:bg-[#006CD1] text-white font-normal px-5 py-2 text-[14px] transition-colors disabled:opacity-50 gap-1.5 shrink-0";
+const BTN_OUTLINE = "inline-flex items-center justify-center rounded-full border border-black/[0.12] bg-transparent hover:bg-black/[0.04] text-[#1D1D1F] font-normal px-5 py-2 text-[14px] transition-colors disabled:opacity-50 gap-1.5 shrink-0 dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]";
+const BTN_SM = "inline-flex items-center justify-center rounded-full border border-black/[0.12] bg-transparent hover:bg-black/[0.04] text-[#1D1D1F] font-normal px-3 py-1.5 text-[13px] transition-colors disabled:opacity-50 gap-1 shrink-0 dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]";
+const BTN_ICON = "inline-flex items-center justify-center size-8 rounded-xl text-[#6E6E73] hover:bg-black/[0.06] hover:text-[#1D1D1F] transition-colors dark:hover:bg-white/[0.08] dark:hover:text-white";
+const CARD = "rounded-[22px] bg-white border border-black/[0.08] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1E] dark:border-white/[0.08]";
+const LBL = "block text-[13px] font-medium text-[#1D1D1F] mb-1 dark:text-white/90";
+const SEC = "text-[11px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] dark:text-white/40";
+const DIVIDER = "border-t border-black/[0.08] dark:border-white/[0.06]";
+const SELECT_TRIGGER = "w-full h-10 rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 text-[14px] text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white";
+
+// ─── Variant row input ────────────────────────────────────────────────────────
+
+function VariantRowInput({
+  row,
+  onChange,
+  onRemove,
+}: {
+  row: VariantRow;
+  onChange: (r: VariantRow) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-[88px_1fr_1fr_1fr_1fr_28px] gap-1.5 items-center">
+      <input
+        value={row.retailerIdSuffix}
+        onChange={(e) => onChange({ ...row, retailerIdSuffix: e.target.value })}
+        placeholder="red-xl"
+        dir="ltr"
+        className={INPUT_XS + " font-mono"}
+        maxLength={50}
+      />
+      <input value={row.color} onChange={(e) => onChange({ ...row, color: e.target.value })} placeholder="Color" className={INPUT_XS} maxLength={100} />
+      <input value={row.size} onChange={(e) => onChange({ ...row, size: e.target.value })} placeholder="Size" className={INPUT_XS} maxLength={100} />
+      <input value={row.material} onChange={(e) => onChange({ ...row, material: e.target.value })} placeholder="Material" className={INPUT_XS} maxLength={100} />
+      <input value={row.pattern} onChange={(e) => onChange({ ...row, pattern: e.target.value })} placeholder="Pattern" className={INPUT_XS} maxLength={100} />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="size-7 flex items-center justify-center text-[#6E6E73] hover:text-[#FF3B30] rounded-lg transition-colors"
+      >
+        <XIcon className="size-3.5" />
+      </button>
+    </div>
+  );
 }
 
 // ─── Product form ─────────────────────────────────────────────────────────────
@@ -90,6 +138,15 @@ const AGE_GROUP_OPTIONS = [
   { value: "newborn", labelEn: "Newborn" },
 ];
 
+interface VariantRow {
+  _key: string;
+  retailerIdSuffix: string;
+  color: string;
+  size: string;
+  material: string;
+  pattern: string;
+}
+
 interface ProductDraft {
   retailerId: string;
   name: string;
@@ -122,6 +179,8 @@ interface ProductDraft {
   customNumber2: string;
   customNumber3: string;
   customNumber4: string;
+  hasVariants: boolean;
+  variantRows: VariantRow[];
 }
 
 const EMPTY_DRAFT: ProductDraft = {
@@ -156,6 +215,8 @@ const EMPTY_DRAFT: ProductDraft = {
   customNumber2: "",
   customNumber3: "",
   customNumber4: "",
+  hasVariants: false,
+  variantRows: [],
 };
 
 function ProductFormDialog({
@@ -232,6 +293,8 @@ function ProductFormDialog({
           customNumber2: editingProduct.customNumbers?.[2] ?? "",
           customNumber3: editingProduct.customNumbers?.[3] ?? "",
           customNumber4: editingProduct.customNumbers?.[4] ?? "",
+          hasVariants: false,
+          variantRows: [],
         }
       : EMPTY_DRAFT,
   );
@@ -269,7 +332,6 @@ function ProductFormDialog({
       toast.error(t("Image must be under 8 MB", "يجب أن تكون الصورة أقل من 8 ميجابايت"));
       return;
     }
-    // Show local preview immediately
     const localUrl = URL.createObjectURL(file);
     setImagePreview(localUrl);
     setImageError(false);
@@ -346,9 +408,14 @@ function ProductFormDialog({
     e.preventDefault();
     if (!draft.name.trim()) return;
     if (!isEdit && !draft.retailerId.trim()) return;
+    if (!isEdit && draft.hasVariants && draft.variantRows.length === 0) return;
+    if (!isEdit && draft.hasVariants && draft.variantRows.some((r) => !r.retailerIdSuffix.trim())) {
+      toast.error(t("Each variant row needs a unique suffix", "كل صف متغير يحتاج لاحقة فريدة"));
+      return;
+    }
     setSaving(true);
     try {
-      const shared = {
+      const baseFields = {
         name: draft.name.trim(),
         description: draft.description.trim() || undefined,
         price: draft.price.trim() || undefined,
@@ -360,13 +427,6 @@ function ProductFormDialog({
         condition: draft.condition || undefined,
         brand: draft.brand.trim() || undefined,
         productUrl: draft.productUrl.trim() || undefined,
-        itemGroupId: draft.itemGroupId.trim() || undefined,
-        color: draft.color.trim() || undefined,
-        size: draft.size.trim() || undefined,
-        material: draft.material.trim() || undefined,
-        pattern: draft.pattern.trim() || undefined,
-        gender: draft.gender || undefined,
-        ageGroup: draft.ageGroup || undefined,
         salePriceEffectiveDate: draft.salePriceEffectiveDate.trim() || undefined,
         videoUrl: draft.videoUrl.trim() || undefined,
         customLabels: (() => {
@@ -379,10 +439,52 @@ function ProductFormDialog({
         })(),
       };
       if (isEdit) {
-        await updateProduct({ productId: editingProduct!._id, ...shared });
+        await updateProduct({
+          productId: editingProduct!._id,
+          ...baseFields,
+          itemGroupId: draft.itemGroupId.trim() || undefined,
+          color: draft.color.trim() || undefined,
+          size: draft.size.trim() || undefined,
+          material: draft.material.trim() || undefined,
+          pattern: draft.pattern.trim() || undefined,
+          gender: draft.gender || undefined,
+          ageGroup: draft.ageGroup || undefined,
+        });
         toast.success(t("Product updated", "تم تحديث المنتج"));
+      } else if (draft.hasVariants && draft.variantRows.length > 0) {
+        const groupId = draft.itemGroupId.trim() || draft.retailerId.trim();
+        for (const row of draft.variantRows) {
+          await createProduct({
+            catalogDocId,
+            retailerId: `${draft.retailerId.trim()}-${row.retailerIdSuffix.trim()}`,
+            ...baseFields,
+            itemGroupId: groupId,
+            color: row.color.trim() || undefined,
+            size: row.size.trim() || undefined,
+            material: row.material.trim() || undefined,
+            pattern: row.pattern.trim() || undefined,
+          });
+        }
+        toast.success(
+          draft.variantRows.length === 1
+            ? t("1 variant added", "تمت إضافة متغير واحد")
+            : t(`${draft.variantRows.length} variants added`, `تمت إضافة ${draft.variantRows.length} متغيرات`),
+        );
+        setDraft(EMPTY_DRAFT);
+        setImagePreview(null);
       } else {
-        await createProduct({ catalogDocId, retailerId: draft.retailerId.trim(), ...shared });
+        await createProduct({
+          catalogDocId,
+          retailerId: draft.retailerId.trim(),
+          ...baseFields,
+          itemGroupId: draft.itemGroupId.trim() || undefined,
+          color: draft.color.trim() || undefined,
+          size: draft.size.trim() || undefined,
+          material: draft.material.trim() || undefined,
+          pattern: draft.pattern.trim() || undefined,
+          gender: draft.gender || undefined,
+          ageGroup: draft.ageGroup || undefined,
+        });
         toast.success(t("Product added", "تم إضافة المنتج"));
         setDraft(EMPTY_DRAFT);
         setImagePreview(null);
@@ -405,12 +507,12 @@ function ProductFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
-          <DialogTitle className="text-base">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0 rounded-[28px] border-0 overflow-hidden bg-white/95 backdrop-blur-2xl shadow-[0_25px_80px_rgba(0,0,0,0.18)] dark:bg-[#1C1C1E]/95">
+        <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b border-black/[0.06] dark:border-white/[0.06]">
+          <DialogTitle className="text-[17px] font-semibold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">
             {isEdit ? t("Edit Product", "تعديل المنتج") : t("Add Product", "إضافة منتج")}
           </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-[13px] text-[#6E6E73] mt-0.5">
             {t(
               "Fields marked * are required by Meta's catalog schema.",
               "الحقول المحددة بـ * مطلوبة في مخطط كتالوج Meta.",
@@ -419,19 +521,18 @@ function ProductFormDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-y-auto flex-1 px-6 space-y-5 pb-2">
+          <div className="overflow-y-auto flex-1 px-6 space-y-5 pb-2 pt-4">
 
             {/* ── Image section ──────────────────────────────────────── */}
             <div className="flex gap-4">
-              {/* Preview box */}
               <div className="shrink-0">
                 <div
-                  className="size-36 rounded-lg border-2 border-dashed bg-muted/40 flex items-center justify-center overflow-hidden relative cursor-pointer group"
+                  className="size-36 rounded-2xl border-2 border-dashed border-black/[0.12] bg-black/[0.03] flex items-center justify-center overflow-hidden relative cursor-pointer group hover:border-[#0071E3]/50 transition-colors dark:border-white/[0.10] dark:bg-white/[0.03]"
                   onClick={() => !imageUploading && fileInputRef.current?.click()}
                 >
                   {imageUploading && (
-                    <div className="absolute inset-0 bg-background/70 flex items-center justify-center z-10">
-                      <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+                    <div className="absolute inset-0 bg-white/70 dark:bg-black/50 flex items-center justify-center z-10">
+                      <Loader2Icon className="size-5 animate-spin text-[#0071E3]" />
                     </div>
                   )}
                   {imagePreview && !imageError ? (
@@ -448,7 +549,7 @@ function ProductFormDialog({
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center gap-1.5 text-muted-foreground group-hover:text-foreground transition-colors">
+                    <div className="flex flex-col items-center gap-1.5 text-[#6E6E73] group-hover:text-[#0071E3] transition-colors">
                       <ImageIcon className="size-7" />
                       <span className="text-[10px] font-medium">
                         {t("Click to upload", "انقر للرفع")}
@@ -464,7 +565,7 @@ function ProductFormDialog({
                         setImagePreview(null);
                         setImageError(false);
                       }}
-                      className="absolute top-1 end-1 size-5 rounded-full bg-background/80 flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors z-10"
+                      className="absolute top-1.5 end-1.5 size-5 rounded-full bg-white/90 dark:bg-black/60 flex items-center justify-center hover:bg-[#FF3B30] hover:text-white transition-colors z-10 shadow-sm"
                     >
                       <XIcon className="size-3" />
                     </button>
@@ -479,20 +580,19 @@ function ProductFormDialog({
                 />
               </div>
 
-              {/* Image URL input + requirements */}
               <div className="flex-1 space-y-2 min-w-0">
                 <div className="space-y-1">
-                  <Label htmlFor="pf-img">{t("Image URL", "رابط الصورة")}</Label>
-                  <Input
+                  <label className={LBL} htmlFor="pf-img">{t("Image URL", "رابط الصورة")}</label>
+                  <input
                     id="pf-img"
                     value={draft.imageUrl}
                     onChange={handleUrlChange}
                     placeholder="https://example.com/product.jpg"
                     dir="ltr"
-                    className={imageError ? "border-destructive" : ""}
+                    className={INPUT + (imageError ? " !border-[#FF3B30]" : "")}
                   />
                   {imageError && (
-                    <p className="text-xs text-destructive">
+                    <p className="text-[12px] text-[#FF3B30]">
                       {t("Could not load image from this URL", "تعذّر تحميل الصورة من هذا الرابط")}
                     </p>
                   )}
@@ -501,15 +601,15 @@ function ProductFormDialog({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={imageUploading}
-                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 text-[13px] text-[#0071E3] hover:text-[#0077ED] disabled:opacity-50 transition-colors"
                 >
                   <UploadCloudIcon className="size-3.5" />
                   {imageUploading
                     ? t("Uploading…", "جارٍ الرفع…")
                     : t("Or upload from your device", "أو ارفع من جهازك")}
                 </button>
-                <div className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground space-y-0.5">
-                  <p className="font-medium text-foreground/70">{t("Meta image requirements", "متطلبات صورة Meta")}</p>
+                <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] text-[#6E6E73] space-y-1">
+                  <p className="font-medium text-[#1D1D1F] dark:text-white/70">{t("Meta image requirements", "متطلبات صورة Meta")}</p>
                   <p>· {t("Min 500 × 500 px (1024 × 1024 recommended)", "الحد الأدنى 500 × 500 بكسل (يوصى بـ 1024 × 1024)")}</p>
                   <p>· {t("JPG, PNG or GIF — max 8 MB", "JPG أو PNG أو GIF — الحد الأقصى 8 ميجابايت")}</p>
                   <p>· {t("Clear product shot, no promotional text", "صورة واضحة للمنتج، بدون نص إعلاني")}</p>
@@ -520,22 +620,18 @@ function ProductFormDialog({
             {/* ── Additional Images ──────────────────────────────────── */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {t("Additional Images", "صور إضافية")}
-                </p>
-                <span className="text-xs text-muted-foreground">
-                  {draft.additionalImages.length}/9
-                </span>
+                <p className={SEC}>{t("Additional Images", "صور إضافية")}</p>
+                <span className="text-[12px] text-[#6E6E73]">{draft.additionalImages.length}/9</span>
               </div>
               <div className="flex flex-wrap gap-2 items-center">
                 {draft.additionalImages.map((url, idx) => (
-                  <div key={idx} className="relative size-16 rounded border overflow-hidden group shrink-0">
+                  <div key={idx} className="relative size-16 rounded-xl border border-black/[0.08] overflow-hidden group shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt="" className="size-full object-cover" loading="lazy" />
                     <button
                       type="button"
                       onClick={() => removeAdditionalImage(idx)}
-                      className="absolute top-0.5 end-0.5 size-4 rounded-full bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
+                      className="absolute top-0.5 end-0.5 size-4 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[#FF3B30] hover:text-white"
                     >
                       <XIcon className="size-2.5" />
                     </button>
@@ -546,7 +642,7 @@ function ProductFormDialog({
                     type="button"
                     onClick={() => additionalFileInputRef.current?.click()}
                     disabled={additionalImageUploading}
-                    className="size-16 rounded-md border-2 border-dashed flex flex-col items-center justify-center gap-0.5 text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
+                    className="size-16 rounded-xl border-2 border-dashed border-black/[0.12] dark:border-white/[0.10] flex flex-col items-center justify-center gap-0.5 text-[#6E6E73] hover:text-[#0071E3] hover:border-[#0071E3]/40 transition-colors disabled:opacity-50"
                   >
                     {additionalImageUploading ? (
                       <Loader2Icon className="size-4 animate-spin" />
@@ -568,26 +664,26 @@ function ProductFormDialog({
               </div>
             </div>
 
-            <Separator />
+            <div className={DIVIDER} />
 
             {/* ── Identity ──────────────────────────────────────────── */}
             <div className="space-y-3">
               {!isEdit && (
                 <div className="space-y-1">
-                  <Label htmlFor="pf-retailerId">
+                  <label className={LBL} htmlFor="pf-retailerId">
                     {t("Retailer ID", "معرّف البائع")} *
-                  </Label>
-                  <Input
+                  </label>
+                  <input
                     id="pf-retailerId"
                     value={draft.retailerId}
                     onChange={field("retailerId")}
                     placeholder="SKU-001"
                     dir="ltr"
-                    className="font-mono"
+                    className={INPUT + " font-mono"}
                     required
                     maxLength={100}
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[12px] text-[#6E6E73]">
                     {t(
                       "Must match product_retailer_id in your Meta catalog. Max 100 chars.",
                       "يجب أن يطابق product_retailer_id في كتالوج Meta الخاص بك. الحد الأقصى 100 حرف.",
@@ -598,25 +694,26 @@ function ProductFormDialog({
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="pf-name">{t("Product Name", "اسم المنتج")} *</Label>
-                  <span className={`text-xs ${nameLen > 170 ? "text-amber-500" : "text-muted-foreground"}`}>
+                  <label className={LBL} htmlFor="pf-name">{t("Product Name", "اسم المنتج")} *</label>
+                  <span className={`text-[12px] ${nameLen > 170 ? "text-amber-500" : "text-[#6E6E73]"}`}>
                     {nameLen}/200
                   </span>
                 </div>
-                <Input
+                <input
                   id="pf-name"
                   value={draft.name}
                   onChange={field("name")}
                   placeholder={t("e.g. Nike Air Max 270", "مثال: نايكي اير ماكس 270")}
                   required
                   maxLength={200}
+                  className={INPUT}
                 />
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="pf-desc">{t("Description", "الوصف")} *</Label>
-                  <span className={`text-xs ${descLen > 9000 ? "text-amber-500" : "text-muted-foreground"}`}>
+                  <label className={LBL} htmlFor="pf-desc">{t("Description", "الوصف")} *</label>
+                  <span className={`text-[12px] ${descLen > 9000 ? "text-amber-500" : "text-[#6E6E73]"}`}>
                     {descLen}/9,999
                   </span>
                 </div>
@@ -625,81 +722,76 @@ function ProductFormDialog({
                   value={draft.description}
                   onChange={field("description")}
                   placeholder={t("Describe the product — material, size, features…", "صف المنتج — الخامة، الحجم، المميزات…")}
-                  className="min-h-20 resize-none"
+                  className="min-h-20 resize-none rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40"
                   maxLength={9999}
                 />
               </div>
             </div>
 
-            <Separator />
+            <div className={DIVIDER} />
 
             {/* ── Pricing ───────────────────────────────────────────── */}
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {t("Pricing", "التسعير")}
-              </p>
-              <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
+              <p className={SEC}>{t("Pricing", "التسعير")}</p>
+              <div className="grid grid-cols-[1fr_76px_1fr] gap-3 items-end">
                 <div className="space-y-1">
-                  <Label htmlFor="pf-price">{t("Price", "السعر")} *</Label>
-                  <Input
+                  <label className={LBL} htmlFor="pf-price">{t("Price", "السعر")} *</label>
+                  <input
                     id="pf-price"
                     value={draft.price}
                     onChange={field("price")}
                     placeholder="99.99"
                     dir="ltr"
                     inputMode="decimal"
+                    className={INPUT}
                   />
                 </div>
-                <div className="w-28 space-y-1">
-                  <Label htmlFor="pf-currency">{t("Currency", "العملة")} *</Label>
-                  <Input
+                <div className="space-y-1">
+                  <label className={LBL} htmlFor="pf-currency">{t("Currency", "العملة")} *</label>
+                  <input
                     id="pf-currency"
                     value={draft.currency}
                     onChange={field("currency")}
                     placeholder="EGP"
                     dir="ltr"
                     maxLength={3}
-                    className="uppercase"
+                    className={INPUT + " uppercase"}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className={LBL} htmlFor="pf-salePrice">{t("Sale Price", "سعر التخفيض")}</label>
+                  <input
+                    id="pf-salePrice"
+                    value={draft.salePrice}
+                    onChange={field("salePrice")}
+                    placeholder={t("e.g. 79.99", "مثال: 79.99")}
+                    dir="ltr"
+                    inputMode="decimal"
+                    className={INPUT}
                   />
                 </div>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="pf-salePrice">{t("Sale Price", "سعر التخفيض")}</Label>
-                <Input
-                  id="pf-salePrice"
-                  value={draft.salePrice}
-                  onChange={field("salePrice")}
-                  placeholder={t("e.g. 79.99 (leave empty if no discount)", "مثال: 79.99 (اتركه فارغاً إن لم يوجد خصم)")}
-                  dir="ltr"
-                  inputMode="decimal"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("Discounted price shown to customers — must be lower than the regular price.", "السعر المخفّض المعروض للعملاء — يجب أن يكون أقل من السعر الأصلي.")}
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[12px] text-[#6E6E73]">
                 {t(
-                  "Meta format: amount and ISO-4217 currency code (e.g. 99.99 EGP)",
-                  "تنسيق Meta: المبلغ ورمز العملة ISO-4217 (مثال: 99.99 EGP)",
+                  "Sale price must be lower than the regular price. Currency: ISO-4217 code (e.g. EGP, USD).",
+                  "سعر التخفيض يجب أن يكون أقل من السعر الأصلي. العملة: رمز ISO-4217 (مثال: EGP، USD).",
                 )}
               </p>
             </div>
 
-            <Separator />
+            <div className={DIVIDER} />
 
             {/* ── Classification ────────────────────────────────────── */}
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {t("Classification", "التصنيف")}
-              </p>
+              <p className={SEC}>{t("Classification", "التصنيف")}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label>{t("Availability", "التوفر")} *</Label>
+                  <label className={LBL}>{t("Availability", "التوفر")} *</label>
                   <Select
                     value={draft.availability}
                     onValueChange={(v) => setField("availability", v ?? "in stock")}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className={SELECT_TRIGGER}>
                       <span>
                         {AVAILABILITY_OPTIONS.find(o => o.value === draft.availability)?.labelEn ?? draft.availability}
                       </span>
@@ -714,12 +806,12 @@ function ProductFormDialog({
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label>{t("Condition", "الحالة")} *</Label>
+                  <label className={LBL}>{t("Condition", "الحالة")} *</label>
                   <Select
                     value={draft.condition}
                     onValueChange={(v) => setField("condition", v ?? "new")}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className={SELECT_TRIGGER}>
                       <span>
                         {CONDITION_OPTIONS.find(o => o.value === draft.condition)?.labelEn ?? draft.condition}
                       </span>
@@ -736,203 +828,294 @@ function ProductFormDialog({
               </div>
             </div>
 
-            <Separator />
+            <div className={DIVIDER} />
 
             {/* ── Optional extras ───────────────────────────────────── */}
             <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {t("Additional Info", "معلومات إضافية")}
-              </p>
+              <p className={SEC}>{t("Additional Info", "معلومات إضافية")}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label htmlFor="pf-brand">
+                  <label className={LBL} htmlFor="pf-brand">
                     <TagIcon className="size-3 inline me-1" />
                     {t("Brand", "الماركة")}
-                  </Label>
-                  <Input
+                  </label>
+                  <input
                     id="pf-brand"
                     value={draft.brand}
                     onChange={field("brand")}
                     placeholder={t("e.g. Nike", "مثال: نايكي")}
                     maxLength={100}
+                    className={INPUT}
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="pf-url">
+                  <label className={LBL} htmlFor="pf-url">
                     <LinkIcon className="size-3 inline me-1" />
                     {t("Product URL", "رابط المنتج")}
-                  </Label>
-                  <Input
+                  </label>
+                  <input
                     id="pf-url"
                     value={draft.productUrl}
                     onChange={field("productUrl")}
                     placeholder="https://your-store.com/product"
                     dir="ltr"
                     type="url"
+                    className={INPUT}
                   />
                 </div>
               </div>
             </div>
 
-            <Separator />
+            <div className={DIVIDER} />
 
             {/* ── Variants ──────────────────────────────────────────── */}
             <div className="space-y-3">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {t("Variants", "المتغيرات")}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t(
-                    "Products with the same Item Group ID are shown as variants in Meta Commerce Manager.",
-                    "المنتجات التي تشترك في نفس معرّف المجموعة تُعرض كمتغيرات في Meta Commerce Manager.",
-                  )}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className={SEC}>{t("Variants", "المتغيرات")}</p>
+                  <p className="text-[12px] text-[#6E6E73] mt-0.5">
+                    {draft.hasVariants && !isEdit
+                      ? t(
+                          "Each row below creates a separate product. All share the same name, price, and image.",
+                          "كل صف أدناه ينشئ منتجًا منفصلاً. تتشارك جميع الصفوف الاسم والسعر والصورة.",
+                        )
+                      : t(
+                          "Does this product come in different colors, sizes, or materials?",
+                          "هل يأتي هذا المنتج بألوان أو مقاسات أو خامات مختلفة؟",
+                        )}
+                  </p>
+                </div>
+                {!isEdit && (
+                  <Switch
+                    checked={draft.hasVariants}
+                    onCheckedChange={(v) => setField("hasVariants", v)}
+                  />
+                )}
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</Label>
-                <Input
-                  id="pf-itemGroupId"
-                  value={draft.itemGroupId}
-                  onChange={field("itemGroupId")}
-                  placeholder={t("e.g. nike-air-max-270", "مثال: nike-air-max-270")}
-                  dir="ltr"
-                  className="font-mono"
-                  maxLength={100}
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("Leave empty if this product has no variants.", "اتركه فارغاً إذا لم تكن لهذا المنتج متغيرات.")}
-                </p>
-              </div>
+              {draft.hasVariants && !isEdit ? (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className={LBL} htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</label>
+                    <input
+                      id="pf-itemGroupId"
+                      value={draft.itemGroupId}
+                      onChange={field("itemGroupId")}
+                      placeholder={t(
+                        "Auto-filled from Retailer ID if empty",
+                        "يُعبَّأ تلقائياً من معرّف البائع إن تُرك فارغاً",
+                      )}
+                      dir="ltr"
+                      className={INPUT + " font-mono"}
+                      maxLength={100}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="pf-color">{t("Color", "اللون")}</Label>
-                  <Input
-                    id="pf-color"
-                    value={draft.color}
-                    onChange={field("color")}
-                    placeholder={t("e.g. Red", "مثال: أحمر")}
-                    maxLength={100}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="pf-size">{t("Size", "المقاس")}</Label>
-                  <Input
-                    id="pf-size"
-                    value={draft.size}
-                    onChange={field("size")}
-                    placeholder={t("e.g. XL, 42", "مثال: XL، 42")}
-                    maxLength={100}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="pf-material">{t("Material", "الخامة")}</Label>
-                  <Input
-                    id="pf-material"
-                    value={draft.material}
-                    onChange={field("material")}
-                    placeholder={t("e.g. Cotton", "مثال: قطن")}
-                    maxLength={100}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="pf-pattern">{t("Pattern", "النمط")}</Label>
-                  <Input
-                    id="pf-pattern"
-                    value={draft.pattern}
-                    onChange={field("pattern")}
-                    placeholder={t("e.g. Striped", "مثال: مقلّم")}
-                    maxLength={100}
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-[88px_1fr_1fr_1fr_1fr_28px] gap-1.5 px-0.5">
+                    {[
+                      t("Suffix *", "اللاحقة *"),
+                      t("Color", "اللون"),
+                      t("Size", "المقاس"),
+                      t("Material", "الخامة"),
+                      t("Pattern", "النمط"),
+                      "",
+                    ].map((h, i) => (
+                      <span key={i} className="text-[10px] font-semibold text-[#6E6E73] uppercase tracking-wider">{h}</span>
+                    ))}
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>{t("Gender", "الجنس")}</Label>
-                  <Select
-                    value={draft.gender}
-                    onValueChange={(v) => setField("gender", v ?? "")}
+                  <div className="space-y-1.5">
+                    {draft.variantRows.map((row, idx) => (
+                      <VariantRowInput
+                        key={row._key}
+                        row={row}
+                        onChange={(updated) =>
+                          setDraft((d) => ({
+                            ...d,
+                            variantRows: d.variantRows.map((r, i) => (i === idx ? updated : r)),
+                          }))
+                        }
+                        onRemove={() =>
+                          setDraft((d) => ({
+                            ...d,
+                            variantRows: d.variantRows.filter((_, i) => i !== idx),
+                          }))
+                        }
+                      />
+                    ))}
+                    {draft.variantRows.length === 0 && (
+                      <p className="text-[13px] text-[#6E6E73] text-center py-3 border border-dashed border-black/[0.10] dark:border-white/[0.10] rounded-xl">
+                        {t("No variants yet — click Add Variant below", "لا توجد متغيرات بعد — انقر على إضافة متغير أدناه")}
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className={BTN_SM}
+                    onClick={() =>
+                      setDraft((d) => ({
+                        ...d,
+                        variantRows: [
+                          ...d.variantRows,
+                          {
+                            _key: Math.random().toString(36).slice(2),
+                            retailerIdSuffix: "",
+                            color: "",
+                            size: "",
+                            material: "",
+                            pattern: "",
+                          },
+                        ],
+                      }))
+                    }
                   >
-                    <SelectTrigger className="w-full">
-                      <span>
-                        {GENDER_OPTIONS.find(o => o.value === draft.gender)?.labelEn ?? "— None —"}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GENDER_OPTIONS.map((o) => (
-                        <SelectItem key={o.value || "__none__"} value={o.value}>
-                          {o.labelEn}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <PlusIcon className="size-3.5" />
+                    {t("Add Variant", "إضافة متغير")}
+                  </button>
+
+                  <div className="rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] text-[#6E6E73] space-y-1">
+                    <p>
+                      · {t(
+                        'Suffix appended to Retailer ID — e.g. base "SKU-001" + suffix "red-xl" → "SKU-001-red-xl"',
+                        'اللاحقة تُضاف لمعرّف البائع — مثال: الأساس "SKU-001" + اللاحقة "red-xl" → "SKU-001-red-xl"',
+                      )}
+                    </p>
+                    <p>
+                      · {t(
+                        "Each row is a separate product in Meta Commerce Manager, grouped as variants.",
+                        "كل صف منتج منفصل في Meta Commerce Manager، مجمَّعة كمتغيرات.",
+                      )}
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label>{t("Age Group", "الفئة العمرية")}</Label>
-                  <Select
-                    value={draft.ageGroup}
-                    onValueChange={(v) => setField("ageGroup", v ?? "")}
-                  >
-                    <SelectTrigger className="w-full">
-                      <span>
-                        {AGE_GROUP_OPTIONS.find(o => o.value === draft.ageGroup)?.labelEn ?? "— None —"}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AGE_GROUP_OPTIONS.map((o) => (
-                        <SelectItem key={o.value || "__none__"} value={o.value}>
-                          {o.labelEn}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className={LBL} htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</label>
+                    <input
+                      id="pf-itemGroupId"
+                      value={draft.itemGroupId}
+                      onChange={field("itemGroupId")}
+                      placeholder={t("e.g. nike-air-max-270", "مثال: nike-air-max-270")}
+                      dir="ltr"
+                      className={INPUT + " font-mono"}
+                      maxLength={100}
+                    />
+                    <p className="text-[12px] text-[#6E6E73]">
+                      {t("Leave empty if this product has no variants.", "اتركه فارغاً إذا لم تكن لهذا المنتج متغيرات.")}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className={LBL} htmlFor="pf-color">{t("Color", "اللون")}</label>
+                      <input id="pf-color" value={draft.color} onChange={field("color")} placeholder={t("e.g. Red", "مثال: أحمر")} maxLength={100} className={INPUT} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className={LBL} htmlFor="pf-size">{t("Size", "المقاس")}</label>
+                      <input id="pf-size" value={draft.size} onChange={field("size")} placeholder={t("e.g. XL, 42", "مثال: XL، 42")} maxLength={100} className={INPUT} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className={LBL} htmlFor="pf-material">{t("Material", "الخامة")}</label>
+                      <input id="pf-material" value={draft.material} onChange={field("material")} placeholder={t("e.g. Cotton", "مثال: قطن")} maxLength={100} className={INPUT} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className={LBL} htmlFor="pf-pattern">{t("Pattern", "النمط")}</label>
+                      <input id="pf-pattern" value={draft.pattern} onChange={field("pattern")} placeholder={t("e.g. Striped", "مثال: مقلّم")} maxLength={100} className={INPUT} />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className={LBL}>{t("Gender", "الجنس")}</label>
+                      <Select value={draft.gender} onValueChange={(v) => setField("gender", v ?? "")}>
+                        <SelectTrigger className={SELECT_TRIGGER}>
+                          <span>{GENDER_OPTIONS.find(o => o.value === draft.gender)?.labelEn ?? "— None —"}</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GENDER_OPTIONS.map((o) => (
+                            <SelectItem key={o.value || "__none__"} value={o.value}>{o.labelEn}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className={LBL}>{t("Age Group", "الفئة العمرية")}</label>
+                      <Select value={draft.ageGroup} onValueChange={(v) => setField("ageGroup", v ?? "")}>
+                        <SelectTrigger className={SELECT_TRIGGER}>
+                          <span>{AGE_GROUP_OPTIONS.find(o => o.value === draft.ageGroup)?.labelEn ?? "— None —"}</span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AGE_GROUP_OPTIONS.map((o) => (
+                            <SelectItem key={o.value || "__none__"} value={o.value}>{o.labelEn}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            <Separator />
+            <div className={DIVIDER} />
 
             {/* ── Advanced / Meta optional fields ───────────────────── */}
             <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {t("Advanced Fields", "الحقول المتقدمة")}
-              </p>
+              <p className={SEC}>{t("Advanced Fields", "الحقول المتقدمة")}</p>
 
-              {/* Sale price effective date */}
-              <div className="space-y-1">
-                <Label htmlFor="pf-saleDate">{t("Sale Price Effective Date", "فترة سريان سعر التخفيض")}</Label>
-                <Input
-                  id="pf-saleDate"
-                  value={draft.salePriceEffectiveDate}
-                  onChange={field("salePriceEffectiveDate")}
-                  placeholder="2024-01-01T00:00+00:00/2024-01-31T23:59+00:00"
-                  dir="ltr"
-                  className="font-mono text-xs"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {t("Format: start/end in ISO 8601. Leave empty for indefinite sale.", "تنسيق: بداية/نهاية بصيغة ISO 8601. اتركه فارغاً للبيع المفتوح.")}
+              <div className="space-y-2">
+                <label className={LBL}>{t("Sale Price Effective Date", "فترة سريان سعر التخفيض")}</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <p className="text-[12px] text-[#6E6E73]">{t("Start", "البداية")}</p>
+                    <input
+                      type="datetime-local"
+                      dir="ltr"
+                      className={INPUT}
+                      value={draft.salePriceEffectiveDate.split("/")[0]?.replace(/\+.*$/, "") ?? ""}
+                      onChange={(e) => {
+                        const start = e.target.value;
+                        const end = draft.salePriceEffectiveDate.split("/")[1]?.replace(/\+.*$/, "") ?? "";
+                        setField("salePriceEffectiveDate", start || end ? `${start ? `${start}+00:00` : ""}/${end ? `${end}+00:00` : ""}` : "");
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[12px] text-[#6E6E73]">{t("End", "النهاية")}</p>
+                    <input
+                      type="datetime-local"
+                      dir="ltr"
+                      className={INPUT}
+                      value={draft.salePriceEffectiveDate.split("/")[1]?.replace(/\+.*$/, "") ?? ""}
+                      onChange={(e) => {
+                        const end = e.target.value;
+                        const start = draft.salePriceEffectiveDate.split("/")[0]?.replace(/\+.*$/, "") ?? "";
+                        setField("salePriceEffectiveDate", start || end ? `${start ? `${start}+00:00` : ""}/${end ? `${end}+00:00` : ""}` : "");
+                      }}
+                    />
+                  </div>
+                </div>
+                <p className="text-[12px] text-[#6E6E73]">
+                  {t("Leave both empty for an indefinite sale.", "اتركهما فارغَين للبيع المفتوح.")}
                 </p>
               </div>
 
-              {/* Video URL */}
               <div className="space-y-1">
-                <Label htmlFor="pf-video">{t("Product Video URL", "رابط فيديو المنتج")}</Label>
-                <Input
+                <label className={LBL} htmlFor="pf-video">{t("Product Video URL", "رابط فيديو المنتج")}</label>
+                <input
                   id="pf-video"
                   value={draft.videoUrl}
                   onChange={field("videoUrl")}
                   placeholder="https://example.com/product.mp4"
                   dir="ltr"
                   type="url"
+                  className={INPUT}
                 />
               </div>
 
-              {/* Custom Labels */}
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">
+                <p className="text-[12px] text-[#6E6E73] font-medium">
                   {t("Custom Labels (custom_label_0 … 4)", "تسميات مخصصة (custom_label_0 … 4)")}
                 </p>
                 <div className="grid grid-cols-5 gap-2">
@@ -940,12 +1123,12 @@ function ProductFormDialog({
                     const key = `customLabel${i}` as keyof ProductDraft;
                     return (
                       <div key={i} className="space-y-0.5">
-                        <Label className="text-[10px] text-muted-foreground">{i}</Label>
-                        <Input
+                        <span className="text-[10px] text-[#6E6E73] font-medium">{i}</span>
+                        <input
                           value={draft[key] as string}
                           onChange={field(key)}
                           placeholder="—"
-                          className="h-7 text-xs"
+                          className={INPUT_XS}
                           maxLength={100}
                         />
                       </div>
@@ -954,9 +1137,8 @@ function ProductFormDialog({
                 </div>
               </div>
 
-              {/* Custom Numbers */}
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">
+                <p className="text-[12px] text-[#6E6E73] font-medium">
                   {t("Custom Numbers (custom_number_0 … 4)", "أرقام مخصصة (custom_number_0 … 4)")}
                 </p>
                 <div className="grid grid-cols-5 gap-2">
@@ -964,14 +1146,14 @@ function ProductFormDialog({
                     const key = `customNumber${i}` as keyof ProductDraft;
                     return (
                       <div key={i} className="space-y-0.5">
-                        <Label className="text-[10px] text-muted-foreground">{i}</Label>
-                        <Input
+                        <span className="text-[10px] text-[#6E6E73] font-medium">{i}</span>
+                        <input
                           value={draft[key] as string}
                           onChange={field(key)}
                           placeholder="—"
                           dir="ltr"
                           inputMode="numeric"
-                          className="h-7 text-xs font-mono"
+                          className={INPUT_XS + " font-mono"}
                         />
                       </div>
                     );
@@ -980,21 +1162,32 @@ function ProductFormDialog({
               </div>
             </div>
 
-            {/* bottom breathing room */}
             <div className="h-2" />
           </div>
 
-          <div className="shrink-0 border-t px-6 py-4 flex items-center justify-end gap-2 bg-background">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <div className="shrink-0 border-t border-black/[0.06] dark:border-white/[0.06] px-6 py-4 flex items-center justify-end gap-2 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-sm">
+            <button type="button" className={BTN_OUTLINE} onClick={() => onOpenChange(false)}>
               {t("Cancel", "إلغاء")}
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
-              disabled={saving || imageUploading || additionalImageUploading || !draft.name.trim() || (!isEdit && !draft.retailerId.trim())}
+              className={BTN_PRIMARY}
+              disabled={
+                saving ||
+                imageUploading ||
+                additionalImageUploading ||
+                !draft.name.trim() ||
+                (!isEdit && !draft.retailerId.trim()) ||
+                (!isEdit && draft.hasVariants && draft.variantRows.length === 0)
+              }
             >
-              {saving && <Loader2Icon className="size-3.5 animate-spin me-1.5" />}
-              {isEdit ? t("Save Changes", "حفظ التغييرات") : t("Add Product", "إضافة منتج")}
-            </Button>
+              {saving && <Loader2Icon className="size-3.5 animate-spin" />}
+              {isEdit
+                ? t("Save Changes", "حفظ التغييرات")
+                : draft.hasVariants && draft.variantRows.length > 0
+                  ? t(`Add ${draft.variantRows.length} Variant${draft.variantRows.length > 1 ? "s" : ""}`, `إضافة ${draft.variantRows.length} متغير`)
+                  : t("Add Product", "إضافة منتج")}
+            </button>
           </div>
         </form>
       </DialogContent>
@@ -1068,31 +1261,31 @@ function ProductRow({
   }
 
   return (
-    <div className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/40 group">
+    <div className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-black/[0.03] dark:hover:bg-white/[0.04] group transition-colors">
       {product.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="size-9 rounded object-cover shrink-0"
+          className="size-10 rounded-xl object-cover shrink-0"
           loading="lazy"
         />
       ) : (
-        <div className="size-9 rounded bg-muted flex items-center justify-center shrink-0">
-          <ShoppingBagIcon className="size-4 text-muted-foreground" />
+        <div className="size-10 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] flex items-center justify-center shrink-0">
+          <ShoppingBagIcon className="size-4 text-[#6E6E73]" />
         </div>
       )}
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <p className="text-sm font-medium truncate">{product.name}</p>
+          <p className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate">{product.name}</p>
           {product.source === "manual" && (
             <span className="shrink-0 rounded-full bg-blue-100 dark:bg-blue-950 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
               {t("Manual", "يدوي")}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-[12px] text-[#6E6E73]">
           <span dir="ltr" className="font-mono">{product.retailerId}</span>
           {product.price && (
             <span>
@@ -1103,40 +1296,25 @@ function ProductRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
+      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          className={BTN_ICON}
           title={t("Push to Meta", "رفع إلى Meta")}
           onClick={handlePush}
           disabled={pushing}
         >
-          {pushing ? (
-            <Loader2Icon className="size-3.5 animate-spin" />
-          ) : (
-            <UploadCloudIcon className="size-3.5" />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          onClick={() => onEdit(product)}
-        >
+          {pushing ? <Loader2Icon className="size-3.5 animate-spin" /> : <UploadCloudIcon className="size-3.5" />}
+        </button>
+        <button className={BTN_ICON} onClick={() => onEdit(product)}>
           <PencilIcon className="size-3.5" />
-        </Button>
+        </button>
         <AlertDialog>
-          <AlertDialogTrigger
-            className="inline-flex items-center justify-center size-7 rounded-md text-destructive hover:bg-accent transition-colors"
-          >
+          <AlertDialogTrigger className={BTN_ICON + " hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]"}>
             <Trash2Icon className="size-3.5" />
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("Delete product?", "حذف المنتج؟")}
-              </AlertDialogTitle>
+              <AlertDialogTitle>{t("Delete product?", "حذف المنتج؟")}</AlertDialogTitle>
               <AlertDialogDescription>
                 {t(
                   `"${product.name}" will be permanently removed from this catalog.`,
@@ -1165,6 +1343,9 @@ function ProductRow({
 function CatalogCard({
   catalog,
   channelId,
+  activeCatalogId,
+  isCatalogVisible,
+  isCartEnabled,
 }: {
   catalog: {
     _id: Id<"catalogs">;
@@ -1173,6 +1354,9 @@ function CatalogCard({
     lastSyncedAt?: number;
   };
   channelId: Id<"channels">;
+  activeCatalogId?: string;
+  isCatalogVisible?: boolean;
+  isCartEnabled?: boolean;
 }) {
   const t = useT();
   const [expanded, setExpanded] = useState(false);
@@ -1182,6 +1366,11 @@ function CatalogCard({
   const [syncing, setSyncing] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [nameInput, setNameInput] = useState(catalog.name);
+  const [activating, setActivating] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
+  const [togglingCart, setTogglingCart] = useState(false);
+
+  const isActive = activeCatalogId === catalog.metaCatalogId;
 
   const syncStatus = useQuery(api.catalog.getSyncStatusForCatalog, {
     catalogDocId: catalog._id,
@@ -1193,6 +1382,56 @@ function CatalogCard({
   const triggerSync = useMutation(api.catalog.triggerCatalogSync);
   const renameCatalog = useMutation(api.catalog.renameCatalog);
   const removeCatalog = useMutation(api.catalog.removeCatalog);
+  const setCommerceSettings = useAction(api.actions.metaCatalogActions.setCommerceSettings);
+
+  async function handleActivate() {
+    setActivating(true);
+    try {
+      await setCommerceSettings({
+        channelId,
+        metaCatalogId: catalog.metaCatalogId,
+        isVisible: true,
+        isCartEnabled: true,
+      });
+      toast.success(t("Catalog activated in WhatsApp", "تم تفعيل الكتالوج في WhatsApp"));
+    } catch (err) {
+      toast.error(extractConvexMsg(err) || t("Failed to activate catalog", "فشل تفعيل الكتالوج"));
+    } finally {
+      setActivating(false);
+    }
+  }
+
+  async function handleToggleVisibility(checked: boolean) {
+    setTogglingVisibility(true);
+    try {
+      await setCommerceSettings({ channelId, isVisible: checked });
+      toast.success(
+        checked
+          ? t("Catalog now visible to customers", "الكتالوج مرئي للعملاء الآن")
+          : t("Catalog hidden from customers", "تم إخفاء الكتالوج عن العملاء"),
+      );
+    } catch (err) {
+      toast.error(extractConvexMsg(err) || t("Failed to update visibility", "فشل تحديث الرؤية"));
+    } finally {
+      setTogglingVisibility(false);
+    }
+  }
+
+  async function handleToggleCart(checked: boolean) {
+    setTogglingCart(true);
+    try {
+      await setCommerceSettings({ channelId, isCartEnabled: checked });
+      toast.success(
+        checked
+          ? t("Cart enabled for customers", "تم تفعيل عربة التسوق للعملاء")
+          : t("Cart disabled", "تم تعطيل عربة التسوق"),
+      );
+    } catch (err) {
+      toast.error(extractConvexMsg(err) || t("Failed to update cart setting", "فشل تحديث إعداد العربة"));
+    } finally {
+      setTogglingCart(false);
+    }
+  }
 
   async function handleSync() {
     setSyncing(true);
@@ -1245,20 +1484,20 @@ function CatalogCard({
         }}
       />
 
-      <div className="rounded-lg border">
+      <div className="rounded-2xl border border-black/[0.08] dark:border-white/[0.07] overflow-hidden bg-white dark:bg-[#1C1C1E]">
         {/* Catalog header */}
-        <div className="flex items-center gap-3 p-3">
+        <div className="flex items-center gap-2 px-3.5 py-2.5">
           <button
             onClick={() => setExpanded((e) => !e)}
             className="flex items-center gap-2 flex-1 min-w-0 text-start"
           >
             {expanded ? (
-              <ChevronUpIcon className="size-4 shrink-0 text-muted-foreground" />
+              <ChevronUpIcon className="size-4 shrink-0 text-[#6E6E73]" />
             ) : (
-              <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+              <ChevronDownIcon className="size-4 shrink-0 text-[#6E6E73]" />
             )}
             {renaming ? (
-              <Input
+              <input
                 value={nameInput}
                 onChange={(e) => setNameInput(e.target.value)}
                 onBlur={handleRename}
@@ -1266,18 +1505,34 @@ function CatalogCard({
                   if (e.key === "Enter") handleRename();
                   if (e.key === "Escape") setRenaming(false);
                 }}
-                className="h-7 text-sm font-medium"
+                className="h-7 flex-1 rounded-lg border border-black/[0.12] bg-black/[0.04] px-2.5 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white"
                 autoFocus
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <span className="text-sm font-medium truncate">{catalog.name}</span>
+              <span className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate">{catalog.name}</span>
             )}
           </button>
 
           <div className="flex items-center gap-1.5 shrink-0">
+            {isActive ? (
+              <span className="flex items-center gap-1 rounded-full bg-green-100 dark:bg-green-950 px-2.5 py-1 text-[12px] font-medium text-green-700 dark:text-green-300 shrink-0">
+                <WifiIcon className="size-3" />
+                {t("Active in WhatsApp", "نشط في واتساب")}
+              </span>
+            ) : (
+              <button
+                className={BTN_SM}
+                onClick={(e) => { e.stopPropagation(); handleActivate(); }}
+                disabled={activating}
+              >
+                {activating ? <Loader2Icon className="size-3 animate-spin" /> : <WifiIcon className="size-3" />}
+                {t("Activate in WhatsApp", "تفعيل في واتساب")}
+              </button>
+            )}
+
             <span
-              className="font-mono text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5 cursor-pointer"
+              className="font-mono text-[11px] text-[#6E6E73] bg-black/[0.04] dark:bg-white/[0.05] rounded-lg px-2 py-1 cursor-pointer hover:bg-black/[0.07] transition-colors"
               dir="ltr"
               title={t("Click to copy Catalog ID", "انقر لنسخ معرّف الكتالوج")}
               onClick={() => {
@@ -1289,50 +1544,35 @@ function CatalogCard({
             </span>
 
             {syncStatus !== undefined && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-[12px] text-[#6E6E73]">
                 {syncStatus?.productCount ?? 0} {t("items", "منتج")}
               </span>
             )}
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
+            <button
+              className={BTN_ICON}
               title={t("Sync from Meta", "تزامن من Meta")}
               onClick={handleSync}
               disabled={syncing}
             >
-              {syncing ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
-              ) : (
-                <RefreshCwIcon className="size-3.5" />
-              )}
-            </Button>
+              {syncing ? <Loader2Icon className="size-3.5 animate-spin" /> : <RefreshCwIcon className="size-3.5" />}
+            </button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
+            <button
+              className={BTN_ICON}
               title={t("Rename catalog", "إعادة تسمية الكتالوج")}
-              onClick={() => {
-                setNameInput(catalog.name);
-                setRenaming(true);
-              }}
+              onClick={() => { setNameInput(catalog.name); setRenaming(true); }}
             >
               <PencilIcon className="size-3.5" />
-            </Button>
+            </button>
 
             <AlertDialog>
-              <AlertDialogTrigger
-                className="inline-flex items-center justify-center size-7 rounded-md text-destructive hover:bg-accent transition-colors"
-              >
+              <AlertDialogTrigger className={BTN_ICON + " hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]"}>
                 <Trash2Icon className="size-3.5" />
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {t("Remove catalog?", "حذف الكتالوج؟")}
-                  </AlertDialogTitle>
+                  <AlertDialogTitle>{t("Remove catalog?", "حذف الكتالوج؟")}</AlertDialogTitle>
                   <AlertDialogDescription>
                     {t(
                       `"${catalog.name}" and all its products will be permanently removed.`,
@@ -1356,39 +1596,62 @@ function CatalogCard({
           </div>
         </div>
 
+        {/* WhatsApp commerce settings strip */}
+        {isActive && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2.5 bg-[#F0FBF0] dark:bg-green-950/20 border-t border-green-200/60 dark:border-green-900/40 text-[13px]">
+            <p className="text-[#1D1D1F] dark:text-white/70 font-medium shrink-0">
+              {t("WhatsApp Storefront", "واجهة المتجر")}
+            </p>
+            <div className="flex items-center gap-2">
+              <Switch checked={isCatalogVisible ?? false} onCheckedChange={handleToggleVisibility} disabled={togglingVisibility} />
+              <span className="flex items-center gap-1 text-[#6E6E73]">
+                <EyeIcon className="size-3.5" />
+                {t("Visible to customers", "مرئي للعملاء")}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={isCartEnabled ?? false} onCheckedChange={handleToggleCart} disabled={togglingCart} />
+              <span className="flex items-center gap-1 text-[#6E6E73]">
+                <ShoppingCartIcon className="size-3.5" />
+                {t("Cart enabled", "عربة التسوق")}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Expanded products section */}
         {expanded && (
-          <div className="border-t p-3 space-y-3">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{t("Last sync", "آخر تزامن")}: {lastSynced}</span>
-              <Button size="sm" variant="outline" onClick={openCreate}>
-                <PlusIcon className="size-3.5 me-1.5" />
+          <div className="border-t border-black/[0.06] dark:border-white/[0.05] p-3.5 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] text-[#6E6E73]">{t("Last sync", "آخر تزامن")}: {lastSynced}</span>
+              <button className={BTN_SM} onClick={openCreate}>
+                <PlusIcon className="size-3.5" />
                 {t("Add Product", "إضافة منتج")}
-              </Button>
+              </button>
             </div>
 
-            <Input
+            <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={t("Search products…", "ابحث عن منتج…")}
-              className="h-8 text-sm"
+              className={INPUT_SM}
             />
 
             {products === undefined ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-8">
+                <Loader2Icon className="size-4 animate-spin text-[#6E6E73]" />
               </div>
             ) : products.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <ShoppingBagIcon className="size-8 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <ShoppingBagIcon className="size-9 text-[#6E6E73]/40" />
+                <p className="text-[14px] text-[#6E6E73]">
                   {q
                     ? t("No products found", "لا توجد منتجات")
                     : t("No products yet — add one or sync from Meta", "لا توجد منتجات — أضف منتجًا أو تزامن من Meta")}
                 </p>
               </div>
             ) : (
-              <div className="divide-y border rounded-md">
+              <div className="rounded-xl border border-black/[0.06] dark:border-white/[0.06] overflow-hidden divide-y divide-black/[0.06] dark:divide-white/[0.05]">
                 {products.map((p) => (
                   <ProductRow
                     key={p._id}
@@ -1466,73 +1729,68 @@ function AddCatalogForm({
   }
 
   return (
-    <div className="rounded-lg border border-dashed p-4 space-y-4">
-      <p className="text-sm font-medium text-muted-foreground">
+    <div className="rounded-2xl border border-dashed border-black/[0.10] dark:border-white/[0.08] p-4 space-y-4">
+      <p className="text-[13px] font-semibold text-[#1D1D1F] dark:text-white/80">
         {t("Add existing catalog", "إضافة كتالوج موجود")}
       </p>
 
-      {/* Connect existing Meta catalog by ID */}
       <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
         <div className="space-y-1">
-          <Label className="text-xs">{t("Meta Catalog ID", "معرّف كتالوج Meta")}</Label>
-          <Input
+          <label className={LBL}>{t("Meta Catalog ID", "معرّف كتالوج Meta")}</label>
+          <input
             value={metaId}
             onChange={(e) => setMetaId(e.target.value)}
             placeholder="946395248008933"
             dir="ltr"
-            className="font-mono text-sm h-8"
+            className={INPUT_SM + " font-mono"}
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">{t("Display name", "الاسم")}</Label>
-          <Input
+          <label className={LBL}>{t("Display name", "الاسم")}</label>
+          <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t("e.g. Summer Collection", "مثال: مجموعة الصيف")}
-            className="text-sm h-8"
+            className={INPUT_SM}
           />
         </div>
       </div>
-      <Button
-        size="sm"
+      <button
+        className={BTN_SM}
         onClick={handleAdd}
         disabled={saving || !metaId.trim() || !name.trim()}
       >
-        {saving && <Loader2Icon className="size-3.5 animate-spin me-1.5" />}
-        <PlusIcon className="size-3.5 me-1.5" />
+        {saving && <Loader2Icon className="size-3.5 animate-spin" />}
+        <PlusIcon className="size-3.5" />
         {t("Add Catalog", "إضافة الكتالوج")}
-      </Button>
+      </button>
 
-      {/* Divider */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground">{t("or", "أو")}</span>
-        <div className="flex-1 h-px bg-border" />
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.08]" />
+        <span className="text-[12px] text-[#6E6E73]">{t("or", "أو")}</span>
+        <div className="flex-1 h-px bg-black/[0.08] dark:bg-white/[0.08]" />
       </div>
 
-      {/* Create new catalog in Meta */}
-      <p className="text-sm font-medium text-muted-foreground">
+      <p className="text-[13px] font-semibold text-[#1D1D1F] dark:text-white/80">
         {t("Create new catalog in Meta", "إنشاء كتالوج جديد في Meta")}
       </p>
       <div className="flex gap-2">
-        <Input
+        <input
           value={newCatalogName}
           onChange={(e) => setNewCatalogName(e.target.value)}
           placeholder={t("Catalog name", "اسم الكتالوج")}
-          className="text-sm h-8"
+          className={INPUT_SM}
         />
-        <Button
-          size="sm"
-          variant="outline"
+        <button
+          className={BTN_SM}
           onClick={handleCreate}
           disabled={creating || !newCatalogName.trim()}
-          className="shrink-0"
         >
-          {creating && <Loader2Icon className="size-3.5 animate-spin me-1.5" />}
+          {creating && <Loader2Icon className="size-3.5 animate-spin" />}
           {t("Create in Meta", "إنشاء في Meta")}
-        </Button>
+        </button>
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-[12px] text-[#6E6E73]">
         {t(
           "Creates a catalog in your Meta Business Manager and links it automatically.",
           "ينشئ كتالوجًا في Meta Business Manager ويربطه تلقائيًا.",
@@ -1552,6 +1810,8 @@ function ChannelCatalogCard({
     displayName: string;
     displayPhone?: string;
     catalogId?: string;
+    isCatalogVisible?: boolean;
+    isCartEnabled?: boolean;
   };
 }) {
   const t = useT();
@@ -1559,16 +1819,15 @@ function ChannelCatalogCard({
 
   if (catalogs === undefined) {
     return (
-      <div className="rounded-lg border p-4">
-        <p className="font-medium">{channel.displayName}</p>
-        <div className="flex items-center justify-center py-4">
-          <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+      <div className={CARD + " p-5"}>
+        <p className="text-[16px] font-semibold text-[#1D1D1F] dark:text-white">{channel.displayName}</p>
+        <div className="flex items-center justify-center py-6">
+          <Loader2Icon className="size-4 animate-spin text-[#6E6E73]" />
         </div>
       </div>
     );
   }
 
-  // If the channel has a legacy catalogId that isn't yet in the catalogs table, pre-fill it
   const legacyCatalogId =
     channel.catalogId &&
     !catalogs.some((c) => c.metaCatalogId === channel.catalogId)
@@ -1576,12 +1835,12 @@ function ChannelCatalogCard({
       : undefined;
 
   return (
-    <div className="rounded-lg border divide-y">
+    <div className={CARD}>
       {/* Channel header */}
-      <div className="p-4">
-        <p className="font-medium">{channel.displayName}</p>
+      <div className="px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.05]">
+        <p className="text-[16px] font-semibold tracking-[-0.2px] text-[#1D1D1F] dark:text-white">{channel.displayName}</p>
         {channel.displayPhone && (
-          <p className="text-sm text-muted-foreground" dir="ltr">
+          <p className="text-[13px] text-[#6E6E73] mt-0.5" dir="ltr">
             {channel.displayPhone}
           </p>
         )}
@@ -1590,7 +1849,7 @@ function ChannelCatalogCard({
       {/* Catalog list */}
       <div className="p-4 space-y-2">
         {catalogs.length === 0 && !legacyCatalogId ? (
-          <p className="text-sm text-muted-foreground text-center py-2">
+          <p className="text-[14px] text-[#6E6E73] text-center py-3">
             {t("No catalogs added yet", "لا توجد كتالوجات مضافة بعد")}
           </p>
         ) : (
@@ -1599,13 +1858,16 @@ function ChannelCatalogCard({
               key={catalog._id}
               catalog={catalog}
               channelId={channel._id}
+              activeCatalogId={channel.catalogId}
+              isCatalogVisible={channel.isCatalogVisible}
+              isCartEnabled={channel.isCartEnabled}
             />
           ))
         )}
       </div>
 
       {/* Add catalog form */}
-      <div className="p-4">
+      <div className="px-4 pb-4">
         <AddCatalogForm channelId={channel._id} prefillMetaId={legacyCatalogId} />
       </div>
     </div>
@@ -1620,15 +1882,15 @@ export function CatalogSettings() {
 
   if (channels === undefined) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
+      <div className="flex items-center justify-center py-16">
+        <Loader2Icon className="size-5 animate-spin text-[#6E6E73]" />
       </div>
     );
   }
 
   if (channels.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-[14px] text-[#6E6E73]">
         {t("No WhatsApp channels configured yet.", "لا توجد أرقام واتساب مضافة بعد.")}
       </p>
     );
@@ -1636,7 +1898,7 @@ export function CatalogSettings() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-[14px] text-[#6E6E73] leading-relaxed">
         {t(
           "Connect Meta Commerce Manager catalogs to enable product browsing in conversations. You can add multiple catalogs per channel. Available on Growth plan and above.",
           "اربط كتالوجات Meta Commerce Manager لتفعيل تصفح المنتجات في المحادثات. يمكنك إضافة عدة كتالوجات لكل رقم. متاح في خطة Growth وما فوقها.",

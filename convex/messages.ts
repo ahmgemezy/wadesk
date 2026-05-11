@@ -1161,3 +1161,115 @@ export const updateMediaUrl = internalMutation({
     await ctx.db.patch(args.messageId, { mediaUrl: args.mediaUrl });
   },
 });
+
+// [CALLS] Inserts a missed-call system event + schedules an auto-reply to the caller.
+export const insertMissedCallEvent = internalMutation({
+  args: {
+    tenantId: v.string(),
+    channelId: v.id("channels"),
+    callerPhone: v.string(),
+    callId: v.string(),
+    timestamp: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Dedup — webhook can fire more than once for the same call id
+    const dedupKey = `call:${args.callId}`;
+    const existing = await ctx.db
+      .query("messages")
+      .withIndex("by_meta_message_id", (q) => q.eq("metaMessageId", dedupKey))
+      .first();
+    if (existing) return;
+
+    const channel = await ctx.db.get(args.channelId);
+    if (!channel) return;
+
+    const contactId = await ctx.runMutation(internal.contacts.upsertByPhone, {
+      tenantId: args.tenantId,
+      phone: args.callerPhone,
+      channelId: args.channelId,
+    });
+
+    // Find the most recent open/pending conversation for this contact on this channel
+    let conversation = await ctx.db
+      .query("conversations")
+      .withIndex("by_tenant_channel", (q) =>
+        q.eq("tenantId", args.tenantId).eq("channelId", args.channelId),
+      )
+      .filter((q) => q.eq(q.field("contactId"), contactId))
+      .first();
+
+    const now = args.timestamp;
+    const callPreview = "📞 مكالمة فائتة";
+
+    if (!conversation || conversation.status === "forwarded") {
+      const conversationId = await ctx.db.insert("conversations", {
+        tenantId: args.tenantId,
+        channelId: args.channelId,
+        contactId,
+        status: "open",
+        labels: [],
+        lastMessageAt: now,
+        lastMessagePreview: callPreview,
+        unreadCount: 1,
+        createdAt: now,
+        lastInboundAt: now,
+      });
+      conversation = await ctx.db.get(conversationId);
+    } else {
+      await ctx.db.patch(conversation._id, {
+        lastMessageAt: now,
+        lastMessagePreview: callPreview,
+        unreadCount: (conversation.unreadCount ?? 0) + 1,
+        status: conversation.status === "resolved" ? "open" : conversation.status,
+        lastInboundAt: now,
+      });
+      conversation = await ctx.db.get(conversation._id);
+    }
+
+    if (!conversation) return;
+
+    // System message: visual indicator of the call in the thread
+    await ctx.db.insert("messages", {
+      conversationId: conversation._id,
+      tenantId: args.tenantId,
+      direction: "inbound",
+      content: callPreview,
+      contentType: "system_event",
+      isInternalNote: false,
+      metaMessageId: dedupKey,
+      status: "sent",
+      timestamp: now,
+      createdAt: Date.now(),
+    });
+
+    // Auto-reply outbound message — channel setting overrides the system default
+    const autoReplyContent = channel.missedCallAutoReply ?? "مرحباً! رأينا مكالمتك 😊 كيف نقدر نساعدك؟";
+    const autoReplyId = await ctx.db.insert("messages", {
+      conversationId: conversation._id,
+      tenantId: args.tenantId,
+      direction: "outbound",
+      content: autoReplyContent,
+      contentType: "text",
+      isInternalNote: false,
+      status: "sending",
+      timestamp: Date.now(),
+      createdAt: Date.now(),
+    });
+
+    await ctx.db.patch(conversation._id, {
+      lastMessageAt: Date.now(),
+      lastMessagePreview: autoReplyContent.slice(0, 100),
+    });
+
+    const contact = await ctx.db.get(contactId);
+    if (contact) {
+      await ctx.scheduler.runAfter(0, internal.actions.sendWhatsAppMessage.sendMessage, {
+        messageId: autoReplyId,
+        phoneNumberId: channel.phoneNumberId,
+        contactPhone: contact.phone,
+        content: autoReplyContent,
+        tenantId: args.tenantId,
+      });
+    }
+  },
+});

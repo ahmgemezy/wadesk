@@ -54,7 +54,10 @@ export default defineSchema({
     slaThresholdMinutes: v.optional(v.number()),
     slaEnabled: v.optional(v.boolean()),
     reopenWindowHours: v.optional(v.number()),  // window after resolution where a new inbound reopens the same conversation; default 24h
-    catalogId: v.optional(v.string()),            // Meta Commerce Manager catalog ID for product browsing
+    missedCallAutoReply: v.optional(v.string()), // message sent automatically when a WhatsApp call is missed; falls back to system default if unset
+    catalogId: v.optional(v.string()),            // Meta Commerce Manager catalog ID linked to this phone number
+    isCatalogVisible: v.optional(v.boolean()),    // is_catalog_visible — customers can browse catalog in WhatsApp
+    isCartEnabled: v.optional(v.boolean()),       // is_cart_enabled — customers can add to cart in WhatsApp
 
     pendingDisplayName: v.optional(v.string()),
     displayNameStatus: v.optional(v.union(v.literal("pending"), v.literal("approved"), v.literal("rejected"))),

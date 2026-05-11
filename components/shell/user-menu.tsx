@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { DT } from "@/lib/design-tokens";
 import { LogOut } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useAuth, useUser } from "@/lib/auth-hooks";
@@ -46,7 +47,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
         {/* Avatar + info row — clickable to open profile modal */}
         <button
           onClick={() => setProfileOpen(true)}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-sidebar-accent transition-colors w-full text-start group-data-[collapsible=icon]:hidden"
+          className={`flex items-center gap-2 px-2 py-1.5 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] transition-colors w-full text-start rounded-xl group-data-[collapsible=icon]:hidden`}
         >
           {effectiveAvatar ? (
             <img
@@ -55,17 +56,17 @@ export function UserMenu({ user, locale }: UserMenuProps) {
               className="size-8 shrink-0 rounded-full object-cover"
             />
           ) : (
-            <div className="size-8 shrink-0 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
+            <div className={`size-8 shrink-0 rounded-full bg-black/4 dark:bg-white/8 flex items-center justify-center text-xs font-semibold ${DT.TEXT_GRAY}`}>
               {effectiveName?.slice(0, 2).toUpperCase() ?? "?"}
             </div>
           )}
           <div className="flex flex-col min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-medium truncate">{effectiveName}</span>
+              <span className={`${DT.BODY} font-medium truncate`}>{effectiveName}</span>
               {currentUserId && <PresenceIndicator userId={currentUserId} />}
               <RoleBadge role={role} locale={locale} />
             </div>
-            <span className="text-xs text-muted-foreground truncate">
+            <span className={`${DT.MICRO} truncate`}>
               {user.orgName}
             </span>
           </div>
@@ -80,10 +81,10 @@ export function UserMenu({ user, locale }: UserMenuProps) {
             <img
               src={effectiveAvatar}
               alt={effectiveName}
-              className="size-7 rounded-full object-cover ring-1 ring-border"
+              className="size-7 rounded-full object-cover ring-1 ring-black/12 dark:ring-white/12"
             />
           ) : (
-            <div className="size-7 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground ring-1 ring-border">
+            <div className={`size-7 rounded-full bg-black/4 dark:bg-white/8 flex items-center justify-center text-xs font-semibold ${DT.TEXT_GRAY} ring-1 ring-black/12 dark:ring-white/12`}>
               {effectiveName?.slice(0, 2).toUpperCase() ?? "?"}
             </div>
           )}
@@ -92,7 +93,7 @@ export function UserMenu({ user, locale }: UserMenuProps) {
         <button
           onClick={handleSignOut}
           disabled={signingOut}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-full disabled:opacity-60"
+          className={`flex items-center gap-2 px-2 py-1.5 text-sm rounded-xl transition-colors w-full group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:w-full disabled:opacity-60 ${DT.MUTED} hover:${DT.BODY}`}
         >
           <LogOut className="size-4 shrink-0 rtl:scale-x-[-1]" />
           <span className="group-data-[collapsible=icon]:hidden">

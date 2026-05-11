@@ -191,3 +191,69 @@ export const pushProductToMeta = action({
     return { success: true };
   },
 });
+
+/**
+ * Links a Meta Commerce Manager catalog to a phone number and controls its
+ * visibility in the WhatsApp app (storefront icon + "View catalog" button).
+ *
+ * POST /{phoneNumberId}/whatsapp_commerce_settings
+ *   ?catalog_id=...           — links this catalog to the phone number
+ *   &is_catalog_visible=true  — shows storefront icon to customers
+ *   &is_cart_enabled=true     — lets customers add items to a cart
+ */
+export const setCommerceSettings = action({
+  args: {
+    channelId: v.id("channels"),
+    metaCatalogId: v.optional(v.string()),
+    isVisible: v.optional(v.boolean()),
+    isCartEnabled: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const { tenantId, orgRole } = await getCallerIdentity(ctx);
+    assertAdmin(orgRole as OrgRole);
+
+    const channel = await ctx.runQuery(internal.channels.getById, {
+      channelId: args.channelId,
+    });
+    if (!channel || channel.tenantId !== tenantId)
+      throw new ConvexError("NOT_FOUND");
+
+    const token =
+      (channel.accessToken ? await decrypt(channel.accessToken) : "") ||
+      process.env.META_SYSTEM_USER_TOKEN ||
+      "";
+    if (!token) throw new ConvexError("NO_TOKEN");
+
+    const params = new URLSearchParams();
+    if (args.metaCatalogId) params.set("catalog_id", args.metaCatalogId);
+    if (args.isVisible !== undefined) params.set("is_catalog_visible", String(args.isVisible));
+    if (args.isCartEnabled !== undefined) params.set("is_cart_enabled", String(args.isCartEnabled));
+
+    const res = await fetch(
+      `${BASE}/${channel.phoneNumberId}/whatsapp_commerce_settings?${params}`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    if (!res.ok) {
+      const errData = (await res.json().catch(() => ({}))) as {
+        error?: { message: string };
+      };
+      throw new ConvexError(
+        errData.error?.message ?? `Meta API error ${res.status}`,
+      );
+    }
+
+    // Cache locally so the UI reflects the new state instantly
+    await ctx.runMutation(internal.catalog.updateChannelCommerceSettings, {
+      channelId: args.channelId,
+      catalogId: args.metaCatalogId,
+      isCatalogVisible: args.isVisible,
+      isCartEnabled: args.isCartEnabled,
+    });
+
+    return { success: true };
+  },
+});

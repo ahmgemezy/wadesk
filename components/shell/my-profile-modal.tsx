@@ -6,6 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useT } from "@/lib/i18n/context";
+import { DT } from "@/lib/design-tokens";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Loader2, Upload, Link as LinkIcon, User } from "lucide-react";
@@ -165,20 +164,20 @@ export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className={`max-w-md ${DT.DIALOG}`}>
         <DialogHeader>
           <DialogTitle>{t("My Profile", "ملفي الشخصي")}</DialogTitle>
         </DialogHeader>
 
         {/* Current avatar preview */}
-        <div className="flex items-center gap-3 pb-2 border-b">
+        <div className={`flex items-center gap-3 pb-2 ${DT.DIVIDER}`}>
           <Avatar className="size-14">
             <AvatarImage src={effectiveAvatar} alt={effectiveName} />
             <AvatarFallback><User className="size-6" /></AvatarFallback>
           </Avatar>
           <div className="flex flex-col min-w-0">
-            <span className="font-medium truncate">{effectiveName}</span>
-            <span className="text-xs text-muted-foreground truncate">{currentUser.email}</span>
+            <span className={`${DT.BODY} font-medium truncate`}>{effectiveName}</span>
+            <span className={`${DT.MICRO} truncate`}>{currentUser.email}</span>
           </div>
         </div>
 
@@ -195,64 +194,74 @@ export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileMod
           {/* ── Details tab ── */}
           <TabsContent value="details" className="space-y-3 pt-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
+              <label className={DT.LBL}>
                 {t("First Name", "الاسم الأول")}
               </label>
-              <Input
+              <input
+                type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder={t("First name", "الاسم الأول")}
+                className={DT.INPUT}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
+              <label className={DT.LBL}>
                 {t("Last Name", "اسم العائلة")}
               </label>
-              <Input
+              <input
+                type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder={t("Last name", "اسم العائلة")}
+                className={DT.INPUT}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
+              <label className={DT.LBL}>
                 {t("Phone", "رقم الهاتف")}
               </label>
-              <Input
+              <input
+                type="text"
                 dir="ltr"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+201000000000"
+                className={DT.INPUT}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
+              <label className={DT.LBL}>
                 {t("Job Title", "المسمى الوظيفي")}
               </label>
-              <Input
+              <input
+                type="text"
                 value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 placeholder={t("e.g. Sales Agent", "مثال: مندوب مبيعات")}
+                className={DT.INPUT}
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
+              <label className={DT.LBL}>
                 {t("Bio", "نبذة")}
               </label>
-              <Input
+              <input
+                type="text"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder={t("A short bio…", "نبذة مختصرة…")}
+                className={DT.INPUT}
               />
             </div>
-            <Button
-              className="w-full"
+            <button
+              className={DT.BTN_PRIMARY}
               onClick={handleSaveDetails}
               disabled={savingDetails}
             >
               {savingDetails && <Loader2 className="size-3.5 animate-spin" />}
               {t("Save Details", "حفظ البيانات")}
-            </Button>
+            </button>
           </TabsContent>
 
           {/* ── Avatar tab ── */}
@@ -276,26 +285,26 @@ export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileMod
                       <img
                         src={pendingPreviewUrl}
                         alt="preview"
-                        className="size-24 rounded-full object-cover border-2 border-primary"
+                        className={`size-24 rounded-full object-cover border-2 ${DT.BORDER_BLUE}`}
                       />
                     </div>
-                    <p className="text-center text-xs text-muted-foreground">
+                    <p className={`text-center ${DT.MUTED}`}>
                       {pendingFile?.name}
                     </p>
                     <div className="flex gap-2">
-                      <Button className="flex-1" onClick={confirmUpload} disabled={uploading}>
+                      <button className={`flex-1 ${DT.BTN_PRIMARY}`} onClick={confirmUpload} disabled={uploading}>
                         {uploading && <Loader2 className="size-3.5 animate-spin" />}
                         {t("Save Photo", "حفظ الصورة")}
-                      </Button>
-                      <Button variant="outline" className="flex-1" onClick={cancelUpload} disabled={uploading}>
+                      </button>
+                      <button className={`flex-1 ${DT.BTN_OUTLINE}`} onClick={cancelUpload} disabled={uploading}>
                         {t("Cancel", "إلغاء")}
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 ) : (
                   <div
                     className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                      dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                      dragOver ? `${DT.BORDER_BLUE} ${DT.BG_BLUE_LIGHT}` : `border-black/12 dark:border-white/12 ${DT.BORDER_BLUE_HOVER}`
                     }`}
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -307,11 +316,11 @@ export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileMod
                       if (file) stageFile(file);
                     }}
                   >
-                    <Upload className="size-6 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
+                    <Upload className={`size-6 mx-auto mb-2 ${DT.MUTED}`} />
+                    <p className={`text-sm ${DT.MUTED}`}>
                       {t("Click or drag an image here", "انقر أو اسحب صورة هنا")}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">PNG، JPG، WEBP</p>
+                    <p className={`text-xs ${DT.MUTED} mt-1`}>PNG، JPG، WEBP</p>
                   </div>
                 )}
                 <input
@@ -329,14 +338,16 @@ export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileMod
 
               <TabsContent value="url" className="pt-3 space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label className={DT.LBL}>
                     {t("Paste an image URL", "الصق رابط الصورة")}
                   </label>
-                  <Input
+                  <input
+                    type="text"
                     dir="ltr"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     placeholder="https://example.com/photo.jpg"
+                    className={DT.INPUT}
                   />
                 </div>
                 {urlInput && (
@@ -344,32 +355,30 @@ export function MyProfileModal({ open, onOpenChange, currentUser }: MyProfileMod
                     <img
                       src={urlInput}
                       alt="preview"
-                      className="size-20 rounded-full object-cover border"
+                      className="size-20 rounded-full object-cover border border-black/12 dark:border-white/12"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                   </div>
                 )}
-                <Button
-                  className="w-full"
+                <button
+                  className={DT.BTN_PRIMARY}
                   onClick={handleSaveUrl}
                   disabled={savingAvatar || !urlInput.trim()}
                 >
                   {savingAvatar && <Loader2 className="size-3.5 animate-spin" />}
                   {t("Save Avatar", "حفظ الصورة")}
-                </Button>
+                </button>
               </TabsContent>
             </Tabs>
 
             {user?.imageUrl && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-destructive hover:text-destructive"
+              <button
+                className={`w-full px-5 py-2 text-sm font-normal ${DT.TEXT_RED} ${DT.BG_RED_HOVER} rounded-full transition-colors disabled:opacity-50`}
                 onClick={handleRemoveAvatar}
                 disabled={savingAvatar}
               >
                 {t("Remove current avatar", "إزالة الصورة الحالية")}
-              </Button>
+              </button>
             )}
           </TabsContent>
         </Tabs>

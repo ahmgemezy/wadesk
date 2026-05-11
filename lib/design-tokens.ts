@@ -184,6 +184,19 @@ export const DT = {
   DOT_AMBER: "size-2 rounded-full bg-[#FF9500] dark:bg-[#FF9F0A]",
   DOT_RED:   "size-2 rounded-full bg-[#FF3B30] dark:bg-[#FF453A]",
 
+  // ── Semantic colors ───────────────────────────────────────────────────────
+  TEXT_BLUE:    "text-[#0071E3] dark:text-[#0A84FF]",
+  BORDER_BLUE:  "border-[#0071E3] dark:border-[#0A84FF]",
+  BG_BLUE:      "bg-[#0071E3] dark:bg-[#0A84FF]",
+  BG_BLUE_LIGHT: "bg-[#0071E3]/5 dark:bg-[#0A84FF]/5",
+  BG_BLUE_HOVER: "hover:bg-[#0071E3]/10 dark:hover:bg-[#0A84FF]/10",
+  BORDER_BLUE_HOVER: "hover:border-[#0071E3]/50 dark:hover:border-[#0A84FF]/50",
+  BG_RED:       "bg-[#FF3B30] dark:bg-[#FF453A]",
+  BORDER_RED:   "border-[#FF3B30] dark:border-[#FF453A]",
+  BG_RED_HOVER: "hover:bg-[#FF3B30]/10 dark:hover:bg-[#FF453A]/10",
+  TEXT_RED:     "text-[#FF3B30] dark:text-[#FF453A]",
+  TEXT_GRAY:    "text-[#6E6E73] dark:text-white/50",
+
   // ── Info box ──────────────────────────────────────────────────────────────
   INFO_BOX: "rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] text-[#6E6E73] dark:text-white/50",
 } as const;

@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { DT } from "@/lib/design-tokens";
 import { setLocale } from "@/lib/shell/locale-action";
 
 interface LocaleSwitcherProps {
@@ -26,7 +27,7 @@ export function LocaleSwitcher({ locale }: LocaleSwitcherProps) {
     <button
       onClick={toggle}
       disabled={isPending}
-      className="flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors disabled:opacity-50 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8"
+      className={`flex items-center justify-center px-2 py-1 text-xs font-medium transition-colors disabled:opacity-50 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8 ${DT.BTN_SM}`}
       title={locale === "ar" ? "Switch to English" : "التبديل إلى العربية"}
     >
       <span className="group-data-[collapsible=icon]:hidden">

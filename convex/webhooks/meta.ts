@@ -7,8 +7,10 @@ import { processTemplates } from "./processors/templates";
 import { processEcho } from "./processors/echoes";
 import { processHistory } from "./processors/history";
 import { processAppStateSync } from "./processors/appStateSync";
+import { processCalls } from "./processors/calls";
 import type { MetaMessage } from "./processors/messages";
 import type { MetaStatus } from "./processors/statuses";
+import type { MetaCall } from "./processors/calls";
 
 // ── Structured logger ────────────────────────────────────────────────────────
 
@@ -89,6 +91,7 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
             smb_message_echoes?: MetaMessage[];      // Coexistence: echoes from mobile app
             history?: { field: string; old_value?: unknown; new_value?: unknown }[];  // Coexistence: conversation state changes
             smb_app_state_sync?: "business_app" | "cloud_api";  // Coexistence: app state
+            calls?: MetaCall[];
           };
         }[];
       }[];
@@ -201,6 +204,10 @@ export const metaWebhookV2 = httpAction(async (ctx, request) => {
 
             case "message_template_status_update":
               await processTemplates(ctx, channel.tenantId, wabaId, value);
+              break;
+
+            case "calls":
+              await processCalls(ctx, channel, value?.calls ?? []);
               break;
 
             case "account_update":
