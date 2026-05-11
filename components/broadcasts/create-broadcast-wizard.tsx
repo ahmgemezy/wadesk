@@ -5,13 +5,13 @@ import { useQuery, useMutation, useAction } from "convex/react";
 import { useRouter } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Id, Doc } from "@/convex/_generated/dataModel";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { CheckIcon, MegaphoneIcon, RefreshCwIcon, XIcon } from "lucide-react";
 import { WhatsAppTemplatePreview } from "./whatsapp-template-preview";
 import type { TemplateComponent } from "./whatsapp-template-preview";
+import { DT } from "@/lib/design-tokens";
 
 const t = {
   ar: {
@@ -262,7 +262,7 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
           <CheckIcon className="size-6" />
         </div>
         <p className="text-lg font-semibold">{tx.success}</p>
-        <Button onClick={() => router.push("/broadcasts")}>{locale === "ar" ? "عرض الحملات" : "View Broadcasts"}</Button>
+        <button type="button" onClick={() => router.push("/broadcasts")} className={DT.BTN_PRIMARY}>{locale === "ar" ? "عرض الحملات" : "View Broadcasts"}</button>
       </div>
     );
   }
@@ -270,7 +270,7 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
   const steps = [tx.step1, tx.step2, tx.step3];
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className={`${DT.CARD} p-6 max-w-2xl mx-auto`}>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-semibold">{tx.title}</h1>
       </div>
@@ -284,11 +284,11 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
             <div key={idx} className="flex items-center gap-2">
               <div
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                  active
-                    ? "bg-primary text-primary-foreground"
-                    : isDone
-                    ? "bg-primary/20 text-primary"
-                    : "bg-muted text-muted-foreground"
+                  isDone
+                    ? "bg-[#0071E3] text-white dark:bg-[#0A84FF]"
+                    : active
+                    ? "ring-2 ring-[#0071E3] dark:ring-[#0A84FF] text-[#0071E3] dark:text-[#0A84FF]"
+                    : "bg-black/[0.06] dark:bg-white/[0.08] text-[#6E6E73] dark:text-white/50"
                 }`}
               >
                 {isDone ? <CheckIcon className="size-3.5" /> : idx}
@@ -299,7 +299,7 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
                 {label}
               </span>
               {i < steps.length - 1 && (
-                <div className="flex-1 h-px bg-border w-8 mx-1" />
+                <div className={`${DT.DIVIDER} flex-1 w-8 mx-1`} />
               )}
             </div>
           );
@@ -347,13 +347,15 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
             )}
           </div>
           <div className="flex justify-end gap-2 mt-2">
-            <Button variant="outline" onClick={() => router.push("/broadcasts")}>{tx.cancel}</Button>
-            <Button
+            <button type="button" onClick={() => router.push("/broadcasts")} className={DT.BTN_OUTLINE}>{tx.cancel}</button>
+            <button
+              type="button"
               onClick={() => setStep(2)}
               disabled={!selectedListId || !name.trim()}
+              className={DT.BTN_PRIMARY}
             >
               {tx.next}
-            </Button>
+            </button>
           </div>
         </div>
       )}
@@ -602,15 +604,17 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
 
           <div className="flex justify-between mt-2">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(1)}>{tx.back}</Button>
-              <Button variant="outline" onClick={() => router.push("/broadcasts")}>{tx.cancel}</Button>
+              <button type="button" onClick={() => setStep(1)} className={DT.BTN_OUTLINE}>{tx.back}</button>
+              <button type="button" onClick={() => router.push("/broadcasts")} className={DT.BTN_OUTLINE}>{tx.cancel}</button>
             </div>
-            <Button
+            <button
+              type="button"
               onClick={() => setStep(3)}
               disabled={!selectedChannelId || (!selectedTemplate && !selectedBroadcastTemplate)}
+              className={DT.BTN_PRIMARY}
             >
               {tx.next}
-            </Button>
+            </button>
           </div>
         </div>
       )}
@@ -653,13 +657,13 @@ export function CreateBroadcastWizard({ locale, initialListId }: Props) {
 
           <div className="flex justify-between mt-2">
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep(2)}>{tx.back}</Button>
-              <Button variant="outline" onClick={() => router.push("/broadcasts")}>{tx.cancel}</Button>
+              <button type="button" onClick={() => setStep(2)} className={DT.BTN_OUTLINE}>{tx.back}</button>
+              <button type="button" onClick={() => router.push("/broadcasts")} className={DT.BTN_OUTLINE}>{tx.cancel}</button>
             </div>
-            <Button onClick={handleSend} disabled={sending}>
+            <button type="button" onClick={handleSend} disabled={sending} className={DT.BTN_PRIMARY}>
               <MegaphoneIcon className="size-4 me-1" />
               {sending ? tx.sending : tx.send}
-            </Button>
+            </button>
           </div>
         </div>
       )}
