@@ -201,6 +201,9 @@ export const DT = {
 
   // ── Info box ──────────────────────────────────────────────────────────────
   INFO_BOX: "rounded-xl bg-black/[0.03] dark:bg-white/[0.04] px-3.5 py-2.5 text-[12px] text-[#6E6E73] dark:text-white/50",
+
+  // ── Form inputs ───────────────────────────────────────────────────────────
+  CHECKBOX_ACCENT: "accent-[#0071E3] dark:accent-[#0A84FF]",
 } as const;
 
 export type DTKey = keyof typeof DT;

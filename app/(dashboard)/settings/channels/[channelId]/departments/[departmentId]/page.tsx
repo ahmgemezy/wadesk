@@ -6,8 +6,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { DepartmentMembers } from "@/components/settings/department-members";
 import { DepartmentAssignmentMode } from "@/components/settings/department-assignment-mode";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DT } from "@/lib/design-tokens";
 import { Pencil, Check, X, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -77,32 +76,26 @@ export default function DepartmentDetailPage({
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-6">
-      <Button
-        variant="ghost"
-        size="sm"
+      <button className={`${DT.BTN_PRIMARY} gap-1`}
         onClick={() => router.push(`/settings/channels/${channelId}`)}
-        className="gap-1"
       >
         <ArrowLeft className="size-4" />
         {t("Back to Departments", "العودة للإدارات")}
-      </Button>
+      </button>
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">
           {editing ? (
             <div className="flex items-center gap-2">
-              <Input
+              <input className={`${DT.INPUT} max-w-xs`}
                 value={nameValue}
                 onChange={(e) => setNameValue(e.target.value)}
                 disabled={saving}
-                className="max-w-xs"
               />
-              <Button size="icon-sm" onClick={saveName} disabled={saving || !nameValue.trim()}>
+              <button className={DT.BTN_PRIMARY} onClick={saveName} disabled={saving || !nameValue.trim()}>
                 <Check className="size-4" />
-              </Button>
-              <Button
-                size="icon-sm"
-                variant="ghost"
+              </button>
+              <button className={DT.BTN_PRIMARY}
                 onClick={() => {
                   setEditing(false);
                   setNameValue(dept.name);
@@ -111,14 +104,14 @@ export default function DepartmentDetailPage({
                 disabled={saving}
               >
                 <X className="size-4" />
-              </Button>
+              </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <span>{dept.name}</span>
-              <Button size="icon-sm" variant="ghost" onClick={() => setEditing(true)}>
+              <button className={DT.BTN_PRIMARY} onClick={() => setEditing(true)}>
                 <Pencil className="size-3" />
-              </Button>
+              </button>
             </div>
           )}
         </h1>
@@ -127,7 +120,7 @@ export default function DepartmentDetailPage({
       {editing && (
         <div className="space-y-2">
           <h3 className="text-sm font-medium">{t("Description", "الوصف")}</h3>
-          <Input
+          <input className={`${DT.INPUT}`}
             value={descValue}
             onChange={(e) => setDescValue(e.target.value)}
             disabled={saving}

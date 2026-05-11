@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
@@ -88,13 +87,15 @@ export function NotificationsPreferencesRow({
           >
             {t("In-app", "داخل التطبيق")}
           </label>
-          <Switch
+          <input
             id={inAppId}
+            type="checkbox"
             checked={inAppEnabled}
-            onCheckedChange={(newChecked) =>
-              onUpdate(newChecked, emailEnabled)
+            onChange={(e) =>
+              onUpdate(e.target.checked, emailEnabled)
             }
             disabled={isPlanGated}
+            className={`w-4 h-4 rounded cursor-pointer ${DT.CHECKBOX_ACCENT} disabled:opacity-50`}
           />
         </div>
 
@@ -110,13 +111,15 @@ export function NotificationsPreferencesRow({
           >
             {t("Email", "البريد الإلكتروني")}
           </label>
-          <Switch
+          <input
             id={emailId}
+            type="checkbox"
             checked={emailEnabled}
-            onCheckedChange={(newChecked) =>
-              onUpdate(inAppEnabled, newChecked)
+            onChange={(e) =>
+              onUpdate(inAppEnabled, e.target.checked)
             }
             disabled={isPlanGated || isEmailGated}
+            className={`w-4 h-4 rounded cursor-pointer ${DT.CHECKBOX_ACCENT} disabled:opacity-50`}
           />
         </div>
       </div>

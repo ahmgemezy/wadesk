@@ -5,9 +5,7 @@ import { useQuery, useMutation, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { DepartmentList } from "@/components/settings/department-list";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { DT } from "@/lib/design-tokens";
 import { Pencil, Check, X, Trash2, UserCircle, AlertTriangle, Clock, CheckCircle2, Zap, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -156,13 +154,11 @@ export default function ChannelSettingsPage({
                 label={t("Reconnect Now", "أعد الاتصال الآن")}
               />
             ) : (
-              <Button
-                size="sm"
-                variant="outline"
+              <button className={DT.BTN_PRIMARY}
                 onClick={() => { setReconnecting(true); setReconnectError(null); }}
               >
                 {t("Reconnect Now", "أعد الاتصال الآن")}
-              </Button>
+              </button>
             )}
           </AlertDescription>
         </Alert>
@@ -185,18 +181,16 @@ export default function ChannelSettingsPage({
               {t("Your workspace data is ready:", "بياناتك جاهزة:")}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline"
-                className="h-7 text-xs border-green-300 text-green-800 hover:bg-green-100 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/30 gap-1.5"
+              <button className={`${DT.BTN_PRIMARY} h-7 text-xs border-green-300 text-green-800 hover:bg-green-100 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/30 gap-1.5`}
                 onClick={() => router.push("/automations")}>
                 <Zap className="size-3" />
                 {t(`${automationCount} Automation Rules`, `${automationCount} قاعدة أتمتة`)}
-              </Button>
-              <Button size="sm" variant="outline"
-                className="h-7 text-xs border-green-300 text-green-800 hover:bg-green-100 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/30 gap-1.5"
+              </button>
+              <button className={`${DT.BTN_PRIMARY} h-7 text-xs border-green-300 text-green-800 hover:bg-green-100 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-900/30 gap-1.5`}
                 onClick={() => router.push("/settings/templates")}>
                 <FileText className="size-3" />
                 {t(`${templateCount} Templates`, `${templateCount} قالب`)}
-              </Button>
+              </button>
             </div>
           </AlertDescription>
         </Alert>
@@ -206,37 +200,34 @@ export default function ChannelSettingsPage({
         <div className="flex items-center gap-2">
           {editing ? (
             <>
-              <Input
+              <input className={`${DT.INPUT} max-w-sm text-2xl font-bold h-auto px-3 py-1`}
                 value={nameValue}
                 onChange={(e) => setNameValue(e.target.value)}
                 disabled={saving}
-                className="max-w-sm text-2xl font-bold h-auto px-3 py-1"
                 autoFocus
               />
-              <Button size="icon-sm" onClick={saveName} disabled={saving || !nameValue.trim()}>
+              <button className={DT.BTN_PRIMARY} onClick={saveName} disabled={saving || !nameValue.trim()}>
                 <Check className="size-4" />
-              </Button>
-              <Button size="icon-sm" variant="ghost" onClick={cancelEdit} disabled={saving}>
+              </button>
+              <button className={DT.BTN_PRIMARY} onClick={cancelEdit} disabled={saving}>
                 <X className="size-4" />
-              </Button>
+              </button>
             </>
           ) : (
             <>
               <h1 className="text-2xl font-bold">{channel.displayName}</h1>
-              <Button size="icon-sm" variant="ghost" onClick={startEdit}>
+              <button className={DT.BTN_PRIMARY} onClick={startEdit}>
                 <Pencil className="size-4" />
-              </Button>
+              </button>
             </>
           )}
         </div>
-        <Button
-          variant="destructive"
-          size="sm"
+        <button className={DT.BTN_PRIMARY}
           onClick={handleDelete}
         >
           <Trash2 className="size-4 me-1" />
           {t("Delete", "حذف")}
-        </Button>
+        </button>
       </div>
 
       <div className="space-y-2 border-t pt-6">
@@ -248,20 +239,18 @@ export default function ChannelSettingsPage({
           )}
         </p>
         <div className="flex items-center gap-2">
-          <Input
+          <input className={`${DT.INPUT} w-32`}
             type="number"
             min={1}
             max={1440}
             placeholder={t("e.g. 10", "مثال: 10")}
             value={slaMinutes}
             onChange={(e) => setSlaMinutes(e.target.value)}
-            className="w-32"
           />
           <span className="text-sm text-muted-foreground">
             {t("minutes", "دقيقة")}
           </span>
-          <Button
-            size="sm"
+          <button className={DT.BTN_PRIMARY}
             disabled={savingSla}
             onClick={async () => {
               setSavingSla(true);
@@ -280,11 +269,9 @@ export default function ChannelSettingsPage({
             }}
           >
             {savingSla ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
-          </Button>
+          </button>
           {slaMinutes && (
-            <Button
-              size="sm"
-              variant="ghost"
+            <button className={DT.BTN_PRIMARY}
               onClick={async () => {
                 setSavingSla(true);
                 try {
@@ -299,7 +286,7 @@ export default function ChannelSettingsPage({
               }}
             >
               {t("Disable", "تعطيل")}
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -313,20 +300,18 @@ export default function ChannelSettingsPage({
           )}
         </p>
         <div className="flex items-center gap-2">
-          <Input
+          <input className={`${DT.INPUT} w-32`}
             type="number"
             min={1}
             max={720}
             placeholder={t("e.g. 24", "مثال: 24")}
             value={reopenHours}
             onChange={(e) => setReopenHours(e.target.value)}
-            className="w-32"
           />
           <span className="text-sm text-muted-foreground">
             {t("hours", "ساعة")}
           </span>
-          <Button
-            size="sm"
+          <button className={DT.BTN_PRIMARY}
             disabled={savingReopen}
             onClick={async () => {
               setSavingReopen(true);
@@ -345,11 +330,9 @@ export default function ChannelSettingsPage({
             }}
           >
             {savingReopen ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
-          </Button>
+          </button>
           {reopenHours && (
-            <Button
-              size="sm"
-              variant="ghost"
+            <button className={DT.BTN_PRIMARY}
               onClick={async () => {
                 setSavingReopen(true);
                 try {
@@ -364,7 +347,7 @@ export default function ChannelSettingsPage({
               }}
             >
               {t("Reset", "إعادة")}
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -377,7 +360,7 @@ export default function ChannelSettingsPage({
             "يُرسَل تلقائياً عندما يتصل العميل على رقم واتساب ولا يرد أحد. اتركه فارغاً لاستخدام الرسالة الافتراضية.",
           )}
         </p>
-        <Textarea
+        <textarea className={`${DT.TEXTAREA} max-w-sm font-cairo`}
           dir="rtl"
           rows={3}
           maxLength={1000}
@@ -387,11 +370,9 @@ export default function ChannelSettingsPage({
           )}
           value={callReply}
           onChange={(e) => setCallReply(e.target.value)}
-          className="max-w-sm font-cairo"
         />
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
+          <button className={DT.BTN_PRIMARY}
             disabled={savingCallReply}
             onClick={async () => {
               setSavingCallReply(true);
@@ -409,11 +390,9 @@ export default function ChannelSettingsPage({
             }}
           >
             {savingCallReply ? t("Saving...", "جاري الحفظ...") : t("Save", "حفظ")}
-          </Button>
+          </button>
           {callReply && (
-            <Button
-              size="sm"
-              variant="ghost"
+            <button className={DT.BTN_PRIMARY}
               onClick={async () => {
                 setSavingCallReply(true);
                 try {
@@ -428,7 +407,7 @@ export default function ChannelSettingsPage({
               }}
             >
               {t("Reset", "إعادة")}
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -447,33 +426,31 @@ export default function ChannelSettingsPage({
             )}
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5"
+            <button className={`${DT.BTN_PRIMARY} gap-1.5`}
               onClick={() => router.push("/automations")}>
               <Zap className="size-3.5" />
               {rules === undefined
                 ? t("Automation Rules", "قواعد الأتمتة")
                 : t(`${automationCount} Automation Rules`, `${automationCount} قاعدة أتمتة`)}
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1.5"
+            </button>
+            <button className={`${DT.BTN_PRIMARY} gap-1.5`}
               onClick={() => router.push("/settings/templates")}>
               <FileText className="size-3.5" />
               {templates === undefined
                 ? t("Message Templates", "قوالب الرسائل")
                 : t(`${templateCount} Templates`, `${templateCount} قالب`)}
-            </Button>
+            </button>
           </div>
         </div>
       )}
 
       <div className="border-t pt-6">
-        <Button
-          variant="outline"
+        <button className={`${DT.BTN_PRIMARY} gap-2`}
           onClick={() => router.push(`/settings/channels/${channelId}/profile`)}
-          className="gap-2"
         >
           <UserCircle className="size-4" />
           {t("Business Profile", "الملف التجاري")}
-        </Button>
+        </button>
       </div>
     </div>
   );

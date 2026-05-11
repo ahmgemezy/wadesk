@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useAction, useConvexAuth } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n/context";
@@ -199,7 +198,7 @@ export function CsatSettings() {
               )}
             </p>
           </div>
-          <Switch checked={enabled} onCheckedChange={setEnabled} />
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className={`w-5 h-5 rounded cursor-pointer ${DT.CHECKBOX_ACCENT}`} />
         </div>
 
         {enabled && (

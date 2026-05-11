@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { DT } from "@/lib/design-tokens";
 import {
   Loader2Icon,
   RefreshCwIcon,
@@ -54,20 +55,6 @@ function extractConvexMsg(err: unknown): string {
   return m?.[1]?.trim() ?? err.message;
 }
 
-// ─── Apple design tokens ───────────────────────────────────────────────────────
-const INPUT = "w-full rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 py-2 text-[14px] text-[#1D1D1F] outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40";
-const INPUT_SM = "w-full rounded-lg border border-black/[0.12] bg-black/[0.04] px-2.5 py-1.5 text-[13px] text-[#1D1D1F] outline-none focus:border-[#0071E3] transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40";
-const INPUT_XS = "w-full rounded-md border border-black/[0.12] bg-black/[0.04] px-2 py-1 text-[12px] text-[#1D1D1F] outline-none focus:border-[#0071E3] transition-all placeholder:text-[#6E6E73] dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white dark:placeholder:text-white/40";
-const BTN_PRIMARY = "inline-flex items-center justify-center rounded-full bg-[#0071E3] hover:bg-[#0077ED] active:bg-[#006CD1] text-white font-normal px-5 py-2 text-[14px] transition-colors disabled:opacity-50 gap-1.5 shrink-0";
-const BTN_OUTLINE = "inline-flex items-center justify-center rounded-full border border-black/[0.12] bg-transparent hover:bg-black/[0.04] text-[#1D1D1F] font-normal px-5 py-2 text-[14px] transition-colors disabled:opacity-50 gap-1.5 shrink-0 dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]";
-const BTN_SM = "inline-flex items-center justify-center rounded-full border border-black/[0.12] bg-transparent hover:bg-black/[0.04] text-[#1D1D1F] font-normal px-3 py-1.5 text-[13px] transition-colors disabled:opacity-50 gap-1 shrink-0 dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.05]";
-const BTN_ICON = "inline-flex items-center justify-center size-8 rounded-xl text-[#6E6E73] hover:bg-black/[0.06] hover:text-[#1D1D1F] transition-colors dark:hover:bg-white/[0.08] dark:hover:text-white";
-const CARD = "rounded-[22px] bg-white border border-black/[0.08] shadow-[0_2px_6px_rgba(0,0,0,0.04),0_10px_30px_rgba(0,0,0,0.08)] dark:bg-[#1C1C1E] dark:border-white/[0.08]";
-const LBL = "block text-[13px] font-medium text-[#1D1D1F] mb-1 dark:text-white/90";
-const SEC = "text-[11px] font-semibold text-[#6E6E73] uppercase tracking-[0.06em] dark:text-white/40";
-const DIVIDER = "border-t border-black/[0.08] dark:border-white/[0.06]";
-const SELECT_TRIGGER = "w-full h-10 rounded-xl border border-black/[0.12] bg-black/[0.04] px-3.5 text-[14px] text-[#1D1D1F] focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all dark:bg-white/[0.05] dark:border-white/[0.10] dark:text-white";
-
 // ─── Variant row input ────────────────────────────────────────────────────────
 
 function VariantRowInput({
@@ -86,13 +73,13 @@ function VariantRowInput({
         onChange={(e) => onChange({ ...row, retailerIdSuffix: e.target.value })}
         placeholder="red-xl"
         dir="ltr"
-        className={INPUT_XS + " font-mono"}
+        className={`${DT.INPUT} font-mono`}
         maxLength={50}
       />
-      <input value={row.color} onChange={(e) => onChange({ ...row, color: e.target.value })} placeholder="Color" className={INPUT_XS} maxLength={100} />
-      <input value={row.size} onChange={(e) => onChange({ ...row, size: e.target.value })} placeholder="Size" className={INPUT_XS} maxLength={100} />
-      <input value={row.material} onChange={(e) => onChange({ ...row, material: e.target.value })} placeholder="Material" className={INPUT_XS} maxLength={100} />
-      <input value={row.pattern} onChange={(e) => onChange({ ...row, pattern: e.target.value })} placeholder="Pattern" className={INPUT_XS} maxLength={100} />
+      <input value={row.color} onChange={(e) => onChange({ ...row, color: e.target.value })} placeholder="Color" className={DT.INPUT} maxLength={100} />
+      <input value={row.size} onChange={(e) => onChange({ ...row, size: e.target.value })} placeholder="Size" className={DT.INPUT} maxLength={100} />
+      <input value={row.material} onChange={(e) => onChange({ ...row, material: e.target.value })} placeholder="Material" className={DT.INPUT} maxLength={100} />
+      <input value={row.pattern} onChange={(e) => onChange({ ...row, pattern: e.target.value })} placeholder="Pattern" className={DT.INPUT} maxLength={100} />
       <button
         type="button"
         onClick={onRemove}
@@ -580,14 +567,14 @@ function ProductFormDialog({
 
               <div className="flex-1 space-y-2 min-w-0">
                 <div className="space-y-1">
-                  <label className={LBL} htmlFor="pf-img">{t("Image URL", "رابط الصورة")}</label>
+                  <label className={DT.LBL} htmlFor="pf-img">{t("Image URL", "رابط الصورة")}</label>
                   <input
                     id="pf-img"
                     value={draft.imageUrl}
                     onChange={handleUrlChange}
                     placeholder="https://example.com/product.jpg"
                     dir="ltr"
-                    className={INPUT + (imageError ? " !border-[#FF3B30]" : "")}
+                    className={`${DT.INPUT}${imageError ? " !border-[#FF3B30]" : ""}`}
                   />
                   {imageError && (
                     <p className="text-[12px] text-[#FF3B30]">
@@ -618,7 +605,7 @@ function ProductFormDialog({
             {/* ── Additional Images ──────────────────────────────────── */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className={SEC}>{t("Additional Images", "صور إضافية")}</p>
+                <p className={DT.SEC}>{t("Additional Images", "صور إضافية")}</p>
                 <span className="text-[12px] text-[#6E6E73]">{draft.additionalImages.length}/9</span>
               </div>
               <div className="flex flex-wrap gap-2 items-center">
@@ -662,13 +649,13 @@ function ProductFormDialog({
               </div>
             </div>
 
-            <div className={DIVIDER} />
+            <div className={DT.DIVIDER} />
 
             {/* ── Identity ──────────────────────────────────────────── */}
             <div className="space-y-3">
               {!isEdit && (
                 <div className="space-y-1">
-                  <label className={LBL} htmlFor="pf-retailerId">
+                  <label className={DT.LBL} htmlFor="pf-retailerId">
                     {t("Retailer ID", "معرّف البائع")} *
                   </label>
                   <input
@@ -677,7 +664,7 @@ function ProductFormDialog({
                     onChange={field("retailerId")}
                     placeholder="SKU-001"
                     dir="ltr"
-                    className={INPUT + " font-mono"}
+                    className={`${DT.INPUT} font-mono`}
                     required
                     maxLength={100}
                   />
@@ -692,7 +679,7 @@ function ProductFormDialog({
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className={LBL} htmlFor="pf-name">{t("Product Name", "اسم المنتج")} *</label>
+                  <label className={DT.LBL} htmlFor="pf-name">{t("Product Name", "اسم المنتج")} *</label>
                   <span className={`text-[12px] ${nameLen > 170 ? "text-amber-500" : "text-[#6E6E73]"}`}>
                     {nameLen}/200
                   </span>
@@ -704,13 +691,13 @@ function ProductFormDialog({
                   placeholder={t("e.g. Nike Air Max 270", "مثال: نايكي اير ماكس 270")}
                   required
                   maxLength={200}
-                  className={INPUT}
+                  className={DT.INPUT}
                 />
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className={LBL} htmlFor="pf-desc">{t("Description", "الوصف")} *</label>
+                  <label className={DT.LBL} htmlFor="pf-desc">{t("Description", "الوصف")} *</label>
                   <span className={`text-[12px] ${descLen > 9000 ? "text-amber-500" : "text-[#6E6E73]"}`}>
                     {descLen}/9,999
                   </span>
@@ -726,14 +713,14 @@ function ProductFormDialog({
               </div>
             </div>
 
-            <div className={DIVIDER} />
+            <div className={DT.DIVIDER} />
 
             {/* ── Pricing ───────────────────────────────────────────── */}
             <div className="space-y-2">
-              <p className={SEC}>{t("Pricing", "التسعير")}</p>
+              <p className={DT.SEC}>{t("Pricing", "التسعير")}</p>
               <div className="grid grid-cols-[1fr_76px_1fr] gap-3 items-end">
                 <div className="space-y-1">
-                  <label className={LBL} htmlFor="pf-price">{t("Price", "السعر")} *</label>
+                  <label className={DT.LBL} htmlFor="pf-price">{t("Price", "السعر")} *</label>
                   <input
                     id="pf-price"
                     value={draft.price}
@@ -741,11 +728,11 @@ function ProductFormDialog({
                     placeholder="99.99"
                     dir="ltr"
                     inputMode="decimal"
-                    className={INPUT}
+                    className={DT.INPUT}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className={LBL} htmlFor="pf-currency">{t("Currency", "العملة")} *</label>
+                  <label className={DT.LBL} htmlFor="pf-currency">{t("Currency", "العملة")} *</label>
                   <input
                     id="pf-currency"
                     value={draft.currency}
@@ -753,11 +740,11 @@ function ProductFormDialog({
                     placeholder="EGP"
                     dir="ltr"
                     maxLength={3}
-                    className={INPUT + " uppercase"}
+                    className={`${DT.INPUT} uppercase`}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className={LBL} htmlFor="pf-salePrice">{t("Sale Price", "سعر التخفيض")}</label>
+                  <label className={DT.LBL} htmlFor="pf-salePrice">{t("Sale Price", "سعر التخفيض")}</label>
                   <input
                     id="pf-salePrice"
                     value={draft.salePrice}
@@ -765,7 +752,7 @@ function ProductFormDialog({
                     placeholder={t("e.g. 79.99", "مثال: 79.99")}
                     dir="ltr"
                     inputMode="decimal"
-                    className={INPUT}
+                    className={DT.INPUT}
                   />
                 </div>
               </div>
@@ -777,19 +764,19 @@ function ProductFormDialog({
               </p>
             </div>
 
-            <div className={DIVIDER} />
+            <div className={DT.DIVIDER} />
 
             {/* ── Classification ────────────────────────────────────── */}
             <div className="space-y-2">
-              <p className={SEC}>{t("Classification", "التصنيف")}</p>
+              <p className={DT.SEC}>{t("Classification", "التصنيف")}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className={LBL}>{t("Availability", "التوفر")} *</label>
+                  <label className={DT.LBL}>{t("Availability", "التوفر")} *</label>
                   <Select
                     value={draft.availability}
                     onValueChange={(v) => setField("availability", v ?? "in stock")}
                   >
-                    <SelectTrigger className={SELECT_TRIGGER}>
+                    <SelectTrigger className={DT.INPUT}>
                       <span>
                         {AVAILABILITY_OPTIONS.find(o => o.value === draft.availability)?.labelEn ?? draft.availability}
                       </span>
@@ -804,12 +791,12 @@ function ProductFormDialog({
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <label className={LBL}>{t("Condition", "الحالة")} *</label>
+                  <label className={DT.LBL}>{t("Condition", "الحالة")} *</label>
                   <Select
                     value={draft.condition}
                     onValueChange={(v) => setField("condition", v ?? "new")}
                   >
-                    <SelectTrigger className={SELECT_TRIGGER}>
+                    <SelectTrigger className={DT.INPUT}>
                       <span>
                         {CONDITION_OPTIONS.find(o => o.value === draft.condition)?.labelEn ?? draft.condition}
                       </span>
@@ -826,14 +813,14 @@ function ProductFormDialog({
               </div>
             </div>
 
-            <div className={DIVIDER} />
+            <div className={DT.DIVIDER} />
 
             {/* ── Optional extras ───────────────────────────────────── */}
             <div className="space-y-3">
-              <p className={SEC}>{t("Additional Info", "معلومات إضافية")}</p>
+              <p className={DT.SEC}>{t("Additional Info", "معلومات إضافية")}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className={LBL} htmlFor="pf-brand">
+                  <label className={DT.LBL} htmlFor="pf-brand">
                     <TagIcon className="size-3 inline me-1" />
                     {t("Brand", "الماركة")}
                   </label>
@@ -843,11 +830,11 @@ function ProductFormDialog({
                     onChange={field("brand")}
                     placeholder={t("e.g. Nike", "مثال: نايكي")}
                     maxLength={100}
-                    className={INPUT}
+                    className={DT.INPUT}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className={LBL} htmlFor="pf-url">
+                  <label className={DT.LBL} htmlFor="pf-url">
                     <LinkIcon className="size-3 inline me-1" />
                     {t("Product URL", "رابط المنتج")}
                   </label>
@@ -858,19 +845,19 @@ function ProductFormDialog({
                     placeholder="https://your-store.com/product"
                     dir="ltr"
                     type="url"
-                    className={INPUT}
+                    className={DT.INPUT}
                   />
                 </div>
               </div>
             </div>
 
-            <div className={DIVIDER} />
+            <div className={DT.DIVIDER} />
 
             {/* ── Variants ──────────────────────────────────────────── */}
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className={SEC}>{t("Variants", "المتغيرات")}</p>
+                  <p className={DT.SEC}>{t("Variants", "المتغيرات")}</p>
                   <p className="text-[12px] text-[#6E6E73] mt-0.5">
                     {draft.hasVariants && !isEdit
                       ? t(
@@ -888,7 +875,7 @@ function ProductFormDialog({
                     type="checkbox"
                     checked={draft.hasVariants}
                     onChange={(e) => setField("hasVariants", e.target.checked)}
-                    className="w-5 h-5 rounded cursor-pointer accent-[#0071E3]"
+                    className={`w-5 h-5 rounded cursor-pointer ${DT.CHECKBOX_ACCENT}`}
                   />
                 )}
               </div>
@@ -896,7 +883,7 @@ function ProductFormDialog({
               {draft.hasVariants && !isEdit ? (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className={LBL} htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</label>
+                    <label className={DT.LBL} htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</label>
                     <input
                       id="pf-itemGroupId"
                       value={draft.itemGroupId}
@@ -906,7 +893,7 @@ function ProductFormDialog({
                         "يُعبَّأ تلقائياً من معرّف البائع إن تُرك فارغاً",
                       )}
                       dir="ltr"
-                      className={INPUT + " font-mono"}
+                      className={`${DT.INPUT} font-mono`}
                       maxLength={100}
                     />
                   </div>
@@ -952,7 +939,7 @@ function ProductFormDialog({
 
                   <button
                     type="button"
-                    className={BTN_SM}
+                    className={DT.BTN_SM}
                     onClick={() =>
                       setDraft((d) => ({
                         ...d,
@@ -992,14 +979,14 @@ function ProductFormDialog({
               ) : (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className={LBL} htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</label>
+                    <label className={DT.LBL} htmlFor="pf-itemGroupId">{t("Item Group ID", "معرّف مجموعة المتغيرات")}</label>
                     <input
                       id="pf-itemGroupId"
                       value={draft.itemGroupId}
                       onChange={field("itemGroupId")}
                       placeholder={t("e.g. nike-air-max-270", "مثال: nike-air-max-270")}
                       dir="ltr"
-                      className={INPUT + " font-mono"}
+                      className={`${DT.INPUT} font-mono`}
                       maxLength={100}
                     />
                     <p className="text-[12px] text-[#6E6E73]">
@@ -1009,28 +996,28 @@ function ProductFormDialog({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className={LBL} htmlFor="pf-color">{t("Color", "اللون")}</label>
-                      <input id="pf-color" value={draft.color} onChange={field("color")} placeholder={t("e.g. Red", "مثال: أحمر")} maxLength={100} className={INPUT} />
+                      <label className={DT.LBL} htmlFor="pf-color">{t("Color", "اللون")}</label>
+                      <input id="pf-color" value={draft.color} onChange={field("color")} placeholder={t("e.g. Red", "مثال: أحمر")} maxLength={100} className={DT.INPUT} />
                     </div>
                     <div className="space-y-1">
-                      <label className={LBL} htmlFor="pf-size">{t("Size", "المقاس")}</label>
-                      <input id="pf-size" value={draft.size} onChange={field("size")} placeholder={t("e.g. XL, 42", "مثال: XL، 42")} maxLength={100} className={INPUT} />
+                      <label className={DT.LBL} htmlFor="pf-size">{t("Size", "المقاس")}</label>
+                      <input id="pf-size" value={draft.size} onChange={field("size")} placeholder={t("e.g. XL, 42", "مثال: XL، 42")} maxLength={100} className={DT.INPUT} />
                     </div>
                     <div className="space-y-1">
-                      <label className={LBL} htmlFor="pf-material">{t("Material", "الخامة")}</label>
-                      <input id="pf-material" value={draft.material} onChange={field("material")} placeholder={t("e.g. Cotton", "مثال: قطن")} maxLength={100} className={INPUT} />
+                      <label className={DT.LBL} htmlFor="pf-material">{t("Material", "الخامة")}</label>
+                      <input id="pf-material" value={draft.material} onChange={field("material")} placeholder={t("e.g. Cotton", "مثال: قطن")} maxLength={100} className={DT.INPUT} />
                     </div>
                     <div className="space-y-1">
-                      <label className={LBL} htmlFor="pf-pattern">{t("Pattern", "النمط")}</label>
-                      <input id="pf-pattern" value={draft.pattern} onChange={field("pattern")} placeholder={t("e.g. Striped", "مثال: مقلّم")} maxLength={100} className={INPUT} />
+                      <label className={DT.LBL} htmlFor="pf-pattern">{t("Pattern", "النمط")}</label>
+                      <input id="pf-pattern" value={draft.pattern} onChange={field("pattern")} placeholder={t("e.g. Striped", "مثال: مقلّم")} maxLength={100} className={DT.INPUT} />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className={LBL}>{t("Gender", "الجنس")}</label>
+                      <label className={DT.LBL}>{t("Gender", "الجنس")}</label>
                       <Select value={draft.gender} onValueChange={(v) => setField("gender", v ?? "")}>
-                        <SelectTrigger className={SELECT_TRIGGER}>
+                        <SelectTrigger className={DT.INPUT}>
                           <span>{GENDER_OPTIONS.find(o => o.value === draft.gender)?.labelEn ?? "— None —"}</span>
                         </SelectTrigger>
                         <SelectContent>
@@ -1041,9 +1028,9 @@ function ProductFormDialog({
                       </Select>
                     </div>
                     <div className="space-y-1">
-                      <label className={LBL}>{t("Age Group", "الفئة العمرية")}</label>
+                      <label className={DT.LBL}>{t("Age Group", "الفئة العمرية")}</label>
                       <Select value={draft.ageGroup} onValueChange={(v) => setField("ageGroup", v ?? "")}>
-                        <SelectTrigger className={SELECT_TRIGGER}>
+                        <SelectTrigger className={DT.INPUT}>
                           <span>{AGE_GROUP_OPTIONS.find(o => o.value === draft.ageGroup)?.labelEn ?? "— None —"}</span>
                         </SelectTrigger>
                         <SelectContent>
@@ -1058,21 +1045,21 @@ function ProductFormDialog({
               )}
             </div>
 
-            <div className={DIVIDER} />
+            <div className={DT.DIVIDER} />
 
             {/* ── Advanced / Meta optional fields ───────────────────── */}
             <div className="space-y-3">
-              <p className={SEC}>{t("Advanced Fields", "الحقول المتقدمة")}</p>
+              <p className={DT.SEC}>{t("Advanced Fields", "الحقول المتقدمة")}</p>
 
               <div className="space-y-2">
-                <label className={LBL}>{t("Sale Price Effective Date", "فترة سريان سعر التخفيض")}</label>
+                <label className={DT.LBL}>{t("Sale Price Effective Date", "فترة سريان سعر التخفيض")}</label>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <p className="text-[12px] text-[#6E6E73]">{t("Start", "البداية")}</p>
                     <input
                       type="datetime-local"
                       dir="ltr"
-                      className={INPUT}
+                      className={DT.INPUT}
                       value={draft.salePriceEffectiveDate.split("/")[0]?.replace(/\+.*$/, "") ?? ""}
                       onChange={(e) => {
                         const start = e.target.value;
@@ -1086,7 +1073,7 @@ function ProductFormDialog({
                     <input
                       type="datetime-local"
                       dir="ltr"
-                      className={INPUT}
+                      className={DT.INPUT}
                       value={draft.salePriceEffectiveDate.split("/")[1]?.replace(/\+.*$/, "") ?? ""}
                       onChange={(e) => {
                         const end = e.target.value;
@@ -1102,7 +1089,7 @@ function ProductFormDialog({
               </div>
 
               <div className="space-y-1">
-                <label className={LBL} htmlFor="pf-video">{t("Product Video URL", "رابط فيديو المنتج")}</label>
+                <label className={DT.LBL} htmlFor="pf-video">{t("Product Video URL", "رابط فيديو المنتج")}</label>
                 <input
                   id="pf-video"
                   value={draft.videoUrl}
@@ -1110,7 +1097,7 @@ function ProductFormDialog({
                   placeholder="https://example.com/product.mp4"
                   dir="ltr"
                   type="url"
-                  className={INPUT}
+                  className={DT.INPUT}
                 />
               </div>
 
@@ -1128,7 +1115,7 @@ function ProductFormDialog({
                           value={draft[key] as string}
                           onChange={field(key)}
                           placeholder="—"
-                          className={INPUT_XS}
+                          className={DT.INPUT}
                           maxLength={100}
                         />
                       </div>
@@ -1153,7 +1140,7 @@ function ProductFormDialog({
                           placeholder="—"
                           dir="ltr"
                           inputMode="numeric"
-                          className={INPUT_XS + " font-mono"}
+                          className={`${DT.INPUT} font-mono`}
                         />
                       </div>
                     );
@@ -1166,12 +1153,12 @@ function ProductFormDialog({
           </div>
 
           <div className="shrink-0 border-t border-black/[0.06] dark:border-white/[0.06] px-6 py-4 flex items-center justify-end gap-2 bg-white/80 dark:bg-[#1C1C1E]/80 backdrop-blur-sm">
-            <button type="button" className={BTN_OUTLINE} onClick={() => onOpenChange(false)}>
+            <button type="button" className={DT.BTN_OUTLINE} onClick={() => onOpenChange(false)}>
               {t("Cancel", "إلغاء")}
             </button>
             <button
               type="submit"
-              className={BTN_PRIMARY}
+              className={DT.BTN_PRIMARY}
               disabled={
                 saving ||
                 imageUploading ||
@@ -1298,18 +1285,18 @@ function ProductRow({
 
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
-          className={BTN_ICON}
+          className={DT.BTN_ICON}
           title={t("Push to Meta", "رفع إلى Meta")}
           onClick={handlePush}
           disabled={pushing}
         >
           {pushing ? <Loader2Icon className="size-3.5 animate-spin" /> : <UploadCloudIcon className="size-3.5" />}
         </button>
-        <button className={BTN_ICON} onClick={() => onEdit(product)}>
+        <button className={DT.BTN_ICON} onClick={() => onEdit(product)}>
           <PencilIcon className="size-3.5" />
         </button>
         <AlertDialog>
-          <AlertDialogTrigger className={BTN_ICON + " hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]"}>
+          <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]`}>
             <Trash2Icon className="size-3.5" />
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -1522,7 +1509,7 @@ function CatalogCard({
               </span>
             ) : (
               <button
-                className={BTN_SM}
+                className={DT.BTN_SM}
                 onClick={(e) => { e.stopPropagation(); handleActivate(); }}
                 disabled={activating}
               >
@@ -1550,7 +1537,7 @@ function CatalogCard({
             )}
 
             <button
-              className={BTN_ICON}
+              className={DT.BTN_ICON}
               title={t("Sync from Meta", "تزامن من Meta")}
               onClick={handleSync}
               disabled={syncing}
@@ -1559,7 +1546,7 @@ function CatalogCard({
             </button>
 
             <button
-              className={BTN_ICON}
+              className={DT.BTN_ICON}
               title={t("Rename catalog", "إعادة تسمية الكتالوج")}
               onClick={() => { setNameInput(catalog.name); setRenaming(true); }}
             >
@@ -1567,7 +1554,7 @@ function CatalogCard({
             </button>
 
             <AlertDialog>
-              <AlertDialogTrigger className={BTN_ICON + " hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]"}>
+              <AlertDialogTrigger className={`${DT.BTN_ICON} hover:!bg-[#FF3B30]/10 hover:!text-[#FF3B30]`}>
                 <Trash2Icon className="size-3.5" />
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -1608,7 +1595,7 @@ function CatalogCard({
                 checked={isCatalogVisible ?? false}
                 onChange={(e) => handleToggleVisibility(e.target.checked)}
                 disabled={togglingVisibility}
-                className="w-4 h-4 rounded cursor-pointer accent-[#0071E3] disabled:opacity-50"
+                className={`w-4 h-4 rounded cursor-pointer ${DT.CHECKBOX_ACCENT} disabled:opacity-50`}
               />
               <span className="flex items-center gap-1 text-[#6E6E73]">
                 <EyeIcon className="size-3.5" />
@@ -1621,7 +1608,7 @@ function CatalogCard({
                 checked={isCartEnabled ?? false}
                 onChange={(e) => handleToggleCart(e.target.checked)}
                 disabled={togglingCart}
-                className="w-4 h-4 rounded cursor-pointer accent-[#0071E3] disabled:opacity-50"
+                className={`w-4 h-4 rounded cursor-pointer ${DT.CHECKBOX_ACCENT} disabled:opacity-50`}
               />
               <span className="flex items-center gap-1 text-[#6E6E73]">
                 <ShoppingCartIcon className="size-3.5" />
@@ -1636,7 +1623,7 @@ function CatalogCard({
           <div className="border-t border-black/[0.06] dark:border-white/[0.05] p-3.5 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[12px] text-[#6E6E73]">{t("Last sync", "آخر تزامن")}: {lastSynced}</span>
-              <button className={BTN_SM} onClick={openCreate}>
+              <button className={DT.BTN_SM} onClick={openCreate}>
                 <PlusIcon className="size-3.5" />
                 {t("Add Product", "إضافة منتج")}
               </button>
@@ -1646,7 +1633,7 @@ function CatalogCard({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder={t("Search products…", "ابحث عن منتج…")}
-              className={INPUT_SM}
+              className={DT.INPUT}
             />
 
             {products === undefined ? (
@@ -1748,27 +1735,27 @@ function AddCatalogForm({
 
       <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
         <div className="space-y-1">
-          <label className={LBL}>{t("Meta Catalog ID", "معرّف كتالوج Meta")}</label>
+          <label className={DT.LBL}>{t("Meta Catalog ID", "معرّف كتالوج Meta")}</label>
           <input
             value={metaId}
             onChange={(e) => setMetaId(e.target.value)}
             placeholder="946395248008933"
             dir="ltr"
-            className={INPUT_SM + " font-mono"}
+            className={`${DT.INPUT} font-mono`}
           />
         </div>
         <div className="space-y-1">
-          <label className={LBL}>{t("Display name", "الاسم")}</label>
+          <label className={DT.LBL}>{t("Display name", "الاسم")}</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t("e.g. Summer Collection", "مثال: مجموعة الصيف")}
-            className={INPUT_SM}
+            className={DT.INPUT}
           />
         </div>
       </div>
       <button
-        className={BTN_SM}
+        className={DT.BTN_SM}
         onClick={handleAdd}
         disabled={saving || !metaId.trim() || !name.trim()}
       >
@@ -1791,10 +1778,10 @@ function AddCatalogForm({
           value={newCatalogName}
           onChange={(e) => setNewCatalogName(e.target.value)}
           placeholder={t("Catalog name", "اسم الكتالوج")}
-          className={INPUT_SM}
+          className={DT.INPUT}
         />
         <button
-          className={BTN_SM}
+          className={DT.BTN_SM}
           onClick={handleCreate}
           disabled={creating || !newCatalogName.trim()}
         >
@@ -1831,7 +1818,7 @@ function ChannelCatalogCard({
 
   if (catalogs === undefined) {
     return (
-      <div className={CARD + " p-5"}>
+      <div className={`${DT.CARD} p-5`}>
         <p className="text-[16px] font-semibold text-[#1D1D1F] dark:text-white">{channel.displayName}</p>
         <div className="flex items-center justify-center py-6">
           <Loader2Icon className="size-4 animate-spin text-[#6E6E73]" />
@@ -1847,7 +1834,7 @@ function ChannelCatalogCard({
       : undefined;
 
   return (
-    <div className={CARD}>
+    <div className={DT.CARD}>
       {/* Channel header */}
       <div className="px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.05]">
         <p className="text-[16px] font-semibold tracking-[-0.2px] text-[#1D1D1F] dark:text-white">{channel.displayName}</p>
