@@ -123,24 +123,32 @@ export function TeamSummaryCards({ dateRange, locale = "ar" }: TeamSummaryCardsP
       animate="show"
       variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1 } } }}
     >
-      {cards.map((card) => (
-        <motion.div key={card.id} variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
-          <div className={`${DT.CARD_SM} overflow-hidden relative p-5`}>
-            <div className={`${DT.MICRO} mb-2`}>
-              {card.label}
-            </div>
-            <div className={`text-[32px] font-semibold tracking-[-0.5px] ${DT.TEXT_PRIMARY}`}>
-              {card.isNumeric ? <AnimatedCounter value={card.value as number} /> : card.value}
-              {card.suffix && (
-                <span className={`${DT.MUTED} ms-1`}>{card.suffix}</span>
+      {cards.map((card) => {
+        const valueColor = card.id === "responseTime"
+          ? DT.TEXT_WARNING
+          : card.id === "csat"
+            ? DT.TEXT_SUCCESS
+            : DT.TEXT_PRIMARY;
+
+        return (
+          <motion.div key={card.id} variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+            <div className={`${DT.CARD_SM} ${DT.GRADIENT_CARD} ${DT.SHADOW_HOVER} ${DT.FOCUS_VISIBLE} overflow-hidden relative p-5 min-h-[44px]`}>
+              <div className={`${DT.MICRO} mb-2`}>
+                {card.label}
+              </div>
+              <div className={`text-[32px] font-semibold tracking-[-0.5px] ${valueColor}`}>
+                {card.isNumeric ? <AnimatedCounter value={card.value as number} /> : card.value}
+                {card.suffix && (
+                  <span className={`${DT.MUTED} ms-1`}>{card.suffix}</span>
+                )}
+              </div>
+              {card.subtext && (
+                <p className={`${DT.MICRO} mt-1`}>{card.subtext}</p>
               )}
             </div>
-            {card.subtext && (
-              <p className={`${DT.MICRO} mt-1`}>{card.subtext}</p>
-            )}
-          </div>
-        </motion.div>
-      ))}
+          </motion.div>
+        );
+      })}
     </motion.div>
   );
 }

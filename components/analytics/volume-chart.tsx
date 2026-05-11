@@ -51,11 +51,11 @@ export function VolumeChart({ dateRange, locale = "ar" }: VolumeChartProps) {
   const accent = DT.CHART_COLORS[0];
 
   return (
-    <div className={`${DT.CARD} p-6`}>
+    <div className={`${DT.CARD} ${DT.SHADOW_HOVER_LG} p-6`}>
       <h2 className={`${DT.H3} mb-4`}>
         {locale === "ar" ? "حجم المحادثات" : "Conversation Volume"}
       </h2>
-      <div dir="ltr" className="h-64 w-full">
+      <div dir="ltr" tabIndex={0} className={`${DT.FOCUS_VISIBLE} h-[250px] sm:h-[300px] lg:h-[350px] w-full`}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
             <defs>

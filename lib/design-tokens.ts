@@ -247,6 +247,57 @@ export const DT = {
   BG_BLUE_TINT: "bg-[#0071E3]/10 dark:bg-[#0A84FF]/15",
 
   CHART_COLORS: ["#0071E3", "#34C759", "#FF9500", "#FF3B30", "#AF52DE", "#5AC8FA"] as readonly string[],
+
+  // ── Shadows / Elevation ──────────────────────────────────────
+  SHADOW_SM: "shadow-[0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.2)]",
+  SHADOW_MD: "shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.25)]",
+  SHADOW_LG: "shadow-[0_4px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)]",
+  SHADOW_XL: "shadow-[0_8px_24px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)]",
+  SHADOW_HOVER: "hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-shadow duration-200",
+  SHADOW_HOVER_LG: "hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition-shadow duration-300",
+
+  // ── Gradients ────────────────────────────────────────────────
+  GRADIENT_CARD: "bg-gradient-to-br from-white to-[#fafbfc] dark:from-[#2c2c2e] dark:to-[#1c1c1e]",
+  GRADIENT_BG: "bg-gradient-to-br from-[#fafbfc] to-[#f8f9fa] dark:from-[#1a1a1b] dark:to-[#111111]",
+  GRADIENT_ACCENT: "bg-gradient-to-r from-[#0071E3] to-[#0A84FF] dark:from-[#0A84FF] dark:to-[#5AC8FA]",
+
+  // ── Transitions / Animation ──────────────────────────────────
+  TRANSITION_FAST: "transition-all duration-150",
+  TRANSITION_STANDARD: "transition-all duration-200",
+  TRANSITION_SLOW: "transition-all duration-300",
+  EASE_STANDARD: "ease-[cubic-bezier(0.4,0,0.2,1)]",
+
+  // ── Focus visible states ─────────────────────────────────────
+  FOCUS_VISIBLE: "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0071E3] dark:focus-visible:outline-[#0A84FF]",
+  FOCUS_VISIBLE_ROUNDED: "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#0071E3] dark:focus-visible:outline-[#0A84FF]",
+  FOCUS_VISIBLE_RING: "focus-visible:ring-2 focus-visible:ring-[#0071E3]/20 focus-visible:border-[#0071E3] dark:focus-visible:ring-[#0A84FF]/20 dark:focus-visible:border-[#0A84FF]",
+
+  // ── Semantic status colors ───────────────────────────────────
+  TEXT_SUCCESS: "text-[#34C759] dark:text-[#30D158]",
+  TEXT_WARNING: "text-[#FF9500] dark:text-[#FF9F0A]",
+  TEXT_DESTRUCTIVE: "text-[#FF3B30] dark:text-[#FF453A]",
+  BG_SUCCESS: "bg-[#34C759]/10 dark:bg-[#30D158]/15",
+  BG_WARNING: "bg-[#FF9500]/10 dark:bg-[#FF9F0A]/15",
+  BG_DESTRUCTIVE: "bg-[#FF3B30]/10 dark:bg-[#FF453A]/15",
+  BORDER_SUCCESS: "border-[#34C759]/20 dark:border-[#30D158]/25",
+  BORDER_WARNING: "border-[#FF9500]/20 dark:border-[#FF9F0A]/25",
+  BORDER_DESTRUCTIVE: "border-[#FF3B30]/20 dark:border-[#FF453A]/25",
+
+  // ── Text opacity levels ──────────────────────────────────────
+  TEXT_SECONDARY: "text-[#1D1D1F]/60 dark:text-white/60",
+  TEXT_TERTIARY: "text-[#1D1D1F]/40 dark:text-white/40",
+  TEXT_DISABLED: "text-[#1D1D1F]/30 dark:text-white/30",
+
+  // ── Enhanced borders ─────────────────────────────────────────
+  BORDER_STANDARD: "border-black/[0.08] dark:border-white/[0.10]",
+  BORDER_ACCENT: "border-black/[0.12] dark:border-white/[0.15]",
+  BORDER_HEAVY: "border-black/[0.15] dark:border-white/[0.20]",
+
+  // ── Spacing tokens ───────────────────────────────────────────
+  SPACE_XS: "px-2.5 py-2",
+  SPACE_SM: "px-3 py-2.5",
+  SPACE_MD: "px-4 py-3",
+  SPACE_LG: "px-6 py-4",
 } as const;
 
 export type DTKey = keyof typeof DT;

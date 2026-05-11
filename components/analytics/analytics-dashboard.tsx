@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { DT } from "@/lib/design-tokens";
 import { DateRangePicker, type DateRange } from "./date-range-picker";
 import { TeamSummaryCards } from "./team-summary-cards";
@@ -24,13 +24,14 @@ export function AnalyticsDashboard({ locale = "ar" }: AnalyticsDashboardProps) {
     from.setDate(from.getDate() - 30);
     return { from, to };
   });
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.div 
-      className="space-y-6 p-4 md:p-6"
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="space-y-4 sm:space-y-6 p-4 sm:p-6"
+      initial={prefersReducedMotion ? undefined : { opacity: 0, y: 15 }}
+      animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+      transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.4, ease: "easeOut" }}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className={DT.H1}>
@@ -49,7 +50,7 @@ export function AnalyticsDashboard({ locale = "ar" }: AnalyticsDashboardProps) {
 
       <LabelDistributionChart dateRange={dateRange} locale={locale} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <CustomerLifecycleChart locale={locale} />
         <StageFunnelChart locale={locale} />
       </div>
